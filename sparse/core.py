@@ -22,6 +22,12 @@ class COO(object):
         coords = np.vstack(coords).T
         return cls(coords, data, shape=x.shape)
 
+    def todense(self):
+        x = np.zeros(shape=self.shape, dtype=self.dtype)
+        coords = tuple([self.coords[:, i] for i in range(self.ndim)])
+        x[coords] = self.data
+        return x
+
     @classmethod
     def from_scipy_sparse(cls, x):
         x = scipy.sparse.coo_matrix(x)
@@ -46,11 +52,50 @@ class COO(object):
     def nbytes(self):
         return self.data.nbytes + self.coords.nbytes
 
-    def __getitem__(self, ind):
-        ind = np.asarray(ind)
-        for i in range(self.nnz):
-            if (self.coords[i] == ind).all():
-                return self.data[i]
+    def __getitem__(self, index):
+        if not isinstance(index, tuple):
+            index = (index,)
+        index = tuple(ind + self.shape[i] if isinstance(ind, int) and ind < 0 else ind
+                      for i, ind in enumerate(index))
+        mask = np.ones(self.nnz, dtype=bool)
+        for i, ind in enumerate([i for i in index if i is not None]):
+            if ind == slice(None, None):
+                continue
+            mask &= _mask(self.coords[:, i], ind)
+
+        n = mask.sum()
+        coords = []
+        shape = []
+        i = 0
+        for ind in index:
+            if isinstance(ind, int):
+                i += 1
+                continue
+            elif isinstance(ind, slice):
+                shape.append(min(ind.stop, self.shape[i]) - ind.start)
+                coords.append(self.coords[:, i][mask] - ind.start)
+                i += 1
+            elif isinstance(ind, list):
+                old = self.coords[:, i][mask]
+                new = np.empty(shape=old.shape, dtype=old.dtype)
+                for j, item in enumerate(ind):
+                    new[old == item] = j
+                coords.append(new)
+                shape.append(len(ind))
+                i += 1
+            elif ind is None:
+                coords.append(np.zeros(n))
+                shape.append(1)
+
+        for j in range(i, self.ndim):
+            coords.append(self.coords[:, j][mask])
+            shape.append(self.shape[j])
+
+        coords = np.stack(coords, axis=1)
+        shape = tuple(shape)
+        data = self.data[mask]
+
+        return COO(coords, data, shape=shape)
 
     def __str__(self):
         return "<COO: shape=%s, dtype=%s, nnz=%d>" % (self.shape, self.dtype,
@@ -140,10 +185,7 @@ class COO(object):
 
 
     def __array__(self, *args, **kwargs):
-        x = np.zeros(shape=self.shape, dtype=self.dtype)
-        coords = tuple([self.coords[:, i] for i in range(self.ndim)])
-        x[coords] = self.data
-        return x
+        return self.todense()
 
     def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
         try:
@@ -241,3 +283,17 @@ def _keepdims(original, new, axis):
     for ax in axis:
         shape[ax] = 1
     return new.reshape(shape)
+
+
+def _mask(coords, idx):
+    if isinstance(idx, int):
+        return coords == idx
+    elif isinstance(idx, slice):
+        if idx.step not in (1, None):
+            raise NotImplementedError("Steped slices not implemented")
+        return (coords >= idx.start) & (coords < idx.stop)
+    elif isinstance(idx, list):
+        mask = np.zeros(len(coords), dtype=bool)
+        for item in idx:
+            mask |= coords == item
+        return mask

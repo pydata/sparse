@@ -98,3 +98,25 @@ def test_ufunc(ufunc):
     assert isinstance(ufunc(s), COO)
 
     assert_eq(ufunc(x), ufunc(s))
+
+
+@pytest.mark.parametrize('index', [
+    0,
+    1,
+    -1,
+    (slice(0, 2),),
+    (0, slice(0, 2),),
+    (slice(0, 1), 0),
+    ([1, 0], 0),
+    (1, [0, 2]),
+    (0, [1, 0], 0),
+    (1, [2, 0], 0),
+    (None, slice(1, 3), 0),
+    (slice(0, 3), None, 0),
+    (slice(1, 2), slice(2, 4)),
+])
+def test_slicing(index):
+    x = random_x((2, 3, 4))
+    s = COO.from_numpy(x)
+
+    assert_eq(x[index], s[index])
