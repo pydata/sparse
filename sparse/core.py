@@ -13,7 +13,7 @@ class COO(object):
 
         self.shape = shape
         self.data = np.asarray(data)
-        self.coords = np.asarray(coords)
+        self.coords = np.asarray(coords).astype(np.uint64)
 
     @classmethod
     def from_numpy(cls, x):
@@ -44,6 +44,12 @@ class COO(object):
             if (self.coords[i] == ind).all():
                 return self.data[i]
 
+    def __str__(self):
+        return "<COO: shape=%s, dtype=%s, nnz=%d>" % (self.shape, self.dtype,
+                self.nnz)
+
+    __repr__ = __str__
+
     def sum(self, axis=None):
         if axis is None:
             return self.data.sum()
@@ -71,6 +77,21 @@ class COO(object):
 
         shape = tuple(self.shape[ax] for ax in axes)
         return COO(self.coords[:, axes], self.data, shape)
+
+    def reshape(self, shape):
+        linear_loc = np.zeros(self.nnz, dtype=np.uint64)
+        strides = 1
+        for i, d in enumerate(self.shape[::-1]):
+            linear_loc += self.coords[:, -(i + 1)] * strides
+            strides *= d
+
+        coords = np.empty((self.nnz, len(shape)), dtype=self.coords.dtype)
+        strides = 1
+        for i, d in enumerate(shape[::-1]):
+            coords[:, -(i + 1)] = linear_loc // strides % d
+            strides *= d
+
+        return COO(coords, self.data, shape)
 
     def __array__(self, *args, **kwargs):
         x = np.zeros(shape=self.shape, dtype=self.dtype)

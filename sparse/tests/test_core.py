@@ -5,7 +5,7 @@ import numpy as np
 from sparse import COO
 
 
-x = np.empty(shape=(2, 3, 4), dtype=np.float32)
+x = np.zeros(shape=(2, 3, 4), dtype=np.float32)
 for i in range(10):
     x[random.randint(0, x.shape[0] - 1),
       random.randint(0, x.shape[1] - 1),
@@ -13,19 +13,42 @@ for i in range(10):
 y = COO.from_numpy(x)
 
 
+def random_x(shape, dtype=float):
+    x = np.zeros(shape=shape, dtype=float)
+    for i in range(max(5, np.prod(x.shape) // 10)):
+        x[tuple(random.randint(0, d - 1) for d in x.shape)] = random.randint(0, 100)
+    return x
+
+
+def assert_eq(x, y):
+    assert x.shape == y.shape
+    assert x.dtype == y.dtype
+    assert np.allclose(x, y)
+
+
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2)])
 def test_reductions(axis):
     xx = x.sum(axis=axis)
     yy = y.sum(axis=axis)
-    assert xx.shape == yy.shape
-    assert xx.dtype == yy.dtype
-    assert np.allclose(xx, yy)
+    assert_eq(xx, yy)
 
 
 @pytest.mark.parametrize('axis', [None, (1, 2, 0), (2, 1, 0), (0, 1, 2)])
 def test_transpose(axis):
     xx = x.transpose(axis)
     yy = y.transpose(axis)
-    assert xx.shape == yy.shape
-    assert xx.dtype == yy.dtype
-    assert np.allclose(xx, yy)
+    assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize('a,b', [[(3, 4), (3, 4)],
+                                 [(12,), (3, 4)],
+                                 [(3, 4), (12,)],
+                                 [(2, 3, 4, 5), (8, 15)],
+                                 [(2, 3, 4, 5), (24, 5)],
+                                 [(2, 3, 4, 5), (20, 6)],
+])
+def test_reshape(a, b):
+    x = random_x(a)
+    s = COO.from_numpy(x)
+
+    assert_eq(x.reshape(b), s.reshape(b))
