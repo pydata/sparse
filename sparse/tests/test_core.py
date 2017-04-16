@@ -85,3 +85,14 @@ def test_tensordot(a_shape, b_shape, axes):
 
     assert_eq(np.tensordot(a, b, axes),
               sparse.tensordot(sa, sb, axes))
+
+
+@pytest.mark.xfail
+@pytest.mark.parametrize('ufunc', [np.expm1, np.log1p])
+def test_ufunc(ufunc):
+    x = random_x((2, 3, 4))
+    s = COO.from_numpy(x)
+
+    assert isinstance(ufunc(s), COO)
+
+    assert_eq(ufunc(x), ufunc(s))

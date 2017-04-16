@@ -121,6 +121,22 @@ class COO(object):
         x[coords] = self.data
         return x
 
+    def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
+        try:
+            return elemwise(func)
+        except AssertionError:
+            raise NotImplemented
+
+    def elemwise(self, func):
+        assert func(0) == 0
+        return COO(self.coords, func(self.data), shape=self.shape)
+
+    def expm1(self):
+        return self.elemwise(np.expm1)
+
+    def log1p(self):
+        return self.elemwise(np.log1p)
+
 
 def tensordot(a, b, axes=2):
     # Much of this is stolen from numpy/core/numeric.py::tensordot
@@ -144,7 +160,7 @@ def tensordot(a, b, axes=2):
         axes_b = [axes_b]
         nb = 1
 
-    # a, b = asarray(a), asarray(b)  # modified
+    # a, b = asarray(a), asarray(b)  # <--- modified
     as_ = a.shape
     nda = a.ndim
     bs = b.shape
@@ -185,7 +201,7 @@ def tensordot(a, b, axes=2):
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)
     res = dot(at, bt)
-    res = COO.from_scipy_sparse(res)
+    res = COO.from_scipy_sparse(res)  # <--- modified
     return res.reshape(olda + oldb)
 
 
