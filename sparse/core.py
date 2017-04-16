@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 import scipy.sparse
 
@@ -63,22 +62,27 @@ class COO(object):
         if axis is None:
             return self.data.sum()
 
-        neg_axis = list(range(self.ndim))
         if isinstance(axis, int):
-            neg_axis.remove(axis)
-        else:
-            for ax in axis:
-                neg_axis.remove(ax)
+            axis = (axis,)
 
-        df = pd.DataFrame(self.coords[:, neg_axis])
-        columns = list(df.columns)
-        df['.data'] = self.data
+        if set(axis) == set(range(self.ndim)):
+            return self.data.sum()
 
-        result = df.groupby(columns)['.data'].sum()
-        data = result.values
-        coords = result.reset_index()[columns].values
+        axis = tuple(axis)
 
-        return COO(coords, data, tuple(self.shape[i] for i in neg_axis))
+        neg_axis = list(range(self.ndim))
+        for ax in axis:
+            neg_axis.remove(ax)
+        neg_axis = tuple(neg_axis)
+
+        a = self.transpose(axis + neg_axis)
+        a = a.reshape((np.prod([self.shape[d] for d in axis]),
+                       np.prod([self.shape[d] for d in neg_axis])))
+
+        a = a.to_scipy_sparse().sum(axis=0)
+        a = COO.from_scipy_sparse(a)
+        a = a.reshape([self.shape[d] for d in neg_axis])
+        return a
 
     def transpose(self, axes=None):
         if axes is None:
