@@ -58,41 +58,48 @@ class COO(object):
 
     __repr__ = __str__
 
-    def reduction(self, method, axis=None):
+    def reduction(self, method, axis=None, keepdims=False):
         if axis is None:
-            return getattr(self.data, method)()
+            axis = tuple(range(self.ndim))
 
         if isinstance(axis, int):
             axis = (axis,)
 
         if set(axis) == set(range(self.ndim)):
-            return getattr(self.data, method)()
+            result = getattr(self.data, method)()
+        else:
+            axis = tuple(axis)
 
-        axis = tuple(axis)
+            neg_axis = list(range(self.ndim))
+            for ax in axis:
+                neg_axis.remove(ax)
+            neg_axis = tuple(neg_axis)
 
-        neg_axis = list(range(self.ndim))
-        for ax in axis:
-            neg_axis.remove(ax)
-        neg_axis = tuple(neg_axis)
+            a = self.transpose(axis + neg_axis)
+            a = a.reshape((np.prod([self.shape[d] for d in axis]),
+                           np.prod([self.shape[d] for d in neg_axis])))
 
-        a = self.transpose(axis + neg_axis)
-        a = a.reshape((np.prod([self.shape[d] for d in axis]),
-                       np.prod([self.shape[d] for d in neg_axis])))
+            a = a.to_scipy_sparse()
+            a = getattr(a, method)(axis=0)
+            a = COO.from_scipy_sparse(a)
+            a = a.reshape([self.shape[d] for d in neg_axis])
+            result = a
 
-        a = a.to_scipy_sparse()
-        a = getattr(a, method)(axis=0)
-        a = COO.from_scipy_sparse(a)
-        a = a.reshape([self.shape[d] for d in neg_axis])
-        return a
+        if keepdims:
+            result = _keepdims(self, result, axis)
+        return result
 
-    def sum(self, axis=None):
-        return self.reduction('sum', axis=axis)
+    def sum(self, axis=None, keepdims=False):
+        return self.reduction('sum', axis=axis, keepdims=keepdims)
 
-    def max(self, axis=None):
-        x = self.reduction('max', axis=axis)
+    def max(self, axis=None, keepdims=False):
+        x = self.reduction('max', axis=axis, keepdims=keepdims)
         # TODO: verify that there are some missing elements in each entry
         if isinstance(x, COO):
             x.data[x.data < 0] = 0
+            return x
+        elif isinstance(x, np.ndarray):
+            x[x < 0] = 0
             return x
         else:
             return np.max(x, 0)
@@ -226,3 +233,10 @@ def dot(a, b):
     aa = scipy.sparse.csr_matrix(a.to_scipy_sparse())
     bb = scipy.sparse.csc_matrix(b.to_scipy_sparse())
     return aa.dot(bb)
+
+
+def _keepdims(original, new, axis):
+    shape = list(original.shape)
+    for ax in axis:
+        shape[ax] = 1
+    return new.reshape(shape)

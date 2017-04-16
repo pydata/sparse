@@ -31,9 +31,10 @@ def assert_eq(x, y):
 
 @pytest.mark.parametrize('reduction', ['max', 'sum'])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2)])
-def test_reductions(reduction, axis):
-    xx = getattr(x, reduction)(axis=axis)
-    yy = getattr(y, reduction)(axis=axis)
+@pytest.mark.parametrize('keepdims', [True, False])
+def test_reductions(reduction, axis, keepdims):
+    xx = getattr(x, reduction)(axis=axis, keepdims=keepdims)
+    yy = getattr(y, reduction)(axis=axis, keepdims=keepdims)
     assert_eq(xx, yy)
 
 
