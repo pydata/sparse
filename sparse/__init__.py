@@ -1,1 +1,1 @@
-from .core import COO
+from .core import COO, tensordot

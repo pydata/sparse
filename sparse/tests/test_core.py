@@ -2,7 +2,10 @@ import pytest
 
 import random
 import numpy as np
+import scipy.sparse
 from sparse import COO
+
+import sparse
 
 
 x = np.zeros(shape=(2, 3, 4), dtype=np.float32)
@@ -42,6 +45,7 @@ def test_transpose(axis):
 
 @pytest.mark.parametrize('a,b', [[(3, 4), (3, 4)],
                                  [(12,), (3, 4)],
+                                 [(12,), (3, -1)],
                                  [(3, 4), (12,)],
                                  [(2, 3, 4, 5), (8, 15)],
                                  [(2, 3, 4, 5), (24, 5)],
@@ -52,3 +56,32 @@ def test_reshape(a, b):
     s = COO.from_numpy(x)
 
     assert_eq(x.reshape(b), s.reshape(b))
+
+
+def test_to_scipy_sparse():
+    x = random_x((3, 5))
+    s = COO.from_numpy(x)
+    a = s.to_scipy_sparse()
+    b = scipy.sparse.coo_matrix(x)
+
+    assert_eq(a.data, b.data)
+    assert_eq(a.todense(), b.todense())
+
+
+@pytest.mark.parametrize('a_shape,b_shape,axes', [
+    [(3, 4), (4, 3), (1, 0)],
+    [(3, 4), (4, 3), (0, 1)],
+    [(3, 4, 5), (4, 3), (1, 0)],
+    [(3, 4), (5, 4, 3), (1, 1)],
+    [(3, 4), (5, 4, 3), ((0, 1), (2, 1))],
+    [(3, 4), (5, 4, 3), ((1, 0), (1, 2))],
+])
+def test_tensordot(a_shape, b_shape, axes):
+    a = random_x(a_shape)
+    b = random_x(b_shape)
+
+    sa = COO.from_numpy(a)
+    sb = COO.from_numpy(b)
+
+    assert_eq(np.tensordot(a, b, axes),
+              sparse.tensordot(sa, sb, axes))
