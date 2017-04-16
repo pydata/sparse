@@ -58,15 +58,15 @@ class COO(object):
 
     __repr__ = __str__
 
-    def sum(self, axis=None):
+    def reduction(self, method, axis=None):
         if axis is None:
-            return self.data.sum()
+            return getattr(self.data, method)()
 
         if isinstance(axis, int):
             axis = (axis,)
 
         if set(axis) == set(range(self.ndim)):
-            return self.data.sum()
+            return getattr(self.data, method)()
 
         axis = tuple(axis)
 
@@ -79,10 +79,23 @@ class COO(object):
         a = a.reshape((np.prod([self.shape[d] for d in axis]),
                        np.prod([self.shape[d] for d in neg_axis])))
 
-        a = a.to_scipy_sparse().sum(axis=0)
+        a = a.to_scipy_sparse()
+        a = getattr(a, method)(axis=0)
         a = COO.from_scipy_sparse(a)
         a = a.reshape([self.shape[d] for d in neg_axis])
         return a
+
+    def sum(self, axis=None):
+        return self.reduction('sum', axis=axis)
+
+    def max(self, axis=None):
+        x = self.reduction('max', axis=axis)
+        # TODO: verify that there are some missing elements in each entry
+        if isinstance(x, COO):
+            x.data[x.data < 0] = 0
+            return x
+        else:
+            return np.max(x, 0)
 
     def transpose(self, axes=None):
         if axes is None:

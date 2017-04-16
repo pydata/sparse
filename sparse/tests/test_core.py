@@ -29,10 +29,11 @@ def assert_eq(x, y):
     assert np.allclose(x, y)
 
 
+@pytest.mark.parametrize('reduction', ['max', 'sum'])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2)])
-def test_reductions(axis):
-    xx = x.sum(axis=axis)
-    yy = y.sum(axis=axis)
+def test_reductions(reduction, axis):
+    xx = getattr(x, reduction)(axis=axis)
+    yy = getattr(y, reduction)(axis=axis)
     assert_eq(xx, yy)
 
 
