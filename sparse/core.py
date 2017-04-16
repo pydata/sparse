@@ -164,6 +164,7 @@ class COO(object):
 
 def tensordot(a, b, axes=2):
     # Much of this is stolen from numpy/core/numeric.py::tensordot
+    # Please see license at https://github.com/numpy/numpy/blob/master/LICENSE.txt
     try:
         iter(axes)
     except:
