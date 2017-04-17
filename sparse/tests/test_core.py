@@ -77,6 +77,8 @@ def test_to_scipy_sparse():
     [(3, 4), (5, 4, 3), (1, 1)],
     [(3, 4), (5, 4, 3), ((0, 1), (2, 1))],
     [(3, 4), (5, 4, 3), ((1, 0), (1, 2))],
+    [(3, 4, 5), (4,), (1, 0)],
+    [(4,), (3, 4, 5), (0, 1)],
 ])
 def test_tensordot(a_shape, b_shape, axes):
     a = random_x(a_shape)
@@ -87,6 +89,16 @@ def test_tensordot(a_shape, b_shape, axes):
 
     assert_eq(np.tensordot(a, b, axes),
               sparse.tensordot(sa, sb, axes))
+
+    assert_eq(np.tensordot(a, b, axes),
+              sparse.tensordot(sa, b, axes))
+
+    assert isinstance(sparse.tensordot(sa, b, axes), COO)
+
+    assert_eq(np.tensordot(a, b, axes),
+              sparse.tensordot(a, sb, axes))
+
+    assert isinstance(sparse.tensordot(a, sb, axes), COO)
 
 
 @pytest.mark.xfail

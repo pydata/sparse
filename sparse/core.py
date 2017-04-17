@@ -158,6 +158,10 @@ class COO(object):
         shape = tuple(self.shape[ax] for ax in axes)
         return COO(self.coords[:, axes], self.data, shape)
 
+    @property
+    def T(self):
+        return self.transpose(list(range(self.ndim))[::-1])
+
     def reshape(self, shape):
         if any(d == -1 for d in shape):
             extra = int(np.prod(self.shape) /
@@ -286,13 +290,19 @@ def tensordot(a, b, axes=2):
 
 
 def dot(a, b):
+    if isinstance(b, COO) and not isinstance(a, COO):
+        return dot(b.T, a.T).T
     aa = a.to_scipy_sparse()
     aa.has_canonical_format = a.has_duplicates
     aa = aa.tocsr()
-    bb = b.to_scipy_sparse()
-    bb.has_canonical_format = b.has_duplicates
-    bb = bb.tocsc()
-    return aa.dot(bb)
+
+    b_original = b
+    if isinstance(b, COO):
+        b = b.to_scipy_sparse()
+    if isinstance(b, scipy.sparse.spmatrix):
+        b.has_canonical_format = b_original.has_duplicates
+        b = b.tocsc()
+    return aa.dot(b)
 
 
 def _keepdims(original, new, axis):
