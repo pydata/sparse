@@ -165,15 +165,19 @@ class COO(object):
 
     __repr__ = __str__
 
-    def reduction(self, method, axis=None, keepdims=False):
+    def reduction(self, method, axis=None, keepdims=False, dtype=None):
         if axis is None:
             axis = tuple(range(self.ndim))
+
+        kwargs = {}
+        if dtype:
+            kwargs['dtype'] = dtype
 
         if isinstance(axis, int):
             axis = (axis,)
 
         if set(axis) == set(range(self.ndim)):
-            result = getattr(self.data, method)()
+            result = getattr(self.data, method)(**kwargs)
         else:
             axis = tuple(axis)
 
@@ -187,7 +191,7 @@ class COO(object):
                            np.prod([self.shape[d] for d in neg_axis])))
 
             a = a.to_scipy_sparse()
-            a = getattr(a, method)(axis=0)
+            a = getattr(a, method)(axis=0, **kwargs)
             a = COO.from_scipy_sparse(a)
             a = a.reshape([self.shape[d] for d in neg_axis])
             result = a
@@ -196,8 +200,8 @@ class COO(object):
             result = _keepdims(self, result, axis)
         return result
 
-    def sum(self, axis=None, keepdims=False):
-        return self.reduction('sum', axis=axis, keepdims=keepdims)
+    def sum(self, axis=None, keepdims=False, dtype=None):
+        return self.reduction('sum', axis=axis, keepdims=keepdims, dtype=dtype)
 
     def max(self, axis=None, keepdims=False):
         x = self.reduction('max', axis=axis, keepdims=keepdims)

@@ -37,12 +37,16 @@ def assert_eq(x, y):
     assert np.allclose(xx, yy)
 
 
-@pytest.mark.parametrize('reduction', ['max', 'sum'])
+@pytest.mark.parametrize('reduction,kwargs', [
+    ('max', {}),
+    ('sum', {}),
+    ('sum', {'dtype': np.float16})
+])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2)])
 @pytest.mark.parametrize('keepdims', [True, False])
-def test_reductions(reduction, axis, keepdims):
-    xx = getattr(x, reduction)(axis=axis, keepdims=keepdims)
-    yy = getattr(y, reduction)(axis=axis, keepdims=keepdims)
+def test_reductions(reduction, axis, keepdims, kwargs):
+    xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
+    yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     assert_eq(xx, yy)
 
 
