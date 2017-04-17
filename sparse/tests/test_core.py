@@ -172,3 +172,13 @@ def test_concatenate():
 
     assert_eq(np.concatenate([x, y, z], axis=2),
               sparse.concatenate([xx, yy, zz], axis=2))
+
+
+def test_coord_dtype():
+    x = random_x((2, 3, 4))
+    s = COO.from_numpy(x)
+    assert s.coords.dtype == np.uint8
+
+    x = np.zeros(1000)
+    s = COO.from_numpy(x)
+    assert s.coords.dtype == np.uint16

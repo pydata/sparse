@@ -13,7 +13,8 @@ class COO(object):
 
         self.shape = tuple(shape)
         self.data = np.asarray(data)
-        self.coords = np.asarray(coords).astype(np.uint64)
+        self.coords = np.asarray(coords)
+        self.coords = self.coords.astype(np.min_scalar_type(max(self.shape)))
         self.has_duplicates = has_duplicates
 
     @classmethod
@@ -167,7 +168,7 @@ class COO(object):
             extra = int(np.prod(self.shape) /
                         np.prod([d for d in shape if d != -1]))
             shape = tuple([d if d != -1 else extra for d in shape])
-        linear_loc = np.zeros(self.nnz, dtype=np.uint64)
+        linear_loc = np.zeros(self.nnz, dtype=np.min_scalar_type(np.prod(self.shape)))
         strides = 1
         for i, d in enumerate(self.shape[::-1]):
             linear_loc += self.coords[:, -(i + 1)] * strides
