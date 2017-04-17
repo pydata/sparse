@@ -87,6 +87,7 @@ def test_to_scipy_sparse():
     [(3, 4), (5, 4, 3), ((1, 0), (1, 2))],
     [(3, 4, 5), (4,), (1, 0)],
     [(4,), (3, 4, 5), (0, 1)],
+    [(4,), (4,), (0, 0)],
 ])
 def test_tensordot(a_shape, b_shape, axes):
     a = random_x(a_shape)

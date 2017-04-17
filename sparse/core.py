@@ -68,7 +68,11 @@ class COO(object):
         self.shape = tuple(shape)
         self.data = np.asarray(data)
         self.coords = np.asarray(coords)
-        self.coords = self.coords.astype(np.min_scalar_type(max(self.shape)))
+        if self.shape:
+            dtype = np.min_scalar_type(max(self.shape))
+        else:
+            dtype = np.int_
+        self.coords = self.coords.astype(dtype)
         assert len(data) == self.coords.shape[1]
         self.has_duplicates = has_duplicates
 
