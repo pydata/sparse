@@ -1,5 +1,7 @@
+import operator
 import numpy as np
 import scipy.sparse
+
 
 class COO(object):
     def __init__(self, coords, data=None, shape=None, has_duplicates=True):
@@ -195,7 +197,7 @@ class COO(object):
 
     def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
         try:
-            return elemwise(func)
+            return self.elemwise(func)
         except AssertionError:
             raise NotImplemented
 
@@ -210,10 +212,38 @@ class COO(object):
         result.has_duplicates = False
         return result
 
-    def elemwise(self, func):
-        assert func(0) == 0
-        return COO(self.coords, func(self.data), shape=self.shape,
-                   has_duplicates=self.has_duplicates)
+    def __add__(self, other):
+        if not isinstance(other, COO):
+            raise NotImplementedError(
+                "adding to scalars or dense arrays would cause the result "
+                "to be dense")
+        if self.shape == other.shape:
+            return COO(np.concatenate([self.coords, other.coords], axis=0),
+                       np.concatenate([self.data, other.data]),
+                       self.shape, has_duplicates=True)
+        else:
+            raise NotImplementedError("Broadcasting not yet supported")
+
+    def __neg__(self):
+        return COO(self.coords, -self.data, self.shape, self.has_duplicates)
+
+    def __sub__(self, other):
+        return self + (-other)
+
+    def __mul__(self, other):
+        return self.elemwise(operator.mul, other)
+
+    __rmul__ = __mul__
+
+    def __pow__(self, other):
+        return self.elemwise(operator.pow, other)
+
+    def elemwise(self, func, *args, **kwargs):
+        if func(0, *args, **kwargs) != 0:
+            raise ValueError("Performing this operation would produce "
+                    "a dense result: %s" % str(func))
+        return COO(self.coords, func(self.data, *args, **kwargs),
+                   shape=self.shape, has_duplicates=self.has_duplicates)
 
     def expm1(self):
         return self.elemwise(np.expm1)

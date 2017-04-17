@@ -182,3 +182,45 @@ def test_coord_dtype():
     x = np.zeros(1000)
     s = COO.from_numpy(x)
     assert s.coords.dtype == np.uint16
+
+
+def test_addition():
+    x = random_x((2, 3, 4))
+    a = COO.from_numpy(x)
+
+    y = random_x((2, 3, 4))
+    b = COO.from_numpy(y)
+
+    assert_eq(x + y, a + b)
+    assert_eq(x - y, a - b)
+    assert_eq(-x, -a)
+
+
+@pytest.mark.xfail
+def test_addition_broadcasting():
+    x = random_x((2, 3, 4))
+    a = COO.from_numpy(x)
+
+    z = random_x((3, 4))
+    c = COO.from_numpy(z)
+
+    assert_eq(x + z, a + c)
+
+
+def test_scalar_multiplication():
+    x = random_x((2, 3, 4))
+    a = COO.from_numpy(x)
+
+    assert_eq(x * 2, a * 2)
+    assert_eq(2 * x, 2 * a)
+
+
+def test_scalar_exponentiation():
+    x = random_x((2, 3, 4))
+    a = COO.from_numpy(x)
+
+    assert_eq(x ** 2, a ** 2)
+    assert_eq(x ** 0.5, a ** 0.5)
+
+    with pytest.raises((ValueError, ZeroDivisionError)):
+        assert_eq(x ** -1, a ** -1)
