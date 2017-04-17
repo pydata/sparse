@@ -40,42 +40,40 @@ There are no plans to support
 Example
 -------
 
+::
+
+   pip install sparse
+
 .. code-block:: python
 
-   In [1]: import numpy as np
-   In [2]: n = 1000
-   In [3]: ndims = 4
-   In [4]: nnz = 1000000
-   In [5]: coords = np.random.randint(0, n - 1, size=(ndims, nnz))
-   In [6]: data = np.random.random(nnz)
+   import numpy as np
+   n = 1000
+   ndims = 4
+   nnz = 1000000
+   coords = np.random.randint(0, n - 1, size=(ndims, nnz))
+   data = np.random.random(nnz)
 
-   In [7]: import sparse
-   In [8]: x = sparse.COO(coords, data, shape=((n,) * ndims))
-   In [9]: x
-   Out[9]: <COO: shape=(1000, 1000, 1000, 1000), dtype=float64, nnz=1000000>
+   import sparse
+   x = sparse.COO(coords, data, shape=((n,) * ndims))
+   x
+   # <COO: shape=(1000, 1000, 1000, 1000), dtype=float64, nnz=1000000>
 
-   In [10]: x.nbytes
-   Out[10]: 40000000
+   x.nbytes
+   # 16000000
 
-   In [11]: %time y = sparse.tensordot(x, x, axes=((3, 0), (1, 2)))
-   CPU times: user 1.52 s, sys: 20 ms, total: 1.54 s
-   Wall time: 1.54 s
+   y = sparse.tensordot(x, x, axes=((3, 0), (1, 2)))
 
-   In [12]: y
-   Out[12]: <COO: shape=(1000, 1000, 1000, 1000), dtype=float64, nnz=1001588>
+   y
+   # <COO: shape=(1000, 1000, 1000, 1000), dtype=float64, nnz=1001588>
 
-   In [13]: %time z = y.sum(axis=(0, 1, 2))
-   CPU times: user 408 ms, sys: 408 ms, total: 816 ms
-   Wall time: 818 ms
+   z = y.sum(axis=(0, 1, 2))
+   z
+   # <COO: shape=(1000,), dtype=float64, nnz=999>
 
-   In [14]: z
-   Out[14]: <COO: shape=(1000,), dtype=float64, nnz=999>
-
-   In [15]: z.todense()
-   Out[15]:
-   array([ 244.0671803 ,  246.38455787,  243.43383158,  256.46068737,
-           261.18598416,  256.36439011,  271.74177584,  238.56059193,
-           ...
+   z.todense()
+   # array([ 244.0671803 ,  246.38455787,  243.43383158,  256.46068737,
+   #         261.18598416,  256.36439011,  271.74177584,  238.56059193,
+   #         ...
 
 
 How does this work?
@@ -83,7 +81,7 @@ How does this work?
 
 Scipy.sparse implements decent 2-d sparse matrix objects for the standard
 layouts, notably for our purposes
-`CSR, CSC, and COO <https://en.wikipedia.org/wiki/Sparse_matrix>`.  However it
+`CSR, CSC, and COO <https://en.wikipedia.org/wiki/Sparse_matrix>`_.  However it
 doesn't include support for sparse arrays of greater than 2 dimensions.
 
 This library extends the COO layout, which stores the row index, column index,

@@ -11,7 +11,7 @@ setup(name='sparse',
       maintainer='Matthew Rocklin',
       maintainer_email='mrocklin@gmail.com',
       license='BSD',
-      keywords='sparse,dask',
+      keywords='sparse,numpy,scipy,dask',
       packages=['sparse'],
       long_description=(open('README.rst').read() if exists('README.rst')
                         else ''),
