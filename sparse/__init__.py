@@ -1,1 +1,1 @@
-from .core import COO, tensordot, concatenate, stack
+from .core import COO, tensordot, concatenate, stack, dot

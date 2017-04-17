@@ -219,8 +219,7 @@ class COO(object):
         return self.transpose(list(range(self.ndim))[::-1])
 
     def dot(self, other):
-        return tensordot(self, other,
-                         axes=((self.ndim - 1,), (other.ndim - 2,)))
+        return dot(self, other)
 
     def reshape(self, shape):
         if any(d == -1 for d in shape):
@@ -423,14 +422,18 @@ def tensordot(a, b, axes=2):
 
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)
-    res = dot(at, bt)
+    res = _dot(at, bt)
     res = COO.from_scipy_sparse(res)  # <--- modified
     return res.reshape(olda + oldb)
 
 
 def dot(a, b):
+    return tensordot(a, b, axes=((a.ndim - 1,), (b.ndim - 2,)))
+
+
+def _dot(a, b):
     if isinstance(b, COO) and not isinstance(a, COO):
-        return dot(b.T, a.T).T
+        return _dot(b.T, a.T).T
     aa = a.to_scipy_sparse()
     aa.has_canonical_format = a.has_duplicates
     aa = aa.tocsr()

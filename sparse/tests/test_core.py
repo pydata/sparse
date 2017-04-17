@@ -117,6 +117,7 @@ def test_dot():
     sb = COO.from_numpy(b)
 
     assert_eq(a.dot(b), sa.dot(sb))
+    assert_eq(np.dot(a, b), sparse.dot(sa, sb))
 
 
 @pytest.mark.parametrize('ufunc', [np.expm1, np.log1p, np.sin, np.tan,
