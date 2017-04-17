@@ -173,6 +173,23 @@ def test_concatenate():
     assert_eq(np.concatenate([x, y, z], axis=2),
               sparse.concatenate([xx, yy, zz], axis=2))
 
+    assert_eq(np.concatenate([x, y, z], axis=-1),
+              sparse.concatenate([xx, yy, zz], axis=-1))
+
+
+@pytest.mark.parametrize('shape', [(5,), (2, 3, 4), (5, 2)])
+@pytest.mark.parametrize('axis', [0, 1, -1])
+def test_stack(shape, axis):
+    x = random_x(shape)
+    xx = COO.from_numpy(x)
+    y = random_x(shape)
+    yy = COO.from_numpy(y)
+    z = random_x(shape)
+    zz = COO.from_numpy(z)
+
+    assert_eq(np.stack([x, y, z], axis=axis),
+              sparse.stack([xx, yy, zz], axis=axis))
+
 
 def test_coord_dtype():
     x = random_x((2, 3, 4))
