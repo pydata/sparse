@@ -275,3 +275,18 @@ def test_scalar_exponentiation():
 
     with pytest.raises((ValueError, ZeroDivisionError)):
         assert_eq(x ** -1, a ** -1)
+
+
+def test_create_with_lists_of_tuples():
+    L = [((0, 0, 0), 1),
+         ((1, 1, 1), 2),
+         ((1, 2, 1), 1),
+         ((1, 3, 2), 3)]
+
+    s = COO(L)
+
+    x = np.zeros((2, 4, 3), dtype=np.asarray([1, 2, 3]).dtype)
+    for ind, value in L:
+        x[ind] = value
+
+    assert_eq(s, x)

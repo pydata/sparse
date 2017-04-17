@@ -55,13 +55,15 @@ class COO(object):
     COO.from_scipy_sparse
     """
     def __init__(self, coords, data=None, shape=None, has_duplicates=True):
-        if shape is None:
-            shape = tuple(ind.max(axis=0).tolist())
         if data is None and isinstance(coords, (tuple, list)):
             if coords:
                 assert len(coords[0]) == 2
-            data = list(pluck(1, coords))
-            coords = list(pluck(0, coords))
+            data = [x[1] for x in coords]
+            coords = [x[0] for x in coords]
+            coords = np.asarray(coords).T
+
+        if shape is None:
+            shape = tuple((coords.max(axis=1) + 1).tolist())
 
         self.shape = tuple(shape)
         self.data = np.asarray(data)
