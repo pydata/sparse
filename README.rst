@@ -5,8 +5,8 @@ This implements sparse multidimensional arrays on top of NumPy and
 Scipy.sparse.  It generalizes the scipy.sparse.coo_matrix_ layout but extends
 beyond just rows and columns to an arbitrary number of dimensions.
 
-The original motivation is for maching learning algorithms, but it is general
-use.
+The original motivation is for machine learning algorithms, but it is
+intended for somewhat general use.
 
 This Supports
 --------------
@@ -29,6 +29,12 @@ However the following things are in scope, relatively doable, and not yet built
 -  Concatenation and stacking
 -  Smooth interaction with numpy arrays, scipy.sparse arrays, etc. for binary
    operations
+-  Incremental buliding of arrays and inplace updates
+
+There are no plans to support
+-----------------------------
+
+-  Parallel computing
 
 Example
 -------
