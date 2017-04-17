@@ -16,6 +16,9 @@ This Supports
 -  Tensordot
 -  Reductions (sum, max)
 -  Slicing with integers, lists, and slices (with no step value)
+-  Concatenation and stacking
+-  Addition with other sparse arrays of the same shape
+-  Arithmetic with scalars (when it preserves zeros)
 
 This may yet support
 --------------------
@@ -24,11 +27,8 @@ A "does not support" list is hard to build because it is infinitely long.
 However the following things are in scope, relatively doable, and not yet built
 (help welcome).
 
--  Arithmetic like add
 -  NumPy ufunc support (where zero is maintained)
--  Concatenation and stacking
--  Smooth interaction with numpy arrays, scipy.sparse arrays, etc. for binary
-   operations
+-  Broadcasting
 -  Incremental buliding of arrays and inplace updates
 
 There are no plans to support
