@@ -1,4 +1,5 @@
 import operator
+from numbers import Number
 import numpy as np
 import scipy.sparse
 
@@ -193,15 +194,6 @@ class COO(object):
                                          self.coords[1])),
                                         shape=self.shape)
 
-    def __array__(self, *args, **kwargs):
-        return self.todense()
-
-    def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
-        try:
-            return self.elemwise(func)
-        except AssertionError:
-            raise NotImplemented
-
     def sum_duplicates(self):
         if not self.has_duplicates:
             return self
@@ -236,6 +228,14 @@ class COO(object):
 
     __rmul__ = __mul__
 
+    def __truediv__(self, other):
+        return self.elemwise(operator.truediv, other)
+
+    def __floordiv__(self, other):
+        return self.elemwise(operator.floordiv, other)
+
+    __div__ = __truediv__
+
     def __pow__(self, other):
         return self.elemwise(operator.pow, other)
 
@@ -251,6 +251,58 @@ class COO(object):
 
     def log1p(self):
         return self.elemwise(np.log1p)
+
+    def sin(self):
+        return self.elemwise(np.sin)
+
+    def sinh(self):
+        return self.elemwise(np.sinh)
+
+    def tan(self):
+        return self.elemwise(np.tan)
+
+    def tanh(self):
+        return self.elemwise(np.tanh)
+
+    def sqrt(self):
+        return self.elemwise(np.sqrt)
+
+    def ceil(self):
+        return self.elemwise(np.ceil)
+
+    def floor(self):
+        return self.elemwise(np.floor)
+
+    def round(self, decimals=0):
+        return self.elemwise(np.round, decimals)
+
+    def rint(self):
+        return self.elemwise(np.rint)
+
+    def conj(self):
+        return self.elemwise(np.conj)
+
+    def conjugate(self):
+        return self.elemwise(np.conjugate)
+
+    def astype(self, dtype):
+        return self.elemwise(np.astype, dtype)
+
+    def __gt__(self, other):
+        if not isinstance(other, Number):
+            raise NotImplementedError("Only scalars supported")
+        if other < 0:
+            raise ValueError("Comparison with negative number would produce "
+                             "dense result")
+        return self.elemwise(operator.gt, other)
+
+    def __ge__(self, other):
+        if not isinstance(other, Number):
+            raise NotImplementedError("Only scalars supported")
+        if other <= 0:
+            raise ValueError("Comparison with negative number would produce "
+                             "dense result")
+        return self.elemwise(operator.ge, other)
 
 
 def tensordot(a, b, axes=2):

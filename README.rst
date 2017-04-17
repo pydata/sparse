@@ -11,14 +11,15 @@ intended for somewhat general use.
 This Supports
 --------------
 
+-  NumPy ufuncs (where zeros are preserved)
+-  Arithmetic with scalars (where zeros are preserved)
+-  Reductions (sum, max)
 -  Reshape
 -  Transpose
 -  Tensordot
--  Reductions (sum, max)
 -  Slicing with integers, lists, and slices (with no step value)
 -  Concatenation and stacking
 -  Addition with other sparse arrays of the same shape
--  Arithmetic with scalars (when it preserves zeros)
 
 This may yet support
 --------------------
@@ -27,14 +28,14 @@ A "does not support" list is hard to build because it is infinitely long.
 However the following things are in scope, relatively doable, and not yet built
 (help welcome).
 
--  NumPy ufunc support (where zero is maintained)
 -  Broadcasting
 -  Incremental buliding of arrays and inplace updates
+-  More reductions
 
 There are no plans to support
 -----------------------------
 
--  Parallel computing
+-  Parallel computing (though Dask.array may use this in the future)
 
 Example
 -------

@@ -26,7 +26,15 @@ def random_x(shape, dtype=float):
 def assert_eq(x, y):
     assert x.shape == y.shape
     assert x.dtype == y.dtype
-    assert np.allclose(x, y)
+    if isinstance(x, COO):
+        xx = x.todense()
+    else:
+        xx = x
+    if isinstance(y, COO):
+        yy = y.todense()
+    else:
+        yy = y
+    assert np.allclose(xx, yy)
 
 
 @pytest.mark.parametrize('reduction', ['max', 'sum'])
@@ -101,8 +109,9 @@ def test_tensordot(a_shape, b_shape, axes):
     assert isinstance(sparse.tensordot(a, sb, axes), COO)
 
 
-@pytest.mark.xfail
-@pytest.mark.parametrize('ufunc', [np.expm1, np.log1p])
+@pytest.mark.parametrize('ufunc', [np.expm1, np.log1p, np.sin, np.tan,
+                                   np.sinh,  np.tanh, np.floor, np.ceil,
+                                   np.sqrt, np.conj, np.round, np.rint])
 def test_ufunc(ufunc):
     x = random_x((2, 3, 4))
     s = COO.from_numpy(x)
@@ -110,6 +119,18 @@ def test_ufunc(ufunc):
     assert isinstance(ufunc(s), COO)
 
     assert_eq(ufunc(x), ufunc(s))
+
+
+def test_gt():
+    x = random_x((2, 3, 4))
+    s = COO.from_numpy(x)
+
+    m = x.mean()
+    assert_eq(x > m, s > m)
+
+    m = s.data[2]
+    assert_eq(x > m, s > m)
+    assert_eq(x >= m, s >= m)
 
 
 @pytest.mark.parametrize('index', [
@@ -230,6 +251,9 @@ def test_scalar_multiplication():
 
     assert_eq(x * 2, a * 2)
     assert_eq(2 * x, 2 * a)
+    assert_eq(x / 2, a / 2)
+    assert_eq(x / 2.5, a / 2.5)
+    assert_eq(x // 2.5, a // 2.5)
 
 
 def test_scalar_exponentiation():
