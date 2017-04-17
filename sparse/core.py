@@ -2,7 +2,7 @@ import numpy as np
 import scipy.sparse
 
 class COO(object):
-    def __init__(self, coords, data=None, shape=None):
+    def __init__(self, coords, data=None, shape=None, has_duplicates=True):
         if shape is None:
             shape = tuple(ind.max(axis=0).tolist())
         if data is None and isinstance(coords, (tuple, list)):
@@ -14,6 +14,7 @@ class COO(object):
         self.shape = tuple(shape)
         self.data = np.asarray(data)
         self.coords = np.asarray(coords).astype(np.uint64)
+        self.has_duplicates = has_duplicates
 
     @classmethod
     def from_numpy(cls, x):
@@ -23,6 +24,7 @@ class COO(object):
         return cls(coords, data, shape=x.shape)
 
     def todense(self):
+        self = self.sum_duplicates()
         x = np.zeros(shape=self.shape, dtype=self.dtype)
         coords = tuple([self.coords[:, i] for i in range(self.ndim)])
         x[coords] = self.data
@@ -34,7 +36,7 @@ class COO(object):
         coords = np.empty((x.nnz, 2), dtype=x.row.dtype)
         coords[:, 0] = x.row
         coords[:, 1] = x.col
-        return COO(coords, x.data, shape=x.shape)
+        return COO(coords, x.data, shape=x.shape, has_duplicates=x.has_canonical_format)
 
     @property
     def dtype(self):
@@ -95,7 +97,7 @@ class COO(object):
         shape = tuple(shape)
         data = self.data[mask]
 
-        return COO(coords, data, shape=shape)
+        return COO(coords, data, shape=shape, has_duplicates=self.has_duplicates)
 
     def __str__(self):
         return "<COO: shape=%s, dtype=%s, nnz=%d>" % (self.shape, self.dtype,
@@ -173,7 +175,7 @@ class COO(object):
             coords[:, -(i + 1)] = linear_loc // strides % d
             strides *= d
 
-        return COO(coords, self.data, shape)
+        return COO(coords, self.data, shape, has_duplicates=self.has_duplicates)
 
     def to_scipy_sparse(self):
         assert self.ndim == 2
@@ -182,7 +184,6 @@ class COO(object):
                                         (self.coords[:, 0],
                                          self.coords[:, 1])),
                                         shape=self.shape)
-
 
     def __array__(self, *args, **kwargs):
         return self.todense()
@@ -193,9 +194,21 @@ class COO(object):
         except AssertionError:
             raise NotImplemented
 
+    def sum_duplicates(self):
+        if not self.has_duplicates:
+            return self
+        x = (self.reshape((np.prod(self.shape), 1))
+                 .to_scipy_sparse())
+        x.sum_duplicates()
+        # TODO: we may be able to do this faster
+        result = COO.from_scipy_sparse(x).reshape(self.shape)
+        result.has_duplicates = False
+        return result
+
     def elemwise(self, func):
         assert func(0) == 0
-        return COO(self.coords, func(self.data), shape=self.shape)
+        return COO(self.coords, func(self.data), shape=self.shape,
+                   has_duplicates=self.has_duplicates)
 
     def expm1(self):
         return self.elemwise(np.expm1)
@@ -273,8 +286,12 @@ def tensordot(a, b, axes=2):
 
 
 def dot(a, b):
-    aa = scipy.sparse.csr_matrix(a.to_scipy_sparse())
-    bb = scipy.sparse.csc_matrix(b.to_scipy_sparse())
+    aa = a.to_scipy_sparse()
+    aa.has_canonical_format = a.has_duplicates
+    aa = aa.tocsr()
+    bb = b.to_scipy_sparse()
+    bb.has_canonical_format = b.has_duplicates
+    bb = bb.tocsc()
     return aa.dot(bb)
 
 

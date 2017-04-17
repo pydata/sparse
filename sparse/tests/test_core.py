@@ -120,3 +120,21 @@ def test_slicing(index):
     s = COO.from_numpy(x)
 
     assert_eq(x[index], s[index])
+
+
+def test_canonical():
+    coords = np.array([[0, 0, 0],
+                       [0, 1, 0],
+                       [1, 0, 3],
+                       [0, 1, 0],
+                       [1, 0, 3]])
+    data = np.arange(5)
+
+    x = COO(coords, data, shape=(2, 2, 5))
+    y = x.sum_duplicates()
+
+    assert_eq(x, y)
+    assert x.nnz == 5
+    assert x.has_duplicates
+    assert y.nnz == 3
+    assert not y.has_duplicates
