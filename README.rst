@@ -45,7 +45,7 @@ Example
    In [2]: n = 1000
    In [3]: ndims = 4
    In [4]: nnz = 1000000
-   In [5]: coords = np.random.randint(0, n - 1, size=(nnz, ndims))
+   In [5]: coords = np.random.randint(0, n - 1, size=(ndims, nnz))
    In [6]: data = np.random.random(nnz)
 
    In [7]: import sparse

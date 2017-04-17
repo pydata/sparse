@@ -17,28 +17,29 @@ class COO(object):
         self.data = np.asarray(data)
         self.coords = np.asarray(coords)
         self.coords = self.coords.astype(np.min_scalar_type(max(self.shape)))
+        assert len(data) == self.coords.shape[1]
         self.has_duplicates = has_duplicates
 
     @classmethod
     def from_numpy(cls, x):
         coords = np.where(x)
         data = x[coords]
-        coords = np.vstack(coords).T
+        coords = np.vstack(coords)
         return cls(coords, data, shape=x.shape)
 
     def todense(self):
         self = self.sum_duplicates()
         x = np.zeros(shape=self.shape, dtype=self.dtype)
-        coords = tuple([self.coords[:, i] for i in range(self.ndim)])
+        coords = tuple([self.coords[i, :] for i in range(self.ndim)])
         x[coords] = self.data
         return x
 
     @classmethod
     def from_scipy_sparse(cls, x):
         x = scipy.sparse.coo_matrix(x)
-        coords = np.empty((x.nnz, 2), dtype=x.row.dtype)
-        coords[:, 0] = x.row
-        coords[:, 1] = x.col
+        coords = np.empty((2, x.nnz), dtype=x.row.dtype)
+        coords[0, :] = x.row
+        coords[1, :] = x.col
         return COO(coords, x.data, shape=x.shape, has_duplicates=x.has_canonical_format)
 
     @property
@@ -51,7 +52,7 @@ class COO(object):
 
     @property
     def nnz(self):
-        return self.coords.shape[0]
+        return self.coords.shape[1]
 
     @property
     def nbytes(self):
@@ -66,7 +67,7 @@ class COO(object):
         for i, ind in enumerate([i for i in index if i is not None]):
             if ind == slice(None, None):
                 continue
-            mask &= _mask(self.coords[:, i], ind)
+            mask &= _mask(self.coords[i], ind)
 
         n = mask.sum()
         coords = []
@@ -78,10 +79,10 @@ class COO(object):
                 continue
             elif isinstance(ind, slice):
                 shape.append(min(ind.stop, self.shape[i]) - ind.start)
-                coords.append(self.coords[:, i][mask] - ind.start)
+                coords.append(self.coords[i][mask] - ind.start)
                 i += 1
             elif isinstance(ind, list):
-                old = self.coords[:, i][mask]
+                old = self.coords[i][mask]
                 new = np.empty(shape=old.shape, dtype=old.dtype)
                 for j, item in enumerate(ind):
                     new[old == item] = j
@@ -93,10 +94,10 @@ class COO(object):
                 shape.append(1)
 
         for j in range(i, self.ndim):
-            coords.append(self.coords[:, j][mask])
+            coords.append(self.coords[j][mask])
             shape.append(self.shape[j])
 
-        coords = np.stack(coords, axis=1)
+        coords = np.stack(coords, axis=0)
         shape = tuple(shape)
         data = self.data[mask]
 
@@ -159,7 +160,7 @@ class COO(object):
             axes = tuple(reversed(range(self.ndim)))
 
         shape = tuple(self.shape[ax] for ax in axes)
-        return COO(self.coords[:, axes], self.data, shape)
+        return COO(self.coords[axes, :], self.data, shape)
 
     @property
     def T(self):
@@ -173,13 +174,13 @@ class COO(object):
         linear_loc = np.zeros(self.nnz, dtype=np.min_scalar_type(np.prod(self.shape)))
         strides = 1
         for i, d in enumerate(self.shape[::-1]):
-            linear_loc += self.coords[:, -(i + 1)] * strides
+            linear_loc += self.coords[-(i + 1), :] * strides
             strides *= d
 
-        coords = np.empty((self.nnz, len(shape)), dtype=self.coords.dtype)
+        coords = np.empty((len(shape), self.nnz), dtype=self.coords.dtype)
         strides = 1
         for i, d in enumerate(shape[::-1]):
-            coords[:, -(i + 1)] = linear_loc // strides % d
+            coords[-(i + 1), :] = linear_loc // strides % d
             strides *= d
 
         return COO(coords, self.data, shape, has_duplicates=self.has_duplicates)
@@ -188,8 +189,8 @@ class COO(object):
         assert self.ndim == 2
         import scipy.sparse
         return scipy.sparse.coo_matrix((self.data,
-                                        (self.coords[:, 0],
-                                         self.coords[:, 1])),
+                                        (self.coords[0],
+                                         self.coords[1])),
                                         shape=self.shape)
 
     def __array__(self, *args, **kwargs):
@@ -218,7 +219,7 @@ class COO(object):
                 "adding to scalars or dense arrays would cause the result "
                 "to be dense")
         if self.shape == other.shape:
-            return COO(np.concatenate([self.coords, other.coords], axis=0),
+            return COO(np.concatenate([self.coords, other.coords], axis=1),
                        np.concatenate([self.data, other.data]),
                        self.shape, has_duplicates=True)
         else:
@@ -362,13 +363,13 @@ def concatenate(arrays, axis=0):
                for x in arrays
                for ax in set(range(arrays[0].ndim)) - {axis})
     data = np.concatenate([x.data for x in arrays])
-    coords = np.concatenate([x.coords for x in arrays])
+    coords = np.concatenate([x.coords for x in arrays], axis=1)
 
     nnz = 0
     dim = 0
     for x in arrays:
         if dim:
-            coords[nnz:x.nnz + nnz, axis] += dim
+            coords[axis, nnz:x.nnz + nnz] += dim
         dim += x.shape[axis]
         nnz += x.nnz
 

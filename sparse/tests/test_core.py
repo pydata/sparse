@@ -139,7 +139,7 @@ def test_canonical():
                        [0, 1, 0],
                        [1, 0, 3],
                        [0, 1, 0],
-                       [1, 0, 3]])
+                       [1, 0, 3]]).T
     data = np.arange(5)
 
     x = COO(coords, data, shape=(2, 2, 5))
