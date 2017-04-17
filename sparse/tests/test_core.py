@@ -109,6 +109,16 @@ def test_tensordot(a_shape, b_shape, axes):
     assert isinstance(sparse.tensordot(a, sb, axes), COO)
 
 
+def test_dot():
+    a = random_x((3, 4, 5))
+    b = random_x((5, 6))
+
+    sa = COO.from_numpy(a)
+    sb = COO.from_numpy(b)
+
+    assert_eq(a.dot(b), sa.dot(sb))
+
+
 @pytest.mark.parametrize('ufunc', [np.expm1, np.log1p, np.sin, np.tan,
                                    np.sinh,  np.tanh, np.floor, np.ceil,
                                    np.sqrt, np.conj, np.round, np.rint])

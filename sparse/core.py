@@ -5,6 +5,55 @@ import scipy.sparse
 
 
 class COO(object):
+    """ A Sparse Multidimensional Array
+
+    This is stored in COO format.  It depends on NumPy and Scipy.sparse for
+    computation, but supports arrays of arbitrary dimension.
+
+    Parameters
+    ----------
+    coords: np.ndarray (ndim, nnz)
+        An array holding the index locations of every value
+        Should have shape (number of dimensions, number of non-zeros)
+    data: np.array (nnz,)
+        An array of Values
+    shape: tuple (ndim,), optional
+        The shape of the array
+
+    Examples
+    --------
+    >>> x = np.eye(4)
+    >>> x[2, 3] = 5
+    >>> s = COO.from_numpy(x)
+    >>> s
+    <COO: shape=(4, 4), dtype=float64, nnz=5>
+    >>> s.data
+    array([ 1.,  1.,  1.,  5.,  1.])
+    >>> s.coords
+    array([[0, 1, 2, 2, 3],
+           [0, 1, 2, 3, 3]], dtype=uint8)
+
+    >>> s.dot(s.T).sum(axis=0).todense()
+    array([  1.,   1.,  31.,   6.])
+
+    Make a sparse array by passing in an array of coordinates and an array of
+    values.
+
+    >>> coords = [[0, 0, 0, 1, 1],
+    ...           [0, 1, 2, 0, 3],
+    ...           [0, 3, 2, 0, 1]]
+    >>> data = [1, 2, 3, 4, 5]
+    >>> y = COO(coords, data, shape=(3, 4, 5))
+    >>> y
+    <COO: shape=(3, 4, 5), dtype=int64, nnz=5>
+    >>> tensordot(x, y, axes=(0, 1))
+    <COO: shape=(4, 3, 5), dtype=float64, nnz=6>
+
+    See Also
+    --------
+    COO.from_numpy
+    COO.from_scipy_sparse
+    """
     def __init__(self, coords, data=None, shape=None, has_duplicates=True):
         if shape is None:
             shape = tuple(ind.max(axis=0).tolist())
@@ -166,6 +215,10 @@ class COO(object):
     @property
     def T(self):
         return self.transpose(list(range(self.ndim))[::-1])
+
+    def dot(self, other):
+        return tensordot(self, other,
+                         axes=((self.ndim - 1,), (other.ndim - 2,)))
 
     def reshape(self, shape):
         if any(d == -1 for d in shape):
