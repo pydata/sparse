@@ -71,6 +71,61 @@ Example
            ...
 
 
+How does this work?
+-------------------
+
+Scipy.sparse implements decent 2-d sparse matrix objects for the standard
+layouts, notably for our purposes
+`CSR, CSC, and COO <https://en.wikipedia.org/wiki/Sparse_matrix>`.  However it
+doesn't include support for sparse arrays of greater than 2 dimensions.
+
+This library extends the COO layout, which stores the row index, column index,
+and value of every element:
+
+=== === ====
+row col data
+=== === ====
+  0   0   10
+  0   2   13
+  1   3    9
+  3   8   21
+=== === ====
+
+It is straightforward to extend the COO layout to an arbitrary number of
+dimensions:
+
+==== ==== ==== === ====
+dim1 dim2 dim3 ... data
+==== ==== ==== === ====
+  0    0     0   .   10
+  0    0     3   .   13
+  0    2     2   .    9
+  3    1     4   .   21
+==== ==== ==== === ====
+
+This makes it easy to *store* a multidimensional sparse array, but we still
+need to reimplement all of the array operations like transpose, reshape,
+slicing, tensordot, reductions, etc., which can be quite challenging in
+general.
+
+Fortunately in many cases we can leverage the existing SciPy.sparse algorithms
+if we can intelligently transpose and reshape our multi-dimensional array into
+an appropriate 2-d sparse matrix, perform a modified sparse matrix
+operation, and then reshape and transpose back.  These reshape and transpose
+operations can all be done at numpy speeds by modifying the arrays of
+coordinates.  After scipy.sparse runs its operations (coded in C) then we can
+convert back to using the same path of reshapings and transpositions in
+reverse.
+
+This approach is not novel; it has been around in the multidimensional array
+community for a while.  It is also how some operations in numpy work.  For example
+the ``numpy.tensordot`` function performs transposes and reshapes so that it can
+use the ``numpy.dot`` function for matrix multiplication which is backed by
+fast BLAS implementations.  The ``sparse.tensordot`` code is very slight
+modification of ``numpy.tensordot``, replacing ``numpy.dot`` with
+``scipy.sprarse.csr_matrix.dot``.
+
+
 LICENSE
 -------
 
