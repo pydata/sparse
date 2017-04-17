@@ -314,3 +314,25 @@ def _mask(coords, idx):
         for item in idx:
             mask |= coords == item
         return mask
+
+
+def concatenate(arrays, axis=0):
+    assert all(x.shape[ax] == arrays[0].shape[ax]
+               for x in arrays
+               for ax in set(range(arrays[0].ndim)) - {axis})
+    data = np.concatenate([x.data for x in arrays])
+    coords = np.concatenate([x.coords for x in arrays])
+
+    nnz = 0
+    dim = 0
+    for x in arrays:
+        if dim:
+            coords[nnz:x.nnz + nnz, axis] += dim
+        dim += x.shape[axis]
+        nnz += x.nnz
+
+    shape = list(arrays[0].shape)
+    shape[axis] = dim
+    has_duplicates = any(x.has_duplicates for x in arrays)
+
+    return COO(coords, data, shape=shape, has_duplicates=has_duplicates)

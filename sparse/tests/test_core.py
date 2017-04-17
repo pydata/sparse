@@ -138,3 +138,25 @@ def test_canonical():
     assert x.has_duplicates
     assert y.nnz == 3
     assert not y.has_duplicates
+
+
+def test_concatenate():
+    x = random_x((2, 3, 4))
+    xx = COO.from_numpy(x)
+    y = random_x((5, 3, 4))
+    yy = COO.from_numpy(y)
+    z = random_x((4, 3, 4))
+    zz = COO.from_numpy(z)
+
+    assert_eq(np.concatenate([x, y, z], axis=0),
+              sparse.concatenate([xx, yy, zz], axis=0))
+
+    x = random_x((5, 3, 1))
+    xx = COO.from_numpy(x)
+    y = random_x((5, 3, 3))
+    yy = COO.from_numpy(y)
+    z = random_x((5, 3, 2))
+    zz = COO.from_numpy(z)
+
+    assert_eq(np.concatenate([x, y, z], axis=2),
+              sparse.concatenate([xx, yy, zz], axis=2))
