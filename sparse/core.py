@@ -54,6 +54,7 @@ class COO(object):
     COO.from_numpy
     COO.from_scipy_sparse
     """
+    __array_priority__ = 12
     def __init__(self, coords, data=None, shape=None, has_duplicates=True):
         if data is None and isinstance(coords, (tuple, list)):
             if coords:
@@ -114,6 +115,9 @@ class COO(object):
     def nbytes(self):
         return self.data.nbytes + self.coords.nbytes
 
+    def __sizeof__(self):
+        return self.nbytes
+
     def __getitem__(self, index):
         if not isinstance(index, tuple):
             index = (index,)
@@ -134,8 +138,10 @@ class COO(object):
                 i += 1
                 continue
             elif isinstance(ind, slice):
-                shape.append(min(ind.stop, self.shape[i]) - ind.start)
-                coords.append(self.coords[i][mask] - ind.start)
+                start = ind.start or 0
+                stop = ind.stop if ind.stop is not None else self.shape[i]
+                shape.append(min(stop, self.shape[i]) - start)
+                coords.append(self.coords[i][mask] - start)
                 i += 1
             elif isinstance(ind, list):
                 old = self.coords[i][mask]
@@ -200,10 +206,10 @@ class COO(object):
             result = _keepdims(self, result, axis)
         return result
 
-    def sum(self, axis=None, keepdims=False, dtype=None):
+    def sum(self, axis=None, keepdims=False, dtype=None, out=None):
         return self.reduction('sum', axis=axis, keepdims=keepdims, dtype=dtype)
 
-    def max(self, axis=None, keepdims=False):
+    def max(self, axis=None, keepdims=False, out=None):
         x = self.reduction('max', axis=axis, keepdims=keepdims)
         # TODO: verify that there are some missing elements in each entry
         if isinstance(x, COO):

@@ -154,6 +154,7 @@ def test_gt():
     1,
     -1,
     (slice(0, 2),),
+    (slice(None, None),),
     (0, slice(0, 2),),
     (slice(0, 1), 0),
     ([1, 0], 0),
@@ -163,6 +164,8 @@ def test_gt():
     (None, slice(1, 3), 0),
     (slice(0, 3), None, 0),
     (slice(1, 2), slice(2, 4)),
+    (slice(1, 2), slice(None, None)),
+    (slice(1, 2), slice(None, None), 2),
 ])
 def test_slicing(index):
     x = random_x((2, 3, 4))
@@ -296,3 +299,12 @@ def test_create_with_lists_of_tuples():
         x[ind] = value
 
     assert_eq(s, x)
+
+
+def test_sizeof():
+    import sys
+    x = np.eye(100)
+    y = COO.from_numpy(x)
+
+    nb = sys.getsizeof(y)
+    assert 400 < nb < x.nbytes / 10
