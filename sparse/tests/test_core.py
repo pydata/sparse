@@ -1,6 +1,7 @@
 import pytest
 
 import random
+import operator
 import numpy as np
 import scipy.sparse
 from sparse import COO
@@ -151,6 +152,17 @@ def test_elemwise(func):
     assert isinstance(func(s), COO)
 
     assert_eq(func(x), func(s))
+
+
+@pytest.mark.parametrize('func', [operator.mul])
+def test_elemwise_binary(func):
+    x = random_x((2, 3, 4))
+    y = random_x((2, 3, 4))
+
+    xs = COO.from_numpy(x)
+    ys = COO.from_numpy(y)
+
+    assert_eq(func(xs, ys), func(x, y))
 
 
 def test_gt():

@@ -4,6 +4,7 @@ import operator
 
 import numpy as np
 import scipy.sparse
+import scipy.spatial
 
 
 class COO(object):
@@ -357,7 +358,10 @@ class COO(object):
         return self + (-other)
 
     def __mul__(self, other):
-        return self.elemwise(operator.mul, other)
+        if isinstance(other, COO):
+            return self.elemwise_binary(operator.mul, other)
+        else:
+            return self.elemwise(operator.mul, other)
 
     __rmul__ = __mul__
 
@@ -378,6 +382,45 @@ class COO(object):
                     "a dense result: %s" % str(func))
         return COO(self.coords, func(self.data, *args, **kwargs),
                    shape=self.shape, has_duplicates=self.has_duplicates)
+
+    def elemwise_binary(self, func, other, *args, **kwargs):
+        assert isinstance(other, COO)
+        if kwargs.pop('check', True) and func(0, 0, *args, **kwargs) != 0:
+            raise ValueError("Performing this operation would produce "
+                    "a dense result: %s" % str(func))
+        if self.shape != other.shape:
+            raise ValueError("Broadcasting is not supported")
+        self.sum_duplicates()  # TODO: document side-effect or make copy
+        other.sum_duplicates()  # TODO: document side-effect or make copy
+
+        tree = scipy.spatial.cKDTree(other.coords.T)
+        dist, ind = tree.query(self.coords.T, k=1)
+
+        matched_self = (dist == 0)
+        matched_other = ind[matched_self]
+
+        unmatched_self = ~matched_self
+        unmatched_other = np.ones(len(other.data), dtype=bool)
+        unmatched_other[matched_other] = False
+
+        print(self.coords.shape, self.data.shape)
+        print(matched_self, unmatched_self)
+        print('----------')
+        print(other.coords.shape, other.data.shape)
+        print(matched_other, unmatched_other)
+
+        coords = np.hstack([self.coords[:, matched_self],
+                            self.coords[:, unmatched_self],
+                            other.coords[:, unmatched_other]])
+        data = np.concatenate([func(self.data[matched_self],
+                                    other.data[matched_other],
+                                    *args, **kwargs),
+                               func(self.data[unmatched_self], 0,
+                                    *args, **kwargs),
+                               func(0, other.data[unmatched_other],
+                                    *args, **kwargs)])
+
+        return COO(coords, data, shape=self.shape, has_duplicates=False)
 
     def expm1(self):
         return self.elemwise(np.expm1)
