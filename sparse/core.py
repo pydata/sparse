@@ -403,12 +403,6 @@ class COO(object):
         unmatched_other = np.ones(len(other.data), dtype=bool)
         unmatched_other[matched_other] = False
 
-        print(self.coords.shape, self.data.shape)
-        print(matched_self, unmatched_self)
-        print('----------')
-        print(other.coords.shape, other.data.shape)
-        print(matched_other, unmatched_other)
-
         coords = np.hstack([self.coords[:, matched_self],
                             self.coords[:, unmatched_self],
                             other.coords[:, unmatched_other]])
