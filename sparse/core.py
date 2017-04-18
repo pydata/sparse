@@ -308,7 +308,7 @@ class COO(object):
         return self.elemwise(operator.pow, other)
 
     def elemwise(self, func, *args, **kwargs):
-        if func(0, *args, **kwargs) != 0:
+        if kwargs.pop('check', True) and func(0, *args, **kwargs) != 0:
             raise ValueError("Performing this operation would produce "
                     "a dense result: %s" % str(func))
         return COO(self.coords, func(self.data, *args, **kwargs),
@@ -354,7 +354,7 @@ class COO(object):
         return self.elemwise(np.conjugate)
 
     def astype(self, dtype):
-        return self.elemwise(np.astype, dtype)
+        return self.elemwise(np.ndarray.astype, dtype, check=False)
 
     def __gt__(self, other):
         if not isinstance(other, Number):

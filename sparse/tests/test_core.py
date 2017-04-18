@@ -125,16 +125,18 @@ def test_dot():
     assert_eq(np.dot(a, b), sparse.dot(sa, sb))
 
 
-@pytest.mark.parametrize('ufunc', [np.expm1, np.log1p, np.sin, np.tan,
+@pytest.mark.parametrize('func', [np.expm1, np.log1p, np.sin, np.tan,
                                    np.sinh,  np.tanh, np.floor, np.ceil,
-                                   np.sqrt, np.conj, np.round, np.rint])
-def test_ufunc(ufunc):
+                                   np.sqrt, np.conj, np.round, np.rint,
+                                   lambda x: x.astype('int32'), np.conjugate,
+                                   lambda x: x.round(decimals=2)])
+def test_elemwise(func):
     x = random_x((2, 3, 4))
     s = COO.from_numpy(x)
 
-    assert isinstance(ufunc(s), COO)
+    assert isinstance(func(s), COO)
 
-    assert_eq(ufunc(x), ufunc(s))
+    assert_eq(func(x), func(s))
 
 
 def test_gt():
