@@ -1,5 +1,7 @@
-import operator
+from collections import Iterable
 from numbers import Number
+import operator
+
 import numpy as np
 import scipy.sparse
 
@@ -49,6 +51,34 @@ class COO(object):
     >>> tensordot(x, y, axes=(0, 1))
     <COO: shape=(4, 3, 5), dtype=float64, nnz=6>
 
+    Following scipy.sparse conventions you can also pass these as a tuple with
+    rows and columns
+
+    >>> rows = [0, 1, 2, 3, 4]
+    >>> cols = [0, 0, 0, 1, 1]
+    >>> data = [10, 20, 30, 40, 50]
+    >>> z = COO((data, (rows, cols)))
+    >>> z.todense()
+    array([[10,  0],
+           [20,  0],
+           [30,  0],
+           [ 0, 40],
+           [ 0, 50]])
+
+    You can also pass a dictionary or iterable of index/value pairs. Repeated
+    indices imply summation:
+
+    >>> d = {(0, 0, 0): 1, (1, 2, 3): 2, (1, 1, 0): 3}
+    >>> COO(d)
+    <COO: shape=(2, 3, 4), dtype=int64, nnz=3>
+
+    >>> L = [((0, 0), 1),
+    ...      ((1, 1), 2),
+    ...      ((0, 0), 3)]
+    >>> COO(L).todense()
+    array([[4, 0],
+           [0, 2]])
+
     See Also
     --------
     COO.from_numpy
@@ -56,19 +86,36 @@ class COO(object):
     """
     __array_priority__ = 12
     def __init__(self, coords, data=None, shape=None, has_duplicates=True):
-        if data is None and isinstance(coords, (tuple, list)):
-            if coords:
-                assert len(coords[0]) == 2
-            data = [x[1] for x in coords]
-            coords = [x[0] for x in coords]
-            coords = np.asarray(coords).T
+        if data is None:
+            # {(i, j, k): x, (i, j, k): y, ...}
+            if isinstance(coords, dict):
+                coords = list(coords.items())
 
-        if shape is None:
-            shape = tuple((coords.max(axis=1) + 1).tolist())
+            # []
+            if not coords:
+                data = []
+                coords = []
 
-        self.shape = tuple(shape)
+            # [((i, j, k), value), (i, j, k), value), ...]
+            elif isinstance(coords[0][0], Iterable):
+                if coords:
+                    assert len(coords[0]) == 2
+                data = [x[1] for x in coords]
+                coords = [x[0] for x in coords]
+                coords = np.asarray(coords).T
+
+            # (data, (row, col, slab, ...))
+            else:
+                data = coords[0]
+                coords = np.stack(coords[1], axis=0)
+
         self.data = np.asarray(data)
         self.coords = np.asarray(coords)
+
+        if shape is None:
+            shape = tuple((self.coords.max(axis=1) + 1).tolist())
+
+        self.shape = tuple(shape)
         if self.shape:
             dtype = np.min_scalar_type(max(self.shape))
         else:
@@ -87,6 +134,7 @@ class COO(object):
     def todense(self):
         self = self.sum_duplicates()
         x = np.zeros(shape=self.shape, dtype=self.dtype)
+
         coords = tuple([self.coords[i, :] for i in range(self.ndim)])
         x[coords] = self.data
         return x
@@ -97,7 +145,7 @@ class COO(object):
         coords = np.empty((2, x.nnz), dtype=x.row.dtype)
         coords[0, :] = x.row
         coords[1, :] = x.col
-        return COO(coords, x.data, shape=x.shape, has_duplicates=x.has_canonical_format)
+        return COO(coords, x.data, shape=x.shape, has_duplicates=not x.has_canonical_format)
 
     @property
     def dtype(self):
@@ -225,6 +273,9 @@ class COO(object):
         if axes is None:
             axes = tuple(reversed(range(self.ndim)))
 
+        if list(axes) == list(range(self.ndim)):
+            return self
+
         shape = tuple(self.shape[ax] for ax in axes)
         return COO(self.coords[axes, :], self.data, shape)
 
@@ -240,16 +291,18 @@ class COO(object):
             extra = int(np.prod(self.shape) /
                         np.prod([d for d in shape if d != -1]))
             shape = tuple([d if d != -1 else extra for d in shape])
-        linear_loc = np.zeros(self.nnz, dtype=np.min_scalar_type(np.prod(self.shape)))
+        # TODO: this np.prod(self.shape) enforces a 2**64 limit to array size
+        dtype = np.min_scalar_type(np.prod(self.shape))
+        linear_loc = np.zeros(self.nnz, dtype=dtype)
         strides = 1
         for i, d in enumerate(self.shape[::-1]):
-            linear_loc += self.coords[-(i + 1), :] * strides
+            linear_loc += self.coords[-(i + 1), :].astype(dtype) * strides
             strides *= d
 
-        coords = np.empty((len(shape), self.nnz), dtype=self.coords.dtype)
+        coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max(self.shape)))
         strides = 1
         for i, d in enumerate(shape[::-1]):
-            coords[-(i + 1), :] = linear_loc // strides % d
+            coords[-(i + 1), :] = (linear_loc // strides) % d
             strides *= d
 
         return COO(coords, self.data, shape, has_duplicates=self.has_duplicates)
@@ -263,15 +316,27 @@ class COO(object):
                                         shape=self.shape)
 
     def sum_duplicates(self):
+        # Inspired by scipy/sparse/coo.py::sum_duplicates
+        # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
         if not self.has_duplicates:
             return self
-        x = (self.reshape((np.prod(self.shape), 1))
-                 .to_scipy_sparse())
-        x.sum_duplicates()
-        # TODO: we may be able to do this faster
-        result = COO.from_scipy_sparse(x).reshape(self.shape)
-        result.has_duplicates = False
-        return result
+        if not np.prod(self.coords.shape):
+            return self
+        order = np.lexsort(self.coords)
+        coords = self.coords[:, order]
+        data = self.data[order]
+        unique_mask = (coords[:, 1:] != coords[:, :-1]).any(axis=0)
+        unique_mask = np.append(True, unique_mask)
+
+        coords = coords[:, unique_mask]
+        (unique_inds,) = np.nonzero(unique_mask)
+        data = np.add.reduceat(data, unique_inds, dtype=data.dtype)
+
+        self.data = data
+        self.coords = coords
+        self.has_duplicates = False
+
+        return self
 
     def __add__(self, other):
         if not isinstance(other, COO):
@@ -449,14 +514,14 @@ def _dot(a, b):
     if isinstance(b, COO) and not isinstance(a, COO):
         return _dot(b.T, a.T).T
     aa = a.to_scipy_sparse()
-    aa.has_canonical_format = a.has_duplicates
+    aa.has_canonical_format = not a.has_duplicates
     aa = aa.tocsr()
 
     b_original = b
     if isinstance(b, COO):
         b = b.to_scipy_sparse()
     if isinstance(b, scipy.sparse.spmatrix):
-        b.has_canonical_format = b_original.has_duplicates
+        b.has_canonical_format = not b_original.has_duplicates
         b = b.tocsc()
     return aa.dot(b)
 

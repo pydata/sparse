@@ -26,11 +26,11 @@ def random_x(shape, dtype=float):
 def assert_eq(x, y):
     assert x.shape == y.shape
     assert x.dtype == y.dtype
-    if isinstance(x, COO):
+    if hasattr(x, 'todense'):
         xx = x.todense()
     else:
         xx = x
-    if isinstance(y, COO):
+    if hasattr(y, 'todense'):
         yy = y.todense()
     else:
         yy = y
@@ -61,6 +61,8 @@ def test_transpose(axis):
                                  [(12,), (3, 4)],
                                  [(12,), (3, -1)],
                                  [(3, 4), (12,)],
+                                 [(3, 4), (-1, 4)],
+                                 [(3, 4), (3, -1)],
                                  [(2, 3, 4, 5), (8, 15)],
                                  [(2, 3, 4, 5), (24, 5)],
                                  [(2, 3, 4, 5), (20, 6)],
@@ -70,6 +72,18 @@ def test_reshape(a, b):
     s = COO.from_numpy(x)
 
     assert_eq(x.reshape(b), s.reshape(b))
+
+
+def test_large_reshape():
+    n = 100
+    m = 10
+    row = np.arange(n, dtype=np.uint16)# np.random.randint(0, n, size=n, dtype=np.uint16)
+    col = row % m # np.random.randint(0, m, size=n, dtype=np.uint16)
+    data = np.ones(n, dtype=np.uint8)
+
+    x = COO((data, (row, col)))
+
+    assert_eq(x, x.reshape(x.shape))
 
 
 def test_to_scipy_sparse():
@@ -186,12 +200,13 @@ def test_canonical():
                        [1, 0, 3]]).T
     data = np.arange(5)
 
+    old = COO(coords, data, shape=(2, 2, 5))
     x = COO(coords, data, shape=(2, 2, 5))
     y = x.sum_duplicates()
 
-    assert_eq(x, y)
-    assert x.nnz == 5
-    assert x.has_duplicates
+    assert_eq(old, y)
+    # assert x.nnz == 5
+    # assert x.has_duplicates
     assert y.nnz == 3
     assert not y.has_duplicates
 
@@ -312,3 +327,24 @@ def test_sizeof():
 
     nb = sys.getsizeof(y)
     assert 400 < nb < x.nbytes / 10
+
+
+def test_scipy_sparse_interface():
+    n = 100
+    m = 10
+    row = np.random.randint(0, n, size=n, dtype=np.uint16)
+    col = np.random.randint(0, m, size=n, dtype=np.uint16)
+    data = np.ones(n, dtype=np.uint8)
+
+    inp = (data, (row, col))
+
+    x = scipy.sparse.coo_matrix(inp)
+    xx = sparse.COO(inp)
+
+    assert_eq(x, xx)
+    assert_eq(x.T, xx.T)
+    assert_eq(xx.to_scipy_sparse(), x)
+    assert_eq(COO.from_scipy_sparse(xx.to_scipy_sparse()), xx)
+
+    assert_eq(x, xx)
+    assert_eq(x.T.dot(x), xx.T.dot(xx))
