@@ -156,6 +156,8 @@ def test_gt():
     1,
     -1,
     (slice(0, 2),),
+    (slice(None, 2), slice(None, 2)),
+    (slice(1, None), slice(1, None)),
     (slice(None, None),),
     (0, slice(0, 2),),
     (slice(0, 1), 0),

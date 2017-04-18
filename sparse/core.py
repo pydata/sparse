@@ -474,7 +474,9 @@ def _mask(coords, idx):
     elif isinstance(idx, slice):
         if idx.step not in (1, None):
             raise NotImplementedError("Steped slices not implemented")
-        return (coords >= idx.start) & (coords < idx.stop)
+        start = idx.start if idx.start is not None else 0
+        stop = idx.stop if idx.stop is not None else np.inf
+        return (coords >= start) & (coords < stop)
     elif isinstance(idx, list):
         mask = np.zeros(len(coords), dtype=bool)
         for item in idx:
