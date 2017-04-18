@@ -4,7 +4,6 @@ import operator
 
 import numpy as np
 import scipy.sparse
-import scipy.spatial
 
 
 class COO(object):
@@ -393,26 +392,39 @@ class COO(object):
         self.sum_duplicates()  # TODO: document side-effect or make copy
         other.sum_duplicates()  # TODO: document side-effect or make copy
 
-        tree = scipy.spatial.cKDTree(other.coords.T)
-        dist, ind = tree.query(self.coords.T, k=1)
+        # Sort self.coords in lexographical order using record arrays
+        self_coords = np.rec.fromarrays(self.coords)
+        i = np.argsort(self_coords)
+        self_coords = self_coords[i]
+        self_data = self.data[i]
 
-        matched_self = (dist == 0)
-        matched_other = ind[matched_self]
+        # Convert other.coords to a record array
+        other_coords = np.rec.fromarrays(other.coords)
+        other_data = other.data
 
-        unmatched_self = ~matched_self
-        unmatched_other = np.ones(len(other.data), dtype=bool)
-        unmatched_other[matched_other] = False
+        # Find matches between self.coords and other.coords
+        j = np.searchsorted(self_coords, other_coords)
+        matched_other = (other_coords == self_coords[j % len(self_coords)])
+        matched_self = j[matched_other]
 
-        coords = np.hstack([self.coords[:, matched_self],
-                            self.coords[:, unmatched_self],
-                            other.coords[:, unmatched_other]])
-        data = np.concatenate([func(self.data[matched_self],
-                                    other.data[matched_other],
+        # Locate coordinates without a match
+        unmatched_other = ~matched_other
+        unmatched_self = np.ones(len(self_coords), dtype=bool)
+        unmatched_self[matched_self] = 0
+
+        # Concatenate matches and mismatches
+        data = np.concatenate([func(self_data[matched_self],
+                                    other_data[matched_other],
                                     *args, **kwargs),
-                               func(self.data[unmatched_self], 0,
+                               func(self_data[unmatched_self], 0,
                                     *args, **kwargs),
-                               func(0, other.data[unmatched_other],
+                               func(0, other_data[unmatched_other],
                                     *args, **kwargs)])
+        coords = np.concatenate([self_coords[matched_self],
+                                 self_coords[unmatched_self],
+                                 other_coords[unmatched_other]])
+        # record array to ND array
+        coords = np.asarray(coords.view(coords.dtype[0]).reshape(len(coords), -1)).T
 
         return COO(coords, data, shape=self.shape, has_duplicates=False)
 
