@@ -357,7 +357,10 @@ class COO(object):
         return self + (-other)
 
     def __mul__(self, other):
-        return self.elemwise(operator.mul, other)
+        if isinstance(other, COO):
+            return self.elemwise_binary(operator.mul, other)
+        else:
+            return self.elemwise(operator.mul, other)
 
     __rmul__ = __mul__
 
@@ -378,6 +381,52 @@ class COO(object):
                     "a dense result: %s" % str(func))
         return COO(self.coords, func(self.data, *args, **kwargs),
                    shape=self.shape, has_duplicates=self.has_duplicates)
+
+    def elemwise_binary(self, func, other, *args, **kwargs):
+        assert isinstance(other, COO)
+        if kwargs.pop('check', True) and func(0, 0, *args, **kwargs) != 0:
+            raise ValueError("Performing this operation would produce "
+                    "a dense result: %s" % str(func))
+        if self.shape != other.shape:
+            raise ValueError("Broadcasting is not supported")
+        self.sum_duplicates()  # TODO: document side-effect or make copy
+        other.sum_duplicates()  # TODO: document side-effect or make copy
+
+        # Sort self.coords in lexographical order using record arrays
+        self_coords = np.rec.fromarrays(self.coords)
+        i = np.argsort(self_coords)
+        self_coords = self_coords[i]
+        self_data = self.data[i]
+
+        # Convert other.coords to a record array
+        other_coords = np.rec.fromarrays(other.coords)
+        other_data = other.data
+
+        # Find matches between self.coords and other.coords
+        j = np.searchsorted(self_coords, other_coords)
+        matched_other = (other_coords == self_coords[j % len(self_coords)])
+        matched_self = j[matched_other]
+
+        # Locate coordinates without a match
+        unmatched_other = ~matched_other
+        unmatched_self = np.ones(len(self_coords), dtype=bool)
+        unmatched_self[matched_self] = 0
+
+        # Concatenate matches and mismatches
+        data = np.concatenate([func(self_data[matched_self],
+                                    other_data[matched_other],
+                                    *args, **kwargs),
+                               func(self_data[unmatched_self], 0,
+                                    *args, **kwargs),
+                               func(0, other_data[unmatched_other],
+                                    *args, **kwargs)])
+        coords = np.concatenate([self_coords[matched_self],
+                                 self_coords[unmatched_self],
+                                 other_coords[unmatched_other]])
+        # record array to ND array
+        coords = np.asarray(coords.view(coords.dtype[0]).reshape(len(coords), -1)).T
+
+        return COO(coords, data, shape=self.shape, has_duplicates=False)
 
     def expm1(self):
         return self.elemwise(np.expm1)
