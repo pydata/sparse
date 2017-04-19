@@ -309,7 +309,6 @@ class COO(object):
 
     def to_scipy_sparse(self):
         assert self.ndim == 2
-        import scipy.sparse
         return scipy.sparse.coo_matrix((self.data,
                                         (self.coords[0],
                                          self.coords[1])),
