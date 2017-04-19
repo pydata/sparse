@@ -155,9 +155,10 @@ def test_elemwise(func):
 
 
 @pytest.mark.parametrize('func', [operator.mul])
-def test_elemwise_binary(func):
-    x = random_x((2, 3, 4))
-    y = random_x((2, 3, 4))
+@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+def test_elemwise_binary(func, shape):
+    x = random_x(shape)
+    y = random_x(shape)
 
     xs = COO.from_numpy(x)
     ys = COO.from_numpy(y)
