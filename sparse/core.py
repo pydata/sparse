@@ -280,7 +280,8 @@ class COO(object):
             return self
 
         shape = tuple(self.shape[ax] for ax in axes)
-        return COO(self.coords[axes, :], self.data, shape)
+        return COO(self.coords[axes, :], self.data, shape,
+                has_duplicates=self.has_duplicates)
 
     @property
     def T(self):
@@ -573,10 +574,14 @@ def dot(a, b):
 
 
 def _dot(a, b):
+    if isinstance(a, COO):
+        a.sum_duplicates()
+    if isinstance(b, COO):
+        b.sum_duplicates()
     if isinstance(b, COO) and not isinstance(a, COO):
         return _dot(b.T, a.T).T
     aa = a.to_scipy_sparse()
-    aa.has_canonical_format = not a.has_duplicates
+    aa.has_canonical_format = True
     aa = aa.tocsr()
 
     b_original = b
