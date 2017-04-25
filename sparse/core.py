@@ -112,6 +112,9 @@ class COO(object):
         self.data = np.asarray(data)
         self.coords = np.asarray(coords)
 
+        if shape and not np.prod(self.coords.shape):
+            self.coords = np.zeros((len(shape), 0), dtype=int)
+
         if shape is None:
             shape = tuple((self.coords.max(axis=1) + 1).tolist())
 
@@ -403,7 +406,10 @@ class COO(object):
 
         # Find matches between self.coords and other.coords
         j = np.searchsorted(self_coords, other_coords)
-        matched_other = (other_coords == self_coords[j % len(self_coords)])
+        if len(self_coords):
+            matched_other = (other_coords == self_coords[j % len(self_coords)])
+        else:
+            matched_other = np.zeros(shape=(0,), dtype=bool)
         matched_self = j[matched_other]
 
         # Locate coordinates without a match
@@ -422,8 +428,13 @@ class COO(object):
         coords = np.concatenate([self_coords[matched_self],
                                  self_coords[unmatched_self],
                                  other_coords[unmatched_other]])
+
+        nonzero = data != 0
+        data = data[nonzero]
+        coords = coords[nonzero]
+
         # record array to ND array
-        coords = np.asarray(coords.view(coords.dtype[0]).reshape(len(coords), -1)).T
+        coords = np.asarray(coords.view(coords.dtype[0]).reshape(len(coords), self.ndim)).T
 
         return COO(coords, data, shape=self.shape, has_duplicates=False)
 
