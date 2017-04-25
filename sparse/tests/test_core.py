@@ -7,6 +7,7 @@ import scipy.sparse
 from sparse import COO
 
 import sparse
+from sparse.utils import assert_eq
 
 
 x = np.zeros(shape=(2, 3, 4), dtype=np.float32)
@@ -22,20 +23,6 @@ def random_x(shape, dtype=float):
     for i in range(max(5, np.prod(x.shape) // 10)):
         x[tuple(random.randint(0, d - 1) for d in x.shape)] = random.randint(0, 100)
     return x
-
-
-def assert_eq(x, y):
-    assert x.shape == y.shape
-    assert x.dtype == y.dtype
-    if hasattr(x, 'todense'):
-        xx = x.todense()
-    else:
-        xx = x
-    if hasattr(y, 'todense'):
-        yy = y.todense()
-    else:
-        yy = y
-    assert np.allclose(xx, yy)
 
 
 @pytest.mark.parametrize('reduction,kwargs', [
