@@ -291,10 +291,14 @@ class COO(object):
         return dot(self, other)
 
     def reshape(self, shape):
+        if self.shape == shape:
+            return self
         if any(d == -1 for d in shape):
             extra = int(np.prod(self.shape) /
                         np.prod([d for d in shape if d != -1]))
             shape = tuple([d if d != -1 else extra for d in shape])
+        if self.shape == shape:
+            return self
         # TODO: this np.prod(self.shape) enforces a 2**64 limit to array size
         dtype = np.min_scalar_type(np.prod(self.shape))
         linear_loc = np.zeros(self.nnz, dtype=dtype)

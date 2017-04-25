@@ -87,6 +87,13 @@ def test_large_reshape():
     assert_eq(x, x.reshape(x.shape))
 
 
+def test_reshape_same():
+    x = random_x((3, 5))
+    s = COO.from_numpy(x)
+
+    assert s.reshape(s.shape) is s
+
+
 def test_to_scipy_sparse():
     x = random_x((3, 5))
     s = COO.from_numpy(x)
