@@ -166,6 +166,16 @@ def test_elemwise_binary(func, shape):
     assert_eq(func(xs, ys), func(x, y))
 
 
+def test_elemwise_binary_empty():
+    x = COO({}, shape=(10, 10))
+    y = COO.from_numpy(random_x((10, 10)))
+
+    for z in [x * y, y * x]:
+        assert z.nnz == 0
+        assert z.coords.shape == (2, 0)
+        assert z.data.shape == (0,)
+
+
 def test_gt():
     x = random_x((2, 3, 4))
     s = COO.from_numpy(x)
