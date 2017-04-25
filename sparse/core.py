@@ -1,6 +1,7 @@
 from collections import Iterable
 from numbers import Number
 import operator
+from functools import reduce
 
 import numpy as np
 import scipy.sparse
@@ -510,7 +511,7 @@ class COO(object):
 
     def maybe_densify(x, allowed_nnz=1e3, allowed_fraction=0.25):
         """ Convert to a dense numpy array if not too costly.  Err othrewise """
-        if x.nnz <= allowed_nnz or x.nnz <= np.prod(x.shape) * allowed_fraction:
+        if x.nnz <= allowed_nnz or x.nnz >= np.prod(x.shape) * allowed_fraction:
             return x.todense()
         else:
             raise NotImplementedError("Operation would require converting "
@@ -581,7 +582,13 @@ def tensordot(a, b, axes=2):
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)
     res = _dot(at, bt)
-    res = COO.from_scipy_sparse(res)  # <--- modified
+    if isinstance(res, scipy.sparse.spmatrix):
+        if res.nnz > reduce(operator.mul, res.shape) / 2:
+            res = res.todense()
+        else:
+            res = COO.from_scipy_sparse(res)  # <--- modified
+    if isinstance(res, np.matrix):
+        res = np.asarray(res)
     return res.reshape(olda + oldb)
 
 
