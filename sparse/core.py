@@ -275,14 +275,27 @@ class COO(object):
 
     def transpose(self, axes=None):
         if axes is None:
-            axes = tuple(reversed(range(self.ndim)))
+            axes = reversed(range(self.ndim))
 
-        if list(axes) == list(range(self.ndim)):
+        axes = tuple(axes)
+
+        if axes == tuple(range(self.ndim)):
             return self
 
         shape = tuple(self.shape[ax] for ax in axes)
-        return COO(self.coords[axes, :], self.data, shape,
-                has_duplicates=self.has_duplicates)
+        result = COO(self.coords[axes, :], self.data, shape,
+                     has_duplicates=self.has_duplicates)
+
+        if axes == (1, 0):
+            try:
+                result._csc = self._csr.T
+            except AttributeError:
+                pass
+            try:
+                result._csr = self._csc.T
+            except AttributeError:
+                pass
+        return result
 
     @property
     def T(self):
@@ -318,10 +331,43 @@ class COO(object):
 
     def to_scipy_sparse(self):
         assert self.ndim == 2
-        return scipy.sparse.coo_matrix((self.data,
-                                        (self.coords[0],
-                                         self.coords[1])),
-                                        shape=self.shape)
+        result = scipy.sparse.coo_matrix((self.data,
+                                          (self.coords[0],
+                                           self.coords[1])),
+                                          shape=self.shape)
+        result.has_canonical_format = not self.has_duplicates
+        return result
+
+    def tocsr(self):
+        try:
+            return self._csr
+        except AttributeError:
+            pass
+        try:
+            self._csr = self._csc.tocsr()
+            return self._csr
+        except AttributeError:
+            pass
+
+        coo = self.to_scipy_sparse()
+        csr = coo.tocsr()
+        self._csr = csr
+        return csr
+
+    def tocsc(self):
+        try:
+            return self._csc
+        except AttributeError:
+            pass
+        try:
+            self._csc = self._csr.tocsc()
+            return self._csc
+        except AttributeError:
+            pass
+        coo = self.to_scipy_sparse()
+        csc = coo.tocsc()
+        self._csc = csc
+        return csc
 
     def sum_duplicates(self):
         # Inspired by scipy/sparse/coo.py::sum_duplicates
@@ -603,15 +649,9 @@ def _dot(a, b):
         b.sum_duplicates()
     if isinstance(b, COO) and not isinstance(a, COO):
         return _dot(b.T, a.T).T
-    aa = a.to_scipy_sparse()
-    aa.has_canonical_format = True
-    aa = aa.tocsr()
+    aa = a.tocsr()
 
-    b_original = b
-    if isinstance(b, COO):
-        b = b.to_scipy_sparse()
-    if isinstance(b, scipy.sparse.spmatrix):
-        b.has_canonical_format = not b_original.has_duplicates
+    if isinstance(b, (COO, scipy.sparse.spmatrix)):
         b = b.tocsc()
     return aa.dot(b)
 

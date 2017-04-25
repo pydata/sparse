@@ -402,3 +402,22 @@ def test_scipy_sparse_interface():
 
     assert_eq(x, xx)
     assert_eq(x.T.dot(x), xx.T.dot(xx))
+
+
+def test_cache_csr():
+    x = random_x((10, 5))
+    s = COO.from_numpy(x)
+
+    ss = s.tocsr()
+    assert isinstance(s.tocsr(), scipy.sparse.csr_matrix)
+    assert isinstance(s.tocsc(), scipy.sparse.csc_matrix)
+    assert s.tocsr() is s.tocsr()
+    assert s.tocsc() is s.tocsc()
+
+    st = s.T
+
+    assert_eq(st._csr, st)
+    assert_eq(st._csc, st)
+
+    assert isinstance(st.tocsr(), scipy.sparse.csr_matrix)
+    assert isinstance(st.tocsc(), scipy.sparse.csc_matrix)
