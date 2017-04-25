@@ -343,9 +343,7 @@ class COO(object):
 
     def __add__(self, other):
         if not isinstance(other, COO):
-            raise NotImplementedError(
-                "adding to scalars or dense arrays would cause the result "
-                "to be dense")
+            return self.maybe_densify() + other
         if self.shape == other.shape:
             return COO(np.concatenate([self.coords, other.coords], axis=1),
                        np.concatenate([self.data, other.data]),
@@ -358,6 +356,9 @@ class COO(object):
 
     def __sub__(self, other):
         return self + (-other)
+
+    def __rsub__(self, other):
+        return -self + other
 
     def __mul__(self, other):
         if isinstance(other, COO):
@@ -442,6 +443,9 @@ class COO(object):
     def __abs__(self):
         return self.elemwise(abs)
 
+    def exp(self):
+        return np.exp(self.maybe_densify())
+
     def expm1(self):
         return self.elemwise(np.expm1)
 
@@ -499,6 +503,14 @@ class COO(object):
             raise ValueError("Comparison with negative number would produce "
                              "dense result")
         return self.elemwise(operator.ge, other)
+
+    def maybe_densify(x, allowed_nnz=1e3, allowed_fraction=0.25):
+        """ Convert to a dense numpy array if not too costly.  Err othrewise """
+        if x.nnz <= allowed_nnz or x.nnz <= np.prod(x.shape) * allowed_fraction:
+            return x.todense()
+        else:
+            raise NotImplementedError("Operation would require converting "
+                                      "large sparse array to dense")
 
 
 def tensordot(a, b, axes=2):

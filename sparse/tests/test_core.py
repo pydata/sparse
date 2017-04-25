@@ -295,6 +295,30 @@ def test_addition():
     assert_eq(-x, -a)
 
 
+def test_addition_ok_when_mostly_dense():
+    x = np.arange(10)
+    y = COO.from_numpy(x)
+
+    assert_eq(x + 1, y + 1)
+    assert_eq(x - 1, y - 1)
+    assert_eq(1 - x, 1 - y)
+    assert_eq(np.exp(x), np.exp(y))
+
+
+def test_addition_not_ok_when_large_and_sparse():
+    x = COO({(0, 0): 1}, shape=(1000000, 1000000))
+    with pytest.raises(Exception):
+        x + 1
+    with pytest.raises(Exception):
+        1 + x
+    with pytest.raises(Exception):
+        1 - x
+    with pytest.raises(Exception):
+        x - 1
+    with pytest.raises(Exception):
+        np.exp(x)
+
+
 @pytest.mark.xfail
 def test_addition_broadcasting():
     x = random_x((2, 3, 4))
