@@ -144,7 +144,7 @@ def test_dot():
                                    np.sinh,  np.tanh, np.floor, np.ceil,
                                    np.sqrt, np.conj, np.round, np.rint,
                                    lambda x: x.astype('int32'), np.conjugate,
-                                   lambda x: x.round(decimals=2)])
+                                   lambda x: x.round(decimals=2), abs])
 def test_elemwise(func):
     x = random_x((2, 3, 4))
     s = COO.from_numpy(x)

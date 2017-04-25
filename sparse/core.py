@@ -438,6 +438,9 @@ class COO(object):
 
         return COO(coords, data, shape=self.shape, has_duplicates=False)
 
+    def __abs__(self):
+        return self.elemwise(abs)
+
     def expm1(self):
         return self.elemwise(np.expm1)
 
