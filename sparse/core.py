@@ -1,7 +1,9 @@
+from __future__ import absolute_import, division, print_function
+
 from collections import Iterable
+from functools import reduce
 from numbers import Number
 import operator
-from functools import reduce
 
 import numpy as np
 import scipy.sparse
@@ -49,7 +51,7 @@ class COO(object):
     >>> y = COO(coords, data, shape=(3, 4, 5))
     >>> y
     <COO: shape=(3, 4, 5), dtype=int64, nnz=5>
-    >>> tensordot(x, y, axes=(0, 1))
+    >>> tensordot(s, y, axes=(0, 1))
     <COO: shape=(4, 3, 5), dtype=float64, nnz=6>
 
     Following scipy.sparse conventions you can also pass these as a tuple with
@@ -86,6 +88,7 @@ class COO(object):
     COO.from_scipy_sparse
     """
     __array_priority__ = 12
+
     def __init__(self, coords, data=None, shape=None, has_duplicates=True):
         if data is None:
             # {(i, j, k): x, (i, j, k): y, ...}

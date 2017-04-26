@@ -45,15 +45,16 @@ def test_transpose(axis):
     assert_eq(xx, yy)
 
 
-@pytest.mark.parametrize('a,b', [[(3, 4), (3, 4)],
-                                 [(12,), (3, 4)],
-                                 [(12,), (3, -1)],
-                                 [(3, 4), (12,)],
-                                 [(3, 4), (-1, 4)],
-                                 [(3, 4), (3, -1)],
-                                 [(2, 3, 4, 5), (8, 15)],
-                                 [(2, 3, 4, 5), (24, 5)],
-                                 [(2, 3, 4, 5), (20, 6)],
+@pytest.mark.parametrize('a,b', [
+    [(3, 4), (3, 4)],
+    [(12,), (3, 4)],
+    [(12,), (3, -1)],
+    [(3, 4), (12,)],
+    [(3, 4), (-1, 4)],
+    [(3, 4), (3, -1)],
+    [(2, 3, 4, 5), (8, 15)],
+    [(2, 3, 4, 5), (24, 5)],
+    [(2, 3, 4, 5), (20, 6)],
 ])
 def test_reshape(a, b):
     x = random_x(a)
@@ -395,7 +396,6 @@ def test_cache_csr():
     x = random_x((10, 5))
     s = COO.from_numpy(x)
 
-    ss = s.tocsr()
     assert isinstance(s.tocsr(), scipy.sparse.csr_matrix)
     assert isinstance(s.tocsc(), scipy.sparse.csc_matrix)
     assert s.tocsr() is s.tocsr()

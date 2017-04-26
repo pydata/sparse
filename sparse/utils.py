@@ -13,4 +13,3 @@ def assert_eq(x, y):
     else:
         yy = y
     assert np.allclose(xx, yy)
-
