@@ -1,6 +1,8 @@
 Sparse Multidimensional Arrays
 ==============================
 
+|Build Status|
+
 This implements sparse multidimensional arrays on top of NumPy and
 Scipy.sparse.  It generalizes the scipy.sparse.coo_matrix_ layout but extends
 beyond just rows and columns to an arbitrary number of dimensions.
@@ -137,3 +139,5 @@ LICENSE
 This is licensed under New BSD-3
 
 .. _scipy.sparse.coo_matrix: https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.coo_matrix.html
+.. |Build Status| image:: https://travis-ci.org/mrocklin/sparse.svg?branch=master
+   :target: https://travis-ci.org/mrocklin/sparse
