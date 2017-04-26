@@ -254,6 +254,21 @@ def test_concatenate():
               sparse.concatenate([xx, yy, zz], axis=-1))
 
 
+@pytest.mark.parametrize('axis', [0, 1])
+@pytest.mark.parametrize('func', ['stack', 'concatenate'])
+def test_concatenate_mixed(func, axis):
+    d = random_x((10, 10))
+    d[d < 0.9] = 0
+    s = COO.from_numpy(d)
+
+    result = getattr(sparse, func)([d, s, s], axis=axis)
+    expected = getattr(np, func)([d, d, d], axis=axis)
+
+    assert isinstance(result, COO)
+
+    assert_eq(result, expected)
+
+
 @pytest.mark.parametrize('shape', [(5,), (2, 3, 4), (5, 2)])
 @pytest.mark.parametrize('axis', [0, 1, -1])
 def test_stack(shape, axis):

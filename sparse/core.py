@@ -95,6 +95,14 @@ class COO(object):
             if isinstance(coords, dict):
                 coords = list(coords.items())
 
+            if isinstance(coords, np.ndarray):
+                result = COO.from_numpy(coords)
+                self.coords = result.coords
+                self.data = result.data
+                self.has_duplicates = result.has_duplicates
+                self.shape = result.shape
+                return
+
             # []
             if not coords:
                 data = []
@@ -683,6 +691,7 @@ def _mask(coords, idx):
 
 
 def concatenate(arrays, axis=0):
+    arrays = [x if type(x) is COO else COO(x) for x in arrays]
     if axis < 0:
         axis = axis + arrays[0].ndim
     assert all(x.shape[ax] == arrays[0].shape[ax]
@@ -708,6 +717,7 @@ def concatenate(arrays, axis=0):
 
 def stack(arrays, axis=0):
     assert len(set(x.shape for x in arrays)) == 1
+    arrays = [x if type(x) is COO else COO(x) for x in arrays]
     if axis < 0:
         axis = axis + arrays[0].ndim + 1
     data = np.concatenate([x.data for x in arrays])
