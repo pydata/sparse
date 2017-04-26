@@ -102,6 +102,7 @@ def test_to_scipy_sparse():
     [(3, 4, 5), (4,), (1, 0)],
     [(4,), (3, 4, 5), (0, 1)],
     [(4,), (4,), (0, 0)],
+    [(4,), (4,), 0],
 ])
 def test_tensordot(a_shape, b_shape, axes):
     a = random_x(a_shape)
@@ -139,7 +140,7 @@ def test_dot():
                                    np.sinh,  np.tanh, np.floor, np.ceil,
                                    np.sqrt, np.conj, np.round, np.rint,
                                    lambda x: x.astype('int32'), np.conjugate,
-                                   lambda x: x.round(decimals=2), abs])
+                                   np.conj, lambda x: x.round(decimals=2), abs])
 def test_elemwise(func):
     x = random_x((2, 3, 4))
     s = COO.from_numpy(x)
@@ -423,3 +424,26 @@ def test_cache_csr():
 
     assert isinstance(st.tocsr(), scipy.sparse.csr_matrix)
     assert isinstance(st.tocsc(), scipy.sparse.csc_matrix)
+
+
+def test_empty_shape():
+    x = COO([], [1.0])
+    assert x.shape == ()
+    assert ((2 * x).todense() == np.array(2.0)).all()
+
+
+def test_single_dimension():
+    x = COO([1, 3], [1.0, 3.0])
+    assert x.shape == (4,)
+    assert_eq(x, np.array([0, 1.0, 0, 3.0]))
+
+
+def test_raise_dense():
+    x = COO({(10000, 10000): 1.0})
+    with pytest.raises((ValueError, NotImplementedError)) as exc_info:
+        np.exp(x)
+
+    assert 'dense' in str(exc_info.value).lower()
+
+    with pytest.raises((ValueError, NotImplementedError)):
+        x + 1

@@ -123,12 +123,17 @@ class COO(object):
 
         self.data = np.asarray(data)
         self.coords = np.asarray(coords)
+        if self.coords.ndim == 1:
+            self.coords = self.coords[None, :]
 
         if shape and not np.prod(self.coords.shape):
             self.coords = np.zeros((len(shape), 0), dtype=int)
 
         if shape is None:
-            shape = tuple((self.coords.max(axis=1) + 1).tolist())
+            if self.coords.nbytes:
+                shape = tuple((self.coords.max(axis=1) + 1).tolist())
+            else:
+                shape = ()
 
         self.shape = tuple(shape)
         if self.shape:
@@ -136,7 +141,7 @@ class COO(object):
         else:
             dtype = np.int_
         self.coords = self.coords.astype(dtype)
-        assert len(data) == self.coords.shape[1]
+        assert not self.shape or len(data) == self.coords.shape[1]
         self.has_duplicates = has_duplicates
 
     @classmethod
@@ -454,7 +459,7 @@ class COO(object):
             raise ValueError("Performing this operation would produce "
                     "a dense result: %s" % str(func))
         if self.shape != other.shape:
-            raise ValueError("Broadcasting is not supported")
+            raise NotImplementedError("Broadcasting is not supported")
         self.sum_duplicates()  # TODO: document side-effect or make copy
         other.sum_duplicates()  # TODO: document side-effect or make copy
 
@@ -566,10 +571,10 @@ class COO(object):
                              "dense result")
         return self.elemwise(operator.ge, other)
 
-    def maybe_densify(x, allowed_nnz=1e3, allowed_fraction=0.25):
+    def maybe_densify(self, allowed_nnz=1e3, allowed_fraction=0.25):
         """ Convert to a dense numpy array if not too costly.  Err othrewise """
-        if x.nnz <= allowed_nnz or x.nnz >= np.prod(x.shape) * allowed_fraction:
-            return x.todense()
+        if reduce(operator.mul, self.shape) <= allowed_nnz or self.nnz >= np.prod(self.shape) * allowed_fraction:
+            return self.todense()
         else:
             raise NotImplementedError("Operation would require converting "
                                       "large sparse array to dense")
