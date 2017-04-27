@@ -266,7 +266,11 @@ class COO(object):
 
             a = a.to_scipy_sparse()
             a = getattr(a, method)(axis=0, **kwargs)
-            a = COO.from_scipy_sparse(a)
+            if isinstance(a, scipy.sparse.spmatrix):
+                a = COO.from_scipy_sparse(a)
+            elif isinstance(a, np.matrix):
+                a = np.asarray(a)[0]
+                a = COO.from_numpy(a)
             a = a.reshape([self.shape[d] for d in neg_axis])
             result = a
 
@@ -337,7 +341,7 @@ class COO(object):
             linear_loc += self.coords[-(i + 1), :].astype(dtype) * strides
             strides *= d
 
-        coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max(self.shape)))
+        coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max(shape)))
         strides = 1
         for i, d in enumerate(shape[::-1]):
             coords[-(i + 1), :] = (linear_loc // strides) % d

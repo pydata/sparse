@@ -447,3 +447,18 @@ def test_raise_dense():
 
     with pytest.raises((ValueError, NotImplementedError)):
         x + 1
+
+
+def test_large_sum():
+    n = 500000
+    x = np.random.randint(0, 10000, size=(n,))
+    y = np.random.randint(0, 1000, size=(n,))
+    z = np.random.randint(0, 3, size=(n,))
+
+    data = np.random.random(n)
+
+    a = COO((x, y, z), data)
+    assert a.shape == (10000, 1000, 3)
+
+    b = a.sum(axis=2)
+    assert b.nnz > 100000
