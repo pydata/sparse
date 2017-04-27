@@ -510,49 +510,64 @@ class COO(object):
     def __abs__(self):
         return self.elemwise(abs)
 
-    def exp(self):
+    def exp(self, out=None):
+        assert out is None
         return np.exp(self.maybe_densify())
 
-    def expm1(self):
+    def expm1(self, out=None):
+        assert out is None
         return self.elemwise(np.expm1)
 
-    def log1p(self):
+    def log1p(self, out=None):
+        assert out is None
         return self.elemwise(np.log1p)
 
-    def sin(self):
+    def sin(self, out=None):
+        assert out is None
         return self.elemwise(np.sin)
 
-    def sinh(self):
+    def sinh(self, out=None):
+        assert out is None
         return self.elemwise(np.sinh)
 
-    def tan(self):
+    def tan(self, out=None):
+        assert out is None
         return self.elemwise(np.tan)
 
-    def tanh(self):
+    def tanh(self, out=None):
+        assert out is None
         return self.elemwise(np.tanh)
 
-    def sqrt(self):
+    def sqrt(self, out=None):
+        assert out is None
         return self.elemwise(np.sqrt)
 
-    def ceil(self):
+    def ceil(self, out=None):
+        assert out is None
         return self.elemwise(np.ceil)
 
-    def floor(self):
+    def floor(self, out=None):
+        assert out is None
         return self.elemwise(np.floor)
 
-    def round(self, decimals=0):
+    def round(self, decimals=0, out=None):
+        assert out is None
         return self.elemwise(np.round, decimals)
 
-    def rint(self):
+    def rint(self, out=None):
+        assert out is None
         return self.elemwise(np.rint)
 
-    def conj(self):
+    def conj(self, out=None):
+        assert out is None
         return self.elemwise(np.conj)
 
-    def conjugate(self):
+    def conjugate(self, out=None):
+        assert out is None
         return self.elemwise(np.conjugate)
 
-    def astype(self, dtype):
+    def astype(self, dtype, out=None):
+        assert out is None
         return self.elemwise(np.ndarray.astype, dtype, check=False)
 
     def __gt__(self, other):
