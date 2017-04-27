@@ -462,3 +462,9 @@ def test_large_sum():
 
     b = a.sum(axis=2)
     assert b.nnz > 100000
+
+
+def test_add_many_sparse_arrays():
+    x = COO({(1, 1): 1})
+    y = sum([x] * 100)
+    assert y.nnz < np.prod(y.shape)

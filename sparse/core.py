@@ -413,14 +413,17 @@ class COO(object):
         return self
 
     def __add__(self, other):
+        if isinstance(other, Number) and other == 0:
+            return self
         if not isinstance(other, COO):
             return self.maybe_densify() + other
         if self.shape == other.shape:
-            return COO(np.concatenate([self.coords, other.coords], axis=1),
-                       np.concatenate([self.data, other.data]),
-                       self.shape, has_duplicates=True)
+            return self.elemwise_binary(operator.add, other)
         else:
             raise NotImplementedError("Broadcasting not yet supported")
+
+    def __radd__(self, other):
+        return self + other
 
     def __neg__(self):
         return COO(self.coords, -self.data, self.shape, self.has_duplicates)
