@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 
 from collections import Iterable
 from functools import reduce
-from numbers import Number
+import numbers
 import operator
 
 import numpy as np
@@ -127,7 +127,7 @@ class COO(object):
             self.coords = self.coords[None, :]
 
         if shape and not np.prod(self.coords.shape):
-            self.coords = np.zeros((len(shape), 0), dtype=int)
+            self.coords = np.zeros((len(shape), 0), dtype=np.uint64)
 
         if shape is None:
             if self.coords.nbytes:
@@ -146,9 +146,13 @@ class COO(object):
 
     @classmethod
     def from_numpy(cls, x):
-        coords = np.where(x)
-        data = x[coords]
-        coords = np.vstack(coords)
+        if x.shape:
+            coords = np.where(x)
+            data = x[coords]
+            coords = np.vstack(coords)
+        else:
+            coords = []
+            data = x
         return cls(coords, data, shape=x.shape)
 
     def todense(self):
@@ -189,7 +193,7 @@ class COO(object):
     def __getitem__(self, index):
         if not isinstance(index, tuple):
             index = (index,)
-        index = tuple(ind + self.shape[i] if isinstance(ind, int) and ind < 0 else ind
+        index = tuple(ind + self.shape[i] if isinstance(ind, numbers.Integral) and ind < 0 else ind
                       for i, ind in enumerate(index))
         mask = np.ones(self.nnz, dtype=bool)
         for i, ind in enumerate([i for i in index if i is not None]):
@@ -202,7 +206,7 @@ class COO(object):
         shape = []
         i = 0
         for ind in index:
-            if isinstance(ind, int):
+            if isinstance(ind, numbers.Integral):
                 i += 1
                 continue
             elif isinstance(ind, slice):
@@ -247,7 +251,7 @@ class COO(object):
         if dtype:
             kwargs['dtype'] = dtype
 
-        if isinstance(axis, int):
+        if isinstance(axis, numbers.Integral):
             axis = (axis,)
 
         if set(axis) == set(range(self.ndim)):
@@ -328,8 +332,8 @@ class COO(object):
         if self.shape == shape:
             return self
         if any(d == -1 for d in shape):
-            extra = int(np.prod(self.shape) /
-                        np.prod([d for d in shape if d != -1]))
+            extra = np.uint64(np.prod(self.shape) /
+                              np.prod([d for d in shape if d != -1]))
             shape = tuple([d if d != -1 else extra for d in shape])
         if self.shape == shape:
             return self
@@ -413,7 +417,7 @@ class COO(object):
         return self
 
     def __add__(self, other):
-        if isinstance(other, Number) and other == 0:
+        if isinstance(other, numbers.Number) and other == 0:
             return self
         if not isinstance(other, COO):
             return self.maybe_densify() + other
@@ -578,7 +582,7 @@ class COO(object):
         return self.elemwise(np.ndarray.astype, dtype, check=False)
 
     def __gt__(self, other):
-        if not isinstance(other, Number):
+        if not isinstance(other, numbers.Number):
             raise NotImplementedError("Only scalars supported")
         if other < 0:
             raise ValueError("Comparison with negative number would produce "
@@ -586,7 +590,7 @@ class COO(object):
         return self.elemwise(operator.gt, other)
 
     def __ge__(self, other):
-        if not isinstance(other, Number):
+        if not isinstance(other, numbers.Number):
             raise NotImplementedError("Only scalars supported")
         if other <= 0:
             raise ValueError("Comparison with negative number would produce "
@@ -702,7 +706,7 @@ def _keepdims(original, new, axis):
 
 
 def _mask(coords, idx):
-    if isinstance(idx, int):
+    if isinstance(idx, numbers.Integral):
         return coords == idx
     elif isinstance(idx, slice):
         if idx.step not in (1, None):

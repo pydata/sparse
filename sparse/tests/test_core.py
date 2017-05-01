@@ -55,6 +55,7 @@ def test_transpose(axis):
     [(2, 3, 4, 5), (8, 15)],
     [(2, 3, 4, 5), (24, 5)],
     [(2, 3, 4, 5), (20, 6)],
+    [(), ()],
 ])
 def test_reshape(a, b):
     x = random_x(a)
