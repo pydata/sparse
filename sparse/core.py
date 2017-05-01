@@ -154,6 +154,7 @@ class COO(object):
         assert not self.shape or len(data) == self.coords.shape[1]
         self.has_duplicates = has_duplicates
         self.sorted = sorted
+        self._cache = defaultdict(lambda: deque(maxlen=3))
 
     @classmethod
     def from_numpy(cls, x):
@@ -209,6 +210,9 @@ class COO(object):
             index = (index,)
         index = tuple(ind + self.shape[i] if isinstance(ind, numbers.Integral) and ind < 0 else ind
                       for i, ind in enumerate(index))
+        if (all(ind == slice(None) or ind == slice(0, d)
+                for ind, d in zip(index, self.shape))):
+            return self
         mask = np.ones(self.nnz, dtype=bool)
         for i, ind in enumerate([i for i in index if i is not None]):
             if ind == slice(None, None):
@@ -325,19 +329,15 @@ class COO(object):
         if axes == tuple(range(self.ndim)):
             return self
 
+        for ax, value in self._cache['transpose']:
+            if ax == axes:
+                return value
+
         shape = tuple(self.shape[ax] for ax in axes)
         result = COO(self.coords[axes, :], self.data, shape,
                      has_duplicates=self.has_duplicates)
 
-        if axes == (1, 0):
-            try:
-                result._csc = self._csr.T
-            except AttributeError:
-                pass
-            try:
-                result._csr = self._csc.T
-            except AttributeError:
-                pass
+        self._cache['transpose'].append((axes, result))
         return result
 
     @property
@@ -374,8 +374,14 @@ class COO(object):
             extra = int(np.prod(self.shape) /
                         np.prod([d for d in shape if d != -1]))
             shape = tuple([d if d != -1 else extra for d in shape])
+
         if self.shape == shape:
             return self
+
+        for sh, value in self._cache['reshape']:
+            if sh == shape:
+                return value
+
         # TODO: this np.prod(self.shape) enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
 
@@ -385,9 +391,12 @@ class COO(object):
             coords[-(i + 1), :] = (linear_loc // strides) % d
             strides *= d
 
-        return COO(coords, self.data, shape,
-                   has_duplicates=self.has_duplicates,
-                   sorted=self.sorted)
+        result = COO(coords, self.data, shape,
+                     has_duplicates=self.has_duplicates,
+                     sorted=self.sorted)
+
+        self._cache['reshape'].append((shape, result))
+        return result
 
     def to_scipy_sparse(self):
         assert self.ndim == 2

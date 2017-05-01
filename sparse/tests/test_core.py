@@ -418,14 +418,6 @@ def test_cache_csr():
     assert s.tocsr() is s.tocsr()
     assert s.tocsc() is s.tocsc()
 
-    st = s.T
-
-    assert_eq(st._csr, st)
-    assert_eq(st._csc, st)
-
-    assert isinstance(st.tocsr(), scipy.sparse.csr_matrix)
-    assert isinstance(st.tocsc(), scipy.sparse.csc_matrix)
-
 
 def test_empty_shape():
     x = COO([], [1.0])
@@ -469,3 +461,16 @@ def test_add_many_sparse_arrays():
     x = COO({(1, 1): 1})
     y = sum([x] * 100)
     assert y.nnz < np.prod(y.shape)
+
+
+def test_caching():
+    x = COO({(10, 10, 10): 1})
+
+    assert x[:].reshape((100, 10)).transpose().tocsr() is x[:].reshape((100, 10)).transpose().tocsr()
+
+    x = COO({(1, 1, 1, 1, 1, 1, 1, 2): 1})
+
+    for i in range(x.ndim):
+        x.reshape((1,) * i + (2,) + (1,) * (x.ndim - i - 1))
+
+    assert len(x._cache['reshape']) < 5
