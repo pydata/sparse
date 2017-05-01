@@ -71,7 +71,7 @@ def test_large_reshape():
     col = row % m # np.random.randint(0, m, size=n, dtype=np.uint16)
     data = np.ones(n, dtype=np.uint8)
 
-    x = COO((data, (row, col)))
+    x = COO((data, (row, col)), sorted=True, has_duplicates=False)
 
     assert_eq(x, x.reshape(x.shape))
 
@@ -366,8 +366,8 @@ def test_scalar_exponentiation():
 
 def test_create_with_lists_of_tuples():
     L = [((0, 0, 0), 1),
-         ((1, 1, 1), 2),
          ((1, 2, 1), 1),
+         ((1, 1, 1), 2),
          ((1, 3, 2), 3)]
 
     s = COO(L)
