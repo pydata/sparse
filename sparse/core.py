@@ -328,6 +328,11 @@ class COO(object):
     def dot(self, other):
         return dot(self, other)
 
+    __matmul__ = dot
+
+    def __rmatmul__(self, other):
+        return dot(other, self)
+
     def reshape(self, shape):
         if self.shape == shape:
             return self
