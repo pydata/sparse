@@ -328,7 +328,11 @@ class COO(object):
     def dot(self, other):
         return dot(self, other)
 
-    __matmul__ = dot
+    def __matmul__(self, other):
+        try:
+            return dot(self, other)
+        except AttributeError:
+            return dot(self, np.array(other))
 
     def __rmatmul__(self, other):
         return dot(np.array(other), self)
