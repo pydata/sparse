@@ -140,6 +140,7 @@ def test_dot():
     if sys.version_info >= (3, 5):
         assert_eq(eval("a @ b"), eval("sa @ sb"))
         assert_eq(eval("sa @ sb"), sparse.dot(sa, sb))
+        assert_eq(eval("a @ sb"), sparse.dot(a, sb))
 
 
 @pytest.mark.parametrize('func', [np.expm1, np.log1p, np.sin, np.tan,
