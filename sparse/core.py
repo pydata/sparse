@@ -326,13 +326,12 @@ class COO(object):
         return self.transpose(list(range(self.ndim))[::-1])
 
     def dot(self, other):
-        return dot(self, other)
-
-    def __matmul__(self, other):
         try:
             return dot(self, other)
-        except AttributeError:
+        except AttributeError:  # missing .ndim
             return dot(self, np.array(other))
+
+    __matmul__ = dot
 
     def __rmatmul__(self, other):
         return dot(np.array(other), self)

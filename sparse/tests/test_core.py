@@ -131,6 +131,7 @@ def test_dot():
     a = random_x((3, 4, 5))
     b = random_x((5, 6))
     l = [1, 2, 3, 4, 5]
+    l # silencing flake8
 
     sa = COO.from_numpy(a)
     sb = COO.from_numpy(b)
