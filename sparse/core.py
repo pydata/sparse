@@ -802,6 +802,10 @@ def tensordot(a, b, axes=2):
 
 
 def dot(a, b):
+    if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
+        raise NotImplementedError(
+                "Cannot perform dot product on types %s, %s" %
+                (type(a), type(b)))
     return tensordot(a, b, axes=((a.ndim - 1,), (b.ndim - 2,)))
 
 
