@@ -331,7 +331,7 @@ class COO(object):
     __matmul__ = dot
 
     def __rmatmul__(self, other):
-        return dot(other, self)
+        return dot(np.array(other), self)
 
     def reshape(self, shape):
         if self.shape == shape:
