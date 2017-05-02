@@ -131,6 +131,7 @@ def test_dot():
     import operator
     a = random_x((3, 4, 5))
     b = random_x((5, 6))
+    lol = [[1, 2, 3, 4, 5]]
 
     sa = COO.from_numpy(a)
     sb = COO.from_numpy(b)
@@ -142,7 +143,7 @@ def test_dot():
         # Basic equivalences
         assert_eq(eval("a @ b"), eval("sa @ sb"))
         assert_eq(eval("sa @ sb"), sparse.dot(sa, sb))
-        assert_eq(eval("a @ sb"), sparse.dot(a, sb))
+        assert_eq(eval("lol @ b"), eval("lol @ sb"))
 
         # Test that SOO's and np.array's combine correctly
         assert_eq(eval("a @ sb"), eval("sa @ b"))
