@@ -142,6 +142,7 @@ def test_dot():
         # Basic equivalences
         assert_eq(eval("a @ b"), eval("sa @ sb"))
         assert_eq(eval("sa @ sb"), sparse.dot(sa, sb))
+        assert_eq(eval("a @ sb"), sparse.dot(a, sb))
 
         # Test that SOO's and np.array's combine correctly
         assert_eq(eval("a @ sb"), eval("sa @ b"))
