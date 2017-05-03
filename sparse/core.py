@@ -90,6 +90,7 @@ class COO(object):
     __array_priority__ = 12
 
     def __init__(self, coords, data=None, shape=None, has_duplicates=True):
+
         if data is None:
             # {(i, j, k): x, (i, j, k): y, ...}
             if isinstance(coords, dict):
@@ -327,6 +328,11 @@ class COO(object):
 
     def dot(self, other):
         return dot(self, other)
+
+    __matmul__ = dot
+
+    def __rmatmul__(self, other):
+        return dot(other, self)
 
     def reshape(self, shape):
         if self.shape == shape:
@@ -681,6 +687,10 @@ def tensordot(a, b, axes=2):
 
 
 def dot(a, b):
+    if isinstance(a, (list, tuple)):
+        a = np.array(a)
+    if isinstance(b, (list, tuple)):
+        b = np.array(b)
     return tensordot(a, b, axes=((a.ndim - 1,), (b.ndim - 2,)))
 
 
