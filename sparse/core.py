@@ -96,8 +96,10 @@ class COO(object):
     __array_priority__ = 12
 
     def __init__(self, coords, data=None, shape=None, has_duplicates=True,
-                 sorted=False):
-        self._cache = defaultdict(lambda: deque(maxlen=3))
+                 sorted=False, cache=False):
+        self._cache = None
+        if cache:
+            self.enable_caching()
         if data is None:
             # {(i, j, k): x, (i, j, k): y, ...}
             if isinstance(coords, dict):
@@ -154,7 +156,30 @@ class COO(object):
         assert not self.shape or len(data) == self.coords.shape[1]
         self.has_duplicates = has_duplicates
         self.sorted = sorted
+
+    def enable_caching(self):
+        """ Enable caching of reshape, transpose, and tocsr/csc operations
+
+        This enables efficient iterative workflows that make heavy use of
+        csr/csc operations, such as tensordot.  This maintains a cache of
+        recent results of reshape and transpose so that operations like
+        tensordot (which uses both internally) store efficiently stored
+        representations for repeated use.  This can significantly cut down on
+        computational costs in common numeric algorithms.
+
+        However, this also assumes that neither this object, nor the downstream
+        objects will have their data mutated.
+
+        Examples
+        --------
+        >>> x.enable_caching()  # doctest: +SKIP
+        >>> csr1 = x.transpose((2, 0, 1)).reshape((100, 120)).tocsr()  # doctest: +SKIP
+        >>> csr2 = x.transpose((2, 0, 1)).reshape((100, 120)).tocsr()  # doctest: +SKIP
+        >>> csr1 is csr2  # doctest: +SKIP
+        True
+        """
         self._cache = defaultdict(lambda: deque(maxlen=3))
+        return self
 
     @classmethod
     def from_numpy(cls, x):
@@ -329,15 +354,18 @@ class COO(object):
         if axes == tuple(range(self.ndim)):
             return self
 
-        for ax, value in self._cache['transpose']:
-            if ax == axes:
-                return value
+        if self._cache is not None:
+            for ax, value in self._cache['transpose']:
+                if ax == axes:
+                    return value
 
         shape = tuple(self.shape[ax] for ax in axes)
         result = COO(self.coords[axes, :], self.data, shape,
-                     has_duplicates=self.has_duplicates)
+                     has_duplicates=self.has_duplicates,
+                     cache=self._cache is not None)
 
-        self._cache['transpose'].append((axes, result))
+        if self._cache is not None:
+            self._cache['transpose'].append((axes, result))
         return result
 
     @property
@@ -378,9 +406,10 @@ class COO(object):
         if self.shape == shape:
             return self
 
-        for sh, value in self._cache['reshape']:
-            if sh == shape:
-                return value
+        if self._cache is not None:
+            for sh, value in self._cache['reshape']:
+                if sh == shape:
+                    return value
 
         # TODO: this np.prod(self.shape) enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
@@ -393,9 +422,10 @@ class COO(object):
 
         result = COO(coords, self.data, shape,
                      has_duplicates=self.has_duplicates,
-                     sorted=self.sorted)
+                     sorted=self.sorted, cache=self._cache is not None)
 
-        self._cache['reshape'].append((shape, result))
+        if self._cache is not None:
+            self._cache['reshape'].append((shape, result))
         return result
 
     def to_scipy_sparse(self):
@@ -424,32 +454,39 @@ class COO(object):
         return scipy.sparse.csr_matrix((self.data, col, indptr), shape=self.shape)
 
     def tocsr(self):
-        try:
-            return self._csr
-        except AttributeError:
-            pass
-        try:
-            self._csr = self._csc.tocsr()
-            return self._csr
-        except AttributeError:
-            pass
+        if self._cache is not None:
+            try:
+                return self._csr
+            except AttributeError:
+                pass
+            try:
+                self._csr = self._csc.tocsr()
+                return self._csr
+            except AttributeError:
+                pass
 
-        self._csr = self._tocsr()
-        return self._csr
+            self._csr = csr = self._tocsr()
+        else:
+            csr = self._tocsr()
+        return csr
 
     def tocsc(self):
-        try:
-            return self._csc
-        except AttributeError:
-            pass
-        try:
-            self._csc = self._csr.tocsc()
-            return self._csc
-        except AttributeError:
-            pass
+        if self._cache is not None:
+            try:
+                return self._csc
+            except AttributeError:
+                pass
+            try:
+                self._csc = self._csr.tocsc()
+                return self._csc
+            except AttributeError:
+                pass
 
-        self._csc = self.tocsr().tocsc()
-        return self._csc
+            self._csc = csc = self.tocsr().tocsc()
+        else:
+            csc = self.tocsr().tocsc()
+
+        return csc
 
     def sort_indices(self):
         if self.sorted:
