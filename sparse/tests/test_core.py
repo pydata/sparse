@@ -411,7 +411,7 @@ def test_scipy_sparse_interface():
 
 def test_cache_csr():
     x = random_x((10, 5))
-    s = COO.from_numpy(x)
+    s = COO(x, cache=True)
 
     assert isinstance(s.tocsr(), scipy.sparse.csr_matrix)
     assert isinstance(s.tocsc(), scipy.sparse.csc_matrix)
@@ -465,10 +465,12 @@ def test_add_many_sparse_arrays():
 
 def test_caching():
     x = COO({(10, 10, 10): 1})
+    assert x[:].reshape((100, 10)).transpose().tocsr() is not x[:].reshape((100, 10)).transpose().tocsr()
 
+    x = COO({(10, 10, 10): 1}, cache=True)
     assert x[:].reshape((100, 10)).transpose().tocsr() is x[:].reshape((100, 10)).transpose().tocsr()
 
-    x = COO({(1, 1, 1, 1, 1, 1, 1, 2): 1})
+    x = COO({(1, 1, 1, 1, 1, 1, 1, 2): 1}, cache=True)
 
     for i in range(x.ndim):
         x.reshape((1,) * i + (2,) + (1,) * (x.ndim - i - 1))
