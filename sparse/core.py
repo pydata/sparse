@@ -89,7 +89,10 @@ class COO(object):
     """
     __array_priority__ = 12
 
-    def __init__(self, coords, data=None, shape=None, has_duplicates=True):
+    def __init__(self, coords, data=None, shape=None,
+                 has_duplicates=True, toarray_other=False):
+
+        self._toarray_other = toarray_other
         if data is None:
             # {(i, j, k): x, (i, j, k): y, ...}
             if isinstance(coords, dict):
@@ -325,8 +328,14 @@ class COO(object):
     def T(self):
         return self.transpose(list(range(self.ndim))[::-1])
 
-    def dot(self, other):
-        return dot(self, other)
+    def dot(self, other, make_array=False):
+        return dot(self, other,
+                   make_array=make_array or self._toarray_other)
+
+    __matmul__ = dot
+
+    def __rmatmul__(self, other):
+        return dot(other, self)
 
     def reshape(self, shape):
         if self.shape == shape:
@@ -680,7 +689,12 @@ def tensordot(a, b, axes=2):
     return res.reshape(olda + oldb)
 
 
-def dot(a, b):
+def dot(a, b, make_array=True):
+    if make_array:
+        if not hasattr(a, 'ndim'):
+            a = np.array(a)
+        if not hasattr(b, 'ndim'):
+            b = np.array(b)
     return tensordot(a, b, axes=((a.ndim - 1,), (b.ndim - 2,)))
 
 
