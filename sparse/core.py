@@ -89,10 +89,7 @@ class COO(object):
     """
     __array_priority__ = 12
 
-    def __init__(self, coords, data=None, shape=None,
-                 has_duplicates=True, toarray_other=False):
-
-        self._toarray_other = toarray_other
+    def __init__(self, coords, data=None, shape=None, has_duplicates=True):
         if data is None:
             # {(i, j, k): x, (i, j, k): y, ...}
             if isinstance(coords, dict):
@@ -329,8 +326,7 @@ class COO(object):
         return self.transpose(list(range(self.ndim))[::-1])
 
     def dot(self, other, make_array=False):
-        return dot(self, other,
-                   make_array=make_array or self._toarray_other)
+        return dot(self, other)
 
     __matmul__ = dot
 
@@ -690,11 +686,8 @@ def tensordot(a, b, axes=2):
 
 
 def dot(a, b, make_array=True):
-    if make_array:
-        if not hasattr(a, 'ndim'):
-            a = np.array(a)
-        if not hasattr(b, 'ndim'):
-            b = np.array(b)
+    if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
+        return NotImplemented
     return tensordot(a, b, axes=((a.ndim - 1,), (b.ndim - 2,)))
 
 

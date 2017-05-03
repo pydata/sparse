@@ -142,18 +142,9 @@ def test_dot():
     assert_eq(np.dot(a, b), sparse.dot(sa, sb))
 
     if sys.version_info >= (3, 5):
-        # Coerce to np.array for arg lacking __matmul__
-        sa._toarray_other = True
-        sb._toarray_other = True
-
         # Basic equivalences
         assert_eq(eval("a @ b"), eval("sa @ sb"))
         assert_eq(eval("sa @ sb"), sparse.dot(sa, sb))
-
-        # Exercise __rmatmul__ with naive collection (list)
-        assert_eq(eval("la @ b"), eval("la @ sb"))
-        assert_eq(eval("a @ sb"), sparse.dot(a, sb))
-        assert_eq(eval("a @ lb"), eval("sa @ lb"))
 
         # Test that SOO's and np.array's combine correctly
         assert_eq(eval("a @ sb"), eval("sa @ b"))
