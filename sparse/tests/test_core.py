@@ -130,8 +130,10 @@ def test_tensordot(a_shape, b_shape, axes):
 def test_dot():
     a = random_x((3, 4, 5))
     b = random_x((5, 6))
-    l = [1, 2, 3, 4, 5]
-    l # silencing flake8
+
+    la = a.tolist()
+    lb = b.tolist()
+    la, lb          # silencing flake8
 
     sa = COO.from_numpy(a)
     sb = COO.from_numpy(b)
@@ -140,10 +142,40 @@ def test_dot():
     assert_eq(np.dot(a, b), sparse.dot(sa, sb))
 
     if sys.version_info >= (3, 5):
+        # Coerce to np.array for arg lacking __matmul__
+        sa._toarray_other = True
+        sb._toarray_other = True
+
+        # Basic equivalences
         assert_eq(eval("a @ b"), eval("sa @ sb"))
         assert_eq(eval("sa @ sb"), sparse.dot(sa, sb))
-        assert_eq(eval("l @ b"), eval("l @ sb"))     # __rmatmul__
-        assert_eq(eval("a @ sb"), sparse.dot(a, sb)) # __rmatmul__
+
+        # Exercise __rmatmul__ with naive collection (list)
+        assert_eq(eval("la @ b"), eval("la @ sb"))
+        assert_eq(eval("a @ sb"), sparse.dot(a, sb))
+        assert_eq(eval("a @ lb"), eval("sa @ lb"))
+
+        # Test that SOO's and np.array's combine correctly
+        assert_eq(eval("a @ sb"), eval("sa @ b"))
+
+
+@pytest.mark.xfail
+def test_dot_nocoercion():
+    a = random_x((3, 4, 5))
+    b = random_x((5, 6))
+
+    la = a.tolist()
+    lb = b.tolist()
+    la, lb          # silencing flake8
+
+    sa = COO.from_numpy(a)
+    sb = COO.from_numpy(b)
+    sa, sb          # silencing flake8
+
+    if sys.version_info >= (3, 5):
+        # Operations with naive collection (list)
+        assert_eq(eval("la @ b"), eval("la @ sb"))
+        assert_eq(eval("a @ lb"), eval("sa @ lb"))
 
 
 @pytest.mark.parametrize('func', [np.expm1, np.log1p, np.sin, np.tan,
