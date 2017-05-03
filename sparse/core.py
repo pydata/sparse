@@ -325,8 +325,13 @@ class COO(object):
     def T(self):
         return self.transpose(list(range(self.ndim))[::-1])
 
-    def dot(self, other):
+    def dot(self, other, make_array=False):
         return dot(self, other)
+
+    __matmul__ = dot
+
+    def __rmatmul__(self, other):
+        return dot(other, self)
 
     def reshape(self, shape):
         if self.shape == shape:
@@ -680,7 +685,9 @@ def tensordot(a, b, axes=2):
     return res.reshape(olda + oldb)
 
 
-def dot(a, b):
+def dot(a, b, make_array=True):
+    if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
+        return NotImplemented
     return tensordot(a, b, axes=((a.ndim - 1,), (b.ndim - 2,)))
 
 
