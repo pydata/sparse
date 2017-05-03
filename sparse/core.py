@@ -685,7 +685,7 @@ def tensordot(a, b, axes=2):
     return res.reshape(olda + oldb)
 
 
-def dot(a, b, make_array=True):
+def dot(a, b):
     if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
         return NotImplemented
     return tensordot(a, b, axes=((a.ndim - 1,), (b.ndim - 2,)))
