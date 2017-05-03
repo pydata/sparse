@@ -142,10 +142,6 @@ def test_dot():
     assert_eq(np.dot(a, b), sparse.dot(sa, sb))
 
     if sys.version_info >= (3, 5):
-        # Coerce to np.array for arg lacking __matmul__
-        sa._toarray_other = True
-        sb._toarray_other = True
-
         # Basic equivalences
         assert_eq(eval("a @ b"), eval("sa @ sb"))
         assert_eq(eval("sa @ sb"), sparse.dot(sa, sb))
@@ -161,12 +157,14 @@ def test_dot():
 
 @pytest.mark.xfail
 def test_dot_nocoercion():
+    # Expect failure with some non-list, non-tuple collection
+    # that cannot be coerced straightforwardly
     a = random_x((3, 4, 5))
     b = random_x((5, 6))
 
-    la = a.tolist()
-    lb = b.tolist()
-    la, lb          # silencing flake8
+    set_a = set(a.tolist())
+    set_b = set(b.tolist())
+    set_a, set_b    # silencing flake8
 
     sa = COO.from_numpy(a)
     sb = COO.from_numpy(b)
@@ -174,8 +172,8 @@ def test_dot_nocoercion():
 
     if sys.version_info >= (3, 5):
         # Operations with naive collection (list)
-        assert_eq(eval("la @ b"), eval("la @ sb"))
-        assert_eq(eval("a @ lb"), eval("sa @ lb"))
+        assert_eq(eval("set_a @ b"), eval("set_a @ sb"))
+        assert_eq(eval("a @ set_b"), eval("sa @ set_b"))
 
 
 @pytest.mark.parametrize('func', [np.expm1, np.log1p, np.sin, np.tan,
