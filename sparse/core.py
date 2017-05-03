@@ -325,7 +325,7 @@ class COO(object):
     def T(self):
         return self.transpose(list(range(self.ndim))[::-1])
 
-    def dot(self, other, make_array=False):
+    def dot(self, other):
         return dot(self, other)
 
     __matmul__ = dot
