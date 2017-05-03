@@ -695,7 +695,7 @@ def dot(a, b, make_array=True):
             a = np.array(a)
         if not hasattr(b, 'ndim'):
             b = np.array(b)
-    return tensordot(a, b, axes=((a.ndim - 1,), (b.ndim - 2,)))
+    return tensordot(a, b, axes=((a.ndim-1,), (b.ndim-2,)))
 
 
 def _dot(a, b):
