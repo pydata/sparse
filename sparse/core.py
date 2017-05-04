@@ -328,10 +328,20 @@ class COO(object):
     def dot(self, other):
         return dot(self, other)
 
-    __matmul__ = dot
+    def __matmul__(self, other):
+        try:
+            return dot(self, other)
+        except NotImplementedError:
+            return NotImplemented
 
     def __rmatmul__(self, other):
-        return dot(other, self)
+        try:
+            return dot(other, self)
+        except NotImplementedError:
+            return NotImplemented
+
+    def __numpy_ufunc__(self, ufunc, method, i, inputs, **kwargs):
+        return NotImplemented
 
     def reshape(self, shape):
         if self.shape == shape:
@@ -687,7 +697,9 @@ def tensordot(a, b, axes=2):
 
 def dot(a, b):
     if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
-        return NotImplemented
+        raise NotImplementedError(
+                "Cannot perform dot product on types %s, %s" %
+                (type(a), type(b)))
     return tensordot(a, b, axes=((a.ndim - 1,), (b.ndim - 2,)))
 
 

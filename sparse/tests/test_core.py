@@ -128,12 +128,9 @@ def test_tensordot(a_shape, b_shape, axes):
 
 
 def test_dot():
+    import operator
     a = random_x((3, 4, 5))
     b = random_x((5, 6))
-
-    la = a.tolist()
-    lb = b.tolist()
-    la, lb          # silencing flake8
 
     sa = COO.from_numpy(a)
     sb = COO.from_numpy(b)
@@ -141,7 +138,7 @@ def test_dot():
     assert_eq(a.dot(b), sa.dot(sb))
     assert_eq(np.dot(a, b), sparse.dot(sa, sb))
 
-    if sys.version_info >= (3, 5):
+    if hasattr(operator, 'matmul'):
         # Basic equivalences
         assert_eq(eval("a @ b"), eval("sa @ sb"))
         assert_eq(eval("sa @ sb"), sparse.dot(sa, sb))
