@@ -410,21 +410,6 @@ class COO(object):
             strides *= d
         return out
 
-    def __matmul__(self, other):
-        try:
-            return dot(self, other)
-        except NotImplementedError:
-            return NotImplemented
-
-    def __rmatmul__(self, other):
-        try:
-            return dot(other, self)
-        except NotImplementedError:
-            return NotImplemented
-
-    def __numpy_ufunc__(self, ufunc, method, i, inputs, **kwargs):
-        return NotImplemented
-
     def reshape(self, shape):
         if self.shape == shape:
             return self
