@@ -148,6 +148,8 @@ def test_dot():
 
 @pytest.mark.xfail
 def test_dot_nocoercion():
+    # Expect failure with non-array naive type (e.g. list)
+    import operator
     a = random_x((3, 4, 5))
     b = random_x((5, 6))
 
