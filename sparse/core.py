@@ -1,12 +1,18 @@
 from __future__ import absolute_import, division, print_function
 
-from collections import Iterable
+from collections import Iterable, defaultdict, deque
 from functools import reduce
 import numbers
 import operator
 
 import numpy as np
 import scipy.sparse
+
+
+try:  # Windows compatibility
+    int = long
+except NameError:
+    pass
 
 
 class COO(object):
@@ -29,9 +35,9 @@ class COO(object):
     --------
     >>> x = np.eye(4)
     >>> x[2, 3] = 5
-    >>> s = COO.from_numpy(x)
+    >>> s = COO(x)
     >>> s
-    <COO: shape=(4, 4), dtype=float64, nnz=5>
+    <COO: shape=(4, 4), dtype=float64, nnz=5, sorted=True, duplicates=False>
     >>> s.data
     array([ 1.,  1.,  1.,  5.,  1.])
     >>> s.coords
@@ -50,9 +56,9 @@ class COO(object):
     >>> data = [1, 2, 3, 4, 5]
     >>> y = COO(coords, data, shape=(3, 4, 5))
     >>> y
-    <COO: shape=(3, 4, 5), dtype=int64, nnz=5>
+    <COO: shape=(3, 4, 5), dtype=int64, nnz=5, sorted=False, duplicates=True>
     >>> tensordot(s, y, axes=(0, 1))
-    <COO: shape=(4, 3, 5), dtype=float64, nnz=6>
+    <COO: shape=(4, 3, 5), dtype=float64, nnz=6, sorted=False, duplicates=False>
 
     Following scipy.sparse conventions you can also pass these as a tuple with
     rows and columns
@@ -73,7 +79,7 @@ class COO(object):
 
     >>> d = {(0, 0, 0): 1, (1, 2, 3): 2, (1, 1, 0): 3}
     >>> COO(d)
-    <COO: shape=(2, 3, 4), dtype=int64, nnz=3>
+    <COO: shape=(2, 3, 4), dtype=int64, nnz=3, sorted=False, duplicates=False>
 
     >>> L = [((0, 0), 1),
     ...      ((1, 1), 2),
@@ -89,17 +95,23 @@ class COO(object):
     """
     __array_priority__ = 12
 
-    def __init__(self, coords, data=None, shape=None, has_duplicates=True):
+    def __init__(self, coords, data=None, shape=None, has_duplicates=True,
+                 sorted=False, cache=False):
+        self._cache = None
+        if cache:
+            self.enable_caching()
         if data is None:
             # {(i, j, k): x, (i, j, k): y, ...}
             if isinstance(coords, dict):
                 coords = list(coords.items())
+                has_duplicates = False
 
             if isinstance(coords, np.ndarray):
                 result = COO.from_numpy(coords)
                 self.coords = result.coords
                 self.data = result.data
                 self.has_duplicates = result.has_duplicates
+                self.sorted = result.sorted
                 self.shape = result.shape
                 return
 
@@ -143,6 +155,31 @@ class COO(object):
         self.coords = self.coords.astype(dtype)
         assert not self.shape or len(data) == self.coords.shape[1]
         self.has_duplicates = has_duplicates
+        self.sorted = sorted
+
+    def enable_caching(self):
+        """ Enable caching of reshape, transpose, and tocsr/csc operations
+
+        This enables efficient iterative workflows that make heavy use of
+        csr/csc operations, such as tensordot.  This maintains a cache of
+        recent results of reshape and transpose so that operations like
+        tensordot (which uses both internally) store efficiently stored
+        representations for repeated use.  This can significantly cut down on
+        computational costs in common numeric algorithms.
+
+        However, this also assumes that neither this object, nor the downstream
+        objects will have their data mutated.
+
+        Examples
+        --------
+        >>> x.enable_caching()  # doctest: +SKIP
+        >>> csr1 = x.transpose((2, 0, 1)).reshape((100, 120)).tocsr()  # doctest: +SKIP
+        >>> csr2 = x.transpose((2, 0, 1)).reshape((100, 120)).tocsr()  # doctest: +SKIP
+        >>> csr1 is csr2  # doctest: +SKIP
+        True
+        """
+        self._cache = defaultdict(lambda: deque(maxlen=3))
+        return self
 
     @classmethod
     def from_numpy(cls, x):
@@ -153,7 +190,8 @@ class COO(object):
         else:
             coords = []
             data = x
-        return cls(coords, data, shape=x.shape)
+        return cls(coords, data, shape=x.shape, has_duplicates=False,
+                   sorted=True)
 
     def todense(self):
         self = self.sum_duplicates()
@@ -169,7 +207,9 @@ class COO(object):
         coords = np.empty((2, x.nnz), dtype=x.row.dtype)
         coords[0, :] = x.row
         coords[1, :] = x.col
-        return COO(coords, x.data, shape=x.shape, has_duplicates=not x.has_canonical_format)
+        return COO(coords, x.data, shape=x.shape,
+                   has_duplicates=not x.has_canonical_format,
+                   sorted=x.has_canonical_format)
 
     @property
     def dtype(self):
@@ -195,6 +235,9 @@ class COO(object):
             index = (index,)
         index = tuple(ind + self.shape[i] if isinstance(ind, numbers.Integral) and ind < 0 else ind
                       for i, ind in enumerate(index))
+        if (all(ind == slice(None) or ind == slice(0, d)
+                for ind, d in zip(index, self.shape))):
+            return self
         mask = np.ones(self.nnz, dtype=bool)
         for i, ind in enumerate([i for i in index if i is not None]):
             if ind == slice(None, None):
@@ -235,11 +278,14 @@ class COO(object):
         shape = tuple(shape)
         data = self.data[mask]
 
-        return COO(coords, data, shape=shape, has_duplicates=self.has_duplicates)
+        return COO(coords, data, shape=shape,
+                   has_duplicates=self.has_duplicates,
+                   sorted=self.sorted)
 
     def __str__(self):
-        return "<COO: shape=%s, dtype=%s, nnz=%d>" % (self.shape, self.dtype,
-                self.nnz)
+        return "<COO: shape=%s, dtype=%s, nnz=%d, sorted=%s, duplicates=%s>" % (
+                self.shape, self.dtype, self.nnz, self.sorted,
+                self.has_duplicates)
 
     __repr__ = __str__
 
@@ -272,6 +318,8 @@ class COO(object):
             a = getattr(a, method)(axis=0, **kwargs)
             if isinstance(a, scipy.sparse.spmatrix):
                 a = COO.from_scipy_sparse(a)
+                a.sorted = self.sorted
+                a.has_duplicates = False
             elif isinstance(a, np.matrix):
                 a = np.asarray(a)[0]
                 a = COO.from_numpy(a)
@@ -306,19 +354,18 @@ class COO(object):
         if axes == tuple(range(self.ndim)):
             return self
 
+        if self._cache is not None:
+            for ax, value in self._cache['transpose']:
+                if ax == axes:
+                    return value
+
         shape = tuple(self.shape[ax] for ax in axes)
         result = COO(self.coords[axes, :], self.data, shape,
-                     has_duplicates=self.has_duplicates)
+                     has_duplicates=self.has_duplicates,
+                     cache=self._cache is not None)
 
-        if axes == (1, 0):
-            try:
-                result._csc = self._csr.T
-            except AttributeError:
-                pass
-            try:
-                result._csr = self._csc.T
-            except AttributeError:
-                pass
+        if self._cache is not None:
+            self._cache['transpose'].append((axes, result))
         return result
 
     @property
@@ -343,22 +390,44 @@ class COO(object):
     def __numpy_ufunc__(self, ufunc, method, i, inputs, **kwargs):
         return NotImplemented
 
+    def linear_loc(self, signed=False):
+        """ Index location of every piece of data in a flattened array
+
+        This is used internally to check for duplicates, re-order, reshape,
+        etc..
+        """
+        n = reduce(operator.mul, self.shape)
+        if signed:
+            n = -n
+        dtype = np.min_scalar_type(n)
+        out = np.zeros(self.nnz, dtype=dtype)
+        tmp = np.zeros(self.nnz, dtype=dtype)
+        strides = 1
+        for i, d in enumerate(self.shape[::-1]):
+            # out += self.coords[-(i + 1), :].astype(dtype) * strides
+            np.multiply(self.coords[-(i + 1), :], strides, out=tmp, dtype=dtype)
+            np.add(tmp, out, out=out)
+            strides *= d
+        return out
+
     def reshape(self, shape):
         if self.shape == shape:
             return self
         if any(d == -1 for d in shape):
-            extra = np.uint64(np.prod(self.shape) /
-                              np.prod([d for d in shape if d != -1]))
+            extra = int(np.prod(self.shape) /
+                        np.prod([d for d in shape if d != -1]))
             shape = tuple([d if d != -1 else extra for d in shape])
+
         if self.shape == shape:
             return self
+
+        if self._cache is not None:
+            for sh, value in self._cache['reshape']:
+                if sh == shape:
+                    return value
+
         # TODO: this np.prod(self.shape) enforces a 2**64 limit to array size
-        dtype = np.min_scalar_type(np.prod(self.shape))
-        linear_loc = np.zeros(self.nnz, dtype=dtype)
-        strides = 1
-        for i, d in enumerate(self.shape[::-1]):
-            linear_loc += self.coords[-(i + 1), :].astype(dtype) * strides
-            strides *= d
+        linear_loc = self.linear_loc()
 
         coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max(shape)))
         strides = 1
@@ -366,7 +435,13 @@ class COO(object):
             coords[-(i + 1), :] = (linear_loc // strides) % d
             strides *= d
 
-        return COO(coords, self.data, shape, has_duplicates=self.has_duplicates)
+        result = COO(coords, self.data, shape,
+                     has_duplicates=self.has_duplicates,
+                     sorted=self.sorted, cache=self._cache is not None)
+
+        if self._cache is not None:
+            self._cache['reshape'].append((shape, result))
+        return result
 
     def to_scipy_sparse(self):
         assert self.ndim == 2
@@ -374,39 +449,75 @@ class COO(object):
                                           (self.coords[0],
                                            self.coords[1])),
                                           shape=self.shape)
-        result.has_canonical_format = not self.has_duplicates
+        result.has_canonical_format = (not self.has_duplicates and self.sorted)
         return result
 
-    def tocsr(self):
-        try:
-            return self._csr
-        except AttributeError:
-            pass
-        try:
-            self._csr = self._csc.tocsr()
-            return self._csr
-        except AttributeError:
-            pass
+    def _tocsr(self):
+        assert self.ndim == 2
 
-        coo = self.to_scipy_sparse()
-        csr = coo.tocsr()
-        self._csr = csr
+        # Pass 1: sum duplicates
+        self.sum_duplicates()
+
+        # Pass 2: sort indices
+        self.sort_indices()
+        row, col = self.coords
+
+        # Pass 3: count nonzeros in each row
+        indptr = np.zeros(self.shape[0] + 1, dtype=np.int64)
+        np.cumsum(np.bincount(row, minlength=self.shape[0]), out=indptr[1:])
+
+        return scipy.sparse.csr_matrix((self.data, col, indptr), shape=self.shape)
+
+    def tocsr(self):
+        if self._cache is not None:
+            try:
+                return self._csr
+            except AttributeError:
+                pass
+            try:
+                self._csr = self._csc.tocsr()
+                return self._csr
+            except AttributeError:
+                pass
+
+            self._csr = csr = self._tocsr()
+        else:
+            csr = self._tocsr()
         return csr
 
     def tocsc(self):
-        try:
-            return self._csc
-        except AttributeError:
-            pass
-        try:
-            self._csc = self._csr.tocsc()
-            return self._csc
-        except AttributeError:
-            pass
-        coo = self.to_scipy_sparse()
-        csc = coo.tocsc()
-        self._csc = csc
+        if self._cache is not None:
+            try:
+                return self._csc
+            except AttributeError:
+                pass
+            try:
+                self._csc = self._csr.tocsc()
+                return self._csc
+            except AttributeError:
+                pass
+
+            self._csc = csc = self.tocsr().tocsc()
+        else:
+            csc = self.tocsr().tocsc()
+
         return csc
+
+    def sort_indices(self):
+        if self.sorted:
+            return
+
+        linear = self.linear_loc(signed=True)
+
+        if (np.diff(linear) > 0).all():  # already sorted
+            self.sorted = True
+            return self
+
+        order = np.argsort(linear)
+        self.coords = self.coords[:, order]
+        self.data = self.data[order]
+        self.sorted = True
+        return self
 
     def sum_duplicates(self):
         # Inspired by scipy/sparse/coo.py::sum_duplicates
@@ -415,15 +526,21 @@ class COO(object):
             return self
         if not np.prod(self.coords.shape):
             return self
-        order = np.lexsort(self.coords)
-        coords = self.coords[:, order]
-        data = self.data[order]
-        unique_mask = (coords[:, 1:] != coords[:, :-1]).any(axis=0)
+
+        self.sort_indices()
+
+        linear = self.linear_loc()
+        unique_mask = np.diff(linear) != 0
+
+        if unique_mask.sum() == len(unique_mask):  # already unique
+            self.has_duplicates = False
+            return self
+
         unique_mask = np.append(True, unique_mask)
 
-        coords = coords[:, unique_mask]
+        coords = self.coords[:, unique_mask]
         (unique_inds,) = np.nonzero(unique_mask)
-        data = np.add.reduceat(data, unique_inds, dtype=data.dtype)
+        data = np.add.reduceat(self.data, unique_inds, dtype=self.data.dtype)
 
         self.data = data
         self.coords = coords
@@ -445,7 +562,8 @@ class COO(object):
         return self + other
 
     def __neg__(self):
-        return COO(self.coords, -self.data, self.shape, self.has_duplicates)
+        return COO(self.coords, -self.data, self.shape, self.has_duplicates,
+                   self.sorted)
 
     def __sub__(self, other):
         return self + (-other)
@@ -477,7 +595,9 @@ class COO(object):
             raise ValueError("Performing this operation would produce "
                     "a dense result: %s" % str(func))
         return COO(self.coords, func(self.data, *args, **kwargs),
-                   shape=self.shape, has_duplicates=self.has_duplicates)
+                   shape=self.shape,
+                   has_duplicates=self.has_duplicates,
+                   sorted=self.sorted)
 
     def elemwise_binary(self, func, other, *args, **kwargs):
         assert isinstance(other, COO)
@@ -690,6 +810,7 @@ def tensordot(a, b, axes=2):
             res = res.todense()
         else:
             res = COO.from_scipy_sparse(res)  # <--- modified
+            res.has_duplicates = False
     if isinstance(res, np.matrix):
         res = np.asarray(res)
     return res.reshape(olda + oldb)
@@ -762,7 +883,8 @@ def concatenate(arrays, axis=0):
     shape[axis] = dim
     has_duplicates = any(x.has_duplicates for x in arrays)
 
-    return COO(coords, data, shape=shape, has_duplicates=has_duplicates)
+    return COO(coords, data, shape=shape, has_duplicates=has_duplicates,
+               sorted=(axis == 0) and all(a.sorted for a in arrays))
 
 
 def stack(arrays, axis=0):
@@ -788,4 +910,5 @@ def stack(arrays, axis=0):
     coords.insert(axis, new)
     coords = np.stack(coords, axis=0)
 
-    return COO(coords, data, shape=shape, has_duplicates=has_duplicates)
+    return COO(coords, data, shape=shape, has_duplicates=has_duplicates,
+               sorted=(axis == 0) and all(a.sorted for a in arrays))

@@ -72,7 +72,7 @@ def test_large_reshape():
     col = row % m # np.random.randint(0, m, size=n, dtype=np.uint16)
     data = np.ones(n, dtype=np.uint8)
 
-    x = COO((data, (row, col)))
+    x = COO((data, (row, col)), sorted=True, has_duplicates=False)
 
     assert_eq(x, x.reshape(x.shape))
 
@@ -395,8 +395,8 @@ def test_scalar_exponentiation():
 
 def test_create_with_lists_of_tuples():
     L = [((0, 0, 0), 1),
-         ((1, 1, 1), 2),
          ((1, 2, 1), 1),
+         ((1, 1, 1), 2),
          ((1, 3, 2), 3)]
 
     s = COO(L)
@@ -440,20 +440,12 @@ def test_scipy_sparse_interface():
 
 def test_cache_csr():
     x = random_x((10, 5))
-    s = COO.from_numpy(x)
+    s = COO(x, cache=True)
 
     assert isinstance(s.tocsr(), scipy.sparse.csr_matrix)
     assert isinstance(s.tocsc(), scipy.sparse.csc_matrix)
     assert s.tocsr() is s.tocsr()
     assert s.tocsc() is s.tocsc()
-
-    st = s.T
-
-    assert_eq(st._csr, st)
-    assert_eq(st._csc, st)
-
-    assert isinstance(st.tocsr(), scipy.sparse.csr_matrix)
-    assert isinstance(st.tocsc(), scipy.sparse.csc_matrix)
 
 
 def test_empty_shape():
@@ -498,3 +490,18 @@ def test_add_many_sparse_arrays():
     x = COO({(1, 1): 1})
     y = sum([x] * 100)
     assert y.nnz < np.prod(y.shape)
+
+
+def test_caching():
+    x = COO({(10, 10, 10): 1})
+    assert x[:].reshape((100, 10)).transpose().tocsr() is not x[:].reshape((100, 10)).transpose().tocsr()
+
+    x = COO({(10, 10, 10): 1}, cache=True)
+    assert x[:].reshape((100, 10)).transpose().tocsr() is x[:].reshape((100, 10)).transpose().tocsr()
+
+    x = COO({(1, 1, 1, 1, 1, 1, 1, 2): 1}, cache=True)
+
+    for i in range(x.ndim):
+        x.reshape((1,) * i + (2,) + (1,) * (x.ndim - i - 1))
+
+    assert len(x._cache['reshape']) < 5
