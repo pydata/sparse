@@ -1,6 +1,5 @@
 import pytest
 
-import sys
 import random
 import operator
 import numpy as np
