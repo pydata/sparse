@@ -130,10 +130,6 @@ def test_dot():
     import operator
     a = random_x((3, 4, 5))
     b = random_x((5, 6))
-<<<<<<< HEAD
-    lol = [[1, 2, 3, 4, 5]]
-=======
->>>>>>> 8882fce... Cleanup on review comments for PR#16
 
     sa = COO.from_numpy(a)
     sb = COO.from_numpy(b)

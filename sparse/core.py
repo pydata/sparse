@@ -375,7 +375,6 @@ class COO(object):
     def dot(self, other):
         return dot(self, other)
 
-<<<<<<< HEAD
     def linear_loc(self, signed=False):
         """ Index location of every piece of data in a flattened array
 
@@ -395,7 +394,7 @@ class COO(object):
             np.add(tmp, out, out=out)
             strides *= d
         return out
-=======
+
     def __matmul__(self, other):
         try:
             return dot(self, other)
@@ -410,7 +409,6 @@ class COO(object):
 
     def __numpy_ufunc__(self, ufunc, method, i, inputs, **kwargs):
         return NotImplemented
->>>>>>> 8882fce... Cleanup on review comments for PR#16
 
     def reshape(self, shape):
         if self.shape == shape:
