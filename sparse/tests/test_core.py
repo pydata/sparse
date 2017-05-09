@@ -127,6 +127,7 @@ def test_tensordot(a_shape, b_shape, axes):
 
 
 def test_dot():
+    import operator
     a = random_x((3, 4, 5))
     b = random_x((5, 6))
 
@@ -135,6 +136,33 @@ def test_dot():
 
     assert_eq(a.dot(b), sa.dot(sb))
     assert_eq(np.dot(a, b), sparse.dot(sa, sb))
+
+    if hasattr(operator, 'matmul'):
+        # Basic equivalences
+        assert_eq(eval("a @ b"), eval("sa @ sb"))
+        assert_eq(eval("sa @ sb"), sparse.dot(sa, sb))
+
+        # Test that SOO's and np.array's combine correctly
+        assert_eq(eval("a @ sb"), eval("sa @ b"))
+
+
+@pytest.mark.xfail
+def test_dot_nocoercion():
+    a = random_x((3, 4, 5))
+    b = random_x((5, 6))
+
+    la = a.tolist()
+    lb = b.tolist()
+    la, lb          # silencing flake8
+
+    sa = COO.from_numpy(a)
+    sb = COO.from_numpy(b)
+    sa, sb          # silencing flake8
+
+    if hasattr(operator, 'matmul'):
+        # Operations with naive collection (list)
+        assert_eq(eval("la @ b"), eval("la @ sb"))
+        assert_eq(eval("a @ lb"), eval("sa @ lb"))
 
 
 @pytest.mark.parametrize('func', [np.expm1, np.log1p, np.sin, np.tan,
