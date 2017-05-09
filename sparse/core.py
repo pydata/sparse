@@ -375,6 +375,21 @@ class COO(object):
     def dot(self, other):
         return dot(self, other)
 
+    def __matmul__(self, other):
+        try:
+            return dot(self, other)
+        except NotImplementedError:
+            return NotImplemented
+
+    def __rmatmul__(self, other):
+        try:
+            return dot(other, self)
+        except NotImplementedError:
+            return NotImplemented
+
+    def __numpy_ufunc__(self, ufunc, method, i, inputs, **kwargs):
+        return NotImplemented
+
     def linear_loc(self, signed=False):
         """ Index location of every piece of data in a flattened array
 
