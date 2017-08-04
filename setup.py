@@ -5,7 +5,7 @@ from setuptools import setup
 
 
 setup(name='sparse',
-      version='0.1.0',
+      version='0.1.1',
       description='Sparse',
       url='http://github.com/mrocklin/sparse/',
       maintainer='Matthew Rocklin',
