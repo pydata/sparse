@@ -511,6 +511,6 @@ def test___setitem__():
         x = random_x((2, 3, 4))
         xx = COO.from_numpy(x)
         ranNumber = random.randint(-1, 1)
-        x[1,2,3] = ranNumber
-        xx[1,2,3] = ranNumber
+        x[1, 2, 3] = ranNumber
+        xx[1, 2, 3] = ranNumber
         assert_eq(x, xx)
