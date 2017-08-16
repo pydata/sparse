@@ -282,6 +282,55 @@ class COO(object):
                    has_duplicates=self.has_duplicates,
                    sorted=self.sorted)
 
+    def __setitem__(self, index, value):
+        """
+        Sets the single field at index to the given value.
+        Parameters
+        ----------
+        index : tuple
+            The coordinates of the field to write the new value to. Must be a tuple.
+        value
+            the value to write
+        """
+
+        # TODO: check input
+        # search for index in coords and get it's position if present
+        # TODO: speedup by not checking every possible position in every dimension
+        coord_ids = None
+        for i, ind in enumerate(index):
+            # keep only the positions that occure in every dimension
+            coord_ids_i  =  np.where(self.coords[i] == ind)[0]
+            if coord_ids is not None:
+                coord_ids = np.intersect1d(coord_ids, coord_ids_i)
+            else:
+                coord_ids = coord_ids_i
+
+        # found an value for index, replace it
+        if len(coord_ids) == 1:
+            # replace value
+            if(value != 0):
+                coords_id = coord_ids[0]
+                self.data[coords_id] = value
+            # TODO: test writing zeros
+            # remove entry that should be set to zero
+            else:
+                self.coords = np.delete(self.coords, coord_ids[0], 1)
+                self.data = np.delete(self.data, coord_ids[0], 0)
+
+
+        # found no value for index, append a new non-zero value
+        elif len(coord_ids) == 0:
+            # only take action if a non-zero value shoud be set
+            #  this adds a new value
+            if(value != 0):
+                addIndex = [[index[i]] for i in range(len(index))]
+                self.coords = np.concatenate((self.coords, addIndex), axis=1)
+                self.data = np.concatenate((self.data, [value]))
+                self.sorted = False
+
+        else:
+            raise RuntimeError("COO is corrupt. There are multiple values assigned for "+index+".")
+
     def __str__(self):
         return "<COO: shape=%s, dtype=%s, nnz=%d, sorted=%s, duplicates=%s>" % (
                 self.shape, self.dtype, self.nnz, self.sorted,
