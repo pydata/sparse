@@ -567,9 +567,9 @@ def test_reshape_with__setitem__():
     shape = (2,) * dims
     x = COO(coords=coords, data=data, shape=shape)
     new_shape1 = (4,) * dims
-    y = x.reshape(shape=new_shape1)
+    x = x.reshape(shape=new_shape1)
 
-    y[1, 2, 3] = True
+    x[1, 2, 3] = True
 
     new_shape2 = (8,) * dims
-    z = y.reshape(shape=new_shape2)
+    x = x.reshape(shape=new_shape2)
