@@ -287,22 +287,49 @@ class COO(object):
         Sets the single field at index to the given value.
         Parameters
         ----------
-        index : tuple
-            The coordinates of the field to write the new value to. Must be a tuple.
+        index : tuple of int
+            The coordinates of the field to write the new value to. Slices are not jet supported.
         value
             the value to write
         """
-        # TODO: check input
-        # search for index in coords and get it's position if present
+        # check input
+        # convert single valued inputs to tuples
+        if not isinstance(index, tuple):
+            index = (index,)
+        # TODO: remove this for loop when slices are supported
+        for ind in index:
+            if isinstance(ind, slice):
+                raise NotImplementedError("Slices are not jet supported for setting values.")
+        # check that all entries are Integral or slice
+        for ind in index:
+            if not isinstance(ind, numbers.Integral) and not isinstance(ind, slice):
+                raise ValueError("no valid coordinate.")
+        # check that the index has as many entries as the COO dimensions
+        if len(index) != self.ndim:
+            raise ValueError("Coordinates don't match the dimension " + str(self.ndim) + "of COO.")
+        # check that the index entries are in range of the dimension's ranges
+        for dim, ind in enumerate(index):
+            if isinstance(ind, numbers.Integral):
+                if not 0 <= ind < self.shape[dim]:
+                    raise ValueError(
+                        "Coordinate " + str(ind) + "for dimension " + str(dim) + " exceeds dimensions range of" + str(
+                            self.shape[dim]) + ".")
+
+        # convert to coords dtype
+        index = np.asarray(index, dtype=self.coords.dtype)
+
         # TODO: speedup by not checking every possible position in every dimension
+        # search for index in coords and get it's position in coords if present
         coord_ids = None
         for i, ind in enumerate(index):
-            # keep only the positions that occure in every dimension
-            coord_ids_i = np.asarray(np.where(self.coords[i] == ind)[0],dtype=self.coords.dtype)
+            # keep only the positions that occur in every dimension
+            coord_ids_i = np.where(self.coords[i] == ind)[0]
             if coord_ids is not None:
-                coord_ids = np.asarray(np.intersect1d(coord_ids, coord_ids_i),dtype=self.coords.dtype)
+                coord_ids = np.intersect1d(coord_ids, coord_ids_i)
             else:
                 coord_ids = coord_ids_i
+        # convert to self.coords dtype
+        coord_ids = np.asarray(coord_ids, dtype=self.coords.dtype)
 
         # found an value for index, replace it
         if len(coord_ids) == 1:
@@ -313,17 +340,18 @@ class COO(object):
             # TODO: test writing zeros
             # remove entry that should be set to zero
             else:
-                self.coords = np.delete(self.coords, coord_ids[0], 1) #keeps dtype type
+                self.coords = np.delete(self.coords, coord_ids[0], 1)  # keeps dtype type
                 self.data = np.delete(self.data, coord_ids[0], 0)
 
         # found no value for index, append a new non-zero value
         elif len(coord_ids) == 0:
-            # only take action if a non-zero value shoud be set
-            #  this adds a new value
+            # only take action if a non-zero value should be set
+            # this adds a new value
             if (value != 0):
-                addIndex = np.asarray([[index[i]] for i in range(len(index))],dtype=self.coords.dtype)
+                addIndex = np.asarray([[index[i]] for i in range(len(index))])  # is already self.coords.dtype
                 self.coords = np.concatenate((self.coords, addIndex), axis=1)
                 self.data = np.concatenate((self.data, [value]))
+                # TODO: add support to insert preserving sort
                 self.sorted = False
 
         else:

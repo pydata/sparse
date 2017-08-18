@@ -506,6 +506,49 @@ def test_caching():
     assert len(x._cache['reshape']) < 5
 
 
+def test___setitem__input1():
+    # assign to single dimensional
+    sd = random_x((5,))
+    ssdd = COO.from_numpy(sd)
+    sd_val = random.randint(-1, 1)
+    sd[3] = sd_val
+    ssdd[3] = sd_val
+    assert_eq(sd, ssdd)
+
+
+def test___setitem__input2():
+    with pytest.raises(NotImplementedError):
+        # TODO: remove this for loop when slices are supported
+        # slices sould raise an exception
+        sl = random_x((5,))
+        ssll = COO.from_numpy(sl)
+        ssll[0:1] = [1, 1]
+
+
+def test___setitem__input3():
+    with pytest.raises(ValueError):
+        # none numbers.Integral and slices should raise an exception
+        wv = random_x((5, 5))
+        wwvv = COO.from_numpy(wv)
+        wwvv["a"] = 3
+
+
+def test___setitem__input4():
+    with pytest.raises(ValueError):
+        # indices of wrong length should raise an exception
+        wl = random_x((5, 5))
+        wwll = COO.from_numpy(wl)
+        wwll[1] = 3
+
+
+def test___setitem__input5():
+    with pytest.raises(ValueError):
+        # indices with entries out of their dimensions range should raise an exception
+        dr = random_x((5, 5))
+        ddrr = COO.from_numpy(dr)
+        ddrr[10] = 3
+
+
 def test___setitem__():
     for i in range(100):
         x = random_x((2, 3, 4))
@@ -515,30 +558,18 @@ def test___setitem__():
         xx[1, 2, 3] = ranNumber
         assert_eq(x, xx)
 
-def test_reshape_ok():
+
+def test_reshape_with__setitem__():
+    # exception is thrown if COO.coords.dtype is not minimal, see: COO.linear_loc
     dims = 3
-    coords = np.asarray([[0],[1],[1]])
-    data = np.asarray([True], dtype=bool)
+    coords = np.asarray([])
+    data = np.asarray([], dtype=bool)
     shape = (2,) * dims
     x = COO(coords=coords, data=data, shape=shape)
     new_shape1 = (4,) * dims
     y = x.reshape(shape=new_shape1)
 
-    new_shape2 = (8,) * dims
-    z = y.reshape(shape=new_shape2)
-    print("")
-
-def test_reshape():
-    dims = 3
-    coords = np.asarray([])
-    data =  np.asarray([],dtype=bool)
-    shape = (2,)*dims
-    x = COO(coords=coords,data=data,shape=shape)
-    new_shape1 = (4,)*dims
-    y = x.reshape(shape=new_shape1)
-
-    y[1,2,3] = True
+    y[1, 2, 3] = True
 
     new_shape2 = (8,) * dims
     z = y.reshape(shape=new_shape2)
-    print("")
