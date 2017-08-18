@@ -292,7 +292,6 @@ class COO(object):
         value
             the value to write
         """
-        # TODO: what if coordinates are too big for dtype of coords?
         # TODO: check input
         # search for index in coords and get it's position if present
         # TODO: speedup by not checking every possible position in every dimension
