@@ -514,3 +514,31 @@ def test___setitem__():
         x[1, 2, 3] = ranNumber
         xx[1, 2, 3] = ranNumber
         assert_eq(x, xx)
+
+def test_reshape_ok():
+    dims = 3
+    coords = np.asarray([[0],[1],[1]])
+    data = np.asarray([True], dtype=bool)
+    shape = (2,) * dims
+    x = COO(coords=coords, data=data, shape=shape)
+    new_shape1 = (4,) * dims
+    y = x.reshape(shape=new_shape1)
+
+    new_shape2 = (8,) * dims
+    z = y.reshape(shape=new_shape2)
+    print("")
+
+def test_reshape():
+    dims = 3
+    coords = np.asarray([])
+    data =  np.asarray([],dtype=bool)
+    shape = (2,)*dims
+    x = COO(coords=coords,data=data,shape=shape)
+    new_shape1 = (4,)*dims
+    y = x.reshape(shape=new_shape1)
+
+    y[1,2,3] = True
+
+    new_shape2 = (8,) * dims
+    z = y.reshape(shape=new_shape2)
+    print("")

@@ -292,16 +292,16 @@ class COO(object):
         value
             the value to write
         """
-
+        # TODO: what if coordinates are too big for dtype of coords?
         # TODO: check input
         # search for index in coords and get it's position if present
         # TODO: speedup by not checking every possible position in every dimension
         coord_ids = None
         for i, ind in enumerate(index):
             # keep only the positions that occure in every dimension
-            coord_ids_i = np.where(self.coords[i] == ind)[0]
+            coord_ids_i = np.asarray(np.where(self.coords[i] == ind)[0],dtype=self.coords.dtype)
             if coord_ids is not None:
-                coord_ids = np.intersect1d(coord_ids, coord_ids_i)
+                coord_ids = np.asarray(np.intersect1d(coord_ids, coord_ids_i),dtype=self.coords.dtype)
             else:
                 coord_ids = coord_ids_i
 
@@ -314,7 +314,7 @@ class COO(object):
             # TODO: test writing zeros
             # remove entry that should be set to zero
             else:
-                self.coords = np.delete(self.coords, coord_ids[0], 1)
+                self.coords = np.delete(self.coords, coord_ids[0], 1) #keeps dtype type
                 self.data = np.delete(self.data, coord_ids[0], 0)
 
         # found no value for index, append a new non-zero value
@@ -322,7 +322,7 @@ class COO(object):
             # only take action if a non-zero value shoud be set
             #  this adds a new value
             if (value != 0):
-                addIndex = [[index[i]] for i in range(len(index))]
+                addIndex = np.asarray([[index[i]] for i in range(len(index))],dtype=self.coords.dtype)
                 self.coords = np.concatenate((self.coords, addIndex), axis=1)
                 self.data = np.concatenate((self.data, [value]))
                 self.sorted = False
