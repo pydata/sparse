@@ -282,6 +282,54 @@ class COO(object):
                    has_duplicates=self.has_duplicates,
                    sorted=self.sorted)
 
+    def __setitem__(self, index, value):
+        """
+        Sets the single field at index to the given value.
+        Parameters
+        ----------
+        index : tuple
+            The coordinates of the field to write the new value to. Must be a tuple.
+        value
+            the value to write
+        """
+        # TODO: what if coordinates are too big for dtype of coords?
+        # TODO: check input
+        # search for index in coords and get it's position if present
+        # TODO: speedup by not checking every possible position in every dimension
+        coord_ids = None
+        for i, ind in enumerate(index):
+            # keep only the positions that occure in every dimension
+            coord_ids_i = np.asarray(np.where(self.coords[i] == ind)[0],dtype=self.coords.dtype)
+            if coord_ids is not None:
+                coord_ids = np.asarray(np.intersect1d(coord_ids, coord_ids_i),dtype=self.coords.dtype)
+            else:
+                coord_ids = coord_ids_i
+
+        # found an value for index, replace it
+        if len(coord_ids) == 1:
+            # replace value
+            if (value != 0):
+                coords_id = coord_ids[0]
+                self.data[coords_id] = value
+            # TODO: test writing zeros
+            # remove entry that should be set to zero
+            else:
+                self.coords = np.delete(self.coords, coord_ids[0], 1) #keeps dtype type
+                self.data = np.delete(self.data, coord_ids[0], 0)
+
+        # found no value for index, append a new non-zero value
+        elif len(coord_ids) == 0:
+            # only take action if a non-zero value shoud be set
+            #  this adds a new value
+            if (value != 0):
+                addIndex = np.asarray([[index[i]] for i in range(len(index))],dtype=self.coords.dtype)
+                self.coords = np.concatenate((self.coords, addIndex), axis=1)
+                self.data = np.concatenate((self.data, [value]))
+                self.sorted = False
+
+        else:
+            raise RuntimeError("COO is corrupt. There are multiple values assigned for " + index + ".")
+
     def __str__(self):
         return "<COO: shape=%s, dtype=%s, nnz=%d, sorted=%s, duplicates=%s>" % (
                 self.shape, self.dtype, self.nnz, self.sorted,
@@ -410,7 +458,21 @@ class COO(object):
             strides *= d
         return out
 
-    def reshape(self, shape):
+    def reshape(self, shape, scale=True):
+        """
+        Gives a new shape to an COO without changing its data.
+        Parameters
+        ----------
+        shape : int or tuple of ints
+            The new shape should be compatible with the original shape. If an integer, then the result will be a 1-D array of that length. One shape dimension can be -1. In this case, the value is inferred from the length of the array and remaining dimensions.
+        scale : bool, optional
+            If False (default) coordinates of values are be scaled with the shape. Else if True the coordinates stay the same.
+
+        Returns
+        -------
+        COO
+            new reshaped COO
+        """
         if self.shape == shape:
             return self
         if any(d == -1 for d in shape):
@@ -428,12 +490,14 @@ class COO(object):
 
         # TODO: this np.prod(self.shape) enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
-
-        coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max(shape)))
-        strides = 1
-        for i, d in enumerate(shape[::-1]):
-            coords[-(i + 1), :] = (linear_loc // strides) % d
-            strides *= d
+        if scale:
+            coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max(shape)))
+            strides = 1
+            for i, d in enumerate(shape[::-1]):
+                coords[-(i + 1), :] = (linear_loc // strides) % d
+                strides *= d
+        else:
+            coords = self.coords
 
         result = COO(coords, self.data, shape,
                      has_duplicates=self.has_duplicates,
