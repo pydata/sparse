@@ -200,6 +200,23 @@ def test_elemwise_binary_empty():
         assert z.coords.shape == (2, 0)
         assert z.data.shape == (0,)
 
+def test_elemwise_binary_OR():
+    size = 3
+    dimension = 3
+
+    coords1 = np.ndarray(shape=(0,))
+    data1 = np.ndarray(shape=(0,), dtype=bool)
+    tensor1 = COO(data=data1, coords=coords1,shape=((size,) * dimension))
+
+    coords2 = np.asarray(a=[[0], [1], [2]])
+    data2 = np.asarray(a=[True], dtype=bool)
+    tensor2 = COO(coords=coords2, data=data2, shape=((size,) * dimension))
+
+    resultTensor = tensor1.elemwise_binary(func=operator.or_, other=tensor2)
+    print('\nresultTensor = emptyTensor | oneElementTensor')
+    print(resultTensor.todense())
+    print("")
+
 
 def test_gt():
     x = random_x((2, 3, 4))
