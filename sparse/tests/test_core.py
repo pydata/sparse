@@ -19,7 +19,7 @@ y = COO.from_numpy(x)
 
 
 def random_x(shape, dtype=float):
-    x = np.zeros(shape=shape, dtype=float)
+    x = np.zeros(shape=shape, dtype=dtype)
     for i in range(max(5, np.prod(x.shape) // 10)):
         x[tuple(random.randint(0, d - 1) for d in x.shape)] = random.randint(0, 100)
     return x
@@ -416,7 +416,7 @@ def test_scalar_exponentiation():
         assert_eq(x ** -1, a ** -1)
 
 
-def test_bit_and():
+def test_bool_and():
     x = random_x_bool((2, 3, 4))
     xx = COO.from_numpy(x)
 
@@ -426,7 +426,17 @@ def test_bit_and():
     assert_eq(x & y, xx & yy)
 
 
-def test_bit_or():
+def test_int_and():
+    x = random_x((2, 3, 4), dtype=int)
+    xx = COO.from_numpy(x)
+
+    y = random_x((2, 3, 4), dtype=int)
+    yy = COO.from_numpy(y)
+
+    assert_eq((x & y), (xx & yy))
+
+
+def test_bool_or():
     x = random_x_bool((2, 3, 4))
     xx = COO.from_numpy(x)
 
@@ -436,11 +446,31 @@ def test_bit_or():
     assert_eq(x | y, xx | yy)
 
 
-def test_bit_xor():
+def test_int_or():
+    x = random_x((2, 3, 4), dtype=int)
+    xx = COO.from_numpy(x)
+
+    y = random_x((2, 3, 4), dtype=int)
+    yy = COO.from_numpy(y)
+
+    assert_eq(x | y, xx | yy)
+
+
+def test_bool_xor():
     x = random_x_bool((2, 3, 4))
     xx = COO.from_numpy(x)
 
     y = random_x_bool((2, 3, 4))
+    yy = COO.from_numpy(y)
+
+    assert_eq(x ^ y, xx ^ yy)
+
+
+def test_int_xor():
+    x = random_x((2, 3, 4), dtype=int)
+    xx = COO.from_numpy(x)
+
+    y = random_x((2, 3, 4), dtype=int)
     yy = COO.from_numpy(y)
 
     assert_eq(x ^ y, xx ^ yy)
