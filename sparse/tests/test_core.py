@@ -25,6 +25,13 @@ def random_x(shape, dtype=float):
     return x
 
 
+def random_x_bool(shape):
+    x = np.zeros(shape=shape, dtype=bool)
+    for i in range(max(5, np.prod(x.shape) // 10)):
+        x[tuple(random.randint(0, d - 1) for d in x.shape)] = bool(random.randint(0, 1))
+    return x
+
+
 @pytest.mark.parametrize('reduction,kwargs', [
     ('max', {}),
     ('sum', {}),
@@ -200,22 +207,22 @@ def test_elemwise_binary_empty():
         assert z.coords.shape == (2, 0)
         assert z.data.shape == (0,)
 
+
 def test_elemwise_binary_OR():
     size = 3
     dimension = 3
+    shape = ((size,) * dimension)
 
-    coords1 = np.ndarray(shape=(0,))
-    data1 = np.ndarray(shape=(0,), dtype=bool)
-    tensor1 = COO(data=data1, coords=coords1,shape=((size,) * dimension))
+    x = np.zeros(shape=shape,dtype=bool)
+    xx = COO.from_numpy(x)
 
-    coords2 = np.asarray(a=[[0], [1], [2]])
-    data2 = np.asarray(a=[True], dtype=bool)
-    tensor2 = COO(coords=coords2, data=data2, shape=((size,) * dimension))
+    y = np.zeros(shape=shape,dtype=bool)
+    y[0,1,2] = True
+    yy = COO.from_numpy(y)
 
-    resultTensor = tensor1.elemwise_binary(func=operator.or_, other=tensor2)
-    print('\nresultTensor = emptyTensor | oneElementTensor')
-    print(resultTensor.todense())
-    print("")
+    z = x | y
+    zz = xx.elemwise_binary(func=operator.or_, other=yy)
+    assert_eq(z,zz)
 
 
 def test_gt():
@@ -407,6 +414,36 @@ def test_scalar_exponentiation():
 
     with pytest.raises((ValueError, ZeroDivisionError)):
         assert_eq(x ** -1, a ** -1)
+
+
+def test_bit_and():
+    x = random_x_bool((2, 3, 4))
+    xx = COO.from_numpy(x)
+
+    y = random_x_bool((2, 3, 4))
+    yy = COO.from_numpy(y)
+
+    assert_eq(x & y, xx & yy)
+
+
+def test_bit_or():
+    x = random_x_bool((2, 3, 4))
+    xx = COO.from_numpy(x)
+
+    y = random_x_bool((2, 3, 4))
+    yy = COO.from_numpy(y)
+
+    assert_eq(x | y, xx | yy)
+
+
+def test_bit_xor():
+    x = random_x_bool((2, 3, 4))
+    xx = COO.from_numpy(x)
+
+    y = random_x_bool((2, 3, 4))
+    yy = COO.from_numpy(y)
+
+    assert_eq(x ^ y, xx ^ yy)
 
 
 def test_create_with_lists_of_tuples():

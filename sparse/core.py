@@ -8,7 +8,6 @@ import operator
 import numpy as np
 import scipy.sparse
 
-
 try:  # Windows compatibility
     int = long
 except NameError:
@@ -589,6 +588,15 @@ class COO(object):
 
     def __pow__(self, other):
         return self.elemwise(operator.pow, other)
+
+    def __and__(self, other):
+        return self.elemwise_binary(operator.and_, other)
+
+    def __or__(self, other):
+        return self.elemwise_binary(operator.or_, other)
+
+    def __xor__(self, other):
+        return self.elemwise_binary(operator.xor, other)
 
     def elemwise(self, func, *args, **kwargs):
         if kwargs.pop('check', True) and func(0, *args, **kwargs) != 0:
