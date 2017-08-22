@@ -84,11 +84,12 @@ def test_reshape_same():
 
 
 def test_reshape_without_scale():
-    x = np.asarray([[0, 1, 0],
-                   [0, 0, 0]])
+    x = np.asarray([[0, 0, 0],
+                    [0, 1, 0]])
     xx = COO.from_numpy(x)
-    xx = xx.reshape(shape=(6,), scale=False)
-    assert xx[0,1] == 1
+    woxx = xx.reshape(shape=(4, 12), scale=False)
+    assert_eq(woxx[[1], [1]], np.asarray([[1]]))
+    assert_eq(woxx[[0], [4]], np.asarray([[0]]))
 
 
 def test_to_scipy_sparse():
