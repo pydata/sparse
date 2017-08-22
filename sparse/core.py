@@ -648,9 +648,9 @@ class COO(object):
         data = np.concatenate([func(self_data[matched_self],
                                     other_data[matched_other],
                                     *args, **kwargs),
-                               func(self_data[unmatched_self], 0,
+                               func(self_data[unmatched_self], False,
                                     *args, **kwargs),
-                               func(0, other_data[unmatched_other],
+                               func(False, other_data[unmatched_other],
                                     *args, **kwargs)])
         coords = np.concatenate([self_coords[matched_self],
                                  self_coords[unmatched_self],
