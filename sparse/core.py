@@ -484,7 +484,24 @@ class COO(object):
             strides *= d
         return out
 
-    def reshape(self, shape):
+    def reshape(self, shape, scale=True):
+        """
+        Gives a new shape to an COO without changing its data.
+        Parameters
+        ----------
+        shape : int or tuple of ints
+            The new shape should be compatible with the original shape. If an integer, then the result will be a 1-D
+            array of that length. One shape dimension can be -1. In this case, the value is inferred from the length of
+             the array and remaining dimensions.
+        scale : bool, optional
+            If False (default) coordinates of values are be scaled with the shape. Else if True the coordinates stay
+            the same.
+
+        Returns
+        -------
+        COO
+            new reshaped COO
+        """
         if self.shape == shape:
             return self
         if any(d == -1 for d in shape):
@@ -502,12 +519,14 @@ class COO(object):
 
         # TODO: this np.prod(self.shape) enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
-
-        coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max(shape)))
-        strides = 1
-        for i, d in enumerate(shape[::-1]):
-            coords[-(i + 1), :] = (linear_loc // strides) % d
-            strides *= d
+        if scale:
+            coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max(shape)))
+            strides = 1
+            for i, d in enumerate(shape[::-1]):
+                coords[-(i + 1), :] = (linear_loc // strides) % d
+                strides *= d
+        else:
+            coords = self.coords
 
         result = COO(coords, self.data, shape,
                      has_duplicates=self.has_duplicates,

@@ -90,6 +90,14 @@ def test_reshape_same():
     assert s.reshape(s.shape) is s
 
 
+def test_reshape_without_scale():
+    x = np.asarray([[0, 1, 0],
+                   [0, 0, 0]])
+    xx = COO.from_numpy(x)
+    xx = xx.reshape(shape=(2,6), scale=False)
+    assert (xx[0,1] == 1)
+
+
 def test_to_scipy_sparse():
     x = random_x((3, 5))
     s = COO.from_numpy(x)
@@ -611,19 +619,3 @@ def test___setitem__():
         x[1, 2, 3] = ranNumber
         xx[1, 2, 3] = ranNumber
         assert_eq(x, xx)
-
-
-def test_reshape_with__setitem__():
-    # exception is thrown if COO.coords.dtype is not minimal, see: COO.linear_loc
-    dims = 3
-    coords = np.asarray([])
-    data = np.asarray([], dtype=bool)
-    shape = (2,) * dims
-    x = COO(coords=coords, data=data, shape=shape)
-    new_shape1 = (4,) * dims
-    x = x.reshape(shape=new_shape1)
-
-    x[1, 2, 3] = True
-
-    new_shape2 = (8,) * dims
-    x = x.reshape(shape=new_shape2)
