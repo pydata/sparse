@@ -8,7 +8,6 @@ import operator
 import numpy as np
 import scipy.sparse
 
-
 try:  # Windows compatibility
     int = long
 except NameError:
@@ -485,7 +484,24 @@ class COO(object):
             strides *= d
         return out
 
-    def reshape(self, shape):
+    def reshape(self, shape, scale=True):
+        """
+        Gives a new shape to an COO without changing its data.
+        Parameters
+        ----------
+        shape : int or tuple of ints
+            The new shape should be compatible with the original shape. If an integer, then the result will be a 1-D
+            array of that length. One shape dimension can be -1. In this case, the value is inferred from the length of
+             the array and remaining dimensions.
+        scale : bool, optional
+            If False (default) coordinates of values are be scaled with the shape. Else if True the coordinates stay
+            the same.
+
+        Returns
+        -------
+        COO
+            new reshaped COO
+        """
         if self.shape == shape:
             return self
         if any(d == -1 for d in shape):
@@ -503,12 +519,14 @@ class COO(object):
 
         # TODO: this np.prod(self.shape) enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
-
-        coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max(shape)))
-        strides = 1
-        for i, d in enumerate(shape[::-1]):
-            coords[-(i + 1), :] = (linear_loc // strides) % d
-            strides *= d
+        if scale:
+            coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max(shape)))
+            strides = 1
+            for i, d in enumerate(shape[::-1]):
+                coords[-(i + 1), :] = (linear_loc // strides) % d
+                strides *= d
+        else:
+            coords = self.coords
 
         result = COO(coords, self.data, shape,
                      has_duplicates=self.has_duplicates,
@@ -665,6 +683,15 @@ class COO(object):
     def __pow__(self, other):
         return self.elemwise(operator.pow, other)
 
+    def __and__(self, other):
+        return self.elemwise_binary(operator.and_, other)
+
+    def __or__(self, other):
+        return self.elemwise_binary(operator.or_, other)
+
+    def __xor__(self, other):
+        return self.elemwise_binary(operator.xor, other)
+
     def elemwise(self, func, *args, **kwargs):
         if kwargs.pop('check', True) and func(0, *args, **kwargs) != 0:
             raise ValueError("Performing this operation would produce "
@@ -686,34 +713,46 @@ class COO(object):
 
         # Sort self.coords in lexographical order using record arrays
         self_coords = np.rec.fromarrays(self.coords)
-        i = np.argsort(self_coords)
-        self_coords = self_coords[i]
-        self_data = self.data[i]
+        self_sort_order = np.argsort(self_coords)
+        self_coords = self_coords[self_sort_order]
+        self_data = self.data[self_sort_order]
 
-        # Convert other.coords to a record array
+        # Sort other.coords in lexographical order using record arrays
         other_coords = np.rec.fromarrays(other.coords)
-        other_data = other.data
+        other_sort_order = np.argsort(other_coords)
+        other_coords = other_coords[other_sort_order]
+        other_data = other.data[other_sort_order]
 
         # Find matches between self.coords and other.coords
-        j = np.searchsorted(self_coords, other_coords)
-        if len(self_coords):
-            matched_other = (other_coords == self_coords[j % len(self_coords)])
-        else:
-            matched_other = np.zeros(shape=(0,), dtype=bool)
-        matched_self = j[matched_other]
+        # TODO: implement a modified exponential search to find next fitting coordinate faster
+        matched_self = np.zeros(shape=(len(self_coords),), dtype=bool)
+        matched_other = np.zeros(shape=(len(other_coords),), dtype=bool)
+        i = 0
+        j = 0
+        while (i < len(self_coords)) & (j < len(other_coords)):
+            self_coord = tuple(self_coords[i])
+            other_coord = tuple(other_coords[j])
+            if self_coord == other_coord:
+                matched_self[i] = True
+                matched_other[j] = True
+                i += 1
+                j += 1
+            elif self_coord < other_coord:
+                i += 1
+            else:
+                j += 1
 
         # Locate coordinates without a match
+        unmatched_self = ~matched_self
         unmatched_other = ~matched_other
-        unmatched_self = np.ones(len(self_coords), dtype=bool)
-        unmatched_self[matched_self] = 0
 
         # Concatenate matches and mismatches
         data = np.concatenate([func(self_data[matched_self],
                                     other_data[matched_other],
                                     *args, **kwargs),
-                               func(self_data[unmatched_self], 0,
+                               func(self_data[unmatched_self], False,
                                     *args, **kwargs),
-                               func(0, other_data[unmatched_other],
+                               func(False, other_data[unmatched_other],
                                     *args, **kwargs)])
         coords = np.concatenate([self_coords[matched_self],
                                  self_coords[unmatched_self],
