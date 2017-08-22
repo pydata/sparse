@@ -25,6 +25,13 @@ def random_x(shape, dtype=float):
     return x
 
 
+def random_x_bool(shape):
+    x = np.zeros(shape=shape, dtype=bool)
+    for i in range(max(5, np.prod(x.shape) // 10)):
+        x[tuple(random.randint(0, d - 1) for d in x.shape)] = bool(random.randint(0, 1))
+    return x
+
+
 @pytest.mark.parametrize('reduction,kwargs', [
     ('max', {}),
     ('sum', {}),
@@ -81,6 +88,15 @@ def test_reshape_same():
     s = COO.from_numpy(x)
 
     assert s.reshape(s.shape) is s
+
+
+def test_reshape_without_scale():
+    x = np.asarray([[0, 0, 0],
+                    [0, 1, 0]])
+    xx = COO.from_numpy(x)
+    woxx = xx.reshape(shape=(4, 12), scale=False)
+    assert_eq(woxx[[1], [1]], np.asarray([[1]]))
+    assert_eq(woxx[[0], [4]], np.asarray([[0]]))
 
 
 def test_to_scipy_sparse():
@@ -199,6 +215,23 @@ def test_elemwise_binary_empty():
         assert z.nnz == 0
         assert z.coords.shape == (2, 0)
         assert z.data.shape == (0,)
+
+
+def test_elemwise_binary_OR():
+    size = 3
+    dimension = 3
+    shape = ((size,) * dimension)
+
+    x = np.zeros(shape=shape,dtype=bool)
+    xx = COO.from_numpy(x)
+
+    y = np.zeros(shape=shape,dtype=bool)
+    y[0,1,2] = True
+    yy = COO.from_numpy(y)
+
+    z = x | y
+    zz = xx.elemwise_binary(func=operator.or_, other=yy)
+    assert_eq(z,zz)
 
 
 def test_gt():
@@ -392,6 +425,36 @@ def test_scalar_exponentiation():
         assert_eq(x ** -1, a ** -1)
 
 
+def test_bit_and():
+    x = random_x_bool((2, 3, 4))
+    xx = COO.from_numpy(x)
+
+    y = random_x_bool((2, 3, 4))
+    yy = COO.from_numpy(y)
+
+    assert_eq(x & y, xx & yy)
+
+
+def test_bit_or():
+    x = random_x_bool((2, 3, 4))
+    xx = COO.from_numpy(x)
+
+    y = random_x_bool((2, 3, 4))
+    yy = COO.from_numpy(y)
+
+    assert_eq(x | y, xx | yy)
+
+
+def test_bit_xor():
+    x = random_x_bool((2, 3, 4))
+    xx = COO.from_numpy(x)
+
+    y = random_x_bool((2, 3, 4))
+    yy = COO.from_numpy(y)
+
+    assert_eq(x ^ y, xx ^ yy)
+
+
 def test_create_with_lists_of_tuples():
     L = [((0, 0, 0), 1),
          ((1, 2, 1), 1),
@@ -504,3 +567,56 @@ def test_caching():
         x.reshape((1,) * i + (2,) + (1,) * (x.ndim - i - 1))
 
     assert len(x._cache['reshape']) < 5
+
+
+def test___setitem__input1():
+    # assign to single dimensional
+    sd = random_x((5,))
+    ssdd = COO.from_numpy(sd)
+    sd_val = random.randint(-1, 1)
+    sd[3] = sd_val
+    ssdd[3] = sd_val
+    assert_eq(sd, ssdd)
+
+
+def test___setitem__input2():
+    with pytest.raises(NotImplementedError):
+        # TODO: remove this for loop when slices are supported
+        # slices sould raise an exception
+        sl = random_x((5,))
+        ssll = COO.from_numpy(sl)
+        ssll[0:1] = [1, 1]
+
+
+def test___setitem__input3():
+    with pytest.raises(ValueError):
+        # none numbers.Integral and slices should raise an exception
+        wv = random_x((5, 5))
+        wwvv = COO.from_numpy(wv)
+        wwvv["a"] = 3
+
+
+def test___setitem__input4():
+    with pytest.raises(ValueError):
+        # indices of wrong length should raise an exception
+        wl = random_x((5, 5))
+        wwll = COO.from_numpy(wl)
+        wwll[1] = 3
+
+
+def test___setitem__input5():
+    with pytest.raises(ValueError):
+        # indices with entries out of their dimensions range should raise an exception
+        dr = random_x((5, 5))
+        ddrr = COO.from_numpy(dr)
+        ddrr[10] = 3
+
+
+def test___setitem__():
+    for i in range(100):
+        x = random_x((2, 3, 4))
+        xx = COO.from_numpy(x)
+        ranNumber = random.randint(-1, 1)
+        x[1, 2, 3] = ranNumber
+        xx[1, 2, 3] = ranNumber
+        assert_eq(x, xx)
