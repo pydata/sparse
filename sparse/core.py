@@ -464,9 +464,12 @@ class COO(object):
         Parameters
         ----------
         shape : int or tuple of ints
-            The new shape should be compatible with the original shape. If an integer, then the result will be a 1-D array of that length. One shape dimension can be -1. In this case, the value is inferred from the length of the array and remaining dimensions.
+            The new shape should be compatible with the original shape. If an integer, then the result will be a 1-D
+            array of that length. One shape dimension can be -1. In this case, the value is inferred from the length of
+             the array and remaining dimensions.
         scale : bool, optional
-            If False (default) coordinates of values are be scaled with the shape. Else if True the coordinates stay the same.
+            If False (default) coordinates of values are be scaled with the shape. Else if True the coordinates stay
+            the same.
 
         Returns
         -------
