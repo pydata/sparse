@@ -83,6 +83,15 @@ def test_reshape_same():
     assert s.reshape(s.shape) is s
 
 
+def test_reshape_without_scale():
+    x = np.asarray([[0, 0, 0],
+                    [0, 1, 0]])
+    xx = COO.from_numpy(x)
+    woxx = xx.reshape(shape=(4, 12), scale=False)
+    assert_eq(woxx[[1], [1]], np.asarray([[1]]))
+    assert_eq(woxx[[0], [4]], np.asarray([[0]]))
+
+
 def test_to_scipy_sparse():
     x = random_x((3, 5))
     s = COO.from_numpy(x)
@@ -504,3 +513,13 @@ def test_caching():
         x.reshape((1,) * i + (2,) + (1,) * (x.ndim - i - 1))
 
     assert len(x._cache['reshape']) < 5
+
+
+def test___setitem__():
+    for i in range(100):
+        x = random_x((2, 3, 4))
+        xx = COO.from_numpy(x)
+        ranNumber = random.randint(-1, 1)
+        x[1, 2, 3] = ranNumber
+        xx[1, 2, 3] = ranNumber
+        assert_eq(x, xx)
