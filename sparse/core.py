@@ -15,6 +15,10 @@ except NameError:
     pass
 
 
+# Generated once with np.random.rand(). Used for checking if an elemwise function returns zero for specific inputs.
+_TEST_NONZERO = 0.8173885343707892
+_TEST_NONZERO_2 = 0.32621130891611305
+
 class COO(object):
     """ A Sparse Multidimensional Array
 
@@ -603,7 +607,7 @@ class COO(object):
         assert isinstance(other, COO)
         if kwargs.pop('check', True) and func(0, 0, *args, **kwargs) != 0:
             raise ValueError("Performing this operation would produce "
-                    "a dense result: %s" % str(func))
+                             "a dense result: %s" % str(func))
         if self.shape != other.shape:
             raise NotImplementedError("Broadcasting is not supported")
         self.sum_duplicates()  # TODO: document side-effect or make copy
@@ -624,25 +628,40 @@ class COO(object):
         if len(self_coords):
             matched_other = (other_coords == self_coords[j % len(self_coords)])
         else:
-            matched_other = np.zeros(shape=(0,), dtype=bool)
+            matched_other = np.zeros(shape=(0,), dtype=np.bool)
         matched_self = j[matched_other]
 
         # Locate coordinates without a match
         unmatched_other = ~matched_other
-        unmatched_self = np.ones(len(self_coords), dtype=bool)
-        unmatched_self[matched_self] = 0
+        unmatched_self = np.ones(len(self_coords), dtype=np.bool)
+        unmatched_self[matched_self] = False
+
+        # Start with an empty list. This may reduce computation in many cases.
+        data_list = []
+        coords_list = []
+
+        # Add the matched part.
+        if func(_TEST_NONZERO, _TEST_NONZERO_2):
+            data_list.append(func(self_data[matched_self],
+                                  other_data[matched_other],
+                                  *args, **kwargs))
+            coords_list.append(self_coords[matched_self])
+
+        # Add unmatched parts as necessary.
+        if func(_TEST_NONZERO, 0):
+            data_list.append(func(self_data[unmatched_self], 0,
+                                  *args, **kwargs))
+            coords_list.append(self_coords[unmatched_self])
+
+        if func(0, _TEST_NONZERO):
+            data_list.append(func(0, other_data[unmatched_other],
+                                  *args, **kwargs))
+            coords_list.append(other_coords[unmatched_other])
 
         # Concatenate matches and mismatches
-        data = np.concatenate([func(self_data[matched_self],
-                                    other_data[matched_other],
-                                    *args, **kwargs),
-                               func(self_data[unmatched_self], 0,
-                                    *args, **kwargs),
-                               func(0, other_data[unmatched_other],
-                                    *args, **kwargs)])
-        coords = np.concatenate([self_coords[matched_self],
-                                 self_coords[unmatched_self],
-                                 other_coords[unmatched_other]])
+        data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=self.dtype)
+        coords = np.concatenate(coords_list) if len(coords_list) else np.empty((0, self.ndim),
+                                                                               dtype=self.coords.dtype)
 
         nonzero = data != 0
         data = data[nonzero]
