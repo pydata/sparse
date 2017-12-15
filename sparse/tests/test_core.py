@@ -9,7 +9,6 @@ from sparse import COO
 import sparse
 from sparse.utils import assert_eq
 
-
 x = np.zeros(shape=(2, 3, 4), dtype=np.float32)
 for i in range(10):
     x[random.randint(0, x.shape[0] - 1),
@@ -67,8 +66,8 @@ def test_reshape(a, b):
 def test_large_reshape():
     n = 100
     m = 10
-    row = np.arange(n, dtype=np.uint16)# np.random.randint(0, n, size=n, dtype=np.uint16)
-    col = row % m # np.random.randint(0, m, size=n, dtype=np.uint16)
+    row = np.arange(n, dtype=np.uint16)  # np.random.randint(0, n, size=n, dtype=np.uint16)
+    col = row % m  # np.random.randint(0, m, size=n, dtype=np.uint16)
     data = np.ones(n, dtype=np.uint8)
 
     x = COO((data, (row, col)), sorted=True, has_duplicates=False)
@@ -153,11 +152,11 @@ def test_dot_nocoercion():
 
     la = a.tolist()
     lb = b.tolist()
-    la, lb          # silencing flake8
+    la, lb  # silencing flake8
 
     sa = COO.from_numpy(a)
     sb = COO.from_numpy(b)
-    sa, sb          # silencing flake8
+    sa, sb  # silencing flake8
 
     if hasattr(operator, 'matmul'):
         # Operations with naive collection (list)
@@ -166,10 +165,10 @@ def test_dot_nocoercion():
 
 
 @pytest.mark.parametrize('func', [np.expm1, np.log1p, np.sin, np.tan,
-                                   np.sinh,  np.tanh, np.floor, np.ceil,
-                                   np.sqrt, np.conj, np.round, np.rint,
-                                   lambda x: x.astype('int32'), np.conjugate,
-                                   np.conj, lambda x: x.round(decimals=2), abs])
+                                  np.sinh, np.tanh, np.floor, np.ceil,
+                                  np.sqrt, np.conj, np.round, np.rint,
+                                  lambda x: x.astype('int32'), np.conjugate,
+                                  np.conj, lambda x: x.round(decimals=2), abs])
 def test_elemwise(func):
     x = random_x((2, 3, 4))
     s = COO.from_numpy(x)
@@ -368,6 +367,17 @@ def test_addition_broadcasting():
     c = COO.from_numpy(z)
 
     assert_eq(x + z, a + c)
+
+
+@pytest.mark.xfail
+def test_multiplication_broadcasting():
+    x = random_x((2, 3, 4))
+    a = COO.from_numpy(x)
+
+    z = random_x((3, 4))
+    c = COO.from_numpy(z)
+
+    assert_eq(x * z, a * c)
 
 
 def test_scalar_multiplication():
