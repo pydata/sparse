@@ -638,6 +638,7 @@ class COO(object):
         other_coords = np.rec.fromarrays(other.coords)
         other_reduced_coords = np.rec.fromarrays(self._get_reduced_coords(other.coords, other_reduce_params))
         i = np.argsort(other_reduced_coords)
+        other_coords = other_coords[i]
         other_reduced_coords = other_reduced_coords[i]
         other_data = other.data[i]
 
@@ -657,8 +658,8 @@ class COO(object):
         # Add the matched part.
         # if func(_TEST_NONZERO, _TEST_NONZERO_2):
         matched_coords = self._get_matching_coords(self_coords[matched_self],
-                                                        other_coords[matched_other],
-                                                        self_shape, other_shape)
+                                                   other_coords[matched_other],
+                                                   self_shape, other_shape)
 
         data_list.append(func(self_data[matched_self],
                               other_data[matched_other],
@@ -714,7 +715,7 @@ class COO(object):
         data = data[nonzero]
         coords = coords[:, nonzero]
 
-        return COO(coords, data, shape=self.shape, has_duplicates=False)
+        return COO(coords, data, shape=result_shape, has_duplicates=False)
 
     @staticmethod
     def _get_broadcast_shape(shape1, shape2):
@@ -756,12 +757,14 @@ class COO(object):
         for param, l in zip(params, broadcast_shape):
             if param:
                 coords_list.append(np.repeat(coords[names[dim]], times_repeated))
-                dim += 1
             else:
                 data = np.repeat(data, l)
                 coords_list = [np.repeat(coord, l) for coord in coords_list]
                 coords_list.append(np.tile(np.arange(l), times_repeated * data_len))
                 times_repeated *= l
+
+            if param is not None:
+                dim += 1
 
         return coords_list, data
 
@@ -781,11 +784,13 @@ class COO(object):
         for p1, p2 in zip(params1, params2):
             if p1:
                 coords_list.append(coords1[names1[dim1]])
-                dim1 += 1
             else:
                 coords_list.append(coords2[names2[dim2]])
 
-            if p2:
+            if p1 is not None:
+                dim1 += 1
+
+            if p2 is not None:
                 dim2 += 1
 
         return coords_list
@@ -795,6 +800,12 @@ class COO(object):
         full_coords, full_data = COO._get_expanded_coords_data(coords, data, params, broadcast_shape)
         full_coords = np.rec.fromarrays(full_coords)
         matched_coords = np.rec.fromarrays(matched_coords, dtype=full_coords.dtype)
+
+        matched_coords.sort()
+
+        i = np.argsort(full_coords)
+        full_coords = full_coords[i]
+        full_data = full_data[i]
 
         overlapping_coords, _ = _match_coords(full_coords, matched_coords)
         mask = np.ones(len(full_coords), dtype=np.bool)

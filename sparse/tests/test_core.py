@@ -358,26 +358,20 @@ def test_addition_not_ok_when_large_and_sparse():
         np.exp(x)
 
 
-@pytest.mark.xfail
-def test_addition_broadcasting():
-    x = random_x((2, 3, 4))
+@pytest.mark.parametrize('func', [operator.add, operator.mul])
+@pytest.mark.parametrize('shape1,shape2', [((2, 3, 4), (3, 4)),
+                                           ((3, 4), (2, 3, 4)),
+                                           ((3, 1, 4), (3, 2, 4)),
+                                           ((1, 3, 4), (3, 4)),
+                                           ((3, 4, 1), (3, 4, 2))])
+def test_broadcasting(func, shape1, shape2):
+    x = random_x(shape1)
     a = COO.from_numpy(x)
 
-    z = random_x((3, 4))
+    z = random_x(shape2)
     c = COO.from_numpy(z)
 
-    assert_eq(x + z, a + c)
-
-
-@pytest.mark.xfail
-def test_multiplication_broadcasting():
-    x = random_x((2, 3, 4))
-    a = COO.from_numpy(x)
-
-    z = random_x((3, 4))
-    c = COO.from_numpy(z)
-
-    assert_eq(x * z, a * c)
+    assert_eq(func(x, z), func(a, c))
 
 
 def test_scalar_multiplication():
