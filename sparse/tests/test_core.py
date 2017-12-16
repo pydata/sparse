@@ -18,7 +18,7 @@ y = COO.from_numpy(x)
 
 
 def random_x(shape, dtype=float):
-    x = np.zeros(shape=shape, dtype=float)
+    x = np.zeros(shape=shape, dtype=dtype)
     for i in range(max(5, np.prod(x.shape) // 10)):
         x[tuple(random.randint(0, d - 1) for d in x.shape)] = random.randint(0, 100)
     return x
@@ -358,7 +358,7 @@ def test_addition_not_ok_when_large_and_sparse():
         np.exp(x)
 
 
-@pytest.mark.parametrize('func', [operator.add, operator.mul])
+@pytest.mark.parametrize('func', [operator.add])
 @pytest.mark.parametrize('shape1,shape2', [((2, 3, 4), (3, 4)),
                                            ((3, 4), (2, 3, 4)),
                                            ((3, 1, 4), (3, 2, 4)),

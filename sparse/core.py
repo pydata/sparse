@@ -563,10 +563,8 @@ class COO(object):
             return self
         if not isinstance(other, COO):
             return self.maybe_densify() + other
-        else:  # if self.shape == other.shape:
+        else:
             return self.elemwise_binary(operator.add, other)
-        # else:
-        #     raise NotImplementedError("Broadcasting not yet supported")
 
     def __radd__(self, other):
         return self + other
@@ -632,7 +630,8 @@ class COO(object):
         matches_found = True
 
         try:
-            self_reduced_coords = np.rec.fromarrays(self._get_reduced_coords(self.coords, self_reduce_params))
+            self_reduced_coords = np.rec.fromarrays(self._get_reduced_coords(self.coords,
+                                                                             self_reduce_params))
             i = np.argsort(self_reduced_coords)
             self_reduced_coords = self_reduced_coords[i]
             self_coords = self_coords[i]
@@ -644,7 +643,8 @@ class COO(object):
         other_coords = np.rec.fromarrays(other.coords)
         other_data = other.data
         try:
-            other_reduced_coords = np.rec.fromarrays(self._get_reduced_coords(other.coords, other_reduce_params))
+            other_reduced_coords = np.rec.fromarrays(self._get_reduced_coords(other.coords,
+                                                                              other_reduce_params))
             i = np.argsort(other_reduced_coords)
             other_coords = other_coords[i]
             other_reduced_coords = other_reduced_coords[i]
@@ -657,7 +657,7 @@ class COO(object):
         if matches_found:
             matched_self, matched_other = _match_coords(self_reduced_coords, other_reduced_coords)
         else:
-            matched_self, matched_other = np.repeat(np.arange(len(self_data)), len(other_data)),\
+            matched_self, matched_other = np.repeat(np.arange(len(self_data)), len(other_data)), \
                                           np.tile(np.arange(len(other_data)), len(self_data))
 
         # Locate coordinates without a match
@@ -683,16 +683,18 @@ class COO(object):
 
         # Add unmatched parts as necessary.
         if func(_TEST_NONZERO, 0, *args, **kwargs):
-            self_unmatched_coords, self_unmatched_data = self._get_expanded_coords_data(self_coords[unmatched_self],
-                                                                                        self_data[unmatched_self],
-                                                                                        self_params,
-                                                                                        result_shape)
+            self_unmatched_coords, self_unmatched_data = \
+                self._get_expanded_coords_data(self_coords[unmatched_self],
+                                               self_data[unmatched_self],
+                                               self_params,
+                                               result_shape)
 
-            self_broadcast_coords, self_broadcast_data = self._get_broadcast_coords_data(self_coords[matched_self],
-                                                                                         matched_coords,
-                                                                                         self_data[matched_self],
-                                                                                         self_params,
-                                                                                         result_shape)
+            self_broadcast_coords, self_broadcast_data = \
+                self._get_broadcast_coords_data(self_coords[matched_self],
+                                                matched_coords,
+                                                self_data[matched_self],
+                                                self_params,
+                                                result_shape)
 
             data_list.append(func(self_unmatched_data, 0,
                                   *args, **kwargs))
@@ -703,16 +705,18 @@ class COO(object):
             coords_list.append(self_broadcast_coords)
 
         if func(0, _TEST_NONZERO, *args, **kwargs):
-            other_unmatched_coords, other_unmatched_data = self._get_expanded_coords_data(other_coords[unmatched_other],
-                                                                                          other_data[unmatched_other],
-                                                                                          other_params,
-                                                                                          result_shape)
+            other_unmatched_coords, other_unmatched_data = \
+                self._get_expanded_coords_data(other_coords[unmatched_other],
+                                               other_data[unmatched_other],
+                                               other_params,
+                                               result_shape)
 
-            other_broadcast_coords, other_broadcast_data = self._get_broadcast_coords_data(other_coords[matched_other],
-                                                                                           matched_coords,
-                                                                                           other_data[matched_other],
-                                                                                           other_params,
-                                                                                           result_shape)
+            other_broadcast_coords, other_broadcast_data = \
+                self._get_broadcast_coords_data(other_coords[matched_other],
+                                                matched_coords,
+                                                other_data[matched_other],
+                                                other_params,
+                                                result_shape)
 
             data_list.append(func(0, other_unmatched_data,
                                   *args, **kwargs))
@@ -723,8 +727,8 @@ class COO(object):
 
         # Concatenate matches and mismatches
         data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=self.dtype)
-        coords = np.concatenate(coords_list, axis=1) if len(coords_list) else np.empty((0, len(result_shape)),
-                                                                                       dtype=self.coords.dtype)
+        coords = np.concatenate(coords_list, axis=1) if len(coords_list) else \
+            np.empty((0, len(result_shape)), dtype=self.coords.dtype)
 
         nonzero = data != 0
         data = data[nonzero]
@@ -735,56 +739,124 @@ class COO(object):
     @staticmethod
     def _get_broadcast_shape(shape1, shape2, is_result=False):
         """
-        Get the overall broadcasted shape from two different shapes, without actually constructing any arrays.
+        Get the overall broadcasted shape.
+
+        Parameters
+        ----------
+        shape1, shape2 : tuple[int]
+            The input shapes to broadcast together.
+        is_result : bool
+            Whether or not shape2 is also the result shape.
+        Returns
+        -------
+        result_shape : tuple[int]
+            The overall shape of the result.
+        Raises
+        ------
+        ValueError
+            If the two shapes cannot be broadcast together.
         """
         # https://stackoverflow.com/a/47244284/774273
-        if not all((l1 == l2) or (l1 == 1) or ((l2 == 1) and not is_result) for l1, l2 in zip(shape1[::-1],
-                                                                                             shape2[::-1])):
-            raise ValueError('operands could not be broadcast together with shapes %s, %s' % (shape1, shape2))
+        if not all((l1 == l2) or (l1 == 1) or ((l2 == 1) and not is_result) for l1, l2 in
+                   zip(shape1[::-1], shape2[::-1])):
+            raise ValueError('operands could not be broadcast together with shapes %s, %s' %
+                             (shape1, shape2))
 
-        broadcast_shape = tuple(max(l1, l2) for l1, l2 in zip_longest(shape1[::-1], shape2[::-1], fillvalue=1))[::-1]
+        result_shape = tuple(max(l1, l2) for l1, l2 in
+                             zip_longest(shape1[::-1], shape2[::-1], fillvalue=1))[::-1]
 
-        return broadcast_shape
+        return result_shape
 
     @staticmethod
     def _get_broadcast_parameters(shape, broadcast_shape):
         """
-        Get broadcast parameters, i.e. tuple with None/True/False. None if extra dimension is added, True if the
-        dimension doesn't need broadcasting, and False if it needs broadcasting.
+        Get the broadcast parameters.
+
+        Parameters
+        ----------
+        shape : tuple[int]
+            The input shape.
+        broadcast_shape
+            The shape to broadcast to.
+        Returns
+        -------
+        params : list
+            A list containing None if the dimension isn't in the original array, False if
+            it needs to be broadcast, and True if it doesn't.
         """
-        params = [None if l1 is None else l1 == l2 for l1, l2 in zip_longest(shape[::-1], broadcast_shape[::-1],
-                                                                             fillvalue=None)][::-1]
+        params = [None if l1 is None else l1 == l2 for l1, l2
+                  in zip_longest(shape[::-1], broadcast_shape[::-1], fillvalue=None)][::-1]
 
         return params
 
     @staticmethod
     def _get_reduced_coords(coords, params):
+        """
+        Gets only those dimensions of the coordinates that don't need to be broadcast.
+        Parameters
+        ----------
+        coords : np.ndarray
+            The coordinates to reduce.
+        params : The params from which to check which dimensions to get.
+
+        Returns
+        -------
+        reduced_coords : np.ndarray
+            The reduced coordinates.
+        """
         reduced_params = [bool(param) for param in params]
 
         return coords[reduced_params]
 
     @staticmethod
     def _get_expanded_coords_data(coords, data, params, broadcast_shape):
+        """
+        Expand coordinates/data to broadcast_shape. Does most of the heavy lifting for broadcast_to.
+        Parameters
+        ----------
+        coords : np.recarray
+        expanded_data : np.ndarray
+        params : list
+        broadcast_shape : tuple[int]
+
+        Returns
+        -------
+        expanded_coords : list[np.ndarray]
+            List of 1-D arrays. Each item in the list has one dimension of coordinates.
+        expanded_data : np.ndarray
+            The data corresponding to expanded_coords.
+        """
         times_repeated = 1
-        coords_list = []
+        expanded_coords = []
+        expanded_data = data
         dim = 0
         names = coords.dtype.names
-        data_len = len(data)
+        data_len = len(expanded_data)
         for param, l in zip(params, broadcast_shape):
             if param:
-                coords_list.append(np.repeat(coords[names[dim]], times_repeated))
+                expanded_coords.append(np.repeat(coords[names[dim]], times_repeated))
             else:
-                data = np.repeat(data, l)
-                coords_list = [np.repeat(coord, l) for coord in coords_list]
-                coords_list.append(np.tile(np.arange(l), times_repeated * data_len))
+                expanded_data = np.repeat(expanded_data, l)
+                expanded_coords = [np.repeat(coord, l) for coord in expanded_coords]
+                expanded_coords.append(np.tile(np.arange(l), times_repeated * data_len))
                 times_repeated *= l
 
             if param is not None:
                 dim += 1
 
-        return coords_list, data
+        return expanded_coords, expanded_data
 
     def broadcast_to(self, shape):
+        """
+        Performs the equivalent of np.broadcast_to for COO.
+        Parameters
+        ----------
+        shape : tuple[int]
+            The shape to broadcast the data to.
+        Returns
+        -------
+            The broadcasted sparse array.
+        """
         result_shape = self._get_broadcast_shape(self.shape, shape, is_result=True)
         params = self._get_broadcast_parameters(self.shape, result_shape)
         self_coords = np.rec.fromarrays(self.coords)
@@ -794,11 +866,27 @@ class COO(object):
 
     @staticmethod
     def _get_matching_coords(coords1, coords2, shape1, shape2):
+        """
+        Takes in the matching coordinates in both dimensions (only those dimensions that
+        don't need to be broadcast in both arrays and returns the coordinates that will
+        overlap in the output array, i.e., the coordinates for which both broadcast arrays
+        will be nonzero.
+
+        Parameters
+        ----------
+        coords1, coords2 : np.recarray
+        shape1, shape2 : tuple[int]
+
+        Returns
+        -------
+        matching_coords : list[np.ndarray]
+            The coordinates of the output array for which both inputs will be nonzero.
+        """
         result_shape = COO._get_broadcast_shape(shape1, shape2)
         params1 = COO._get_broadcast_parameters(shape1, result_shape)
         params2 = COO._get_broadcast_parameters(shape2, result_shape)
 
-        coords_list = []
+        matching_coords = []
         dim1 = 0
         names1 = coords1.dtype.names
 
@@ -807,9 +895,9 @@ class COO(object):
 
         for p1, p2 in zip(params1, params2):
             if p1:
-                coords_list.append(coords1[names1[dim1]])
+                matching_coords.append(coords1[names1[dim1]])
             else:
-                coords_list.append(coords2[names2[dim2]])
+                matching_coords.append(coords2[names2[dim2]])
 
             if p1 is not None:
                 dim1 += 1
@@ -817,16 +905,35 @@ class COO(object):
             if p2 is not None:
                 dim2 += 1
 
-        return coords_list
+        return matching_coords
 
     @staticmethod
     def _get_broadcast_coords_data(coords, matched_coords, data, params, broadcast_shape):
+        """
+        Get data that matched in the reduced coordinates but still had a partial overlap because of
+        the broadcast, i.e., it didn't match in one of the other dimensions.
+
+        Parameters
+        ----------
+        coords : np.recarray
+        matched_coords : list[np.ndarray]
+        data : np.ndarray
+        params : list
+        broadcast_shape : tuple[int]
+        Returns
+        -------
+        broadcast_coords : list[np.ndarray]
+            The broadcasted coordinates.
+        broadcasted_data : np.ndarray
+            The data corresponding to those coordinates.
+        """
         full_coords, full_data = COO._get_expanded_coords_data(coords, data, params, broadcast_shape)
         full_coords = np.rec.fromarrays(full_coords)
         matched_coords = np.rec.fromarrays(matched_coords, dtype=full_coords.dtype)
 
-        matched_coords.sort()
-
+        # TODO: Remove this sort. Only needed in one test case where no dimensions of
+        # the operands match. Will need to find out what's causing it.
+        # Not a high priority as the _match_coords call is O(n log n) anyway.
         i = np.argsort(full_coords)
         full_coords = full_coords[i]
         full_data = full_data[i]
@@ -1124,13 +1231,13 @@ def _match_coords(a, b):
     midx = np.flatnonzero(mv[:-1] == mv[1:])
     ai, bi = m[midx], m[midx + 1] - na
     aic = np.r_[0, np.cumsum(al[ai])]
-    a_idx = np.ones((aic[-1],), dtype=int)
+    a_idx = np.ones((aic[-1],), dtype=np.int_)
     a_idx[aic[:-1]] = asw[ai]
     a_idx[aic[1:-1]] -= asw[ai[:-1]] + al[ai[:-1]] - 1
     a_idx = np.repeat(np.cumsum(a_idx), np.repeat(bl[bi], al[ai]))
     bi = np.repeat(bi, al[ai])
     bic = np.r_[0, np.cumsum(bl[bi])]
-    b_idx = np.ones((bic[-1],), dtype=int)
+    b_idx = np.ones((bic[-1],), dtype=np.int_)
     b_idx[bic[:-1]] = bsw[bi]
     b_idx[bic[1:-1]] -= bsw[bi[:-1]] + bl[bi[:-1]] - 1
     b_idx = np.cumsum(b_idx)
