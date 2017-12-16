@@ -628,22 +628,37 @@ class COO(object):
 
         # Sort self.coords in lexographical order using record arrays
         self_coords = np.rec.fromarrays(self.coords)
-        self_reduced_coords = np.rec.fromarrays(self._get_reduced_coords(self.coords, self_reduce_params))
-        i = np.argsort(self_reduced_coords)
-        self_reduced_coords = self_reduced_coords[i]
-        self_coords = self_coords[i]
-        self_data = self.data[i]
+        self_data = self.data
+        matches_found = True
+
+        try:
+            self_reduced_coords = np.rec.fromarrays(self._get_reduced_coords(self.coords, self_reduce_params))
+            i = np.argsort(self_reduced_coords)
+            self_reduced_coords = self_reduced_coords[i]
+            self_coords = self_coords[i]
+            self_data = self_data[i]
+        except IndexError:
+            matches_found = False
 
         # Convert other.coords to a record array
         other_coords = np.rec.fromarrays(other.coords)
-        other_reduced_coords = np.rec.fromarrays(self._get_reduced_coords(other.coords, other_reduce_params))
-        i = np.argsort(other_reduced_coords)
-        other_coords = other_coords[i]
-        other_reduced_coords = other_reduced_coords[i]
-        other_data = other.data[i]
+        other_data = other.data
+        try:
+            other_reduced_coords = np.rec.fromarrays(self._get_reduced_coords(other.coords, other_reduce_params))
+            i = np.argsort(other_reduced_coords)
+            other_coords = other_coords[i]
+            other_reduced_coords = other_reduced_coords[i]
+            other_data = other_data[i]
+            pass
+        except IndexError:
+            matches_found = False
 
         # Find matches between self.coords and other.coords
-        matched_self, matched_other = _match_coords(self_reduced_coords, other_reduced_coords)
+        if matches_found:
+            matched_self, matched_other = _match_coords(self_reduced_coords, other_reduced_coords)
+        else:
+            matched_self, matched_other = np.repeat(np.arange(len(self_data)), len(other_data)),\
+                                          np.tile(np.arange(len(other_data)), len(self_data))
 
         # Locate coordinates without a match
         unmatched_self = np.ones(len(self_coords), dtype=np.bool)
@@ -718,12 +733,13 @@ class COO(object):
         return COO(coords, data, shape=result_shape, has_duplicates=False)
 
     @staticmethod
-    def _get_broadcast_shape(shape1, shape2):
+    def _get_broadcast_shape(shape1, shape2, is_result=False):
         """
         Get the overall broadcasted shape from two different shapes, without actually constructing any arrays.
         """
         # https://stackoverflow.com/a/47244284/774273
-        if not all((l1 == l2) or (l1 == 1) or (l2 == 1) for l1, l2 in zip(shape1[::-1], shape2[::-1])):
+        if not all((l1 == l2) or (l1 == 1) or ((l2 == 1) and not is_result) for l1, l2 in zip(shape1[::-1],
+                                                                                             shape2[::-1])):
             raise ValueError('operands could not be broadcast together with shapes %s, %s' % (shape1, shape2))
 
         broadcast_shape = tuple(max(l1, l2) for l1, l2 in zip_longest(shape1[::-1], shape2[::-1], fillvalue=1))[::-1]
@@ -767,6 +783,14 @@ class COO(object):
                 dim += 1
 
         return coords_list, data
+
+    def broadcast_to(self, shape):
+        result_shape = self._get_broadcast_shape(self.shape, shape, is_result=True)
+        params = self._get_broadcast_parameters(self.shape, result_shape)
+        self_coords = np.rec.fromarrays(self.coords)
+        coords, data = self._get_expanded_coords_data(self_coords, self.data, params, result_shape)
+
+        return COO(coords, data, shape=result_shape, has_duplicates=self.has_duplicates)
 
     @staticmethod
     def _get_matching_coords(coords1, coords2, shape1, shape2):

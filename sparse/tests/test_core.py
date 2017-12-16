@@ -363,7 +363,8 @@ def test_addition_not_ok_when_large_and_sparse():
                                            ((3, 4), (2, 3, 4)),
                                            ((3, 1, 4), (3, 2, 4)),
                                            ((1, 3, 4), (3, 4)),
-                                           ((3, 4, 1), (3, 4, 2))])
+                                           ((3, 4, 1), (3, 4, 2)),
+                                           ((1, 5), (5, 1))])
 def test_broadcasting(func, shape1, shape2):
     x = random_x(shape1)
     a = COO.from_numpy(x)
@@ -372,6 +373,16 @@ def test_broadcasting(func, shape1, shape2):
     c = COO.from_numpy(z)
 
     assert_eq(func(x, z), func(a, c))
+
+
+@pytest.mark.parametrize('shape1,shape2', [((3, 4), (2, 3, 4)),
+                                           ((3, 1, 4), (3, 2, 4)),
+                                           ((3, 4, 1), (3, 4, 2))])
+def test_broadcast_to(shape1, shape2):
+    x = random_x(shape1)
+    a = COO.from_numpy(x)
+
+    assert_eq(np.broadcast_to(x, shape2), a.broadcast_to(shape2))
 
 
 def test_scalar_multiplication():
