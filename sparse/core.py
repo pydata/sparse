@@ -689,20 +689,21 @@ class COO(object):
                                                self_params,
                                                result_shape)
 
-            self_broadcast_coords, self_broadcast_data = \
-                self._get_broadcast_coords_data(self_coords[matched_self],
-                                                matched_coords,
-                                                self_data[matched_self],
-                                                self_params,
-                                                result_shape)
-
             data_list.append(func(self_unmatched_data, 0,
                                   *args, **kwargs))
             coords_list.append(self_unmatched_coords)
 
-            data_list.append(func(self_broadcast_data, 0,
-                                  *args, **kwargs))
-            coords_list.append(self_broadcast_coords)
+            if self_shape != result_shape:
+                self_broadcast_coords, self_broadcast_data = \
+                    self._get_broadcast_coords_data(self_coords[matched_self],
+                                                    matched_coords,
+                                                    self_data[matched_self],
+                                                    self_params,
+                                                    result_shape)
+
+                data_list.append(func(self_broadcast_data, 0,
+                                      *args, **kwargs))
+                coords_list.append(self_broadcast_coords)
 
         if func(0, _TEST_NONZERO, *args, **kwargs):
             other_unmatched_coords, other_unmatched_data = \
@@ -711,19 +712,20 @@ class COO(object):
                                                other_params,
                                                result_shape)
 
-            other_broadcast_coords, other_broadcast_data = \
-                self._get_broadcast_coords_data(other_coords[matched_other],
-                                                matched_coords,
-                                                other_data[matched_other],
-                                                other_params,
-                                                result_shape)
-
+            coords_list.append(other_unmatched_coords)
             data_list.append(func(0, other_unmatched_data,
                                   *args, **kwargs))
-            coords_list.append(other_unmatched_coords)
-            data_list.append(func(0, other_broadcast_data,
-                                  *args, **kwargs))
-            coords_list.append(other_broadcast_coords)
+
+            if other_shape != result_shape:
+                other_broadcast_coords, other_broadcast_data = \
+                    self._get_broadcast_coords_data(other_coords[matched_other],
+                                                    matched_coords,
+                                                    other_data[matched_other],
+                                                    other_params,
+                                                    result_shape)
+                data_list.append(func(0, other_broadcast_data,
+                                      *args, **kwargs))
+                coords_list.append(other_broadcast_coords)
 
         # Concatenate matches and mismatches
         data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=self.dtype)
