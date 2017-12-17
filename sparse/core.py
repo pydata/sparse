@@ -738,8 +738,9 @@ class COO(object):
 
         nonzero = data != 0
         data = data[nonzero]
-        coords, idx = np.unique(coords[:, nonzero], axis=1, return_index=True)
-        data = data[idx]
+        if len(data) != 0:
+            coords, idx = np.unique(coords[:, nonzero], axis=1, return_index=True)
+            data = data[idx]
 
         return COO(coords, data, shape=result_shape, has_duplicates=False)
 
