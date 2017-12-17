@@ -19,10 +19,6 @@ try:  # Windows compatibility
 except NameError:
     pass
 
-# Generated once with np.random.rand(). Used for checking if an elemwise function returns zero for specific inputs.
-_TEST_NONZERO = 0.8173885343707892
-_TEST_NONZERO_2 = 0.32621130891611305
-
 
 class COO(object):
     """ A Sparse Multidimensional Array
@@ -204,7 +200,7 @@ class COO(object):
                    sorted=True)
 
     def todense(self):
-        self = self.sum_duplicates()
+        self.sum_duplicates()
         x = np.zeros(shape=self.shape, dtype=self.dtype)
 
         coords = tuple([self.coords[i, :] for i in range(self.ndim)])
@@ -689,50 +685,50 @@ class COO(object):
                               *args, **kwargs))
         coords_list.append(matched_coords)
 
+        self_func = func(self_data, 0, *args, **kwargs)
+
         # Add unmatched parts as necessary.
-        if func(_TEST_NONZERO, 0, *args, **kwargs):
-            self_unmatched_coords, self_unmatched_data = \
+        if (self_func != 0).any():
+            self_unmatched_coords, self_unmatched_func = \
                 self._get_expanded_coords_data(self_coords[:, unmatched_self],
-                                               self_data[unmatched_self],
+                                               self_func[unmatched_self],
                                                self_params,
                                                result_shape)
 
-            data_list.append(func(self_unmatched_data, 0,
-                                  *args, **kwargs))
+            data_list.append(self_unmatched_func)
             coords_list.append(self_unmatched_coords)
 
             if self_shape != result_shape:
-                self_broadcast_coords, self_broadcast_data = \
+                self_broadcast_coords, self_broadcast_func = \
                     self._get_broadcast_coords_data(self_coords[:, matched_self],
                                                     matched_coords,
-                                                    self_data[matched_self],
+                                                    self_func[matched_self],
                                                     self_params,
                                                     result_shape)
 
-                data_list.append(func(self_broadcast_data, 0,
-                                      *args, **kwargs))
+                data_list.append(self_broadcast_func)
                 coords_list.append(self_broadcast_coords)
 
-        if func(0, _TEST_NONZERO, *args, **kwargs):
-            other_unmatched_coords, other_unmatched_data = \
+        other_func = func(0, other_data, *args, **kwargs)
+
+        if (other_func != 0).any():
+            other_unmatched_coords, other_unmatched_func = \
                 self._get_expanded_coords_data(other_coords[:, unmatched_other],
-                                               other_data[unmatched_other],
+                                               other_func[unmatched_other],
                                                other_params,
                                                result_shape)
 
             coords_list.append(other_unmatched_coords)
-            data_list.append(func(0, other_unmatched_data,
-                                  *args, **kwargs))
+            data_list.append(other_unmatched_func)
 
             if other_shape != result_shape:
-                other_broadcast_coords, other_broadcast_data = \
+                other_broadcast_coords, other_broadcast_func = \
                     self._get_broadcast_coords_data(other_coords[:, matched_other],
                                                     matched_coords,
-                                                    other_data[matched_other],
+                                                    other_func[matched_other],
                                                     other_params,
                                                     result_shape)
-                data_list.append(func(0, other_broadcast_data,
-                                      *args, **kwargs))
+                data_list.append(other_broadcast_func)
                 coords_list.append(other_broadcast_coords)
 
         # Concatenate matches and mismatches
@@ -742,7 +738,8 @@ class COO(object):
 
         nonzero = data != 0
         data = data[nonzero]
-        coords = coords[:, nonzero]
+        coords, idx = np.unique(coords[:, nonzero], axis=1, return_index=True)
+        data = data[idx]
 
         return COO(coords, data, shape=result_shape, has_duplicates=False)
 
