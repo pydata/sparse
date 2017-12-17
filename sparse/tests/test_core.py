@@ -401,6 +401,7 @@ def test_scalar_multiplication():
     assert_eq(x // 2.5, a // 2.5)
 
 
+@pytest.mark.filterwarnings('ignore:divide by zero')
 def test_scalar_exponentiation():
     x = random_x((2, 3, 4))
     a = COO.from_numpy(x)
