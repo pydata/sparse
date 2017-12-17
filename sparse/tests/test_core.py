@@ -358,12 +358,12 @@ def test_addition_not_ok_when_large_and_sparse():
         np.exp(x)
 
 
-@pytest.mark.parametrize('func', [operator.add])
-@pytest.mark.parametrize('shape1,shape2', [#((2, 3, 4), (3, 4)),
-                                           #((3, 4), (2, 3, 4)),
-                                           #((3, 1, 4), (3, 2, 4)),
-                                           #((1, 3, 4), (3, 4)),
-                                           #((3, 4, 1), (3, 4, 2)),
+@pytest.mark.parametrize('func', [operator.add, operator.mul])
+@pytest.mark.parametrize('shape1,shape2', [((2, 3, 4), (3, 4)),
+                                           ((3, 4), (2, 3, 4)),
+                                           ((3, 1, 4), (3, 2, 4)),
+                                           ((1, 3, 4), (3, 4)),
+                                           ((3, 4, 1), (3, 4, 2)),
                                            ((1, 5), (5, 1))])
 def test_broadcasting(func, shape1, shape2):
     x = random_x(shape1)

@@ -626,43 +626,32 @@ class COO(object):
 
         self_coords = self.coords
         self_data = self.data
-        matches_found = True
 
-        try:
-            self_reduced_coords, self_reduced_shape = \
-                self._get_reduced_coords(self_coords, self_shape,
-                                         self_reduce_params)
-            self_reduced_linear = self._linear_loc(self_reduced_coords, self_reduced_shape)
-            i = np.argsort(self_reduced_linear)
-            self_reduced_linear = self_reduced_linear[i]
-            self_coords = self_coords[:, i]
-            self_data = self_data[i]
-        except IndexError:
-            matches_found = False
+        self_reduced_coords, self_reduced_shape = \
+            self._get_reduced_coords(self_coords, self_shape,
+                                     self_reduce_params)
+        self_reduced_linear = self._linear_loc(self_reduced_coords, self_reduced_shape)
+        i = np.argsort(self_reduced_linear)
+        self_reduced_linear = self_reduced_linear[i]
+        self_coords = self_coords[:, i]
+        self_data = self_data[i]
 
         # Convert other.coords to a record array
         other_coords = other.coords
         other_data = other.data
-        try:
-            other_reduced_coords, other_reduced_shape = \
-                self._get_reduced_coords(other_coords, other_shape,
-                                         other_reduce_params)
-            other_reduced_linear = self._linear_loc(other_reduced_coords, other_reduced_shape)
-            i = np.argsort(other_reduced_linear)
-            other_reduced_linear = other_reduced_linear[i]
-            other_coords = other_coords[:, i]
-            other_data = other_data[i]
-            pass
-        except IndexError:
-            matches_found = False
+
+        other_reduced_coords, other_reduced_shape = \
+            self._get_reduced_coords(other_coords, other_shape,
+                                     other_reduce_params)
+        other_reduced_linear = self._linear_loc(other_reduced_coords, other_reduced_shape)
+        i = np.argsort(other_reduced_linear)
+        other_reduced_linear = other_reduced_linear[i]
+        other_coords = other_coords[:, i]
+        other_data = other_data[i]
 
         # Find matches between self.coords and other.coords
-        if matches_found:
-            matched_self, matched_other = _match_coords(self_reduced_linear,
-                                                        other_reduced_linear)
-        else:
-            matched_self, matched_other = np.repeat(np.arange(len(self_data)), len(other_data)), \
-                                          np.tile(np.arange(len(other_data)), len(self_data))
+        matched_self, matched_other = _match_coords(self_reduced_linear,
+                                                    other_reduced_linear)
 
         # Locate coordinates without a match
         unmatched_self = np.ones(self.nnz, dtype=np.bool)
