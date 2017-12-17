@@ -406,16 +406,20 @@ class COO(object):
         This is used internally to check for duplicates, re-order, reshape,
         etc..
         """
-        n = reduce(operator.mul, self.shape)
+        return self._linear_loc(self.coords, self.shape, signed)
+
+    @staticmethod
+    def _linear_loc(coords, shape, signed=False):
+        n = reduce(operator.mul, shape, 1)
         if signed:
             n = -n
         dtype = np.min_scalar_type(n)
-        out = np.zeros(self.nnz, dtype=dtype)
-        tmp = np.zeros(self.nnz, dtype=dtype)
+        out = np.zeros(coords.shape[1], dtype=dtype)
+        tmp = np.zeros(coords.shape[1], dtype=dtype)
         strides = 1
-        for i, d in enumerate(self.shape[::-1]):
+        for i, d in enumerate(shape[::-1]):
             # out += self.coords[-(i + 1), :].astype(dtype) * strides
-            np.multiply(self.coords[-(i + 1), :], strides, out=tmp, dtype=dtype)
+            np.multiply(coords[-(i + 1), :], strides, out=tmp, dtype=dtype)
             np.add(tmp, out, out=out)
             strides *= d
         return out
@@ -624,30 +628,33 @@ class COO(object):
         self.sum_duplicates()  # TODO: document side-effect or make copy
         other.sum_duplicates()  # TODO: document side-effect or make copy
 
-        # Sort self.coords in lexographical order using record arrays
-        self_coords = np.rec.fromarrays(self.coords)
+        self_coords = self.coords
         self_data = self.data
         matches_found = True
 
         try:
-            self_reduced_coords = np.rec.fromarrays(self._get_reduced_coords(self.coords,
-                                                                             self_reduce_params))
-            i = np.argsort(self_reduced_coords)
-            self_reduced_coords = self_reduced_coords[i]
-            self_coords = self_coords[i]
+            self_reduced_coords, self_reduced_shape = \
+                self._get_reduced_coords(self_coords, self_shape,
+                                         self_reduce_params)
+            self_reduced_linear = self._linear_loc(self_reduced_coords, self_reduced_shape)
+            i = np.argsort(self_reduced_linear)
+            self_reduced_linear = self_reduced_linear[i]
+            self_coords = self_coords[:, i]
             self_data = self_data[i]
         except IndexError:
             matches_found = False
 
         # Convert other.coords to a record array
-        other_coords = np.rec.fromarrays(other.coords)
+        other_coords = other.coords
         other_data = other.data
         try:
-            other_reduced_coords = np.rec.fromarrays(self._get_reduced_coords(other.coords,
-                                                                              other_reduce_params))
-            i = np.argsort(other_reduced_coords)
-            other_coords = other_coords[i]
-            other_reduced_coords = other_reduced_coords[i]
+            other_reduced_coords, other_reduced_shape = \
+                self._get_reduced_coords(other_coords, other_shape,
+                                         other_reduce_params)
+            other_reduced_linear = self._linear_loc(other_reduced_coords, other_reduced_shape)
+            i = np.argsort(other_reduced_linear)
+            other_reduced_linear = other_reduced_linear[i]
+            other_coords = other_coords[:, i]
             other_data = other_data[i]
             pass
         except IndexError:
@@ -655,15 +662,16 @@ class COO(object):
 
         # Find matches between self.coords and other.coords
         if matches_found:
-            matched_self, matched_other = _match_coords(self_reduced_coords, other_reduced_coords)
+            matched_self, matched_other = _match_coords(self_reduced_linear,
+                                                        other_reduced_linear)
         else:
             matched_self, matched_other = np.repeat(np.arange(len(self_data)), len(other_data)), \
                                           np.tile(np.arange(len(other_data)), len(self_data))
 
         # Locate coordinates without a match
-        unmatched_self = np.ones(len(self_coords), dtype=np.bool)
+        unmatched_self = np.ones(self.nnz, dtype=np.bool)
         unmatched_self[matched_self] = False
-        unmatched_other = np.ones(len(other_coords), dtype=np.bool)
+        unmatched_other = np.ones(other.nnz, dtype=np.bool)
         unmatched_other[matched_other] = False
 
         # Start with an empty list. This may reduce computation in many cases.
@@ -672,8 +680,8 @@ class COO(object):
 
         # Add the matched part.
         # if func(_TEST_NONZERO, _TEST_NONZERO_2):
-        matched_coords = self._get_matching_coords(self_coords[matched_self],
-                                                   other_coords[matched_other],
+        matched_coords = self._get_matching_coords(self_coords[:, matched_self],
+                                                   other_coords[:, matched_other],
                                                    self_shape, other_shape)
 
         data_list.append(func(self_data[matched_self],
@@ -684,7 +692,7 @@ class COO(object):
         # Add unmatched parts as necessary.
         if func(_TEST_NONZERO, 0, *args, **kwargs):
             self_unmatched_coords, self_unmatched_data = \
-                self._get_expanded_coords_data(self_coords[unmatched_self],
+                self._get_expanded_coords_data(self_coords[:, unmatched_self],
                                                self_data[unmatched_self],
                                                self_params,
                                                result_shape)
@@ -695,7 +703,7 @@ class COO(object):
 
             if self_shape != result_shape:
                 self_broadcast_coords, self_broadcast_data = \
-                    self._get_broadcast_coords_data(self_coords[matched_self],
+                    self._get_broadcast_coords_data(self_coords[:, matched_self],
                                                     matched_coords,
                                                     self_data[matched_self],
                                                     self_params,
@@ -707,7 +715,7 @@ class COO(object):
 
         if func(0, _TEST_NONZERO, *args, **kwargs):
             other_unmatched_coords, other_unmatched_data = \
-                self._get_expanded_coords_data(other_coords[unmatched_other],
+                self._get_expanded_coords_data(other_coords[:, unmatched_other],
                                                other_data[unmatched_other],
                                                other_params,
                                                result_shape)
@@ -718,7 +726,7 @@ class COO(object):
 
             if other_shape != result_shape:
                 other_broadcast_coords, other_broadcast_data = \
-                    self._get_broadcast_coords_data(other_coords[matched_other],
+                    self._get_broadcast_coords_data(other_coords[:, matched_other],
                                                     matched_coords,
                                                     other_data[matched_other],
                                                     other_params,
@@ -792,7 +800,7 @@ class COO(object):
         return params
 
     @staticmethod
-    def _get_reduced_coords(coords, params):
+    def _get_reduced_coords(coords, shape, params):
         """
         Gets only those dimensions of the coordinates that don't need to be broadcast.
         Parameters
@@ -807,8 +815,9 @@ class COO(object):
             The reduced coordinates.
         """
         reduced_params = [bool(param) for param in params]
+        reduced_shape = tuple(l for l, p in zip(shape, params) if p)
 
-        return coords[reduced_params]
+        return coords[reduced_params], reduced_shape
 
     @staticmethod
     def _get_expanded_coords_data(coords, data, params, broadcast_shape):
@@ -823,7 +832,7 @@ class COO(object):
 
         Returns
         -------
-        expanded_coords : list[np.ndarray]
+        expanded_coords : np.ndarray
             List of 1-D arrays. Each item in the list has one dimension of coordinates.
         expanded_data : np.ndarray
             The data corresponding to expanded_coords.
@@ -832,21 +841,22 @@ class COO(object):
         expanded_coords = []
         expanded_data = data
         dim = 0
-        names = coords.dtype.names
         data_len = len(expanded_data)
+        dt = tuple(np.min_scalar_type(l) for l in broadcast_shape)
+        dt = np.result_type(*dt)
         for param, l in zip(params, broadcast_shape):
             if param:
-                expanded_coords.append(np.repeat(coords[names[dim]], times_repeated))
+                expanded_coords.append(np.repeat(coords[dim], times_repeated))
             else:
                 expanded_data = np.repeat(expanded_data, l)
                 expanded_coords = [np.repeat(coord, l) for coord in expanded_coords]
-                expanded_coords.append(np.tile(np.arange(l), times_repeated * data_len))
+                expanded_coords.append(np.tile(np.arange(l, dtype=dt), times_repeated * data_len))
                 times_repeated *= l
 
             if param is not None:
                 dim += 1
 
-        return expanded_coords, expanded_data
+        return np.asarray(expanded_coords), np.asarray(expanded_data)
 
     def broadcast_to(self, shape):
         """
@@ -861,8 +871,7 @@ class COO(object):
         """
         result_shape = self._get_broadcast_shape(self.shape, shape, is_result=True)
         params = self._get_broadcast_parameters(self.shape, result_shape)
-        self_coords = np.rec.fromarrays(self.coords)
-        coords, data = self._get_expanded_coords_data(self_coords, self.data, params, result_shape)
+        coords, data = self._get_expanded_coords_data(self.coords, self.data, params, result_shape)
 
         return COO(coords, data, shape=result_shape, has_duplicates=self.has_duplicates)
 
@@ -881,7 +890,7 @@ class COO(object):
 
         Returns
         -------
-        matching_coords : list[np.ndarray]
+        matching_coords : np.ndarray
             The coordinates of the output array for which both inputs will be nonzero.
         """
         result_shape = COO._get_broadcast_shape(shape1, shape2)
@@ -890,16 +899,14 @@ class COO(object):
 
         matching_coords = []
         dim1 = 0
-        names1 = coords1.dtype.names
 
         dim2 = 0
-        names2 = coords2.dtype.names
 
         for p1, p2 in zip(params1, params2):
             if p1:
-                matching_coords.append(coords1[names1[dim1]])
+                matching_coords.append(coords1[dim1])
             else:
-                matching_coords.append(coords2[names2[dim2]])
+                matching_coords.append(coords2[dim2])
 
             if p1 is not None:
                 dim1 += 1
@@ -907,7 +914,7 @@ class COO(object):
             if p2 is not None:
                 dim2 += 1
 
-        return matching_coords
+        return np.asarray(matching_coords)
 
     @staticmethod
     def _get_broadcast_coords_data(coords, matched_coords, data, params, broadcast_shape):
@@ -918,42 +925,34 @@ class COO(object):
         Parameters
         ----------
         coords : np.recarray
-        matched_coords : list[np.ndarray]
+        matched_coords : np.ndarray
         data : np.ndarray
         params : list
         broadcast_shape : tuple[int]
         Returns
         -------
-        broadcast_coords : list[np.ndarray]
+        broadcast_coords : np.ndarray
             The broadcasted coordinates.
         broadcasted_data : np.ndarray
             The data corresponding to those coordinates.
         """
         full_coords, full_data = COO._get_expanded_coords_data(coords, data, params, broadcast_shape)
-        full_coords = np.rec.fromarrays(full_coords)
-        matched_coords = np.rec.fromarrays(matched_coords, dtype=full_coords.dtype)
 
         # TODO: Remove this sort. Only needed in one test case where no dimensions of
         # the operands match. Will need to find out what's causing it.
         # Not a high priority as the _match_coords call is O(n log n) anyway.
-        i = np.argsort(full_coords)
-        full_coords = full_coords[i]
+        linear_full_coords = COO._linear_loc(full_coords, broadcast_shape)
+        linear_matched_coords = COO._linear_loc(matched_coords, broadcast_shape)
+        i = np.argsort(linear_full_coords)
+        linear_full_coords = linear_full_coords[i]
+        full_coords = full_coords[:, i]
         full_data = full_data[i]
 
-        overlapping_coords, _ = _match_coords(full_coords, matched_coords)
-        mask = np.ones(len(full_coords), dtype=np.bool)
+        overlapping_coords, _ = _match_coords(linear_full_coords, linear_matched_coords)
+        mask = np.ones(full_coords.shape[1], dtype=np.bool)
         mask[overlapping_coords] = False
 
-        full_coords = full_coords[mask]
-        full_data = full_data[mask]
-
-        names = full_coords.dtype.names
-
-        coords_list = []
-        for dim in range(len(broadcast_shape)):
-            coords_list.append(full_coords[names[dim]])
-
-        return coords_list, full_data
+        return full_coords[:, mask], full_data[mask]
 
     def __abs__(self):
         return self.elemwise(abs)
