@@ -636,7 +636,7 @@ class COO(object):
         self_coords = self_coords[:, i]
         self_data = self_data[i]
 
-        # Convert other.coords to a record array
+        # Store coords
         other_coords = other.coords
         other_data = other.data
 
@@ -815,7 +815,7 @@ class COO(object):
         Expand coordinates/data to broadcast_shape. Does most of the heavy lifting for broadcast_to.
         Parameters
         ----------
-        coords : np.recarray
+        coords : np.ndarray
         expanded_data : np.ndarray
         params : list
         broadcast_shape : tuple[int]
@@ -875,7 +875,7 @@ class COO(object):
 
         Parameters
         ----------
-        coords1, coords2 : np.recarray
+        coords1, coords2 : np.ndarray
         shape1, shape2 : tuple[int]
 
         Returns
@@ -914,7 +914,7 @@ class COO(object):
 
         Parameters
         ----------
-        coords : np.recarray
+        coords : np.ndarray
         matched_coords : np.ndarray
         data : np.ndarray
         params : list
