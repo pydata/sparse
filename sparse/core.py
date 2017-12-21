@@ -678,48 +678,23 @@ class COO(object):
         # Add unmatched parts as necessary.
         if (self_func != 0).any():
             self_unmatched_coords, self_unmatched_func = \
-                self._get_expanded_coords_data(self_coords[:, unmatched_self],
-                                               self_func[unmatched_self],
-                                               self_params,
-                                               result_shape)
+                self._get_unmatched_coords_data(self_coords, self_data, self_shape,
+                                                result_shape, matched_self,
+                                                matched_coords)
 
-            data_list.append(self_unmatched_func)
-            coords_list.append(self_unmatched_coords)
-
-            if self_shape != result_shape:
-                matched_self = np.logical_not(unmatched_self)
-                self_broadcast_coords, self_broadcast_func = \
-                    self._get_broadcast_coords_data(self_coords[:, matched_self],
-                                                    matched_coords,
-                                                    self_func[matched_self],
-                                                    self_params,
-                                                    result_shape)
-
-                data_list.append(self_broadcast_func)
-                coords_list.append(self_broadcast_coords)
+            data_list.extend(self_unmatched_func)
+            coords_list.extend(self_unmatched_coords)
 
         other_func = func(0, other_data, *args, **kwargs)
 
         if (other_func != 0).any():
             other_unmatched_coords, other_unmatched_func = \
-                self._get_expanded_coords_data(other_coords[:, unmatched_other],
-                                               other_func[unmatched_other],
-                                               other_params,
-                                               result_shape)
+                self._get_unmatched_coords_data(other_coords, other_data, other_shape,
+                                                result_shape, matched_other,
+                                                matched_coords)
 
-            coords_list.append(other_unmatched_coords)
-            data_list.append(other_unmatched_func)
-
-            if other_shape != result_shape:
-                matched_other = np.logical_not(unmatched_other)
-                other_broadcast_coords, other_broadcast_func = \
-                    self._get_broadcast_coords_data(other_coords[:, matched_other],
-                                                    matched_coords,
-                                                    other_func[matched_other],
-                                                    other_params,
-                                                    result_shape)
-                data_list.append(other_broadcast_func)
-                coords_list.append(other_broadcast_coords)
+            coords_list.extend(other_unmatched_coords)
+            data_list.extend(other_unmatched_func)
 
         # Concatenate matches and mismatches
         data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=self.dtype)
@@ -731,6 +706,70 @@ class COO(object):
         coords = coords[:, nonzero]
 
         return COO(coords, data, shape=result_shape, has_duplicates=False)
+
+    @staticmethod
+    def _get_unmatched_coords_data(coords, data, shape, result_shape, matched_idx,
+                                   matched_coords):
+        """
+        Get the unmatched coordinates and data - both those that are unmatched with
+        any point of the other data as well as those which are added because of
+        broadcasting.
+
+        Parameters
+        ----------
+        coords : np.ndarray
+            The coordinates to get the unmatched coordinates from.
+        data : np.ndarray
+            The data corresponding to these coordinates.
+        shape : tuple[int]
+            The shape corresponding to these coordinates.
+        result_shape : tuple[int]
+            The result broadcasting shape.
+        matched_idx : np.ndarray
+            The indices into the coords array where it matches with the other array.
+        matched_coords : np.ndarray
+            The overall coordinates that match from both arrays.
+        Returns
+        -------
+        coords_list : list[np.ndarray]
+            The list of unmatched/broadcasting coordinates.
+        data_list : list[np.ndarray]
+            The data corresponding to the coordinates.
+        """
+        params = COO._get_broadcast_parameters(shape, result_shape)
+        unmatched = np.ones(len(data), dtype=np.bool)
+        unmatched[matched_idx] = False
+        matched = np.logical_not(unmatched)
+        nonzero = data != 0
+
+        unmatched = np.logical_and(unmatched, nonzero)
+        matched = np.logical_and(matched, nonzero)
+
+        coords_list = []
+        data_list = []
+
+        unmatched_coords, unmatched_data = \
+            COO._get_expanded_coords_data(coords[:, unmatched],
+                                          data[unmatched],
+                                          params,
+                                          result_shape)
+
+        coords_list.append(unmatched_coords)
+        data_list.append(unmatched_data)
+
+        if shape != result_shape:
+
+            broadcast_coords, broadcast_data = \
+                COO._get_broadcast_coords_data(coords[:, matched],
+                                               matched_coords,
+                                               data[matched],
+                                               params,
+                                               result_shape)
+
+            coords_list.append(broadcast_coords)
+            data_list.append(broadcast_data)
+
+        return coords_list, data_list
 
     @staticmethod
     def _get_broadcast_shape(shape1, shape2, is_result=False):
@@ -812,10 +851,13 @@ class COO(object):
         Parameters
         ----------
         coords : np.ndarray
-        expanded_data : np.ndarray
+            The coordinates to expand.
+        data : np.ndarray
+            The data corresponding to the coordinates.
         params : list
+            The broadcast parameters.
         broadcast_shape : tuple[int]
-
+            The shape to broadcast to.
         Returns
         -------
         expanded_coords : np.ndarray
