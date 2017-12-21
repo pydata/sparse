@@ -862,6 +862,7 @@ class COO(object):
     # (c) senderle
     # Taken from https://stackoverflow.com/a/11146645/774273
     # License: https://creativecommons.org/licenses/by-sa/3.0/
+    @staticmethod
     def _cartesian_product(*arrays):
         broadcastable = np.ix_(*arrays)
         broadcasted = np.broadcast_arrays(*broadcastable)
