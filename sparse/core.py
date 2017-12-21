@@ -729,11 +729,6 @@ class COO(object):
         nonzero = data != 0
         data = data[nonzero]
         coords = coords[:, nonzero]
-        if len(data) != 0 and len(self_reduced_coords) == 0:
-            linear_coords = self._linear_loc(coords, result_shape)
-            linear_coords, idx = np.unique(linear_coords, return_index=True)
-            coords = coords[:, idx]
-            data = data[idx]
 
         return COO(coords, data, shape=result_shape, has_duplicates=False)
 
