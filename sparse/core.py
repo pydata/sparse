@@ -664,7 +664,6 @@ class COO(object):
         coords_list = []
 
         # Add the matched part.
-        # if func(_TEST_NONZERO, _TEST_NONZERO_2):
         matched_coords = self._get_matching_coords(self_coords[:, matched_self],
                                                    other_coords[:, matched_other],
                                                    self_shape, other_shape)
@@ -688,6 +687,7 @@ class COO(object):
             coords_list.append(self_unmatched_coords)
 
             if self_shape != result_shape:
+                matched_self = np.logical_not(unmatched_self)
                 self_broadcast_coords, self_broadcast_func = \
                     self._get_broadcast_coords_data(self_coords[:, matched_self],
                                                     matched_coords,
@@ -711,6 +711,7 @@ class COO(object):
             data_list.append(other_unmatched_func)
 
             if other_shape != result_shape:
+                matched_other = np.logical_not(unmatched_other)
                 other_broadcast_coords, other_broadcast_func = \
                     self._get_broadcast_coords_data(other_coords[:, matched_other],
                                                     matched_coords,
@@ -827,26 +828,51 @@ class COO(object):
         expanded_data : np.ndarray
             The data corresponding to expanded_coords.
         """
-        times_repeated = 1
-        expanded_coords = []
-        expanded_data = data
-        dim = 0
-        data_len = len(expanded_data)
-        dt = tuple(np.min_scalar_type(l) for l in broadcast_shape)
-        dt = np.result_type(*dt)
-        for param, l in zip(params, broadcast_shape):
-            if param:
-                expanded_coords.append(np.repeat(coords[dim], times_repeated))
-            else:
-                expanded_data = np.repeat(expanded_data, l)
-                expanded_coords = [np.repeat(coord, l) for coord in expanded_coords]
-                expanded_coords.append(np.tile(np.arange(l, dtype=dt), times_repeated * data_len))
-                times_repeated *= l
+        first_dim = -1
+        expand_shapes = []
+        for d, p, l in zip(range(len(broadcast_shape)), params, broadcast_shape):
+            if p and first_dim == -1:
+                expand_shapes.append(coords.shape[1])
+                first_dim = d
 
-            if param is not None:
+            if not p:
+                expand_shapes.append(l)
+
+        all_idx = COO._cartesian_product(*tuple(np.arange(d, dtype=np.min_scalar_type(d - 1)) for d in expand_shapes))
+        dt = np.result_type(*tuple(np.min_scalar_type(l - 1) for l in broadcast_shape))
+
+        false_dim = 0
+        dim = 0
+
+        expanded_coords = np.empty((len(broadcast_shape), all_idx.shape[1]), dtype=dt)
+        expanded_data = data[all_idx[first_dim]]
+
+        for d, p, l in zip(range(len(broadcast_shape)), params, broadcast_shape):
+            if p:
+                expanded_coords[d] = coords[dim, all_idx[first_dim]]
+            else:
+                expanded_coords[d] = all_idx[false_dim + (d > first_dim)]
+                false_dim += 1
+
+            if p is not None:
                 dim += 1
 
         return np.asarray(expanded_coords), np.asarray(expanded_data)
+
+    # (c) senderle
+    # Taken from https://stackoverflow.com/a/11146645/774273
+    # License: https://creativecommons.org/licenses/by-sa/3.0/
+    def _cartesian_product(*arrays):
+        broadcastable = np.ix_(*arrays)
+        broadcasted = np.broadcast_arrays(*broadcastable)
+        rows, cols = np.prod(broadcasted[0].shape), len(broadcasted)
+        dtype = np.result_type(*arrays)
+        out = np.empty(rows * cols, dtype=dtype)
+        start, end = 0, rows
+        for a in broadcasted:
+            out[start:end] = a.reshape(-1)
+            start, end = end, end + rows
+        return out.reshape(cols, rows)
 
     def broadcast_to(self, shape):
         """
@@ -927,16 +953,8 @@ class COO(object):
             The data corresponding to those coordinates.
         """
         full_coords, full_data = COO._get_expanded_coords_data(coords, data, params, broadcast_shape)
-
-        # TODO: Remove this sort. Only needed in one test case where no dimensions of
-        # the operands match. Will need to find out what's causing it.
-        # Not a high priority as the _match_coords call is O(n log n) anyway.
         linear_full_coords = COO._linear_loc(full_coords, broadcast_shape)
         linear_matched_coords = COO._linear_loc(matched_coords, broadcast_shape)
-        i = np.argsort(linear_full_coords)
-        linear_full_coords = linear_full_coords[i]
-        full_coords = full_coords[:, i]
-        full_data = full_data[i]
 
         overlapping_coords, _ = _match_coords(linear_full_coords, linear_matched_coords)
         mask = np.ones(full_coords.shape[1], dtype=np.bool)
