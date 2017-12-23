@@ -650,7 +650,7 @@ class COO(object):
         other_data = other_data[i]
 
         # Find matches between self.coords and other.coords
-        matched_self, matched_other = _match_coords(self_reduced_linear,
+        matched_self, matched_other = _match_arrays(self_reduced_linear,
                                                     other_reduced_linear)
 
         # Locate coordinates without a match
@@ -737,13 +737,13 @@ class COO(object):
             The data corresponding to the coordinates.
         """
         params = COO._get_broadcast_parameters(shape, result_shape)
-        unmatched = np.ones(len(data), dtype=np.bool)
-        unmatched[matched_idx] = False
-        matched = np.logical_not(unmatched)
+        matched = np.zeros(len(data), dtype=np.bool)
+        matched[matched_idx] = True
+        unmatched = ~matched
         nonzero = data != 0
 
-        unmatched = np.logical_and(unmatched, nonzero)
-        matched = np.logical_and(matched, nonzero)
+        unmatched &= nonzero
+        matched &= nonzero
 
         coords_list = []
         data_list = []
@@ -758,7 +758,6 @@ class COO(object):
         data_list.append(unmatched_data)
 
         if shape != result_shape:
-
             broadcast_coords, broadcast_data = \
                 COO._get_broadcast_coords_data(coords[:, matched],
                                                matched_coords,
@@ -828,6 +827,7 @@ class COO(object):
     def _get_reduced_coords(coords, shape, params):
         """
         Gets only those dimensions of the coordinates that don't need to be broadcast.
+
         Parameters
         ----------
         coords : np.ndarray
@@ -848,6 +848,8 @@ class COO(object):
     def _get_expanded_coords_data(coords, data, params, broadcast_shape):
         """
         Expand coordinates/data to broadcast_shape. Does most of the heavy lifting for broadcast_to.
+        Produces sorted output for sorted inputs.
+
         Parameters
         ----------
         coords : np.ndarray
@@ -875,8 +877,8 @@ class COO(object):
             if not p:
                 expand_shapes.append(l)
 
-        all_idx = COO._cartesian_product(*tuple(np.arange(d, dtype=np.min_scalar_type(d - 1)) for d in expand_shapes))
-        dt = np.result_type(*tuple(np.min_scalar_type(l - 1) for l in broadcast_shape))
+        all_idx = COO._cartesian_product(*(np.arange(d, dtype=np.min_scalar_type(d - 1)) for d in expand_shapes))
+        dt = np.result_type(*(np.min_scalar_type(l - 1) for l in broadcast_shape))
 
         false_dim = 0
         dim = 0
@@ -901,6 +903,19 @@ class COO(object):
     # License: https://creativecommons.org/licenses/by-sa/3.0/
     @staticmethod
     def _cartesian_product(*arrays):
+        """
+        Get the cartesian product of a number of arrays.
+
+        Parameters
+        ----------
+        arrays : Iterable[np.ndarray]
+            The arrays to get a cartesian product of. Always sorted with respect
+            to the original array.
+        Returns
+        -------
+        out : np.ndarray
+            The overall cartesian product of all the input arrays.
+        """
         broadcastable = np.ix_(*arrays)
         broadcasted = np.broadcast_arrays(*broadcastable)
         rows, cols = np.prod(broadcasted[0].shape), len(broadcasted)
@@ -922,12 +937,17 @@ class COO(object):
         Returns
         -------
             The broadcasted sparse array.
+        Raises
+        ------
+        ValueError
+            If the operand cannot be broadcast to the given shape.
         """
         result_shape = self._get_broadcast_shape(self.shape, shape, is_result=True)
         params = self._get_broadcast_parameters(self.shape, result_shape)
         coords, data = self._get_expanded_coords_data(self.coords, self.data, params, result_shape)
 
-        return COO(coords, data, shape=result_shape, has_duplicates=self.has_duplicates)
+        return COO(coords, data, shape=result_shape, has_duplicates=self.has_duplicates,
+                   sorted=self.sorted)
 
     @staticmethod
     def _get_matching_coords(coords1, coords2, shape1, shape2):
@@ -979,14 +999,19 @@ class COO(object):
         Parameters
         ----------
         coords : np.ndarray
+            The list of coordinates of the required array. Must be sorted.
         matched_coords : np.ndarray
+            The list of coordinates that match. Must be sorted.
         data : np.ndarray
+            The data corresponding to coords.
         params : list
+            The broadcast parameters.
         broadcast_shape : tuple[int]
+            The shape to get the broadcast coordinates.
         Returns
         -------
         broadcast_coords : np.ndarray
-            The broadcasted coordinates.
+            The broadcasted coordinates. Is sorted.
         broadcasted_data : np.ndarray
             The data corresponding to those coordinates.
         """
@@ -994,7 +1019,7 @@ class COO(object):
         linear_full_coords = COO._linear_loc(full_coords, broadcast_shape)
         linear_matched_coords = COO._linear_loc(matched_coords, broadcast_shape)
 
-        overlapping_coords, _ = _match_coords(linear_full_coords, linear_matched_coords)
+        overlapping_coords, _ = _match_arrays(linear_full_coords, linear_matched_coords)
         mask = np.ones(full_coords.shape[1], dtype=np.bool)
         mask[overlapping_coords] = False
 
@@ -1264,7 +1289,22 @@ def stack(arrays, axis=0):
 # (c) Paul Panzer
 # Taken from https://stackoverflow.com/a/47833496/774273
 # License: https://creativecommons.org/licenses/by-sa/3.0/
-def _match_coords(a, b):
+def _match_arrays(a, b):
+    """
+    Finds all indexes into a and b such that a[i] = b[j]. The outputs are sorted
+    in lexographical order.
+
+    Parameters
+    ----------
+    a, b : np.ndarray
+        The input 1-D arrays to match. If matching of multiple fields is
+        needed, use np.recarrays. These two arrays must be sorted.
+
+    Returns
+    -------
+    a_idx, b_idx : np.ndarray
+        The output indices of every possible pair of matching elements.
+    """
     if len(a) == 0 or len(b) == 0:
         return np.array([], dtype=np.uint8), np.array([], dtype=np.uint8)
     asw = np.r_[0, 1 + np.flatnonzero(a[:-1] != a[1:]), len(a)]
