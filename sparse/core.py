@@ -235,8 +235,11 @@ class COO(object):
             index = (index,)
         index = tuple(ind + self.shape[i] if isinstance(ind, numbers.Integral) and ind < 0 else ind
                       for i, ind in enumerate(index))
-        if (all(ind == slice(None) or ind == slice(0, d)
-                for ind, d in zip(index, self.shape))):
+        if any(ind is Ellipsis for ind in index):
+            loc = index.index(Ellipsis)
+            n = self.ndim - (len(index) - 1 - index.count(None))
+            index = index[:loc] + (slice(None, None),) * n + index[loc + 1:]
+        if all(ind == slice(None) for ind in index):
             return self
         mask = np.ones(self.nnz, dtype=bool)
         for i, ind in enumerate([i for i in index if i is not None]):
@@ -746,7 +749,7 @@ def tensordot(a, b, axes=2):
     # Please see license at https://github.com/numpy/numpy/blob/master/LICENSE.txt
     try:
         iter(axes)
-    except:
+    except TypeError:
         axes_a = list(range(-axes, 0))
         axes_b = list(range(0, axes))
     else:
