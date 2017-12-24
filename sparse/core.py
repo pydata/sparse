@@ -233,7 +233,13 @@ class COO(object):
     def __getitem__(self, index):
         if not isinstance(index, tuple):
             index = (index,)
-        index = tuple(ind + self.shape[i] if isinstance(ind, numbers.Integral) and ind < 0 else ind
+        if len(index) - index.count(None) > self.ndim:
+            raise IndexError("too many indices for array")
+        if index.count(Ellipsis) > 1:
+            raise IndexError("an index can only have a single ellipsis ('...')")
+        index = tuple(ind + self.shape[i]  # this fails for newaxis slices
+                      if isinstance(ind, numbers.Integral) and ind < 0
+                      else ind
                       for i, ind in enumerate(index))
         if any(ind is Ellipsis for ind in index):
             loc = index.index(Ellipsis)

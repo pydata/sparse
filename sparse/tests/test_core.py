@@ -248,6 +248,33 @@ def test_slicing(index):
     assert_eq(x[index], s[index])
 
 
+@pytest.mark.parametrize('index', [
+    (Ellipsis, Ellipsis),
+    (1, 1, 1, 1),
+    (slice(None),) * 4,
+    pytest.mark.xfail(5, reason=''),
+    pytest.mark.xfail(-5, reason=''),
+    pytest.mark.xfail('foo', reason=''),
+])
+def test_slicing_errors(index):
+    x = random_x((2, 3, 4))
+    s = COO.from_numpy(x)
+
+    try:
+        x[index]
+    except Exception as e:
+        e1 = e
+    else:
+        raise Exception("exception not raised")
+
+    try:
+        s[index]
+    except Exception as e:
+        assert type(e) == type(e1)
+    else:
+        raise Exception("exception not raised")
+
+
 def test_canonical():
     coords = np.array([[0, 0, 0],
                        [0, 1, 0],
