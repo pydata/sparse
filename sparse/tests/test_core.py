@@ -24,6 +24,13 @@ def random_x(shape, dtype=float):
     return x
 
 
+def random_x_bool(shape):
+    x = np.zeros(shape=shape, dtype=np.bool)
+    for i in range(max(5, np.prod(x.shape) // 10)):
+        x[tuple(random.randint(0, d - 1) for d in x.shape)] = True
+    return x
+
+
 @pytest.mark.parametrize('reduction,kwargs', [
     ('max', {}),
     ('sum', {}),
@@ -178,11 +185,35 @@ def test_elemwise(func):
     assert_eq(func(x), func(s))
 
 
-@pytest.mark.parametrize('func', [operator.mul])
+@pytest.mark.parametrize('func', [operator.mul, operator.add])
 @pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
 def test_elemwise_binary(func, shape):
     x = random_x(shape)
     y = random_x(shape)
+
+    xs = COO.from_numpy(x)
+    ys = COO.from_numpy(y)
+
+    assert_eq(func(xs, ys), func(x, y))
+
+
+@pytest.mark.parametrize('func', [operator.and_, operator.or_, operator.xor])
+@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+def test_bitwise_binary(func, shape):
+    x = random_x(shape, dtype=np.int_)
+    y = random_x(shape, dtype=np.int_)
+
+    xs = COO.from_numpy(x)
+    ys = COO.from_numpy(y)
+
+    assert_eq(func(xs, ys), func(x, y))
+
+
+@pytest.mark.parametrize('func', [operator.and_, operator.or_, operator.xor])
+@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+def test_bitwise_binary_bool(func, shape):
+    x = random_x_bool(shape)
+    y = random_x_bool(shape)
 
     xs = COO.from_numpy(x)
     ys = COO.from_numpy(y)

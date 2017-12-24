@@ -341,12 +341,14 @@ class COO(object):
 
     def max(self, axis=None, keepdims=False, out=None):
         x = self.reduction('max', axis=axis, keepdims=keepdims)
+        x_zero = _zero_of_dtype(x.dtype)
+
         # TODO: verify that there are some missing elements in each entry
         if isinstance(x, COO):
-            x.data[x.data < 0] = 0
+            x.data[x.data < x_zero] = x_zero
             return x
         elif isinstance(x, np.ndarray):
-            x[x < 0] = 0
+            x[x < x_zero] = x_zero
             return x
         else:
             return np.max(x, 0)
@@ -598,8 +600,20 @@ class COO(object):
     def __pow__(self, other):
         return self.elemwise(operator.pow, other)
 
+    def __and__(self, other):
+        return self.elemwise_binary(operator.and_, other)
+
+    def __xor__(self, other):
+        return self.elemwise_binary(operator.xor, other)
+
+    def __or__(self, other):
+        return self.elemwise_binary(operator.or_, other)
+
     def elemwise(self, func, *args, **kwargs):
-        if kwargs.pop('check', True) and func(0, *args, **kwargs) != 0:
+        check = kwargs.pop('check', True)
+        data_zero = _zero_of_dtype(self.dtype)
+        func_zero = _zero_of_dtype(func(data_zero, *args, **kwargs).dtype)
+        if check and func(data_zero, *args, **kwargs) != func_zero:
             raise ValueError("Performing this operation would produce "
                              "a dense result: %s" % str(func))
         return COO(self.coords, func(self.data, *args, **kwargs),
@@ -609,7 +623,11 @@ class COO(object):
 
     def elemwise_binary(self, func, other, *args, **kwargs):
         assert isinstance(other, COO)
-        if kwargs.pop('check', True) and func(0, 0, *args, **kwargs) != 0:
+        self_zero = _zero_of_dtype(self.dtype)
+        other_zero = _zero_of_dtype(other.dtype)
+        check = kwargs.pop('check', True)
+        func_zero = _zero_of_dtype(func(self_zero, other_zero, * args, **kwargs).dtype)
+        if check and func(self_zero, other_zero, *args, **kwargs) != func_zero:
             raise ValueError("Performing this operation would produce "
                              "a dense result: %s" % str(func))
         self_shape, other_shape = self.shape, other.shape
@@ -673,10 +691,10 @@ class COO(object):
                               *args, **kwargs))
         coords_list.append(matched_coords)
 
-        self_func = func(self_data, 0, *args, **kwargs)
+        self_func = func(self_data, other_zero, *args, **kwargs)
 
         # Add unmatched parts as necessary.
-        if (self_func != 0).any():
+        if (self_func != func_zero).any():
             self_unmatched_coords, self_unmatched_func = \
                 self._get_unmatched_coords_data(self_coords, self_data, self_shape,
                                                 result_shape, matched_self,
@@ -685,9 +703,9 @@ class COO(object):
             data_list.extend(self_unmatched_func)
             coords_list.extend(self_unmatched_coords)
 
-        other_func = func(0, other_data, *args, **kwargs)
+        other_func = func(self_zero, other_data, *args, **kwargs)
 
-        if (other_func != 0).any():
+        if (other_func != func_zero).any():
             other_unmatched_coords, other_unmatched_func = \
                 self._get_unmatched_coords_data(other_coords, other_data, other_shape,
                                                 result_shape, matched_other,
@@ -701,7 +719,7 @@ class COO(object):
         coords = np.concatenate(coords_list, axis=1) if len(coords_list) else \
             np.empty((0, len(result_shape)), dtype=self.coords.dtype)
 
-        nonzero = data != 0
+        nonzero = data != func_zero
         data = data[nonzero]
         coords = coords[:, nonzero]
 
@@ -740,7 +758,8 @@ class COO(object):
         matched = np.zeros(len(data), dtype=np.bool)
         matched[matched_idx] = True
         unmatched = ~matched
-        nonzero = data != 0
+        data_zero = _zero_of_dtype(data.dtype)
+        nonzero = data != data_zero
 
         unmatched &= nonzero
         matched &= nonzero
@@ -973,7 +992,6 @@ class COO(object):
 
         matching_coords = []
         dim1 = 0
-
         dim2 = 0
 
         for p1, p2 in zip(params1, params2):
@@ -1284,6 +1302,20 @@ def stack(arrays, axis=0):
 
     return COO(coords, data, shape=shape, has_duplicates=has_duplicates,
                sorted=(axis == 0) and all(a.sorted for a in arrays))
+
+
+def _zero_of_dtype(dtype):
+    """
+    Creates a ()-shaped 0-sized array of a given dtype
+    Parameters
+    ----------
+    dtype : np.dtype
+        The dtype for the array.
+    Returns
+    -------
+    The zero array.
+    """
+    return np.zeros((), dtype=dtype)
 
 
 # (c) Paul Panzer
