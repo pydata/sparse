@@ -9,7 +9,6 @@ from sparse import COO
 import sparse
 from sparse.utils import assert_eq
 
-
 x = np.zeros(shape=(2, 3, 4), dtype=np.float32)
 for i in range(10):
     x[random.randint(0, x.shape[0] - 1),
@@ -19,7 +18,7 @@ y = COO.from_numpy(x)
 
 
 def random_x(shape, dtype=float):
-    x = np.zeros(shape=shape, dtype=float)
+    x = np.zeros(shape=shape, dtype=dtype)
     for i in range(max(5, np.prod(x.shape) // 10)):
         x[tuple(random.randint(0, d - 1) for d in x.shape)] = random.randint(0, 100)
     return x
@@ -67,8 +66,8 @@ def test_reshape(a, b):
 def test_large_reshape():
     n = 100
     m = 10
-    row = np.arange(n, dtype=np.uint16)# np.random.randint(0, n, size=n, dtype=np.uint16)
-    col = row % m # np.random.randint(0, m, size=n, dtype=np.uint16)
+    row = np.arange(n, dtype=np.uint16)  # np.random.randint(0, n, size=n, dtype=np.uint16)
+    col = row % m  # np.random.randint(0, m, size=n, dtype=np.uint16)
     data = np.ones(n, dtype=np.uint8)
 
     x = COO((data, (row, col)), sorted=True, has_duplicates=False)
@@ -153,11 +152,11 @@ def test_dot_nocoercion():
 
     la = a.tolist()
     lb = b.tolist()
-    la, lb          # silencing flake8
+    la, lb  # silencing flake8
 
     sa = COO.from_numpy(a)
     sb = COO.from_numpy(b)
-    sa, sb          # silencing flake8
+    sa, sb  # silencing flake8
 
     if hasattr(operator, 'matmul'):
         # Operations with naive collection (list)
@@ -166,10 +165,10 @@ def test_dot_nocoercion():
 
 
 @pytest.mark.parametrize('func', [np.expm1, np.log1p, np.sin, np.tan,
-                                   np.sinh,  np.tanh, np.floor, np.ceil,
-                                   np.sqrt, np.conj, np.round, np.rint,
-                                   lambda x: x.astype('int32'), np.conjugate,
-                                   np.conj, lambda x: x.round(decimals=2), abs])
+                                  np.sinh, np.tanh, np.floor, np.ceil,
+                                  np.sqrt, np.conj, np.round, np.rint,
+                                  lambda x: x.astype('int32'), np.conjugate,
+                                  np.conj, lambda x: x.round(decimals=2), abs])
 def test_elemwise(func):
     x = random_x((2, 3, 4))
     s = COO.from_numpy(x)
@@ -359,15 +358,36 @@ def test_addition_not_ok_when_large_and_sparse():
         np.exp(x)
 
 
-@pytest.mark.xfail
-def test_addition_broadcasting():
-    x = random_x((2, 3, 4))
+@pytest.mark.parametrize('func', [operator.add, operator.mul])
+@pytest.mark.parametrize('shape1,shape2', [((2, 3, 4), (3, 4)),
+                                           ((3, 4), (2, 3, 4)),
+                                           ((3, 1, 4), (3, 2, 4)),
+                                           ((1, 3, 4), (3, 4)),
+                                           ((3, 4, 1), (3, 4, 2)),
+                                           ((1, 5), (5, 1))])
+def test_broadcasting(func, shape1, shape2):
+    x = random_x(shape1)
     a = COO.from_numpy(x)
 
-    z = random_x((3, 4))
+    z = random_x(shape2)
     c = COO.from_numpy(z)
 
-    assert_eq(x + z, a + c)
+    expected = func(x, z)
+    actual = func(a, c)
+
+    assert_eq(expected, actual)
+
+    assert np.count_nonzero(expected) == actual.nnz
+
+
+@pytest.mark.parametrize('shape1,shape2', [((3, 4), (2, 3, 4)),
+                                           ((3, 1, 4), (3, 2, 4)),
+                                           ((3, 4, 1), (3, 4, 2))])
+def test_broadcast_to(shape1, shape2):
+    x = random_x(shape1)
+    a = COO.from_numpy(x)
+
+    assert_eq(np.broadcast_to(x, shape2), a.broadcast_to(shape2))
 
 
 def test_scalar_multiplication():
@@ -381,6 +401,7 @@ def test_scalar_multiplication():
     assert_eq(x // 2.5, a // 2.5)
 
 
+@pytest.mark.filterwarnings('ignore:divide by zero')
 def test_scalar_exponentiation():
     x = random_x((2, 3, 4))
     a = COO.from_numpy(x)
