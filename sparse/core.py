@@ -626,7 +626,7 @@ class COO(object):
         self_zero = self._zero_of_dtype(self.dtype)
         other_zero = self._zero_of_dtype(other.dtype)
         func_zero = self._zero_of_dtype(func(self_zero, other_zero, * args, **kwargs).dtype)
-        if kwargs.pop('check', True) and func(self_zero, other_zero, *args, **kwargs) != 0:
+        if kwargs.pop('check', True) and func(self_zero, other_zero, *args, **kwargs) != func_zero:
             raise ValueError("Performing this operation would produce "
                              "a dense result: %s" % str(func))
         self_shape, other_shape = self.shape, other.shape
