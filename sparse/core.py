@@ -233,7 +233,7 @@ class COO(object):
     def __getitem__(self, index):
         if not isinstance(index, tuple):
             index = (index,)
-        if len(index) - index.count(None) > self.ndim:
+        if len(index) - index.count(None) - index.count(Ellipsis) > self.ndim:
             raise IndexError("too many indices for array")
         if index.count(Ellipsis) > 1:
             raise IndexError("an index can only have a single ellipsis ('...')")
@@ -283,7 +283,10 @@ class COO(object):
             coords.append(self.coords[j][mask])
             shape.append(self.shape[j])
 
-        coords = np.stack(coords, axis=0)
+        if coords:
+            coords = np.stack(coords, axis=0)
+        else:
+            coords = np.array(coords)
         shape = tuple(shape)
         data = self.data[mask]
 

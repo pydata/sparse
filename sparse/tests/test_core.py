@@ -235,6 +235,8 @@ def test_gt():
     (None, Ellipsis),
     (1, Ellipsis),
     (1, Ellipsis, None),
+    (1, 1, 1),
+    (1, 1, 1, Ellipsis),
     (Ellipsis, 1, None),
     (slice(0, 3), None, 0),
     (slice(1, 2), slice(2, 4)),
