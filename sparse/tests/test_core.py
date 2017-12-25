@@ -258,6 +258,16 @@ def test_gt():
     (0, [1, 0], 0),
     (1, [2, 0], 0),
     (None, slice(1, 3), 0),
+    (Ellipsis, slice(1, 3)),
+    (1, Ellipsis, slice(1, 3)),
+    (slice(0, 1), Ellipsis),
+    (Ellipsis, None),
+    (None, Ellipsis),
+    (1, Ellipsis),
+    (1, Ellipsis, None),
+    (1, 1, 1),
+    (1, 1, 1, Ellipsis),
+    (Ellipsis, 1, None),
     (slice(0, 3), None, 0),
     (slice(1, 2), slice(2, 4)),
     (slice(1, 2), slice(None, None)),
@@ -268,6 +278,33 @@ def test_slicing(index):
     s = COO.from_numpy(x)
 
     assert_eq(x[index], s[index])
+
+
+@pytest.mark.parametrize('index', [
+    (Ellipsis, Ellipsis),
+    (1, 1, 1, 1),
+    (slice(None),) * 4,
+    pytest.mark.xfail(5, reason=''),
+    pytest.mark.xfail(-5, reason=''),
+    pytest.mark.xfail('foo', reason=''),
+])
+def test_slicing_errors(index):
+    x = random_x((2, 3, 4))
+    s = COO.from_numpy(x)
+
+    try:
+        x[index]
+    except Exception as e:
+        e1 = e
+    else:
+        raise Exception("exception not raised")
+
+    try:
+        s[index]
+    except Exception as e:
+        assert type(e) == type(e1)
+    else:
+        raise Exception("exception not raised")
 
 
 def test_canonical():
@@ -556,3 +593,10 @@ def test_caching():
         x.reshape((1,) * i + (2,) + (1,) * (x.ndim - i - 1))
 
     assert len(x._cache['reshape']) < 5
+
+
+def test_scalar_slicing():
+    x = np.array([0, 1])
+    s = COO(x)
+    assert_eq(x[0], s[0])
+    assert_eq(x[1], s[1])

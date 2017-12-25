@@ -194,8 +194,8 @@ class COO(object):
             data = x[coords]
             coords = np.vstack(coords)
         else:
-            coords = []
-            data = x
+            coords = np.empty((0, 1), dtype=np.uint8)
+            data = np.array(x, ndmin=1)
         return cls(coords, data, shape=x.shape, has_duplicates=False,
                    sorted=True)
 
@@ -204,7 +204,14 @@ class COO(object):
         x = np.zeros(shape=self.shape, dtype=self.dtype)
 
         coords = tuple([self.coords[i, :] for i in range(self.ndim)])
-        x[coords] = self.data
+        data = self.data
+
+        if coords != ():
+            x[coords] = data
+        else:
+            if len(data) != 0:
+                x[coords] = data
+
         return x
 
     @classmethod
@@ -239,10 +246,19 @@ class COO(object):
     def __getitem__(self, index):
         if not isinstance(index, tuple):
             index = (index,)
-        index = tuple(ind + self.shape[i] if isinstance(ind, numbers.Integral) and ind < 0 else ind
+        if len(index) - index.count(None) - index.count(Ellipsis) > self.ndim:
+            raise IndexError("too many indices for array")
+        if index.count(Ellipsis) > 1:
+            raise IndexError("an index can only have a single ellipsis ('...')")
+        index = tuple(ind + self.shape[i]  # this fails for newaxis slices
+                      if isinstance(ind, numbers.Integral) and ind < 0
+                      else ind
                       for i, ind in enumerate(index))
-        if (all(ind == slice(None) or ind == slice(0, d)
-                for ind, d in zip(index, self.shape))):
+        if any(ind is Ellipsis for ind in index):
+            loc = index.index(Ellipsis)
+            n = self.ndim - (len(index) - 1 - index.count(None))
+            index = index[:loc] + (slice(None, None),) * n + index[loc + 1:]
+        if all(ind == slice(None) for ind in index):
             return self
         mask = np.ones(self.nnz, dtype=bool)
         for i, ind in enumerate([i for i in index if i is not None]):
@@ -280,7 +296,10 @@ class COO(object):
             coords.append(self.coords[j][mask])
             shape.append(self.shape[j])
 
-        coords = np.stack(coords, axis=0)
+        if coords:
+            coords = np.stack(coords, axis=0)
+        else:
+            coords = np.empty((np.sum(mask), 0), dtype=np.uint8)
         shape = tuple(shape)
         data = self.data[mask]
 
