@@ -188,8 +188,8 @@ class COO(object):
             data = x[coords]
             coords = np.vstack(coords)
         else:
-            coords = []
-            data = x
+            coords = np.empty((0, 1), dtype=np.uint8)
+            data = np.array(x, ndmin=1)
         return cls(coords, data, shape=x.shape, has_duplicates=False,
                    sorted=True)
 
@@ -198,7 +198,14 @@ class COO(object):
         x = np.zeros(shape=self.shape, dtype=self.dtype)
 
         coords = tuple([self.coords[i, :] for i in range(self.ndim)])
-        x[coords] = self.data
+        data = self.data
+
+        if coords != ():
+            x[coords] = data
+        else:
+            if len(data) != 0:
+                x[coords] = data
+
         return x
 
     @classmethod
@@ -286,7 +293,7 @@ class COO(object):
         if coords:
             coords = np.stack(coords, axis=0)
         else:
-            coords = np.array(coords)
+            coords = np.empty((np.sum(mask), 0), dtype=np.uint8)
         shape = tuple(shape)
         data = self.data[mask]
 
