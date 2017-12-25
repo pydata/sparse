@@ -22,5 +22,12 @@ setup(name='sparse',
               'pytest-cov',
               'pytest-flake8',
           ],
+          'docs' : [
+              'sphinx',
+              'sphinxcontrib-napoleon',
+              'sphinx_rtd_theme',
+              'numpydoc',
+          ],
       },
       zip_safe=False)
+
