@@ -541,3 +541,10 @@ def test_caching():
         x.reshape((1,) * i + (2,) + (1,) * (x.ndim - i - 1))
 
     assert len(x._cache['reshape']) < 5
+
+
+def test_scalar_slicing():
+    x = np.array([0, 1])
+    s = COO(x)
+    assert_eq(x[0], s[0])
+    assert_eq(x[1], s[1])
