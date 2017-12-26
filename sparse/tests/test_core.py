@@ -600,3 +600,18 @@ def test_scalar_slicing():
     s = COO(x)
     assert_eq(x[0], s[0])
     assert_eq(x[1], s[1])
+
+
+@pytest.mark.parametrize('shape, k', [
+    ((3, 4), 0),
+    ((3, 4, 5), 1),
+    ((4, 2), -1),
+    ((2, 4), -2),
+    ((4, 4), 1000),
+])
+def test_triul(shape, k):
+    x = random_x(shape)
+    s = COO.from_numpy(x)
+
+    assert_eq(np.triu(x, k), sparse.triu(s, k))
+    assert_eq(np.tril(x, k), sparse.tril(s, k))

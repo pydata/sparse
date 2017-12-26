@@ -1323,6 +1323,60 @@ def stack(arrays, axis=0):
                sorted=(axis == 0) and all(a.sorted for a in arrays))
 
 
+def triu(x, k=0):
+    """
+    Calculates the equivalent of np.triu(x, k) for COO.
+
+    Parameters
+    ----------
+    x : COO
+        The input array.
+    k : int
+        The diagonal below which elements are set to zero.
+
+    Returns
+    -------
+    COO
+        The output upper-triangular matrix.
+    """
+    if not x.ndim >= 2:
+        raise NotImplementedError('sparse.triu is not implemented for scalars or 1-D arrays.')
+
+    mask = x.coords[-2] + k <= x.coords[-1]
+
+    coords = x.coords[:, mask]
+    data = x.data[mask]
+
+    return COO(coords, data, x.shape, x.has_duplicates, x.sorted)
+
+
+def tril(x, k=0):
+    """
+    Calculates the equivalent of np.tril(x, k) for COO.
+
+    Parameters
+    ----------
+    x : COO
+        The input array.
+    k : int
+        The diagonal above which elements are set to zero.
+
+    Returns
+    -------
+    COO
+        The output lower-triangular matrix.
+    """
+    if not x.ndim >= 2:
+        raise NotImplementedError('sparse.tril is not implemented for scalars or 1-D arrays.')
+
+    mask = x.coords[-2] + k >= x.coords[-1]
+
+    coords = x.coords[:, mask]
+    data = x.data[mask]
+
+    return COO(coords, data, x.shape, x.has_duplicates, x.sorted)
+
+
 def _zero_of_dtype(dtype):
     """
     Creates a ()-shaped 0-sized array of a given dtype
