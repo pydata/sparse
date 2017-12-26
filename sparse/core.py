@@ -1514,3 +1514,25 @@ def _grouped_reduce(x, groups, method, **kwargs):
     result = method.reduceat(x, inv_idx, **kwargs)
     counts = np.diff(np.concatenate((inv_idx, [len(x)])))
     return result, inv_idx, counts
+
+
+def random(shape, density=0.01, dtype=None):
+    """ Generate a random sparse multidimensional array
+
+    Parameters
+    ----------
+    shape: :obj:`tuple` of :obj:`int`
+        Shape of the array
+    density: :obj:`float`
+        Density of the generated array.
+    dtype : dtype
+        Type of the returned array values.
+
+
+    """
+    elements = np.prod(shape)
+    nnz = int(elements * density)
+
+    return COO.from_scipy_sparse(
+        scipy.sparse.rand(elements, 1, density, dtype=dtype)
+    ).reshape(shape)
