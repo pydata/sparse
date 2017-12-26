@@ -1352,20 +1352,20 @@ def triu(x, k=0):
 
 def tril(x, k=0):
     """
-        Calculates the equivalent of np.tril(x, k) for COO.
+    Calculates the equivalent of np.tril(x, k) for COO.
 
-        Parameters
-        ----------
-        x : COO
-            The input array.
-        k : int
-            The diagonal above which elements are set to zero.
+    Parameters
+    ----------
+    x : COO
+        The input array.
+    k : int
+        The diagonal above which elements are set to zero.
 
-        Returns
-        -------
-        COO
-            The output lower-triangular matrix.
-        """
+    Returns
+    -------
+    COO
+        The output lower-triangular matrix.
+    """
     if not x.ndim >= 2:
         raise NotImplementedError('sparse.tril is not implemented for scalars or 1-D arrays.')
 
