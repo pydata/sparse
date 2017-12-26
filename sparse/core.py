@@ -1531,7 +1531,6 @@ def random(shape, density=0.01, dtype=None):
 
     """
     elements = np.prod(shape)
-    nnz = int(elements * density)
 
     return COO.from_scipy_sparse(
         scipy.sparse.rand(elements, 1, density, dtype=dtype)
