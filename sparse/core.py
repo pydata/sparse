@@ -1121,6 +1121,26 @@ class COO(object):
         assert out is None
         return self.elemwise(np.conjugate)
 
+    def triu(self, k=0):
+        assert self.ndim >= 2
+
+        mask = self.coords[-2] + k <= self.coords[-1]
+
+        coords = self.coords[:, mask]
+        data = self.data[mask]
+
+        return COO(coords, data, self.shape, self.has_duplicates, self.sorted)
+
+    def tril(self, k=0):
+        assert self.ndim >= 2
+
+        mask = self.coords[-2] + k >= self.coords[-1]
+
+        coords = self.coords[:, mask]
+        data = self.data[mask]
+
+        return COO(coords, data, self.shape, self.has_duplicates, self.sorted)
+
     def astype(self, dtype, out=None):
         assert out is None
         return self.elemwise(np.ndarray.astype, dtype, check=False)
