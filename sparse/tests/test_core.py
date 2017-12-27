@@ -185,7 +185,10 @@ def test_elemwise(func):
     assert_eq(func(x), func(s))
 
 
-@pytest.mark.parametrize('func', [operator.mul, operator.add])
+@pytest.mark.parametrize('func', [
+    operator.mul, operator.add, operator.sub, operator.gt,
+    operator.lt, operator.ne
+])
 @pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
 def test_elemwise_binary(func, shape):
     x = random_x(shape)
@@ -195,6 +198,66 @@ def test_elemwise_binary(func, shape):
     ys = COO.from_numpy(y)
 
     assert_eq(func(xs, ys), func(x, y))
+
+
+@pytest.mark.parametrize('func', [
+    operator.pow, operator.truediv, operator.floordiv,
+    operator.ge, operator.le, operator.eq
+])
+@pytest.mark.filterwarnings('ignore:divide by zero')
+@pytest.mark.filterwarnings('ignore:invalid value')
+def test_auto_densification_fails(func):
+    xs = COO.from_numpy(random_x((2, 3, 4)))
+    ys = COO.from_numpy(random_x((2, 3, 4)))
+
+    with pytest.raises(ValueError):
+        func(xs, ys)
+
+
+@pytest.mark.parametrize('func, scalar', [
+    (operator.mul, 5),
+    (operator.add, 0),
+    (operator.sub, 0),
+    (operator.pow, 5),
+    (operator.truediv, 3),
+    (operator.floordiv, 4),
+    (operator.gt, 5),
+    (operator.lt, -5),
+    (operator.ne, 0),
+    (operator.ge, 5),
+    (operator.le, -3),
+    (operator.eq, 1)
+])
+def test_elemwise_scalar(func, scalar):
+    x = random_x((2, 3, 4))
+    y = scalar
+
+    xs = COO.from_numpy(x)
+
+    assert_eq(func(xs, y), func(x, y))
+
+
+@pytest.mark.parametrize('func, scalar', [
+    (operator.add, 5),
+    (operator.sub, -5),
+    (operator.pow, -3),
+    (operator.truediv, 0),
+    (operator.floordiv, 0),
+    (operator.gt, -5),
+    (operator.lt, 5),
+    (operator.ne, 1),
+    (operator.ge, -3),
+    (operator.le, 3),
+    (operator.eq, 0)
+])
+@pytest.mark.filterwarnings('ignore:divide by zero')
+@pytest.mark.filterwarnings('ignore:invalid value')
+def test_scalar_densification_fails(func, scalar):
+    xs = COO.from_numpy(random_x((2, 3, 4)))
+    y = scalar
+
+    with pytest.raises(ValueError):
+        func(xs, y)
 
 
 @pytest.mark.parametrize('func', [operator.and_, operator.or_, operator.xor])

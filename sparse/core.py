@@ -624,7 +624,7 @@ class COO(object):
 
     def __or__(self, other):
         return self._perform_op(other, operator.or_)
-    
+
     def __gt__(self, other):
         return self._perform_op(other, operator.gt)
 
