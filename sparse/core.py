@@ -579,14 +579,8 @@ class COO(object):
 
         return self
 
-    def _perform_op(self, other, op):
-        if isinstance(other, COO):
-            return self.elemwise_binary(op, other)
-        else:
-            return self.elemwise(op, other)
-
     def __add__(self, other):
-        return self._perform_op(other, operator.add)
+        return self.elemwise_binary(operator.add, other)
 
     __radd__ = __add__
 
@@ -595,53 +589,53 @@ class COO(object):
                    self.sorted)
 
     def __sub__(self, other):
-        return self._perform_op(other, operator.sub)
+        return self.elemwise_binary(operator.sub, other)
 
     def __rsub__(self, other):
         return -(self - other)
 
     def __mul__(self, other):
-        return self._perform_op(other, operator.mul)
+        return self.elemwise_binary(operator.mul, other)
 
     __rmul__ = __mul__
 
     def __truediv__(self, other):
-        return self._perform_op(other, operator.truediv)
+        return self.elemwise_binary(operator.truediv, other)
 
     def __floordiv__(self, other):
-        return self._perform_op(other, operator.floordiv)
+        return self.elemwise_binary(operator.floordiv, other)
 
     __div__ = __truediv__
 
     def __pow__(self, other):
-        return self._perform_op(other, operator.pow)
+        return self.elemwise_binary(operator.pow, other)
 
     def __and__(self, other):
-        return self._perform_op(other, operator.and_)
+        return self.elemwise_binary(operator.and_, other)
 
     def __xor__(self, other):
-        return self._perform_op(other, operator.xor)
+        return self.elemwise_binary(operator.xor, other)
 
     def __or__(self, other):
-        return self._perform_op(other, operator.or_)
+        return self.elemwise_binary(operator.or_, other)
 
     def __gt__(self, other):
-        return self._perform_op(other, operator.gt)
+        return self.elemwise_binary(operator.gt, other)
 
     def __ge__(self, other):
-        return self._perform_op(other, operator.ge)
+        return self.elemwise_binary(operator.ge, other)
 
     def __lt__(self, other):
-        return self._perform_op(other, operator.lt)
+        return self.elemwise_binary(operator.lt, other)
 
     def __le__(self, other):
-        return self._perform_op(other, operator.le)
+        return self.elemwise_binary(operator.le, other)
 
     def __eq__(self, other):
-        return self._perform_op(other, operator.eq)
+        return self.elemwise_binary(operator.eq, other)
 
     def __ne__(self, other):
-        return self._perform_op(other, operator.ne)
+        return self.elemwise_binary(operator.ne, other)
 
     def elemwise(self, func, *args, **kwargs):
         check = kwargs.pop('check', True)
@@ -657,8 +651,7 @@ class COO(object):
 
     def elemwise_binary(self, func, other, *args, **kwargs):
         if not isinstance(other, COO):
-            raise ValueError("Performing this operation would produce "
-                             "a dense result: %s" % str(func))
+            return self.elemwise(func, other, *args, **kwargs)
 
         check = kwargs.pop('check', True)
         self_zero = _zero_of_dtype(self.dtype)
