@@ -299,7 +299,7 @@ class COO(object):
         if coords:
             coords = np.stack(coords, axis=0)
         else:
-            coords = np.empty((np.sum(mask), 0), dtype=np.uint8)
+            coords = np.empty((0, np.sum(mask)), dtype=np.uint8)
         shape = tuple(shape)
         data = self.data[mask]
 
