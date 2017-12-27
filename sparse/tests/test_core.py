@@ -214,6 +214,16 @@ def test_auto_densification_fails(func):
         func(xs, ys)
 
 
+def test_op_scipy_sparse():
+    x = random_x((3, 4))
+    y = random_x((3, 4))
+
+    xs = COO.from_numpy(x)
+    ys = scipy.sparse.csr_matrix(y)
+
+    assert_eq(x + y, xs + ys)
+
+
 @pytest.mark.parametrize('func, scalar', [
     (operator.mul, 5),
     (operator.add, 0),
