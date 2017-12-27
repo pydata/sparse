@@ -460,7 +460,9 @@ class COO(object):
         # TODO: this np.prod(self.shape) enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
 
-        coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max(shape)))
+        max_shape = max(shape) if len(shape) != 0 else 1
+
+        coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max_shape - 1))
         strides = 1
         for i, d in enumerate(shape[::-1]):
             coords[-(i + 1), :] = (linear_loc // strides) % d
