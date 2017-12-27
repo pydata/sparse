@@ -579,54 +579,51 @@ class COO(object):
 
         return self
 
-    def __add__(self, other):
-        if isinstance(other, numbers.Number) and other == 0:
-            return self
-        if not isinstance(other, COO):
-            return self.maybe_densify() + other
+    def _perform_op(self, other, op):
+        if isinstance(other, COO):
+            return self.elemwise_binary(op, other)
         else:
-            return self.elemwise_binary(operator.add, other)
+            return self.elemwise(op, other)
 
-    def __radd__(self, other):
-        return self + other
+    def __add__(self, other):
+        return self._perform_op(other, operator.add)
+
+    __radd__ = __add__
 
     def __neg__(self):
         return COO(self.coords, -self.data, self.shape, self.has_duplicates,
                    self.sorted)
 
     def __sub__(self, other):
-        return self + (-other)
+        return self._perform_op(other, operator.sub)
 
     def __rsub__(self, other):
-        return -self + other
+        return -(self - other)
 
     def __mul__(self, other):
-        if isinstance(other, COO):
-            return self.elemwise_binary(operator.mul, other)
-        else:
-            return self.elemwise(operator.mul, other)
+        return self._perform_op(other, operator.mul)
 
     __rmul__ = __mul__
 
     def __truediv__(self, other):
-        return self.elemwise(operator.truediv, other)
+        return self._perform_op(other, operator.truediv)
 
     def __floordiv__(self, other):
-        return self.elemwise(operator.floordiv, other)
+        return self._perform_op(other, operator.floordiv)
 
     __div__ = __truediv__
 
     def __pow__(self, other):
-        return self.elemwise(operator.pow, other)
+        return self._perform_op(other, operator.pow)
 
     def __and__(self, other):
-        return self.elemwise_binary(operator.and_, other)
+        return self._perform_op(other, operator.and_)
 
     def __xor__(self, other):
-        return self.elemwise_binary(operator.xor, other)
+        return self._perform_op(other, operator.xor)
 
     def __or__(self, other):
-        return self.elemwise_binary(operator.or_, other)
+        return self._perform_op(other, operator.or_)
 
     def elemwise(self, func, *args, **kwargs):
         check = kwargs.pop('check', True)
@@ -641,11 +638,14 @@ class COO(object):
                    sorted=self.sorted)
 
     def elemwise_binary(self, func, other, *args, **kwargs):
-        assert isinstance(other, COO)
+        if not isinstance(other, COO):
+            raise ValueError("Performing this operation would produce "
+                             "a dense result: %s" % str(func))
+
+        check = kwargs.pop('check', True)
         self_zero = _zero_of_dtype(self.dtype)
         other_zero = _zero_of_dtype(other.dtype)
-        check = kwargs.pop('check', True)
-        func_zero = _zero_of_dtype(func(self_zero, other_zero, * args, **kwargs).dtype)
+        func_zero = _zero_of_dtype(func(self_zero, other_zero, *args, **kwargs).dtype)
         if check and func(self_zero, other_zero, *args, **kwargs) != func_zero:
             raise ValueError("Performing this operation would produce "
                              "a dense result: %s" % str(func))
@@ -690,12 +690,6 @@ class COO(object):
         matched_self, matched_other = _match_arrays(self_reduced_linear,
                                                     other_reduced_linear)
 
-        # Locate coordinates without a match
-        unmatched_self = np.ones(self.nnz, dtype=np.bool)
-        unmatched_self[matched_self] = False
-        unmatched_other = np.ones(other.nnz, dtype=np.bool)
-        unmatched_other[matched_other] = False
-
         # Start with an empty list. This may reduce computation in many cases.
         data_list = []
         coords_list = []
@@ -711,11 +705,10 @@ class COO(object):
         coords_list.append(matched_coords)
 
         self_func = func(self_data, other_zero, *args, **kwargs)
-
         # Add unmatched parts as necessary.
         if (self_func != func_zero).any():
             self_unmatched_coords, self_unmatched_func = \
-                self._get_unmatched_coords_data(self_coords, self_data, self_shape,
+                self._get_unmatched_coords_data(self_coords, self_func, self_shape,
                                                 result_shape, matched_self,
                                                 matched_coords)
 
@@ -726,7 +719,7 @@ class COO(object):
 
         if (other_func != func_zero).any():
             other_unmatched_coords, other_unmatched_func = \
-                self._get_unmatched_coords_data(other_coords, other_data, other_shape,
+                self._get_unmatched_coords_data(other_coords, other_func, other_shape,
                                                 result_shape, matched_other,
                                                 matched_coords)
 
@@ -1067,7 +1060,7 @@ class COO(object):
 
     def exp(self, out=None):
         assert out is None
-        return np.exp(self.maybe_densify())
+        return self.elemwise(np.exp)
 
     def expm1(self, out=None):
         assert out is None
