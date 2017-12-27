@@ -651,6 +651,7 @@ class COO(object):
             function. Otherwise, it will be treated as a unary function.
         kwargs : dict, optional
             The kwargs to pass to the function.
+
         Returns
         -------
         COO
