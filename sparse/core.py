@@ -460,7 +460,9 @@ class COO(object):
         # TODO: this np.prod(self.shape) enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
 
-        coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max(shape)))
+        max_shape = max(shape) if len(shape) != 0 else 1
+
+        coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max_shape - 1))
         strides = 1
         for i, d in enumerate(shape[::-1]):
             coords[-(i + 1), :] = (linear_loc // strides) % d
@@ -580,31 +582,22 @@ class COO(object):
         return self
 
     def __add__(self, other):
-        if isinstance(other, numbers.Number) and other == 0:
-            return self
-        if not isinstance(other, COO):
-            return self.maybe_densify() + other
-        else:
-            return self.elemwise_binary(operator.add, other)
+        return self.elemwise(operator.add, other)
 
-    def __radd__(self, other):
-        return self + other
+    __radd__ = __add__
 
     def __neg__(self):
         return COO(self.coords, -self.data, self.shape, self.has_duplicates,
                    self.sorted)
 
     def __sub__(self, other):
-        return self + (-other)
+        return self.elemwise(operator.sub, other)
 
     def __rsub__(self, other):
-        return -self + other
+        return -(self - other)
 
     def __mul__(self, other):
-        if isinstance(other, COO):
-            return self.elemwise_binary(operator.mul, other)
-        else:
-            return self.elemwise(operator.mul, other)
+        return self.elemwise(operator.mul, other)
 
     __rmul__ = __mul__
 
@@ -620,32 +613,86 @@ class COO(object):
         return self.elemwise(operator.pow, other)
 
     def __and__(self, other):
-        return self.elemwise_binary(operator.and_, other)
+        return self.elemwise(operator.and_, other)
 
     def __xor__(self, other):
-        return self.elemwise_binary(operator.xor, other)
+        return self.elemwise(operator.xor, other)
 
     def __or__(self, other):
-        return self.elemwise_binary(operator.or_, other)
+        return self.elemwise(operator.or_, other)
+
+    def __gt__(self, other):
+        return self.elemwise(operator.gt, other)
+
+    def __ge__(self, other):
+        return self.elemwise(operator.ge, other)
+
+    def __lt__(self, other):
+        return self.elemwise(operator.lt, other)
+
+    def __le__(self, other):
+        return self.elemwise(operator.le, other)
+
+    def __eq__(self, other):
+        return self.elemwise(operator.eq, other)
+
+    def __ne__(self, other):
+        return self.elemwise(operator.ne, other)
 
     def elemwise(self, func, *args, **kwargs):
+        """
+        Apply a function to one or two arguments.
+
+        Parameters
+        ----------
+        func
+            The function to apply to one or two arguments.
+        args : tuple, optional
+            The extra arguments to pass to the function. If args[0] is a COO object
+            or a scipy.sparse.spmatrix, the function will be treated as a binary
+            function. Otherwise, it will be treated as a unary function.
+        kwargs : dict, optional
+            The kwargs to pass to the function.
+
+        Returns
+        -------
+        COO
+            The result of applying the function.
+        """
+        if len(args) == 0:
+            return self._elemwise_unary(func, *args, **kwargs)
+        else:
+            other = args[0]
+            if isinstance(other, COO):
+                return self._elemwise_binary(func, *args, **kwargs)
+            elif isinstance(other, scipy.sparse.spmatrix):
+                other = COO.from_scipy_sparse(other)
+                return self._elemwise_binary(func, other, *args[1:], **kwargs)
+            else:
+                return self._elemwise_unary(func, *args, **kwargs)
+
+    def _elemwise_unary(self, func, *args, **kwargs):
         check = kwargs.pop('check', True)
         data_zero = _zero_of_dtype(self.dtype)
         func_zero = _zero_of_dtype(func(data_zero, *args, **kwargs).dtype)
         if check and func(data_zero, *args, **kwargs) != func_zero:
             raise ValueError("Performing this operation would produce "
                              "a dense result: %s" % str(func))
-        return COO(self.coords, func(self.data, *args, **kwargs),
+
+        data_func = func(self.data, *args, **kwargs)
+        nonzero = data_func != func_zero
+
+        return COO(self.coords[:, nonzero], data_func[nonzero],
                    shape=self.shape,
                    has_duplicates=self.has_duplicates,
                    sorted=self.sorted)
 
-    def elemwise_binary(self, func, other, *args, **kwargs):
+    def _elemwise_binary(self, func, other, *args, **kwargs):
         assert isinstance(other, COO)
+        check = kwargs.pop('check', True)
         self_zero = _zero_of_dtype(self.dtype)
         other_zero = _zero_of_dtype(other.dtype)
-        check = kwargs.pop('check', True)
-        func_zero = _zero_of_dtype(func(self_zero, other_zero, * args, **kwargs).dtype)
+        func_zero = _zero_of_dtype(func(self_zero, other_zero, *args, **kwargs).dtype)
         if check and func(self_zero, other_zero, *args, **kwargs) != func_zero:
             raise ValueError("Performing this operation would produce "
                              "a dense result: %s" % str(func))
@@ -690,12 +737,6 @@ class COO(object):
         matched_self, matched_other = _match_arrays(self_reduced_linear,
                                                     other_reduced_linear)
 
-        # Locate coordinates without a match
-        unmatched_self = np.ones(self.nnz, dtype=np.bool)
-        unmatched_self[matched_self] = False
-        unmatched_other = np.ones(other.nnz, dtype=np.bool)
-        unmatched_other[matched_other] = False
-
         # Start with an empty list. This may reduce computation in many cases.
         data_list = []
         coords_list = []
@@ -711,11 +752,10 @@ class COO(object):
         coords_list.append(matched_coords)
 
         self_func = func(self_data, other_zero, *args, **kwargs)
-
         # Add unmatched parts as necessary.
         if (self_func != func_zero).any():
             self_unmatched_coords, self_unmatched_func = \
-                self._get_unmatched_coords_data(self_coords, self_data, self_shape,
+                self._get_unmatched_coords_data(self_coords, self_func, self_shape,
                                                 result_shape, matched_self,
                                                 matched_coords)
 
@@ -726,7 +766,7 @@ class COO(object):
 
         if (other_func != func_zero).any():
             other_unmatched_coords, other_unmatched_func = \
-                self._get_unmatched_coords_data(other_coords, other_data, other_shape,
+                self._get_unmatched_coords_data(other_coords, other_func, other_shape,
                                                 result_shape, matched_other,
                                                 matched_coords)
 
@@ -1067,7 +1107,7 @@ class COO(object):
 
     def exp(self, out=None):
         assert out is None
-        return np.exp(self.maybe_densify())
+        return self.elemwise(np.exp)
 
     def expm1(self, out=None):
         assert out is None
@@ -1123,23 +1163,7 @@ class COO(object):
 
     def astype(self, dtype, out=None):
         assert out is None
-        return self.elemwise(np.ndarray.astype, dtype, check=False)
-
-    def __gt__(self, other):
-        if not isinstance(other, numbers.Number):
-            raise NotImplementedError("Only scalars supported")
-        if other < 0:
-            raise ValueError("Comparison with negative number would produce "
-                             "dense result")
-        return self.elemwise(operator.gt, other)
-
-    def __ge__(self, other):
-        if not isinstance(other, numbers.Number):
-            raise NotImplementedError("Only scalars supported")
-        if other <= 0:
-            raise ValueError("Comparison with negative number would produce "
-                             "dense result")
-        return self.elemwise(operator.ge, other)
+        return self.elemwise(np.ndarray.astype, dtype)
 
     def maybe_densify(self, allowed_nnz=1e3, allowed_fraction=0.25):
         """ Convert to a dense numpy array if not too costly.  Err othrewise """
