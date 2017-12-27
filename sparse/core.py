@@ -580,7 +580,7 @@ class COO(object):
         return self
 
     def __add__(self, other):
-        return self.elemwise_binary(operator.add, other)
+        return self.elemwise(operator.add, other)
 
     __radd__ = __add__
 
@@ -589,70 +589,103 @@ class COO(object):
                    self.sorted)
 
     def __sub__(self, other):
-        return self.elemwise_binary(operator.sub, other)
+        return self.elemwise(operator.sub, other)
 
     def __rsub__(self, other):
         return -(self - other)
 
     def __mul__(self, other):
-        return self.elemwise_binary(operator.mul, other)
+        return self.elemwise(operator.mul, other)
 
     __rmul__ = __mul__
 
     def __truediv__(self, other):
-        return self.elemwise_binary(operator.truediv, other)
+        return self.elemwise(operator.truediv, other)
 
     def __floordiv__(self, other):
-        return self.elemwise_binary(operator.floordiv, other)
+        return self.elemwise(operator.floordiv, other)
 
     __div__ = __truediv__
 
     def __pow__(self, other):
-        return self.elemwise_binary(operator.pow, other)
+        return self.elemwise(operator.pow, other)
 
     def __and__(self, other):
-        return self.elemwise_binary(operator.and_, other)
+        return self.elemwise(operator.and_, other)
 
     def __xor__(self, other):
-        return self.elemwise_binary(operator.xor, other)
+        return self.elemwise(operator.xor, other)
 
     def __or__(self, other):
-        return self.elemwise_binary(operator.or_, other)
+        return self.elemwise(operator.or_, other)
 
     def __gt__(self, other):
-        return self.elemwise_binary(operator.gt, other)
+        return self.elemwise(operator.gt, other)
 
     def __ge__(self, other):
-        return self.elemwise_binary(operator.ge, other)
+        return self.elemwise(operator.ge, other)
 
     def __lt__(self, other):
-        return self.elemwise_binary(operator.lt, other)
+        return self.elemwise(operator.lt, other)
 
     def __le__(self, other):
-        return self.elemwise_binary(operator.le, other)
+        return self.elemwise(operator.le, other)
 
     def __eq__(self, other):
-        return self.elemwise_binary(operator.eq, other)
+        return self.elemwise(operator.eq, other)
 
     def __ne__(self, other):
-        return self.elemwise_binary(operator.ne, other)
+        return self.elemwise(operator.ne, other)
 
     def elemwise(self, func, *args, **kwargs):
+        """
+        Apply a function to one or two arguments.
+
+        Parameters
+        ----------
+        func
+            The function to apply to one or two arguments.
+        args : tuple, optional
+            The extra arguments to pass to the function. If args[0] is a COO object
+            or a scipy.sparse.spmatrix, the function will be treated as a binary
+            function. Otherwise, it will be treated as a unary function.
+        kwargs : dict, optional
+            The kwargs to pass to the function.
+        Returns
+        -------
+        COO
+            The result of applying the function.
+        """
+        if len(args) == 0:
+            return self._elemwise_unary(func, *args, **kwargs)
+        else:
+            other = args[0]
+            if isinstance(other, COO):
+                return self._elemwise_binary(func, *args, **kwargs)
+            elif isinstance(other, scipy.sparse.spmatrix):
+                other = COO.from_scipy_sparse(other)
+                return self._elemwise_binary(func, other, *args[1:], **kwargs)
+            else:
+                return self._elemwise_unary(func, *args, **kwargs)
+
+    def _elemwise_unary(self, func, *args, **kwargs):
         check = kwargs.pop('check', True)
         data_zero = _zero_of_dtype(self.dtype)
         func_zero = _zero_of_dtype(func(data_zero, *args, **kwargs).dtype)
         if check and func(data_zero, *args, **kwargs) != func_zero:
             raise ValueError("Performing this operation would produce "
                              "a dense result: %s" % str(func))
-        return COO(self.coords, func(self.data, *args, **kwargs),
+
+        data_func = func(self.data, *args, **kwargs)
+        nonzero = data_func != func_zero
+
+        return COO(self.coords[:, nonzero], data_func[nonzero],
                    shape=self.shape,
                    has_duplicates=self.has_duplicates,
                    sorted=self.sorted)
 
-    def elemwise_binary(self, func, other, *args, **kwargs):
-        if not isinstance(other, COO):
-            return self.elemwise(func, other, *args, **kwargs)
-
+    def _elemwise_binary(self, func, other, *args, **kwargs):
+        assert isinstance(other, COO)
         check = kwargs.pop('check', True)
         self_zero = _zero_of_dtype(self.dtype)
         other_zero = _zero_of_dtype(other.dtype)
@@ -1127,7 +1160,7 @@ class COO(object):
 
     def astype(self, dtype, out=None):
         assert out is None
-        return self.elemwise(np.ndarray.astype, dtype, check=False)
+        return self.elemwise(np.ndarray.astype, dtype)
 
     def maybe_densify(self, allowed_nnz=1e3, allowed_fraction=0.25):
         """ Convert to a dense numpy array if not too costly.  Err othrewise """

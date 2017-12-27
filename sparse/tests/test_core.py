@@ -233,6 +233,10 @@ def test_elemwise_scalar(func, scalar):
     y = scalar
 
     xs = COO.from_numpy(x)
+    fs = func(xs, y)
+
+    assert isinstance(fs, COO)
+    assert xs.nnz >= fs.nnz
 
     assert_eq(func(xs, y), func(x, y))
 
@@ -589,7 +593,7 @@ def test_cache_csr():
 
 
 def test_empty_shape():
-    x = COO([], [1.0])
+    x = COO(np.empty((0, 1), dtype=np.int8), [1.0])
     assert x.shape == ()
     assert ((2 * x).todense() == np.array(2.0)).all()
 
