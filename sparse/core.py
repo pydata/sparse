@@ -624,6 +624,24 @@ class COO(object):
 
     def __or__(self, other):
         return self._perform_op(other, operator.or_)
+    
+    def __gt__(self, other):
+        return self._perform_op(other, operator.gt)
+
+    def __ge__(self, other):
+        return self._perform_op(other, operator.ge)
+
+    def __lt__(self, other):
+        return self._perform_op(other, operator.lt)
+
+    def __le__(self, other):
+        return self._perform_op(other, operator.le)
+
+    def __eq__(self, other):
+        return self._perform_op(other, operator.eq)
+
+    def __ne__(self, other):
+        return self._perform_op(other, operator.ne)
 
     def elemwise(self, func, *args, **kwargs):
         check = kwargs.pop('check', True)
@@ -1117,22 +1135,6 @@ class COO(object):
     def astype(self, dtype, out=None):
         assert out is None
         return self.elemwise(np.ndarray.astype, dtype, check=False)
-
-    def __gt__(self, other):
-        if not isinstance(other, numbers.Number):
-            raise NotImplementedError("Only scalars supported")
-        if other < 0:
-            raise ValueError("Comparison with negative number would produce "
-                             "dense result")
-        return self.elemwise(operator.gt, other)
-
-    def __ge__(self, other):
-        if not isinstance(other, numbers.Number):
-            raise NotImplementedError("Only scalars supported")
-        if other <= 0:
-            raise ValueError("Comparison with negative number would produce "
-                             "dense result")
-        return self.elemwise(operator.ge, other)
 
     def maybe_densify(self, allowed_nnz=1e3, allowed_fraction=0.25):
         """ Convert to a dense numpy array if not too costly.  Err othrewise """
