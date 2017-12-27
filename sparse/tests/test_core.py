@@ -238,7 +238,7 @@ def test_elemwise_scalar(func, scalar):
     assert isinstance(fs, COO)
     assert xs.nnz >= fs.nnz
 
-    assert_eq(func(xs, y), func(x, y))
+    assert_eq(fs, func(x, y))
 
 
 @pytest.mark.parametrize('func, scalar', [
