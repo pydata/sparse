@@ -330,7 +330,7 @@ class COO(object):
         if zero_reduce_result != _zero_of_dtype(np.dtype(zero_reduce_result)):
             raise ValueError("Performing this reduction operation would produce "
                              "a dense result: %s" % str(method))
-        
+
         # Needed for more esoteric reductions like product.
         self.sum_duplicates()
 
