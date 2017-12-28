@@ -50,7 +50,7 @@ def test_reductions(reduction, axis, keepdims, kwargs):
     (np.max, {}),
     (np.sum, {}),
     (np.sum, {'dtype': np.float16}),
-    # (np.prod, {}),
+    (np.prod, {}),
     (np.min, {}),
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2)])

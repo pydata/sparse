@@ -379,9 +379,9 @@ class COO(object):
         assert out is None
         return self.reduce(np.minimum, axis=axis, keepdims=keepdims)
 
-    def prod(self, axis=None, keepdims=False, out=None):
+    def prod(self, axis=None, keepdims=False, dtype=None, out=None):
         assert out is None
-        return self.reduce(np.multiply, axis=axis, keepdims=keepdims)
+        return self.reduce(np.multiply, axis=axis, keepdims=keepdims, dtype=dtype)
 
     def transpose(self, axes=None):
         if axes is None:
