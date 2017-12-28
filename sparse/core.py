@@ -358,7 +358,7 @@ class COO(object):
             # Ref: https://gist.github.com/shoyer/f538ac78ae904c936844
             inv_idx, = flag.nonzero()
             result = method.reduceat(a.data, inv_idx, **kwargs)
-            counts = np.diff(np.concatenate(np.nonzero(flag) + ([a.nnz],)))
+            counts = np.diff(np.concatenate((inv_idx, [a.nnz])))
             missing_counts = counts != a.shape[1]
             result[missing_counts] = method(result[missing_counts],
                                             _zero_of_dtype(result.dtype), **kwargs)
