@@ -414,7 +414,7 @@ class COO(object):
         except NotImplementedError:
             return NotImplemented
 
-    def __numpy_ufunc__(self, ufunc, method, i, inputs, **kwargs):
+    def __array_ufunc__(self, ufunc, method, i, inputs, **kwargs):
         return NotImplemented
 
     def linear_loc(self, signed=False):
@@ -637,6 +637,12 @@ class COO(object):
 
     def __ne__(self, other):
         return self.elemwise(operator.ne, other)
+
+    def __lshift__(self, other):
+        return self.elemwise(operator.lshift, other)
+
+    def __rshift__(self, other):
+        return self.elemwise(operator.rshift, other)
 
     def elemwise(self, func, *args, **kwargs):
         """
