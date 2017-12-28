@@ -22,6 +22,7 @@ This Supports
 -  Reshape
 -  Transpose
 -  Tensordot
+-  triu, tril
 -  Slicing with integers, lists, and slices (with no step value)
 -  Concatenation and stacking
 
