@@ -1301,10 +1301,15 @@ def concatenate(arrays, axis=0):
     assert all(x.shape[ax] == arrays[0].shape[ax]
                for x in arrays
                for ax in set(range(arrays[0].ndim)) - {axis})
-    data = np.concatenate([x.data for x in arrays])
-    coords = np.concatenate([x.coords for x in arrays], axis=1)
-
     nnz = 0
+    dim = sum(x.shape[axis] for x in arrays)
+    shape = list(arrays[0].shape)
+    shape[axis] = dim
+
+    coords_dtype = np.min_scalar_type(max(shape) - 1) if len(shape) != 0 else np.uint8
+    data = np.concatenate([x.data for x in arrays])
+    coords = np.concatenate([x.coords for x in arrays], axis=1).astype(coords_dtype)
+
     dim = 0
     for x in arrays:
         if dim:
@@ -1312,8 +1317,6 @@ def concatenate(arrays, axis=0):
         dim += x.shape[axis]
         nnz += x.nnz
 
-    shape = list(arrays[0].shape)
-    shape[axis] = dim
     has_duplicates = any(x.has_duplicates for x in arrays)
 
     return COO(coords, data, shape=shape, has_duplicates=has_duplicates,
@@ -1327,19 +1330,21 @@ def stack(arrays, axis=0):
         axis = axis + arrays[0].ndim + 1
     data = np.concatenate([x.data for x in arrays])
     coords = np.concatenate([x.coords for x in arrays], axis=1)
+    shape = list(arrays[0].shape)
+    shape.insert(axis, len(arrays))
+
+    coords_dtype = np.min_scalar_type(max(shape) - 1) if len(shape) != 0 else np.uint8
 
     nnz = 0
     dim = 0
-    new = np.empty(shape=(coords.shape[1],), dtype=coords.dtype)
+    new = np.empty(shape=(coords.shape[1],), dtype=coords_dtype)
     for x in arrays:
         new[nnz:x.nnz + nnz] = dim
         dim += 1
         nnz += x.nnz
 
-    shape = list(arrays[0].shape)
-    shape.insert(axis, len(arrays))
     has_duplicates = any(x.has_duplicates for x in arrays)
-    coords = [coords[i] for i in range(coords.shape[0])]
+    coords = [coords[i].astype(coords_dtype) for i in range(coords.shape[0])]
     coords.insert(axis, new)
     coords = np.stack(coords, axis=0)
 
