@@ -457,6 +457,20 @@ def test_stack(shape, axis):
               sparse.stack([xx, yy, zz], axis=axis))
 
 
+def test_large_concat_stack():
+    data = np.array([1], dtype=np.uint8)
+    coords = np.array([[255]], dtype=np.uint8)
+
+    xs = COO(coords, data, shape=(256,), has_duplicates=False, sorted=True)
+    x = xs.todense()
+
+    assert_eq(np.stack([x, x]),
+              sparse.stack([xs, xs]))
+
+    assert_eq(np.concatenate((x, x)),
+              sparse.concatenate((xs, xs)))
+
+
 def test_coord_dtype():
     x = random_x((2, 3, 4))
     s = COO.from_numpy(x)
