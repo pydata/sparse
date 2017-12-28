@@ -314,40 +314,53 @@ class COO(object):
 
     __repr__ = __str__
 
-    def reduction(self, method, axis=None, keepdims=False, dtype=None):
+    @staticmethod
+    def _reduce(method, *args, **kwargs):
+        assert len(args) == 1
+
+        self = args[0]
+        if isinstance(self, scipy.sparse.spmatrix):
+            self = COO.from_scipy_sparse(self)
+
+        return self.reduce(method, **kwargs)
+
+    def reduce(self, method, axis=None, keepdims=False, **kwargs):
+        zero_reduce_result = method.reduce([_zero_of_dtype(self.dtype)], **kwargs)
+
+        if zero_reduce_result != _zero_of_dtype(np.dtype(zero_reduce_result)):
+            raise ValueError("Performing this reduction operation would produce "
+                             "a dense result: %s" % str(method))
+
+        # Needed for more esoteric reductions like product.
+        self.sum_duplicates()
+
         if axis is None:
             axis = tuple(range(self.ndim))
 
-        kwargs = {}
-        if dtype:
-            kwargs['dtype'] = dtype
-
-        if isinstance(axis, numbers.Integral):
+        if not isinstance(axis, tuple):
             axis = (axis,)
 
         if set(axis) == set(range(self.ndim)):
-            result = getattr(self.data, method)(**kwargs)
+            result = method.reduce(self.data, **kwargs)
+            if self.nnz != np.prod(self.shape):
+                result = method(result, _zero_of_dtype(np.dtype(result))[()])
         else:
             axis = tuple(axis)
+            neg_axis = tuple(ax for ax in range(self.ndim) if ax not in axis)
 
-            neg_axis = list(range(self.ndim))
-            for ax in axis:
-                neg_axis.remove(ax)
-            neg_axis = tuple(neg_axis)
+            a = self.transpose(neg_axis + axis)
+            a = a.reshape((np.prod([self.shape[d] for d in neg_axis]),
+                           np.prod([self.shape[d] for d in axis])))
+            a.sort_indices()
 
-            a = self.transpose(axis + neg_axis)
-            a = a.reshape((np.prod([self.shape[d] for d in axis]),
-                           np.prod([self.shape[d] for d in neg_axis])))
+            result, inv_idx, counts = _grouped_reduce(a.data, a.coords[0], method, **kwargs)
+            missing_counts = counts != a.shape[1]
+            result[missing_counts] = method(result[missing_counts],
+                                            _zero_of_dtype(result.dtype), **kwargs)
 
-            a = a.to_scipy_sparse()
-            a = getattr(a, method)(axis=0, **kwargs)
-            if isinstance(a, scipy.sparse.spmatrix):
-                a = COO.from_scipy_sparse(a)
-                a.sorted = self.sorted
-                a.has_duplicates = False
-            elif isinstance(a, np.matrix):
-                a = np.asarray(a)[0]
-                a = COO.from_numpy(a)
+            a = COO(np.asarray([a.coords[0, inv_idx]]), result, shape=(np.prod(neg_axis),),
+                    has_duplicates=False, sorted=True)
+
             a = a.reshape([self.shape[d] for d in neg_axis])
             result = a
 
@@ -356,21 +369,20 @@ class COO(object):
         return result
 
     def sum(self, axis=None, keepdims=False, dtype=None, out=None):
-        return self.reduction('sum', axis=axis, keepdims=keepdims, dtype=dtype)
+        assert out is None
+        return self.reduce(np.add, axis=axis, keepdims=keepdims, dtype=dtype)
 
     def max(self, axis=None, keepdims=False, out=None):
-        x = self.reduction('max', axis=axis, keepdims=keepdims)
-        x_zero = _zero_of_dtype(x.dtype)
+        assert out is None
+        return self.reduce(np.maximum, axis=axis, keepdims=keepdims)
 
-        # TODO: verify that there are some missing elements in each entry
-        if isinstance(x, COO):
-            x.data[x.data < x_zero] = x_zero
-            return x
-        elif isinstance(x, np.ndarray):
-            x[x < x_zero] = x_zero
-            return x
-        else:
-            return np.max(x, 0)
+    def min(self, axis=None, keepdims=False, out=None):
+        assert out is None
+        return self.reduce(np.minimum, axis=axis, keepdims=keepdims)
+
+    def prod(self, axis=None, keepdims=False, dtype=None, out=None):
+        assert out is None
+        return self.reduce(np.multiply, axis=axis, keepdims=keepdims, dtype=dtype)
 
     def transpose(self, axes=None):
         if axes is None:
@@ -414,8 +426,13 @@ class COO(object):
         except NotImplementedError:
             return NotImplemented
 
-    def __numpy_ufunc__(self, ufunc, method, i, inputs, **kwargs):
-        return NotImplemented
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        if method == '__call__':
+            return COO._elemwise(ufunc, *inputs, **kwargs)
+        elif method == 'reduce':
+            return COO._reduce(ufunc, *inputs, **kwargs)
+        else:
+            return NotImplemented
 
     def linear_loc(self, signed=False):
         """ Index location of every piece of data in a flattened array
@@ -461,7 +478,6 @@ class COO(object):
         linear_loc = self.linear_loc()
 
         max_shape = max(shape) if len(shape) != 0 else 1
-
         coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max_shape - 1))
         strides = 1
         for i, d in enumerate(shape[::-1]):
@@ -587,8 +603,7 @@ class COO(object):
     __radd__ = __add__
 
     def __neg__(self):
-        return COO(self.coords, -self.data, self.shape, self.has_duplicates,
-                   self.sorted)
+        return self.elemwise(operator.neg)
 
     def __sub__(self, other):
         return self.elemwise(operator.sub, other)
@@ -639,6 +654,31 @@ class COO(object):
     def __ne__(self, other):
         return self.elemwise(operator.ne, other)
 
+    def __lshift__(self, other):
+        return self.elemwise(operator.lshift, other)
+
+    def __rshift__(self, other):
+        return self.elemwise(operator.rshift, other)
+
+    @staticmethod
+    def _elemwise(func, *args, **kwargs):
+        assert len(args) >= 1
+        self = args[0]
+        if isinstance(self, scipy.sparse.spmatrix):
+            self = COO.from_numpy(self)
+
+        if len(args) == 1:
+            return self._elemwise_unary(func, *args[1:], **kwargs)
+        else:
+            other = args[1]
+            if isinstance(other, COO):
+                return self._elemwise_binary(func, *args[1:], **kwargs)
+            elif isinstance(other, scipy.sparse.spmatrix):
+                other = COO.from_scipy_sparse(other)
+                return self._elemwise_binary(func, other, *args[2:], **kwargs)
+            else:
+                return self._elemwise_unary(func, *args[1:], **kwargs)
+
     def elemwise(self, func, *args, **kwargs):
         """
         Apply a function to one or two arguments.
@@ -659,17 +699,7 @@ class COO(object):
         COO
             The result of applying the function.
         """
-        if len(args) == 0:
-            return self._elemwise_unary(func, *args, **kwargs)
-        else:
-            other = args[0]
-            if isinstance(other, COO):
-                return self._elemwise_binary(func, *args, **kwargs)
-            elif isinstance(other, scipy.sparse.spmatrix):
-                other = COO.from_scipy_sparse(other)
-                return self._elemwise_binary(func, other, *args[1:], **kwargs)
-            else:
-                return self._elemwise_unary(func, *args, **kwargs)
+        return COO._elemwise(func, self, *args, **kwargs)
 
     def _elemwise_unary(self, func, *args, **kwargs):
         check = kwargs.pop('check', True)
@@ -806,6 +836,7 @@ class COO(object):
             The indices into the coords array where it matches with the other array.
         matched_coords : np.ndarray
             The overall coordinates that match from both arrays.
+
         Returns
         -------
         coords_list : list[np.ndarray]
@@ -859,10 +890,12 @@ class COO(object):
             The input shapes to broadcast together.
         is_result : bool
             Whether or not shape2 is also the result shape.
+
         Returns
         -------
         result_shape : tuple[int]
             The overall shape of the result.
+
         Raises
         ------
         ValueError
@@ -890,6 +923,7 @@ class COO(object):
             The input shape.
         broadcast_shape
             The shape to broadcast to.
+
         Returns
         -------
         params : list
@@ -910,7 +944,8 @@ class COO(object):
         ----------
         coords : np.ndarray
             The coordinates to reduce.
-        params : The params from which to check which dimensions to get.
+        params : list
+            The params from which to check which dimensions to get.
 
         Returns
         -------
@@ -938,6 +973,7 @@ class COO(object):
             The broadcast parameters.
         broadcast_shape : tuple[int]
             The shape to broadcast to.
+
         Returns
         -------
         expanded_coords : np.ndarray
@@ -989,6 +1025,7 @@ class COO(object):
         arrays : Iterable[np.ndarray]
             The arrays to get a cartesian product of. Always sorted with respect
             to the original array.
+
         Returns
         -------
         out : np.ndarray
@@ -1008,13 +1045,16 @@ class COO(object):
     def broadcast_to(self, shape):
         """
         Performs the equivalent of np.broadcast_to for COO.
+
         Parameters
         ----------
         shape : tuple[int]
             The shape to broadcast the data to.
+
         Returns
         -------
             The broadcasted sparse array.
+
         Raises
         ------
         ValueError
@@ -1085,6 +1125,7 @@ class COO(object):
             The broadcast parameters.
         broadcast_shape : tuple[int]
             The shape to get the broadcast coordinates.
+
         Returns
         -------
         broadcast_coords : np.ndarray
@@ -1463,3 +1504,13 @@ def _match_arrays(a, b):
     b_idx[bic[1:-1]] -= bsw[bi[:-1]] + bl[bi[:-1]] - 1
     b_idx = np.cumsum(b_idx)
     return a_idx, b_idx
+
+
+def _grouped_reduce(x, groups, method, **kwargs):
+    # Partial credit to @shoyer
+    # Ref: https://gist.github.com/shoyer/f538ac78ae904c936844
+    flag = np.concatenate(([True], groups[1:] != groups[:-1]))
+    inv_idx, = flag.nonzero()
+    result = method.reduceat(x, inv_idx, **kwargs)
+    counts = np.diff(np.concatenate((inv_idx, [len(x)])))
+    return result, inv_idx, counts

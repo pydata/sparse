@@ -34,13 +34,30 @@ def random_x_bool(shape):
 @pytest.mark.parametrize('reduction,kwargs', [
     ('max', {}),
     ('sum', {}),
-    ('sum', {'dtype': np.float16})
+    ('sum', {'dtype': np.float16}),
+    ('prod', {}),
+    ('min', {}),
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2)])
 @pytest.mark.parametrize('keepdims', [True, False])
 def test_reductions(reduction, axis, keepdims, kwargs):
     xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
+    assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize('reduction,kwargs', [
+    (np.max, {}),
+    (np.sum, {}),
+    (np.sum, {'dtype': np.float16}),
+    (np.prod, {}),
+    (np.min, {}),
+])
+@pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2)])
+@pytest.mark.parametrize('keepdims', [True, False])
+def test_ufunc_reductions(reduction, axis, keepdims, kwargs):
+    xx = reduction(x, axis=axis, keepdims=keepdims, **kwargs)
+    yy = reduction(y, axis=axis, keepdims=keepdims, **kwargs)
     assert_eq(xx, yy)
 
 
@@ -149,7 +166,8 @@ def test_dot():
         assert_eq(eval("sa @ sb"), sparse.dot(sa, sb))
 
         # Test that SOO's and np.array's combine correctly
-        assert_eq(eval("a @ sb"), eval("sa @ b"))
+        # Not possible due to https://github.com/numpy/numpy/issues/9028
+        # assert_eq(eval("a @ sb"), eval("sa @ b"))
 
 
 @pytest.mark.xfail
@@ -180,9 +198,11 @@ def test_elemwise(func):
     x = random_x((2, 3, 4))
     s = COO.from_numpy(x)
 
-    assert isinstance(func(s), COO)
+    fs = func(s)
 
-    assert_eq(func(x), func(s))
+    assert isinstance(fs, COO)
+
+    assert_eq(func(x), fs)
 
 
 @pytest.mark.parametrize('func', [
