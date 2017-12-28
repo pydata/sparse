@@ -324,22 +324,20 @@ class COO(object):
 
         return self.reduce(method, **kwargs)
 
-    def reduce(self, method, axis=None, keepdims=False, dtype=None):
+    def reduce(self, method, axis=None, keepdims=False, **kwargs):
         # Needed for more esoteric reductions like product.
         self.sum_duplicates()
 
         if axis is None:
             axis = tuple(range(self.ndim))
 
-        kwargs = {}
-        if dtype:
-            kwargs['dtype'] = dtype
-
         if not isinstance(axis, tuple):
             axis = (axis,)
 
         if set(axis) == set(range(self.ndim)):
             result = method.reduce(self.data, **kwargs)
+            if self.nnz != np.prod(self.shape):
+                result = method(result, _zero_of_dtype(np.dtype(result))[()])
         else:
             axis = tuple(axis)
             neg_axis = tuple(ax for ax in range(self.ndim) if ax not in axis)
@@ -357,7 +355,7 @@ class COO(object):
             counts = np.diff(np.concatenate(np.nonzero(flag) + ([a.nnz],)))
             missing_counts = counts != a.shape[1]
             result[missing_counts] = method(result[missing_counts],
-                                            _zero_of_dtype(result.dtype))
+                                            _zero_of_dtype(result.dtype), **kwargs)
 
             a = COO(np.asarray([a.coords[0, inv_idx]]), result, shape=(np.prod(neg_axis),),
                     has_duplicates=False, sorted=True)
@@ -376,6 +374,14 @@ class COO(object):
     def max(self, axis=None, keepdims=False, out=None):
         assert out is None
         return self.reduce(np.maximum, axis=axis, keepdims=keepdims)
+
+    def min(self, axis=None, keepdims=False, out=None):
+        assert out is None
+        return self.reduce(np.minimum, axis=axis, keepdims=keepdims)
+
+    def prod(self, axis=None, keepdims=False, out=None):
+        assert out is None
+        return self.reduce(np.multiply, axis=axis, keepdims=keepdims)
 
     def transpose(self, axes=None):
         if axes is None:

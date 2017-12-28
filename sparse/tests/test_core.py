@@ -34,7 +34,9 @@ def random_x_bool(shape):
 @pytest.mark.parametrize('reduction,kwargs', [
     ('max', {}),
     ('sum', {}),
-    ('sum', {'dtype': np.float16})
+    ('sum', {'dtype': np.float16}),
+    ('prod', {}),
+    ('min', {}),
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2)])
 @pytest.mark.parametrize('keepdims', [True, False])
@@ -47,7 +49,9 @@ def test_reductions(reduction, axis, keepdims, kwargs):
 @pytest.mark.parametrize('reduction,kwargs', [
     (np.max, {}),
     (np.sum, {}),
-    (np.sum, {'dtype': np.float16})
+    (np.sum, {'dtype': np.float16}),
+    # (np.prod, {}),
+    (np.min, {}),
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2)])
 @pytest.mark.parametrize('keepdims', [True, False])
