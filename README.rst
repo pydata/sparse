@@ -14,14 +14,17 @@ This Supports
 --------------
 
 -  NumPy ufuncs (where zeros are preserved)
--  Arithmetic with scalars (where zeros are preserved)
--  Reductions (sum, max)
+-  Binary operations with other `COO` objects, where zeros are preserved.
+-  Binary operations with Scipy sparse matrices, where zeros are preserved.
+-  Binary operations with scalars, where zeros are preserved.
+-  Broadcasting binary operations and `broadcast_to`.
+-  Reductions (sum, max, min, prod, ...)
 -  Reshape
 -  Transpose
 -  Tensordot
+-  triu, tril
 -  Slicing with integers, lists, and slices (with no step value)
 -  Concatenation and stacking
--  Addition with other sparse arrays of the same shape
 
 This may yet support
 --------------------
@@ -30,9 +33,8 @@ A "does not support" list is hard to build because it is infinitely long.
 However the following things are in scope, relatively doable, and not yet built
 (help welcome).
 
--  Broadcasting
 -  Incremental buliding of arrays and inplace updates
--  More reductions
+-  More operations supported by Numpy `ndarray`s.
 
 There are no plans to support
 -----------------------------
