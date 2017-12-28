@@ -353,12 +353,7 @@ class COO(object):
                            np.prod([self.shape[d] for d in axis])))
             a.sort_indices()
 
-            flag = np.concatenate(([True], a.coords[0, 1:] != a.coords[0, :-1]))
-            # Partial credit to @shoyer
-            # Ref: https://gist.github.com/shoyer/f538ac78ae904c936844
-            inv_idx, = flag.nonzero()
-            result = method.reduceat(a.data, inv_idx, **kwargs)
-            counts = np.diff(np.concatenate((inv_idx, [a.nnz])))
+            result, inv_idx, counts = _grouped_reduce(a.data, a.coords[0], method, **kwargs)
             missing_counts = counts != a.shape[1]
             result[missing_counts] = method(result[missing_counts],
                                             _zero_of_dtype(result.dtype), **kwargs)
@@ -1504,3 +1499,13 @@ def _match_arrays(a, b):
     b_idx[bic[1:-1]] -= bsw[bi[:-1]] + bl[bi[:-1]] - 1
     b_idx = np.cumsum(b_idx)
     return a_idx, b_idx
+
+
+def _grouped_reduce(x, groups, method, **kwargs):
+    # Partial credit to @shoyer
+    # Ref: https://gist.github.com/shoyer/f538ac78ae904c936844
+    flag = np.concatenate(([True], groups[1:] != groups[:-1]))
+    inv_idx, = flag.nonzero()
+    result = method.reduceat(x, inv_idx, **kwargs)
+    counts = np.diff(np.concatenate((inv_idx, [len(x)])))
+    return result, inv_idx, counts
