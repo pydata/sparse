@@ -587,8 +587,7 @@ class COO(object):
     __radd__ = __add__
 
     def __neg__(self):
-        return COO(self.coords, -self.data, self.shape, self.has_duplicates,
-                   self.sorted)
+        return self.elemwise(operator.neg)
 
     def __sub__(self, other):
         return self.elemwise(operator.sub, other)
@@ -806,6 +805,7 @@ class COO(object):
             The indices into the coords array where it matches with the other array.
         matched_coords : np.ndarray
             The overall coordinates that match from both arrays.
+
         Returns
         -------
         coords_list : list[np.ndarray]
@@ -859,10 +859,12 @@ class COO(object):
             The input shapes to broadcast together.
         is_result : bool
             Whether or not shape2 is also the result shape.
+
         Returns
         -------
         result_shape : tuple[int]
             The overall shape of the result.
+
         Raises
         ------
         ValueError
@@ -890,6 +892,7 @@ class COO(object):
             The input shape.
         broadcast_shape
             The shape to broadcast to.
+
         Returns
         -------
         params : list
@@ -910,7 +913,8 @@ class COO(object):
         ----------
         coords : np.ndarray
             The coordinates to reduce.
-        params : The params from which to check which dimensions to get.
+        params : list
+            The params from which to check which dimensions to get.
 
         Returns
         -------
@@ -938,6 +942,7 @@ class COO(object):
             The broadcast parameters.
         broadcast_shape : tuple[int]
             The shape to broadcast to.
+
         Returns
         -------
         expanded_coords : np.ndarray
@@ -989,6 +994,7 @@ class COO(object):
         arrays : Iterable[np.ndarray]
             The arrays to get a cartesian product of. Always sorted with respect
             to the original array.
+
         Returns
         -------
         out : np.ndarray
@@ -1008,13 +1014,16 @@ class COO(object):
     def broadcast_to(self, shape):
         """
         Performs the equivalent of np.broadcast_to for COO.
+
         Parameters
         ----------
         shape : tuple[int]
             The shape to broadcast the data to.
+
         Returns
         -------
             The broadcasted sparse array.
+
         Raises
         ------
         ValueError
@@ -1085,6 +1094,7 @@ class COO(object):
             The broadcast parameters.
         broadcast_shape : tuple[int]
             The shape to get the broadcast coordinates.
+
         Returns
         -------
         broadcast_coords : np.ndarray
