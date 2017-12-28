@@ -314,7 +314,20 @@ class COO(object):
 
     __repr__ = __str__
 
-    def reduction(self, method, axis=None, keepdims=False, dtype=None):
+    @staticmethod
+    def _reduce(method, *args, **kwargs):
+        assert len(args) == 1
+
+        self = args[0]
+        if isinstance(self, scipy.sparse.spmatrix):
+            self = COO.from_scipy_sparse(self)
+
+        return self.reduce(method, **kwargs)
+
+    def reduce(self, method, axis=None, keepdims=False, dtype=None):
+        # Needed for more esoteric reductions like product.
+        self.sum_duplicates()
+
         if axis is None:
             axis = tuple(range(self.ndim))
 
@@ -322,32 +335,33 @@ class COO(object):
         if dtype:
             kwargs['dtype'] = dtype
 
-        if isinstance(axis, numbers.Integral):
+        if not isinstance(axis, tuple):
             axis = (axis,)
 
         if set(axis) == set(range(self.ndim)):
-            result = getattr(self.data, method)(**kwargs)
+            result = method.reduce(self.data, **kwargs)
         else:
             axis = tuple(axis)
+            neg_axis = tuple(ax for ax in range(self.ndim) if ax not in axis)
 
-            neg_axis = list(range(self.ndim))
-            for ax in axis:
-                neg_axis.remove(ax)
-            neg_axis = tuple(neg_axis)
+            a = self.transpose(neg_axis + axis)
+            a = a.reshape((np.prod([self.shape[d] for d in neg_axis]),
+                           np.prod([self.shape[d] for d in axis])))
+            a.sort_indices()
 
-            a = self.transpose(axis + neg_axis)
-            a = a.reshape((np.prod([self.shape[d] for d in axis]),
-                           np.prod([self.shape[d] for d in neg_axis])))
+            flag = np.concatenate(([True], a.coords[0, 1:] != a.coords[0, :-1]))
+            # Partial credit to @shoyer
+            # Ref: https://gist.github.com/shoyer/f538ac78ae904c936844
+            inv_idx, = flag.nonzero()
+            result = method.reduceat(a.data, inv_idx, **kwargs)
+            counts = np.diff(np.concatenate(np.nonzero(flag) + ([a.nnz],)))
+            missing_counts = counts != a.shape[1]
+            result[missing_counts] = method(result[missing_counts],
+                                            _zero_of_dtype(result.dtype))
 
-            a = a.to_scipy_sparse()
-            a = getattr(a, method)(axis=0, **kwargs)
-            if isinstance(a, scipy.sparse.spmatrix):
-                a = COO.from_scipy_sparse(a)
-                a.sorted = self.sorted
-                a.has_duplicates = False
-            elif isinstance(a, np.matrix):
-                a = np.asarray(a)[0]
-                a = COO.from_numpy(a)
+            a = COO(np.asarray([a.coords[0, inv_idx]]), result, shape=(np.prod(neg_axis),),
+                    has_duplicates=False, sorted=True)
+
             a = a.reshape([self.shape[d] for d in neg_axis])
             result = a
 
@@ -356,21 +370,12 @@ class COO(object):
         return result
 
     def sum(self, axis=None, keepdims=False, dtype=None, out=None):
-        return self.reduction('sum', axis=axis, keepdims=keepdims, dtype=dtype)
+        assert out is None
+        return self.reduce(np.add, axis=axis, keepdims=keepdims, dtype=dtype)
 
     def max(self, axis=None, keepdims=False, out=None):
-        x = self.reduction('max', axis=axis, keepdims=keepdims)
-        x_zero = _zero_of_dtype(x.dtype)
-
-        # TODO: verify that there are some missing elements in each entry
-        if isinstance(x, COO):
-            x.data[x.data < x_zero] = x_zero
-            return x
-        elif isinstance(x, np.ndarray):
-            x[x < x_zero] = x_zero
-            return x
-        else:
-            return np.max(x, 0)
+        assert out is None
+        return self.reduce(np.maximum, axis=axis, keepdims=keepdims)
 
     def transpose(self, axes=None):
         if axes is None:
@@ -414,8 +419,13 @@ class COO(object):
         except NotImplementedError:
             return NotImplemented
 
-    def __array_ufunc__(self, ufunc, method, i, inputs, **kwargs):
-        return NotImplemented
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        if method == '__call__':
+            return COO._elemwise(ufunc, *inputs, **kwargs)
+        elif method == 'reduce':
+            return COO._reduce(ufunc, *inputs, **kwargs)
+        else:
+            return NotImplemented
 
     def linear_loc(self, signed=False):
         """ Index location of every piece of data in a flattened array
@@ -461,7 +471,6 @@ class COO(object):
         linear_loc = self.linear_loc()
 
         max_shape = max(shape) if len(shape) != 0 else 1
-
         coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max_shape - 1))
         strides = 1
         for i, d in enumerate(shape[::-1]):
@@ -644,6 +653,25 @@ class COO(object):
     def __rshift__(self, other):
         return self.elemwise(operator.rshift, other)
 
+    @staticmethod
+    def _elemwise(func, *args, **kwargs):
+        assert len(args) >= 1
+        self = args[0]
+        if isinstance(self, scipy.sparse.spmatrix):
+            self = COO.from_numpy(self)
+
+        if len(args) == 1:
+            return self._elemwise_unary(func, *args[1:], **kwargs)
+        else:
+            other = args[1]
+            if isinstance(other, COO):
+                return self._elemwise_binary(func, *args[1:], **kwargs)
+            elif isinstance(other, scipy.sparse.spmatrix):
+                other = COO.from_scipy_sparse(other)
+                return self._elemwise_binary(func, other, *args[2:], **kwargs)
+            else:
+                return self._elemwise_unary(func, *args[1:], **kwargs)
+
     def elemwise(self, func, *args, **kwargs):
         """
         Apply a function to one or two arguments.
@@ -664,17 +692,7 @@ class COO(object):
         COO
             The result of applying the function.
         """
-        if len(args) == 0:
-            return self._elemwise_unary(func, *args, **kwargs)
-        else:
-            other = args[0]
-            if isinstance(other, COO):
-                return self._elemwise_binary(func, *args, **kwargs)
-            elif isinstance(other, scipy.sparse.spmatrix):
-                other = COO.from_scipy_sparse(other)
-                return self._elemwise_binary(func, other, *args[1:], **kwargs)
-            else:
-                return self._elemwise_unary(func, *args, **kwargs)
+        return COO._elemwise(func, self, *args, **kwargs)
 
     def _elemwise_unary(self, func, *args, **kwargs):
         check = kwargs.pop('check', True)
