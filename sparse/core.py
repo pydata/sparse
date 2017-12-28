@@ -325,6 +325,12 @@ class COO(object):
         return self.reduce(method, **kwargs)
 
     def reduce(self, method, axis=None, keepdims=False, **kwargs):
+        zero_reduce_result = method.reduce([_zero_of_dtype(self.dtype)], **kwargs)
+
+        if zero_reduce_result != _zero_of_dtype(np.dtype(zero_reduce_result)):
+            raise ValueError("Performing this reduction operation would produce "
+                             "a dense result: %s" % str(method))
+        
         # Needed for more esoteric reductions like product.
         self.sum_duplicates()
 
