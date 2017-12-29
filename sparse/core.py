@@ -130,6 +130,15 @@ class COO(object):
                 self.shape = result.shape
                 return
 
+            if isinstance(coords, scipy.sparse.spmatrix):
+                result = COO.from_scipy_sparse(coords)
+                self.coords = result.coords
+                self.data = result.data
+                self.has_duplicates = result.has_duplicates
+                self.sorted = result.sorted
+                self.shape = result.shape
+                return
+
             # []
             if not coords:
                 data = []
@@ -201,6 +210,19 @@ class COO(object):
 
     @classmethod
     def from_numpy(cls, x):
+        """
+        Convert the given :code:`np.ndarray` to a :code:`COO` object.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            The dense array to convert.
+
+        Returns
+        -------
+        COO
+            The converted COO array.
+        """
         x = np.asanyarray(x)
         if x.shape:
             coords = np.where(x)
@@ -213,6 +235,14 @@ class COO(object):
                    sorted=True)
 
     def todense(self):
+        """
+        Convert this :code:`COO` array to a dense :code:`np.ndarray`.
+
+        Returns
+        -------
+        np.ndarray
+            The converted dense array.
+        """
         self.sum_duplicates()
         x = np.zeros(shape=self.shape, dtype=self.dtype)
 
@@ -229,6 +259,18 @@ class COO(object):
 
     @classmethod
     def from_scipy_sparse(cls, x):
+        """
+        Construct a COO array from a :code:`scipy.sparse.spmatrix`
+
+        Parameters
+        ----------
+        x : scipy.sparse.spmatrix
+            The sparse matrix to construct the array from.
+        Returns
+        -------
+        COO
+            The converted :code:`COO` object.
+        """
         x = scipy.sparse.coo_matrix(x)
         coords = np.empty((2, x.nnz), dtype=x.row.dtype)
         coords[0, :] = x.row
@@ -239,18 +281,52 @@ class COO(object):
 
     @property
     def dtype(self):
+        """
+        The datatype of this array.
+
+        Returns
+        -------
+        np.dtype
+            The datatype of this array.
+        """
         return self.data.dtype
 
     @property
     def ndim(self):
+        """
+        The number of dimensions of this array.
+
+        Returns
+        -------
+        int
+            The number of dimensions of this array.
+        """
         return len(self.shape)
 
     @property
     def nnz(self):
+        """
+        The number of nonzero elements in this array. Note that any duplicates in
+        :code:`coords` are counted multiple times.
+
+        Returns
+        -------
+        int
+            The number of nonzero elements in this array.
+        """
         return self.coords.shape[1]
 
     @property
     def nbytes(self):
+        """
+        The number of bytes taken up by this object. Note that for small arrays,
+        this may undercount the number of bytes due to the large constant overhead.
+
+        Returns
+        -------
+        int
+            The approximate bytes of memory taken by this object.
+        """
         return self.data.nbytes + self.coords.nbytes
 
     def __sizeof__(self):
@@ -362,6 +438,25 @@ class COO(object):
         return self.reduce(method, **kwargs)
 
     def reduce(self, method, axis=None, keepdims=False, **kwargs):
+        """
+        Performs a reduction operation on this array.
+
+        Parameters
+        ----------
+        method : np.ufunc
+            The method to use for performing the reduction.
+        axis : Iterable[int], optional
+            The axes along which to perform the reduction. Uses all axes by default.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+        kwargs : dict
+            Any extra arguments to pass to the reduction operation.
+
+        Returns
+        -------
+        COO
+            The result of the reduction operation.
+        """
         zero_reduce_result = method.reduce([_zero_of_dtype(self.dtype)], **kwargs)
 
         if zero_reduce_result != _zero_of_dtype(np.dtype(zero_reduce_result)):
@@ -422,6 +517,20 @@ class COO(object):
         return self.reduce(np.multiply, axis=axis, keepdims=keepdims, dtype=dtype)
 
     def transpose(self, axes=None):
+        """
+        Returns a new array which has the order of the axes switched.
+
+        Parameters
+        ----------
+        axes : Iterable[int], optional
+            The new order of the axes compared to the previous one. Reverses the axes
+            by default.
+
+        Returns
+        -------
+        COO
+            The new array with the axes in the desired order.
+        """
         if axes is None:
             axes = list(reversed(range(self.ndim)))
 
@@ -471,9 +580,31 @@ class COO(object):
 
     @property
     def T(self):
-        return self.transpose(list(range(self.ndim))[::-1])
+        """
+        Returns an array which is the same as this array with the order
+        of the axes reversed.
+
+        Returns
+        -------
+        COO
+            The transposed array.
+        """
+        return self.transpose(tuple(range(self.ndim))[::-1])
 
     def dot(self, other):
+        """
+        Performs the equivalent of :code:`x.dot(y)` for :code:`COO`.
+
+        Parameters
+        ----------
+        other : {COO, np.ndarray, scipy.sparse.spmatrix}
+            The second operand of the dot product operation.
+
+        Returns
+        -------
+        {COO, np.ndarray}
+            The result of the dot product.
+        """
         return dot(self, other)
 
     def __matmul__(self, other):
@@ -497,10 +628,19 @@ class COO(object):
             return NotImplemented
 
     def linear_loc(self, signed=False):
-        """ Index location of every piece of data in a flattened array
+        """
+        Returns the coordinates of a flattened version of this array.
 
-        This is used internally to check for duplicates, re-order, reshape,
-        etc..
+        Parameters
+        ----------
+        signed : bool, optional
+            Whether to use a signed datatype for the output array. :code:`False`
+            by default.
+
+        Returns
+        -------
+        np.ndarray
+            The flattened coordinates.
         """
         return self._linear_loc(self.coords, self.shape, signed)
 
@@ -521,6 +661,19 @@ class COO(object):
         return out
 
     def reshape(self, shape):
+        """
+        Returns a new :code:`COO` array that is a reshaped version of this array.
+
+        Parameters
+        ----------
+        shape : tuple[int]
+            The desired shape of the output array.
+
+        Returns
+        -------
+        COO
+            The reshaped output array.
+        """
         if self.shape == shape:
             return self
         if any(d == -1 for d in shape):
@@ -580,6 +733,14 @@ class COO(object):
         return scipy.sparse.csr_matrix((self.data, col, indptr), shape=self.shape)
 
     def tocsr(self):
+        """
+        Converts this matrix to a :code:`scipy.sparse.csr_matrix`.
+
+        Returns
+        -------
+        scipy.sparse.csr_matrix
+            The result of the conversion.
+        """
         if self._cache is not None:
             try:
                 return self._csr
@@ -597,6 +758,14 @@ class COO(object):
         return csr
 
     def tocsc(self):
+        """
+        Converts this matrix to a :code:`scipy.sparse.csc_matrix`.
+
+        Returns
+        -------
+        scipy.sparse.csc_matrix
+            The result of the conversion.
+        """
         if self._cache is not None:
             try:
                 return self._csc
@@ -615,6 +784,9 @@ class COO(object):
         return csc
 
     def sort_indices(self):
+        """
+        Sorts the indices of the array so they are in canonical form.
+        """
         if self.sorted:
             return
 
@@ -622,21 +794,24 @@ class COO(object):
 
         if (np.diff(linear) > 0).all():  # already sorted
             self.sorted = True
-            return self
+            return
 
         order = np.argsort(linear)
         self.coords = self.coords[:, order]
         self.data = self.data[order]
         self.sorted = True
-        return self
 
     def sum_duplicates(self):
+        """
+        If :code:`x.coords` has any duplicates, this sums the data along those
+        duplicates so there are no duplicates left in :code:`x.coords` anymore.
+        """
         # Inspired by scipy/sparse/coo.py::sum_duplicates
         # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
         if not self.has_duplicates:
-            return self
+            return
         if not np.prod(self.coords.shape):
-            return self
+            return
 
         self.sort_indices()
 
@@ -645,7 +820,7 @@ class COO(object):
 
         if unique_mask.sum() == len(unique_mask):  # already unique
             self.has_duplicates = False
-            return self
+            return
 
         unique_mask = np.append(True, unique_mask)
 
@@ -656,8 +831,6 @@ class COO(object):
         self.data = data
         self.coords = coords
         self.has_duplicates = False
-
-        return self
 
     def __add__(self, other):
         return self.elemwise(operator.add, other)
@@ -1122,6 +1295,7 @@ class COO(object):
 
         Returns
         -------
+        COO
             The broadcasted sparse array.
 
         Raises
@@ -1285,6 +1459,22 @@ class COO(object):
 
 
 def tensordot(a, b, axes=2):
+    """
+    Perform the equivalent of :code:`np.tensordot`.
+
+    Parameters
+    ----------
+    a, b : {COO, np.ndarray, scipy.sparse.spmatrix}
+        The arrays to perform the :code:`tensordot` operation on.
+    axes : {int, {tuple[tuple[int], tuple[int]]}, tuple[int, int]}, optional
+        The axes to match when performing the sum.
+
+    Returns
+    -------
+    {COO, np.ndarray}
+        The result of the operation.
+
+    """
     # Much of this is stolen from numpy/core/numeric.py::tensordot
     # Please see license at https://github.com/numpy/numpy/blob/master/LICENSE.txt
     try:
@@ -1360,6 +1550,19 @@ def tensordot(a, b, axes=2):
 
 
 def dot(a, b):
+    """
+    Perform the equivalent of :code:`np.dot` on two arrays.
+
+    Parameters
+    ----------
+    a, b : {COO, np.ndarray, scipy.sparse.spmatrix}
+        The arrays to perform the :code:`dot` operation on.
+
+    Returns
+    -------
+    {COO, np.ndarray}
+        The result of the operation.
+    """
     if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
         raise NotImplementedError(
             "Cannot perform dot product on types %s, %s" %
@@ -1411,6 +1614,21 @@ def _mask(coords, idx, shape):
 
 
 def concatenate(arrays, axis=0):
+    """
+    Concatenate the input arrays along the given dimension.
+
+    Parameters
+    ----------
+    arrays : Iterable[{COO, np.ndarray, scipy.sparse.spmatrix}]
+        The input arrays to concatenate.
+    axis : int, optional
+        The axis along which to concatenate the input arrays. The default is zero.
+
+    Returns
+    -------
+    COO
+        The output concatenated array.
+    """
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
     if axis < 0:
         axis = axis + arrays[0].ndim
@@ -1440,6 +1658,21 @@ def concatenate(arrays, axis=0):
 
 
 def stack(arrays, axis=0):
+    """
+    Stack the input arrays along the given dimension.
+
+    Parameters
+    ----------
+    arrays : Iterable[{COO, np.ndarray, scipy.sparse.spmatrix}]
+        The input arrays to stack.
+    axis : int, optional
+        The axis along which to stack the input arrays.
+
+    Returns
+    -------
+    COO
+        The output stacked array.
+    """
     assert len(set(x.shape for x in arrays)) == 1
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
     if axis < 0:
@@ -1476,8 +1709,9 @@ def triu(x, k=0):
     ----------
     x : COO
         The input array.
-    k : int
-        The diagonal below which elements are set to zero.
+    k : int, optional
+        The diagonal below which elements are set to zero. The default is
+        zero, which corresponds to the main diagonal.
 
     Returns
     -------
@@ -1503,8 +1737,9 @@ def tril(x, k=0):
     ----------
     x : COO
         The input array.
-    k : int
-        The diagonal above which elements are set to zero.
+    k : int, optional
+        The diagonal above which elements are set to zero. The default is
+        zero, which corresponds to the main diagonal.
 
     Returns
     -------
@@ -1524,14 +1759,17 @@ def tril(x, k=0):
 
 def _zero_of_dtype(dtype):
     """
-    Creates a ()-shaped 0-sized array of a given dtype
+    Creates a ()-shaped 0-sized array of a given dtype.
+
     Parameters
     ----------
     dtype : np.dtype
         The dtype for the array.
+
     Returns
     -------
-    The zero array.
+    np.ndarray
+        The zero array.
     """
     return np.zeros((), dtype=dtype)
 
@@ -1582,6 +1820,31 @@ def _match_arrays(a, b):
 
 
 def _grouped_reduce(x, groups, method, **kwargs):
+    """
+    Performs a :code:`ufunc` grouped reduce.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        The data to reduce.
+    groups : np.ndarray
+        The groups the data belongs to. The groups must be
+        contiguous.
+    method : np.ufunc
+        The :code:`ufunc` to use to perform the reduction.
+    kwargs : dict
+        The kwargs to pass to the :code:`ufunc`'s :code:`reduceat`
+        function.
+
+    Returns
+    -------
+    result : np.ndarray
+        The result of the grouped reduce operation.
+    inv_idx : np.ndarray
+        The index of the first element where each group is found.
+    counts : np.ndarray
+        The number of elements in each group.
+    """
     # Partial credit to @shoyer
     # Ref: https://gist.github.com/shoyer/f538ac78ae904c936844
     flag = np.concatenate(([True] if len(x) != 0 else [], groups[1:] != groups[:-1]))
