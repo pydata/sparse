@@ -34,7 +34,9 @@ However the following things are in scope, relatively doable, and not yet built
 (help welcome).
 
 -  Incremental buliding of arrays and inplace updates
--  More operations supported by Numpy `ndarray`s.
+-  More operations supported by Numpy :code:`ndarray`s, such as :code:`argmin` and :code:`argmax`.
+-  Array building functions such as :code:`eye`, :code:`spdiags`. See `building sparse matrices`_.
+-  Linear algebra operations such as :code:`inv`, :code:`norm` and :code:`solve`. See scipy.sparse.linalg_.
 
 There are no plans to support
 -----------------------------
@@ -141,5 +143,7 @@ LICENSE
 This is licensed under New BSD-3
 
 .. _scipy.sparse.coo_matrix: https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.coo_matrix.html
+.. _building sparse matrices: https://docs.scipy.org/doc/scipy/reference/sparse.html#functions
+.. _scipy.sparse.linalg: https://docs.scipy.org/doc/scipy/reference/sparse.linalg.html
 .. |Build Status| image:: https://travis-ci.org/mrocklin/sparse.svg?branch=master
    :target: https://travis-ci.org/mrocklin/sparse
