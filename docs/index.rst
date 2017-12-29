@@ -1,13 +1,17 @@
-Sparse Multidimensional Arrays
-==============================
+.. sparse documentation master file, created by
+   sphinx-quickstart on Fri Dec 29 20:58:03 2017.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
 
-Contents:
+Welcome to sparse's documentation!
+==================================
 
 .. toctree::
    :maxdepth: 2
+   :caption: Contents:
 
-   modules
-
+.. automodule:: sparse
+   :members:
 
 Indices and tables
 ==================
