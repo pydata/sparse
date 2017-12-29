@@ -1,7 +1,5 @@
-sparse module
+:mod:`sparse`
 =============
 
 .. automodule:: sparse
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
