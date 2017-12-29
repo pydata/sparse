@@ -97,8 +97,8 @@ class COO(object):
 
     See Also
     --------
-    COO.from_numpy
-    COO.from_scipy_sparse
+    COO.from_numpy : Generate sparse array from NumPy array
+    COO.from_scipy_sparse : Generate sparse array from SciPy sparse matrix
     """
     __array_priority__ = 12
 
@@ -260,7 +260,7 @@ class COO(object):
     @classmethod
     def from_scipy_sparse(cls, x):
         """
-        Construct a COO array from a :code:`scipy.sparse.spmatrix`
+        Construct a :code:`COO` array from a :code:`scipy.sparse.spmatrix`
 
         Parameters
         ----------
@@ -1286,7 +1286,7 @@ class COO(object):
 
     def broadcast_to(self, shape):
         """
-        Performs the equivalent of np.broadcast_to for COO.
+        Performs the equivalent of :code:`np.broadcast_to()` for COO.
 
         Parameters
         ----------
@@ -1302,6 +1302,10 @@ class COO(object):
         ------
         ValueError
             If the operand cannot be broadcast to the given shape.
+
+        See also
+        --------
+        numpy.broadcast_to : NumPy equivalent function
         """
         result_shape = self._get_broadcast_shape(self.shape, shape, is_result=True)
         params = self._get_broadcast_parameters(self.shape, result_shape)
@@ -1387,70 +1391,206 @@ class COO(object):
         return full_coords[:, mask], full_data[mask]
 
     def __abs__(self):
+        """ Calculate the absolute value element-wise.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.abs : SciPy sparse equivalent function
+        numpy.abs : NumPy equivalent function
+        """
         return self.elemwise(abs)
 
+    abs = __abs__
+
     def exp(self, out=None):
+        """ Calculate the exponential of all elements in the array.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.exp : SciPy sparse equivalent function
+        numpy.exp : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.exp)
 
     def expm1(self, out=None):
+        """ Calculate :code:`exp(x) - 1` for all elements in the array.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.expm1 : SciPy sparse equivalent function
+        numpy.expm1 : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.expm1)
 
     def log1p(self, out=None):
+        """ Return the natural logarithm of one plus the input array, element-wise.
+
+        Calculates :code:`log(1 + x)`.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.log1p : SciPy sparse equivalent function
+        numpy.log1p : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.log1p)
 
     def sin(self, out=None):
+        """ Trigonometric sine, element-wise.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.sin : SciPy sparse equivalent function
+        numpy.sin : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.sin)
 
     def sinh(self, out=None):
+        """ Hyperbolic sine, element-wise.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.sinh : SciPy sparse equivalent function
+        numpy.sinh : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.sinh)
 
     def tan(self, out=None):
+        """ Compute tangent element-wise.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.tan : SciPy sparse equivalent function
+        numpy.tan : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.tan)
 
     def tanh(self, out=None):
+        """ Compute hyperbolic tangent element-wise.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.tanh : SciPy sparse equivalent function
+        numpy.tanh : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.tanh)
 
     def sqrt(self, out=None):
+        """ Return the positive square-root of an array, element-wise.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.sqrt : SciPy sparse equivalent function
+        numpy.sqrt : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.sqrt)
 
     def ceil(self, out=None):
+        """ Return the ceiling of the input, element-wise.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.ceil : SciPy sparse equivalent function
+        numpy.ceil : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.ceil)
 
     def floor(self, out=None):
+        """ Return the floor of the input, element-wise.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.floor : SciPy sparse equivalent function
+        numpy.floor : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.floor)
 
     def round(self, decimals=0, out=None):
+        """ Evenly round to the given number of decimals.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.round : SciPy sparse equivalent function
+        numpy.round : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.round, decimals)
 
     def rint(self, out=None):
+        """ Round elements of the array to the nearest integer.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.rint : SciPy sparse equivalent function
+        numpy.rint : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.rint)
 
     def conj(self, out=None):
+        """ Return the complex conjugate, element-wise.
+
+        See also
+        --------
+        conjugate : Equivalent function
+        scipy.sparse.coo_matrix.conj : SciPy sparse equivalent function
+        numpy.conj : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.conj)
 
     def conjugate(self, out=None):
+        """ Return the complex conjugate, element-wise.
+
+        See also
+        --------
+        conj : Equivalent function
+        scipy.sparse.coo_matrix.conjugate : SciPy sparse equivalent function
+        numpy.conjugate : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.conjugate)
 
     def astype(self, dtype, out=None):
+        """ Copy of the array, cast to a specified type.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.astype : SciPy sparse equivalent function
+        numpy.ndarray.astype : NumPy equivalent function
+        """
         assert out is None
         return self.elemwise(np.ndarray.astype, dtype)
 
     def maybe_densify(self, allowed_nnz=1e3, allowed_fraction=0.25):
-        """ Convert to a dense numpy array if not too costly.  Err othrewise """
+        """ Convert to a dense numpy array if not too costly. Err othrewise
+
+        Parameters
+        ----------
+        allowed_nnz : int
+            Allowed number of nonzero values
+        allowed_fraction : float
+            Allowed density of nonzero values
+
+        Returns
+        -------
+        np.ndarray
+            The dense array.
+
+        Raises
+        -------
+        NotImplementedError
+            If the returned array would be too large.
+        """
         if reduce(operator.mul, self.shape) <= allowed_nnz or self.nnz >= np.prod(self.shape) * allowed_fraction:
             return self.todense()
         else:
@@ -1473,6 +1613,11 @@ def tensordot(a, b, axes=2):
     -------
     {COO, np.ndarray}
         The result of the operation.
+
+
+    See Also
+    --------
+    np.tensordot : NumPy equivalent function
 
     """
     # Much of this is stolen from numpy/core/numeric.py::tensordot
@@ -1562,6 +1707,11 @@ def dot(a, b):
     -------
     {COO, np.ndarray}
         The result of the operation.
+
+    See Also
+    --------
+    np.dot : NumPy equivalent function
+
     """
     if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
         raise NotImplementedError(
