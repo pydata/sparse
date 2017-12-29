@@ -14,10 +14,10 @@ This Supports
 --------------
 
 -  NumPy ufuncs (where zeros are preserved)
--  Binary operations with other `COO` objects, where zeros are preserved.
+-  Binary operations with other :code:`COO` objects, where zeros are preserved.
 -  Binary operations with Scipy sparse matrices, where zeros are preserved.
 -  Binary operations with scalars, where zeros are preserved.
--  Broadcasting binary operations and `broadcast_to`.
+-  Broadcasting binary operations and :code:`broadcast_to`.
 -  Reductions (sum, max, min, prod, ...)
 -  Reshape
 -  Transpose
