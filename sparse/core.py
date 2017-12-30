@@ -1516,7 +1516,7 @@ def _grouped_reduce(x, groups, method, **kwargs):
     return result, inv_idx, counts
 
 
-def random(shape, density=0.01, dtype=None):
+def random(shape, density=0.01, dtype=None, random_state=None):
     """ Generate a random sparse multidimensional array
 
     Parameters
@@ -1527,11 +1527,19 @@ def random(shape, density=0.01, dtype=None):
         Density of the generated array.
     dtype : dtype
         Type of the returned array values.
-
+    random_state : {numpy.random.RandomState, int}, optional
+        Random number generator or random seed. If not given, the
+        singleton numpy.random will be used. This random state will be used
+        for sampling the sparsity structure, but not necessarily for sampling
+        the values of the structurally nonzero entries of the matrix.
 
     """
     elements = np.prod(shape)
 
     return COO.from_scipy_sparse(
-        scipy.sparse.rand(elements, 1, density, dtype=dtype)
+        scipy.sparse.rand(
+            elements, 1, density,
+            dtype=dtype,
+            random_state=random_state
+        )
     ).reshape(shape)
