@@ -30,12 +30,12 @@ class COO(object):
 
     Parameters
     ----------
-    coords: np.ndarray (ndim, nnz)
+    coords: numpy.ndarray (ndim, nnz)
         An array holding the index locations of every value
         Should have shape (number of dimensions, number of non-zeros)
-    data: np.array (nnz,)
+    data: numpy.ndarray (nnz,)
         An array of Values
-    shape: tuple (ndim,), optional
+    shape: tuple[int] (ndim,), optional
         The shape of the array
 
     Examples
@@ -211,7 +211,7 @@ class COO(object):
     @classmethod
     def from_numpy(cls, x):
         """
-        Convert the given :code:`np.ndarray` to a :code:`COO` object.
+        Convert the given :obj:`numpy.ndarray` to a :code:`COO` object.
 
         Parameters
         ----------
@@ -236,12 +236,16 @@ class COO(object):
 
     def todense(self):
         """
-        Convert this :code:`COO` array to a dense :code:`np.ndarray`.
+        Convert this :obj:`COO` array to a dense :obj:`numpy.ndarray`.
 
         Returns
         -------
-        np.ndarray
+        numpy.ndarray
             The converted dense array.
+
+        See Also
+        --------
+        scipy.sparse.coo_matrix.todense : Equivalent Scipy method.
         """
         self.sum_duplicates()
         x = np.zeros(shape=self.shape, dtype=self.dtype)
@@ -286,8 +290,13 @@ class COO(object):
 
         Returns
         -------
-        np.dtype
+        numpy.dtype
             The datatype of this array.
+
+        See Also
+        --------
+        numpy.ndarray.dtype : Numpy equivalent property.
+        scipy.sparse.coo_matrix.dtype : Scipy equivalent property.
         """
         return self.data.dtype
 
@@ -300,6 +309,10 @@ class COO(object):
         -------
         int
             The number of dimensions of this array.
+
+        See Also
+        --------
+        numpy.ndarray.ndim : Numpy equivalent property.
         """
         return len(self.shape)
 
@@ -307,12 +320,17 @@ class COO(object):
     def nnz(self):
         """
         The number of nonzero elements in this array. Note that any duplicates in
-        :code:`coords` are counted multiple times.
+        :code:`coords` are counted multiple times. To avoid this, call :obj:`COO.sum_duplicates`.
 
         Returns
         -------
         int
             The number of nonzero elements in this array.
+
+        See Also
+        --------
+        numpy.nonzero : A similar Numpy function.
+        scipy.sparse.coo_matrix.nnz : The Scipy equivalent property.
         """
         return self.coords.shape[1]
 
@@ -326,6 +344,10 @@ class COO(object):
         -------
         int
             The approximate bytes of memory taken by this object.
+
+        See Also
+        --------
+        numpy.ndarray.nbytes : The equivalent Numpy property.
         """
         return self.data.nbytes + self.coords.nbytes
 
@@ -443,7 +465,7 @@ class COO(object):
 
         Parameters
         ----------
-        method : np.ufunc
+        method : numpy.ufunc
             The method to use for performing the reduction.
         axis : Iterable[int], optional
             The axes along which to perform the reduction. Uses all axes by default.
@@ -456,6 +478,10 @@ class COO(object):
         -------
         COO
             The result of the reduction operation.
+
+        See Also
+        --------
+        numpy.ufunc.reduce : A similar Numpy method.
         """
         zero_reduce_result = method.reduce([_zero_of_dtype(self.dtype)], **kwargs)
 
@@ -530,6 +556,10 @@ class COO(object):
         -------
         COO
             The new array with the axes in the desired order.
+
+        See Also
+        --------
+        numpy.ndarray.transpose : Numpy equivalent function.
         """
         if axes is None:
             axes = list(reversed(range(self.ndim)))
@@ -588,6 +618,10 @@ class COO(object):
         -------
         COO
             The transposed array.
+
+        See Also
+        --------
+        numpy.ndarray.T : Equivalent Numpy property.
         """
         return self.transpose(tuple(range(self.ndim))[::-1])
 
@@ -604,6 +638,11 @@ class COO(object):
         -------
         {COO, np.ndarray}
             The result of the dot product.
+
+        See Also
+        --------
+        numpy.ndarray.dot : Numpy equivalent function.
+        scipy.sparse.coo_matrix.dot : Scipy equivalent function.
         """
         return dot(self, other)
 
@@ -639,7 +678,7 @@ class COO(object):
 
         Returns
         -------
-        np.ndarray
+        numpy.ndarray
             The flattened coordinates.
         """
         return self._linear_loc(self.coords, self.shape, signed)
@@ -673,6 +712,10 @@ class COO(object):
         -------
         COO
             The reshaped output array.
+
+        See Also
+        --------
+        numpy.ndarray.reshape : The equivalent Numpy function.
         """
         if self.shape == shape:
             return self
@@ -717,7 +760,9 @@ class COO(object):
         return result
 
     def _tocsr(self):
-        assert self.ndim == 2
+        if self.ndim != 2:
+            raise ValueError('This array must be two-dimensional for this conversion '
+                             'to work.')
 
         # Pass 1: sum duplicates
         self.sum_duplicates()
@@ -734,12 +779,21 @@ class COO(object):
 
     def tocsr(self):
         """
-        Converts this matrix to a :code:`scipy.sparse.csr_matrix`.
+        Converts this matrix to a :obj:`scipy.sparse.csr_matrix`.
 
         Returns
         -------
         scipy.sparse.csr_matrix
             The result of the conversion.
+
+        Raises
+        ------
+        ValueError
+            If the array is not two-dimensional.
+
+        See Also
+        --------
+        scipy.sparse.coo_matrix.tocsr : Equivalent Scipy function.
         """
         if self._cache is not None:
             try:
@@ -759,12 +813,21 @@ class COO(object):
 
     def tocsc(self):
         """
-        Converts this matrix to a :code:`scipy.sparse.csc_matrix`.
+        Converts this matrix to a :obj:`scipy.sparse.csc_matrix`.
 
         Returns
         -------
         scipy.sparse.csc_matrix
             The result of the conversion.
+
+        Raises
+        ------
+        ValueError
+            If the array is not two-dimensional.
+
+        See Also
+        --------
+        scipy.sparse.coo_matrix.tocsc : Equivalent Scipy function.
         """
         if self._cache is not None:
             try:
@@ -805,6 +868,10 @@ class COO(object):
         """
         If :code:`x.coords` has any duplicates, this sums the data along those
         duplicates so there are no duplicates left in :code:`x.coords` anymore.
+
+        See Also
+        --------
+        scipy.sparse.coo_matrix.sum_duplicates : Equivalent Scipy function.
         """
         # Inspired by scipy/sparse/coo.py::sum_duplicates
         # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
@@ -940,6 +1007,11 @@ class COO(object):
         -------
         COO
             The result of applying the function.
+
+        See Also
+        --------
+        :obj:`numpy.ufunc` : A similar Numpy construct. Note that any :code:`ufunc` can be used
+            as the :code:`func` input to this function.
         """
         return COO._elemwise(func, self, *args, **kwargs)
 
@@ -1286,7 +1358,7 @@ class COO(object):
 
     def broadcast_to(self, shape):
         """
-        Performs the equivalent of :code:`np.broadcast_to()` for COO.
+        Performs the equivalent of :obj:`numpy.broadcast_to` for COO.
 
         Parameters
         ----------
@@ -1305,7 +1377,7 @@ class COO(object):
 
         See also
         --------
-        numpy.broadcast_to : NumPy equivalent function
+        :obj:`numpy.broadcast_to` : NumPy equivalent function
         """
         result_shape = self._get_broadcast_shape(self.shape, shape, is_result=True)
         params = self._get_broadcast_parameters(self.shape, result_shape)
@@ -1395,8 +1467,7 @@ class COO(object):
 
         See also
         --------
-        scipy.sparse.coo_matrix.abs : SciPy sparse equivalent function
-        numpy.abs : NumPy equivalent function
+        :obj:`numpy.absolute` : NumPy equivalent ufunc.
         """
         return self.elemwise(abs)
 
@@ -1407,8 +1478,7 @@ class COO(object):
 
         See also
         --------
-        scipy.sparse.coo_matrix.exp : SciPy sparse equivalent function
-        numpy.exp : NumPy equivalent function
+        :obj:`numpy.exp` : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.exp)
@@ -1419,7 +1489,7 @@ class COO(object):
         See also
         --------
         scipy.sparse.coo_matrix.expm1 : SciPy sparse equivalent function
-        numpy.expm1 : NumPy equivalent function
+        :obj:`numpy.expm1` : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.expm1)
@@ -1432,7 +1502,7 @@ class COO(object):
         See also
         --------
         scipy.sparse.coo_matrix.log1p : SciPy sparse equivalent function
-        numpy.log1p : NumPy equivalent function
+        :obj:`numpy.log1p` : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.log1p)
@@ -1443,7 +1513,7 @@ class COO(object):
         See also
         --------
         scipy.sparse.coo_matrix.sin : SciPy sparse equivalent function
-        numpy.sin : NumPy equivalent function
+        :obj:`numpy.sin` : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.sin)
@@ -1454,7 +1524,7 @@ class COO(object):
         See also
         --------
         scipy.sparse.coo_matrix.sinh : SciPy sparse equivalent function
-        numpy.sinh : NumPy equivalent function
+        :obj:`numpy.sinh` : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.sinh)
@@ -1465,7 +1535,7 @@ class COO(object):
         See also
         --------
         scipy.sparse.coo_matrix.tan : SciPy sparse equivalent function
-        numpy.tan : NumPy equivalent function
+        :obj:`numpy.tan` : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.tan)
@@ -1476,7 +1546,7 @@ class COO(object):
         See also
         --------
         scipy.sparse.coo_matrix.tanh : SciPy sparse equivalent function
-        numpy.tanh : NumPy equivalent function
+        :obj:`numpy.tanh` : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.tanh)
@@ -1487,7 +1557,7 @@ class COO(object):
         See also
         --------
         scipy.sparse.coo_matrix.sqrt : SciPy sparse equivalent function
-        numpy.sqrt : NumPy equivalent function
+        :obj:`numpy.sqrt` : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.sqrt)
@@ -1498,7 +1568,7 @@ class COO(object):
         See also
         --------
         scipy.sparse.coo_matrix.ceil : SciPy sparse equivalent function
-        numpy.ceil : NumPy equivalent function
+        :obj:`numpy.ceil` : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.ceil)
@@ -1509,7 +1579,7 @@ class COO(object):
         See also
         --------
         scipy.sparse.coo_matrix.floor : SciPy sparse equivalent function
-        numpy.floor : NumPy equivalent function
+        :obj:`numpy.floor` : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.floor)
@@ -1519,8 +1589,7 @@ class COO(object):
 
         See also
         --------
-        scipy.sparse.coo_matrix.round : SciPy sparse equivalent function
-        numpy.round : NumPy equivalent function
+        :obj:`numpy.round` : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.round, decimals)
@@ -1531,7 +1600,7 @@ class COO(object):
         See also
         --------
         scipy.sparse.coo_matrix.rint : SciPy sparse equivalent function
-        numpy.rint : NumPy equivalent function
+        :obj:`numpy.rint` : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.rint)
@@ -1543,7 +1612,7 @@ class COO(object):
         --------
         conjugate : Equivalent function
         scipy.sparse.coo_matrix.conj : SciPy sparse equivalent function
-        numpy.conj : NumPy equivalent function
+        :obj:`numpy.conj` : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.conj)
@@ -1555,7 +1624,7 @@ class COO(object):
         --------
         conj : Equivalent function
         scipy.sparse.coo_matrix.conjugate : SciPy sparse equivalent function
-        numpy.conjugate : NumPy equivalent function
+        :obj:`numpy.conj` : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.conjugate)
@@ -1566,7 +1635,7 @@ class COO(object):
         See also
         --------
         scipy.sparse.coo_matrix.astype : SciPy sparse equivalent function
-        numpy.ndarray.astype : NumPy equivalent function
+        numpy.ndarray.astype : NumPy equivalent ufunc.
         """
         assert out is None
         return self.elemwise(np.ndarray.astype, dtype)
@@ -1583,7 +1652,7 @@ class COO(object):
 
         Returns
         -------
-        np.ndarray
+        numpy.ndarray
             The dense array.
 
         Raises
@@ -1614,11 +1683,9 @@ def tensordot(a, b, axes=2):
     {COO, np.ndarray}
         The result of the operation.
 
-
     See Also
     --------
-    np.tensordot : NumPy equivalent function
-
+    numpy.tensordot : NumPy equivalent function
     """
     # Much of this is stolen from numpy/core/numeric.py::tensordot
     # Please see license at https://github.com/numpy/numpy/blob/master/LICENSE.txt
@@ -1710,7 +1777,7 @@ def dot(a, b):
 
     See Also
     --------
-    np.dot : NumPy equivalent function
+    numpy.dot : NumPy equivalent function
 
     """
     if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
@@ -1778,6 +1845,10 @@ def concatenate(arrays, axis=0):
     -------
     COO
         The output concatenated array.
+
+    See Also
+    --------
+    numpy.concatenate : NumPy equivalent function
     """
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
     if axis < 0:
@@ -1822,6 +1893,10 @@ def stack(arrays, axis=0):
     -------
     COO
         The output stacked array.
+
+    See Also
+    --------
+    numpy.stack : NumPy equivalent function
     """
     assert len(set(x.shape for x in arrays)) == 1
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
@@ -1853,7 +1928,7 @@ def stack(arrays, axis=0):
 
 def triu(x, k=0):
     """
-    Calculates the equivalent of np.triu(x, k) for COO.
+    Returns an array with all elements below the k-th diagonal set to zero.
 
     Parameters
     ----------
@@ -1867,6 +1942,10 @@ def triu(x, k=0):
     -------
     COO
         The output upper-triangular matrix.
+
+    See Also
+    --------
+    numpy.triu : NumPy equivalent function
     """
     if not x.ndim >= 2:
         raise NotImplementedError('sparse.triu is not implemented for scalars or 1-D arrays.')
@@ -1881,7 +1960,7 @@ def triu(x, k=0):
 
 def tril(x, k=0):
     """
-    Calculates the equivalent of np.tril(x, k) for COO.
+    Returns an array with all elements above the k-th diagonal set to zero.
 
     Parameters
     ----------
@@ -1895,6 +1974,10 @@ def tril(x, k=0):
     -------
     COO
         The output lower-triangular matrix.
+
+    See Also
+    --------
+    numpy.tril : NumPy equivalent function
     """
     if not x.ndim >= 2:
         raise NotImplementedError('sparse.tril is not implemented for scalars or 1-D arrays.')
@@ -1913,7 +1996,7 @@ def _zero_of_dtype(dtype):
 
     Parameters
     ----------
-    dtype : np.dtype
+    dtype : numpy.dtype
         The dtype for the array.
 
     Returns

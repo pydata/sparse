@@ -10,7 +10,7 @@ Welcome to sparse's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   sparse
+   modules
 
 Indices and tables
 ==================
