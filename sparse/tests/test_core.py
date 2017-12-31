@@ -732,13 +732,15 @@ def test_scalar_slicing():
     assert np.isscalar(s[0])
     assert_eq(x[0], s[0])
 
-    assert not np.isscalar(s[0, ...])
+    assert isinstance(s[0, ...], COO)
+    assert s[0, ...].shape == ()
     assert_eq(x[0, ...], s[0, ...])
 
     assert np.isscalar(s[1])
     assert_eq(x[1], s[1])
 
-    assert not np.isscalar(s[1, ...])
+    assert isinstance(s[1, ...], COO)
+    assert s[1, ...].shape == ()
     assert_eq(x[1, ...], s[1, ...])
 
 
