@@ -311,7 +311,8 @@ class COO(object):
                         start = stop
                     shape.append((start - stop - step - 1) // (-step))
 
-                coords.append((self.coords[i, mask] - start) // step)
+                dt = np.min_scalar_type(min(-(l - 1) if l != 0 else -1 for l in shape))
+                coords.append((self.coords[i, mask].astype(dt) - start) // step)
                 i += 1
             elif isinstance(ind, list):
                 old = self.coords[i][mask]
