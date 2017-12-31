@@ -9,38 +9,38 @@ from sparse import COO
 import sparse
 from sparse.utils import assert_eq
 
-@pytest.mark.parametrize('reduction,kwargs', [
-    ('max', {}),
-    ('sum', {}),
-    ('sum', {'dtype': np.float16}),
-    ('prod', {}),
-    ('min', {}),
+@pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
+    ('max', {}, {}),
+    ('sum', {}, {}),
+    ('sum', {'dtype': np.float16}, {'atol': 1e-2}),
+    ('prod', {}, {}),
+    ('min', {}, {}),
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2)])
 @pytest.mark.parametrize('keepdims', [True, False])
-def test_reductions(reduction, axis, keepdims, kwargs):
+def test_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     x = sparse.random((2, 3, 4), density=.25)
     y = x.todense()
     xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
-    assert_eq(xx, yy)
+    assert_eq(xx, yy, **eqkwargs)
 
 
-@pytest.mark.parametrize('reduction,kwargs', [
-    (np.max, {}),
-    (np.sum, {}),
-    (np.sum, {'dtype': np.float16}),
-    (np.prod, {}),
-    (np.min, {}),
+@pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
+    (np.max, {}, {}),
+    (np.sum, {}, {}),
+    (np.sum, {'dtype': np.float16}, {'atol': 1e-2}),
+    (np.prod, {}, {}),
+    (np.min, {}, {}),
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2)])
 @pytest.mark.parametrize('keepdims', [True, False])
-def test_ufunc_reductions(reduction, axis, keepdims, kwargs):
+def test_ufunc_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     x = sparse.random((2, 3, 4), density=.5)
     y = x.todense()
     xx = reduction(x, axis=axis, keepdims=keepdims, **kwargs)
     yy = reduction(y, axis=axis, keepdims=keepdims, **kwargs)
-    assert_eq(xx, yy)
+    assert_eq(xx, yy, **eqkwargs)
 
 
 @pytest.mark.parametrize('axis', [None, (1, 2, 0), (2, 1, 0), (0, 1, 2)])
