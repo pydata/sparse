@@ -4,6 +4,7 @@ from collections import Iterable, defaultdict, deque
 from functools import reduce
 import numbers
 import operator
+import copy
 
 import numpy as np
 import scipy.sparse
@@ -553,6 +554,8 @@ class COO(object):
         return csc
 
     def sort_indices(self):
+        """ Sort indices inplace
+        """
         if self.sorted:
             return
 
@@ -567,7 +570,18 @@ class COO(object):
         self.data = self.data[order]
         self.sorted = True
 
+    def sorted_indices(self):
+        """ Return a new :code:`COO` array with sorted indices. If indices
+        were already sorted, a shallow copy with views on the original data and
+        coordinates is returned.
+        """
+        out = copy.copy(self)
+        out.sort_indices()
+        return out
+
     def sum_duplicates(self):
+        """ Sum duplicates inplace
+        """
         # Inspired by scipy/sparse/coo.py::sum_duplicates
         # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
         if not self.has_duplicates:
@@ -593,6 +607,15 @@ class COO(object):
         self.data = data
         self.coords = coords
         self.has_duplicates = False
+
+    def summed_duplicates(self):
+        """ Return a new :code:`COO` array with summed dupicates. If there were
+        no duplicates, a shallow copy with views on the original data and
+        coordinates is returned.
+        """
+        out = copy.copy(self)
+        out.sum_duplicates()
+        return out
 
     def __add__(self, other):
         return self.elemwise(operator.add, other)
