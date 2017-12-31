@@ -16,4 +16,11 @@ setup(name='sparse',
       long_description=(open('README.rst').read() if exists('README.rst')
                         else ''),
       install_requires=list(open('requirements.txt').read().strip().split('\n')),
+      extras_require={
+          'tests': [
+              'pytest',
+              'pytest-cov',
+              'pytest-flake8',
+          ],
+      },
       zip_safe=False)
