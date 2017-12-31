@@ -278,8 +278,10 @@ def test_scalar_densification_fails(func, scalar):
 @pytest.mark.parametrize('func', [operator.and_, operator.or_, operator.xor])
 @pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
 def test_bitwise_binary(func, shape):
-    xs = sparse.random(shape).astype(np.int_)
-    ys = sparse.random(shape).astype(np.int_)
+    # Small arrays need high density to have nnz entries
+    # Casting floats to int will result in all zeros, hence the * 100
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+    ys = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
 
     x = xs.todense()
     y = ys.todense()
@@ -290,6 +292,7 @@ def test_bitwise_binary(func, shape):
 @pytest.mark.parametrize('func', [operator.and_, operator.or_, operator.xor])
 @pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
 def test_bitwise_binary_bool(func, shape):
+    # Small arrays need high density to have nnz entries
     xs = sparse.random(shape, density=0.5).astype(bool)
     ys = sparse.random(shape, density=0.5).astype(bool)
 
