@@ -245,26 +245,43 @@ class COO(object):
 
     def __getitem__(self, index):
         if not isinstance(index, tuple):
-            index = (index,)
+            if isinstance(index, str):
+                data = self.data[index]
+                idx = np.where(data)
+                coords = []
+
+                for i in range(self.ndim):
+                    coords.append(self.coords[i, idx[0]])
+
+                for i in range(1, np.ndim(data)):
+                    coords.append(idx[i])
+
+                return COO(coords, data.flatten(),
+                           shape=self.shape + self.data.dtype[index].shape,
+                           has_duplicates=self.has_duplicates,
+                           sorted=self.sorted)
+            else:
+                index = (index,)
+
+        last_ellipsis = False
+
         if len(index) - index.count(None) - index.count(Ellipsis) > self.ndim:
             raise IndexError("too many indices for array")
         if index.count(Ellipsis) > 1:
             raise IndexError("an index can only have a single ellipsis ('...')")
-        index = tuple(ind + self.shape[i]  # this fails for newaxis slices
-                      if isinstance(ind, numbers.Integral) and ind < 0
-                      else ind
-                      for i, ind in enumerate(index))
         if any(ind is Ellipsis for ind in index):
             loc = index.index(Ellipsis)
             n = self.ndim - (len(index) - 1 - index.count(None))
-            index = index[:loc] + (slice(None, None),) * n + index[loc + 1:]
-        if all(ind == slice(None) for ind in index):
+            if loc == len(index) - 1:
+                last_ellipsis = True
+            index = index[:loc] + (slice(None),) * n + index[loc + 1:]
+        if len(index) != 0 and all(ind == slice(None) for ind in index):
             return self
-        mask = np.ones(self.nnz, dtype=bool)
+        mask = np.ones(self.nnz, dtype=np.bool)
         for i, ind in enumerate([i for i in index if i is not None]):
-            if ind == slice(None, None):
+            if ind == slice(None):
                 continue
-            mask &= _mask(self.coords[i], ind)
+            mask &= _mask(self.coords[i], ind, self.shape[i], i)
 
         n = mask.sum()
         coords = []
@@ -275,10 +292,27 @@ class COO(object):
                 i += 1
                 continue
             elif isinstance(ind, slice):
-                start = ind.start or 0
-                stop = ind.stop if ind.stop is not None else self.shape[i]
-                shape.append(min(stop, self.shape[i]) - start)
-                coords.append(self.coords[i][mask] - start)
+
+                step = ind.step if ind.step is not None else 1
+                if step > 0:
+                    start = ind.start if ind.start is not None else 0
+                    start = max(start, 0)
+                    stop = ind.stop if ind.stop is not None else self.shape[i]
+                    stop = min(stop, self.shape[i])
+                    if start > stop:
+                        start = stop
+                    coords_temp_i = self.coords[i][mask] - start
+                    shape.append((stop - start + step - 1) // step)
+                else:
+                    start = ind.start or self.shape[i] - 1
+                    stop = ind.stop if ind.stop is not None else -1
+                    start = min(start, self.shape[i] - 1)
+                    stop = max(stop, -1)
+                    if start < stop:
+                        start = stop
+                    shape.append((start - stop - step - 1) // (-step))
+
+                coords.append((self.coords[i, mask] - start) // step)
                 i += 1
             elif isinstance(ind, list):
                 old = self.coords[i][mask]
@@ -299,7 +333,13 @@ class COO(object):
         if coords:
             coords = np.stack(coords, axis=0)
         else:
-            coords = np.empty((0, np.sum(mask)), dtype=np.uint8)
+            if last_ellipsis:
+                coords = np.empty((0, np.sum(mask)), dtype=np.uint8)
+            else:
+                if np.sum(mask) != 0:
+                    return self.data[mask][0]
+                else:
+                    return _zero_of_dtype(self.dtype)[()]
         shape = tuple(shape)
         data = self.data[mask]
 
@@ -1319,19 +1359,30 @@ def _keepdims(original, new, axis):
     return new.reshape(shape)
 
 
-def _mask(coords, idx):
+def _mask(coords, idx, shape, axis):
     if isinstance(idx, numbers.Integral):
+        if idx < -shape or idx >= shape:
+            raise IndexError('index %s is out of bounds for axis %s with size %s' %
+                             (idx, axis, shape))
+        if idx < 0:
+            idx = shape + idx
         return coords == idx
     elif isinstance(idx, slice):
-        if idx.step not in (1, None):
-            raise NotImplementedError("Steped slices not implemented")
-        start = idx.start if idx.start is not None else 0
-        stop = idx.stop if idx.stop is not None else np.inf
-        return (coords >= start) & (coords < stop)
-    elif isinstance(idx, list):
-        mask = np.zeros(len(coords), dtype=bool)
+        step = idx.step if idx.step is not None else 1
+        if step > 0:
+            start = idx.start if idx.start is not None else 0
+            stop = idx.stop if idx.stop is not None else shape
+            return (coords >= start) & (coords < stop) & \
+                   (coords % step == start % step)
+        else:
+            start = idx.start if idx.start is not None else (shape - 1)
+            stop = idx.stop if idx.stop is not None else -1
+            return (coords <= start) & (coords > stop) & \
+                   (coords % step == start % step)
+    elif isinstance(idx, Iterable):
+        mask = np.zeros(len(coords), dtype=np.bool)
         for item in idx:
-            mask |= coords == item
+            mask |= _mask(coords, item, shape, axis)
         return mask
 
 

@@ -348,6 +348,12 @@ def test_gt():
     (slice(None, 2), slice(None, 2)),
     (slice(1, None), slice(1, None)),
     (slice(None, None),),
+    (slice(None, 2, -1), slice(None, 2, -1)),
+    (slice(1, None, 2), slice(1, None, 2)),
+    (slice(None, None, 2),),
+    (slice(None, 2, -1), slice(None, 2, -2)),
+    (slice(1, None, 2), slice(1, None, 1)),
+    (slice(None, None, -2),),
     (0, slice(0, 2),),
     (slice(0, 1), 0),
     ([1, 0], 0),
@@ -369,6 +375,13 @@ def test_gt():
     (slice(1, 2), slice(2, 4)),
     (slice(1, 2), slice(None, None)),
     (slice(1, 2), slice(None, None), 2),
+    (slice(1, 2, 2), slice(None, None), 2),
+    (slice(1, 2, None), slice(None, None, 2), 2),
+    (slice(1, 2, -2), slice(None, None), -2),
+    (slice(1, 2, None), slice(None, None, -2), 2),
+    (slice(1, 2, -1), slice(None, None), -1),
+    (slice(1, 2, None), slice(None, None, -1), 2),
+    (slice(2, 0, -1), slice(None, None), -1),
 ])
 def test_slicing(index):
     x = random_x((2, 3, 4))
@@ -377,13 +390,42 @@ def test_slicing(index):
     assert_eq(x[index], s[index])
 
 
+def test_custom_dtype_slicing():
+    dt = np.dtype([('part1', np.float_),
+                   ('part2', np.int_, (2,)),
+                   ('part3', np.int_, (2, 2))])
+
+    x = np.zeros((2, 3, 4), dtype=dt)
+    x[1, 1, 1] = (0.64, [4, 2], [[1, 2], [3, 4]])
+
+    s = COO.from_numpy(x)
+
+    assert x[1, 1, 1] == s[1, 1, 1]
+    assert x[0, 1, 2] == s[0, 1, 2]
+
+    assert_eq(x['part1'], s['part1'])
+    assert_eq(x['part2'], s['part2'])
+    assert_eq(x['part3'], s['part3'])
+
+
+def test_scalar_slicing():
+    x = random_x((2, 3, 4))
+    s = COO.from_numpy(x)
+
+    assert np.isscalar(s[1, 1, 1])
+    assert s[1, 1, 1] == x[1, 1, 1]
+
+    assert not np.isscalar(s[1, 1, 1, ...])
+    assert_eq(s[1, 1, 1, ...], x[1, 1, 1, ...])
+
+
 @pytest.mark.parametrize('index', [
     (Ellipsis, Ellipsis),
     (1, 1, 1, 1),
     (slice(None),) * 4,
-    pytest.mark.xfail(5, reason=''),
-    pytest.mark.xfail(-5, reason=''),
-    pytest.mark.xfail('foo', reason=''),
+    5,
+    -5,
+    'foo',
 ])
 def test_slicing_errors(index):
     x = random_x((2, 3, 4))
