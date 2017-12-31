@@ -715,3 +715,11 @@ def test_triul(shape, k):
 
     assert_eq(np.triu(x, k), sparse.triu(s, k))
     assert_eq(np.tril(x, k), sparse.tril(s, k))
+
+
+def test_empty_reduction():
+    x = np.zeros((2, 3, 4), dtype=np.float_)
+    xs = COO.from_numpy(x)
+
+    assert_eq(x.sum(axis=(0, 2)),
+              xs.sum(axis=(0, 2)))

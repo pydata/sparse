@@ -1509,7 +1509,7 @@ def _match_arrays(a, b):
 def _grouped_reduce(x, groups, method, **kwargs):
     # Partial credit to @shoyer
     # Ref: https://gist.github.com/shoyer/f538ac78ae904c936844
-    flag = np.concatenate(([True], groups[1:] != groups[:-1]))
+    flag = np.concatenate(([True] if len(x) != 0 else [], groups[1:] != groups[:-1]))
     inv_idx, = flag.nonzero()
     result = method.reduceat(x, inv_idx, **kwargs)
     counts = np.diff(np.concatenate((inv_idx, [len(x)])))
