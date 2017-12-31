@@ -408,17 +408,6 @@ def test_custom_dtype_slicing():
     assert_eq(x['part3'], s['part3'])
 
 
-def test_scalar_slicing():
-    x = random_x((2, 3, 4))
-    s = COO.from_numpy(x)
-
-    assert np.isscalar(s[1, 1, 1])
-    assert s[1, 1, 1] == x[1, 1, 1]
-
-    assert not np.isscalar(s[1, 1, 1, ...])
-    assert_eq(s[1, 1, 1, ...], x[1, 1, 1, ...])
-
-
 @pytest.mark.parametrize('index', [
     (Ellipsis, Ellipsis),
     (1, 1, 1, 1),
@@ -740,8 +729,17 @@ def test_caching():
 def test_scalar_slicing():
     x = np.array([0, 1])
     s = COO(x)
+    assert np.isscalar(s[0])
     assert_eq(x[0], s[0])
+
+    assert not np.isscalar(s[0, ...])
+    assert_eq(x[0, ...], s[0, ...])
+
+    assert np.isscalar(s[1])
     assert_eq(x[1], s[1])
+
+    assert not np.isscalar(s[1, ...])
+    assert_eq(x[1, ...], s[1, ...])
 
 
 @pytest.mark.parametrize('shape, k', [

@@ -301,7 +301,6 @@ class COO(object):
                     stop = min(stop, self.shape[i])
                     if start > stop:
                         start = stop
-                    coords_temp_i = self.coords[i][mask] - start
                     shape.append((stop - start + step - 1) // step)
                 else:
                     start = ind.start or self.shape[i] - 1
