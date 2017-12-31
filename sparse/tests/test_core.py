@@ -1,6 +1,5 @@
 import pytest
 
-import random
 import operator
 import numpy as np
 import scipy.sparse
@@ -8,6 +7,7 @@ from sparse import COO
 
 import sparse
 from sparse.utils import assert_eq
+
 
 @pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
     ('max', {}, {}),
