@@ -290,8 +290,8 @@ def test_bitwise_binary(func, shape):
 @pytest.mark.parametrize('func', [operator.and_, operator.or_, operator.xor])
 @pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
 def test_bitwise_binary_bool(func, shape):
-    xs = sparse.random(shape).astype(bool)
-    ys = sparse.random(shape).astype(bool)
+    xs = sparse.random(shape, density=0.5).astype(bool)
+    ys = sparse.random(shape, density=0.5).astype(bool)
 
     x = xs.todense()
     y = ys.todense()
