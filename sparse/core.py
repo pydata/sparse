@@ -560,21 +560,20 @@ class COO(object):
 
         if (np.diff(linear) > 0).all():  # already sorted
             self.sorted = True
-            return self
+            return
 
         order = np.argsort(linear)
         self.coords = self.coords[:, order]
         self.data = self.data[order]
         self.sorted = True
-        return self
 
     def sum_duplicates(self):
         # Inspired by scipy/sparse/coo.py::sum_duplicates
         # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
         if not self.has_duplicates:
-            return self
+            return
         if not np.prod(self.coords.shape):
-            return self
+            return
 
         self.sort_indices()
 
@@ -583,7 +582,7 @@ class COO(object):
 
         if unique_mask.sum() == len(unique_mask):  # already unique
             self.has_duplicates = False
-            return self
+            return
 
         unique_mask = np.append(True, unique_mask)
 
@@ -594,8 +593,6 @@ class COO(object):
         self.data = data
         self.coords = coords
         self.has_duplicates = False
-
-        return self
 
     def __add__(self, other):
         return self.elemwise(operator.add, other)
