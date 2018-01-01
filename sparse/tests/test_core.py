@@ -6,7 +6,7 @@ import scipy.sparse
 from sparse import COO
 
 import sparse
-from sparse.utils import assert_eq
+from sparse.utils import assert_eq, is_lexsorted
 
 
 @pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
@@ -704,3 +704,40 @@ def test_empty_reduction():
 
     assert_eq(x.sum(axis=(0, 2)),
               xs.sum(axis=(0, 2)))
+
+
+@pytest.mark.parametrize('shape', [
+    (2,),
+    (2, 3),
+    (2, 3, 4),
+])
+@pytest.mark.parametrize('density', [
+    0.1, 0.3, 0.5, 0.7
+])
+def test_random_shape(shape, density):
+    s = sparse.random(shape, density)
+
+    assert s.shape == shape
+    expected_nnz = density * np.prod(shape)
+    assert np.floor(expected_nnz) <= s.nnz <= np.ceil(expected_nnz)
+
+
+def test_two_random_unequal():
+    s1 = sparse.random((2, 3, 4), 0.3)
+    s2 = sparse.random((2, 3, 4), 0.3)
+
+    assert not np.allclose(s1.todense(), s2.todense())
+
+
+def test_two_random_same_seed():
+    state = np.random.randint(100)
+    s1 = sparse.random((2, 3, 4), 0.3, random_state=state)
+    s2 = sparse.random((2, 3, 4), 0.3, random_state=state)
+
+    assert_eq(s1, s2)
+
+
+def test_random_sorted():
+    s = sparse.random((2, 3, 4), canonical_order=True)
+
+    assert is_lexsorted(s)

@@ -1516,30 +1516,42 @@ def _grouped_reduce(x, groups, method, **kwargs):
     return result, inv_idx, counts
 
 
-def random(shape, density=0.01, dtype=None, random_state=None):
+def random(shape, density=0.01, dtype=None, canonical_order=False, random_state=None):
     """ Generate a random sparse multidimensional array
 
     Parameters
     ----------
     shape: :obj:`tuple` of :obj:`int`
         Shape of the array
-    density: :obj:`float`
+    density: :obj:`float`, optional
         Density of the generated array.
-    dtype : dtype
+    dtype : numpy.dtype, optional
         Type of the returned array values.
+    canonical_order : bool, optional
+        Whether or not to put the output :obj:`COO` object into canonical
+        order. :code:`False` by default.
     random_state : {numpy.random.RandomState, int}, optional
         Random number generator or random seed. If not given, the
         singleton numpy.random will be used. This random state will be used
         for sampling the sparsity structure, but not necessarily for sampling
         the values of the structurally nonzero entries of the matrix.
 
+    Returns
+    -------
+    COO
+        The generated random matrix.
     """
     elements = np.prod(shape)
 
-    return COO.from_scipy_sparse(
+    ar = COO.from_scipy_sparse(
         scipy.sparse.rand(
             elements, 1, density,
             dtype=dtype,
             random_state=random_state
         )
     ).reshape(shape)
+
+    if canonical_order:
+        ar.sum_duplicates()
+
+    return ar
