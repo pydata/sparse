@@ -1592,7 +1592,7 @@ def random(
     if elements < 3 * nnz:
         ind = random_state.choice(elements, size=nnz, replace=False)
     else:
-        ind = np.empty(nnz, dtype=np.float_)
+        ind = np.empty(nnz, dtype=np.int64)
         selected = set()
         for i in range(nnz):
             j = random_state.randint(elements)
