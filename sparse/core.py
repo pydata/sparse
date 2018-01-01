@@ -1583,7 +1583,7 @@ def random(
 
     if random_state is None:
         random_state = np.random
-    elif isinstance(random_state, (int, np.integer)):
+    elif isinstance(random_state, numbers.Integral):
         random_state = np.random.RandomState(random_state)
     if data_rvs is None:
         data_rvs = random_state.rand
