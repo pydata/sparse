@@ -135,7 +135,7 @@ def sanitize_index(ind):
     array([1, 2, 3])
     >>> sanitize_index(np.array([False, True, True]))
     array([1, 2])
-    >>> type(sanitize_index(np.int32(0)))
+    >>> type(sanitize_index(np.int32(0))) # doctest: +SKIP
     <type 'int'>
     >>> sanitize_index(1.0)
     1
