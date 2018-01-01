@@ -1516,7 +1516,13 @@ def _grouped_reduce(x, groups, method, **kwargs):
     return result, inv_idx, counts
 
 
-def random(shape, density=0.01, canonical_order=False, random_state=None):
+def random(
+    shape,
+    density=0.01,
+    canonical_order=False,
+    random_state=None,
+    data_rvs=None,
+):
     """ Generate a random sparse multidimensional array
 
     Parameters
@@ -1533,6 +1539,10 @@ def random(shape, density=0.01, canonical_order=False, random_state=None):
         singleton numpy.random will be used. This random state will be used
         for sampling the sparsity structure, but not necessarily for sampling
         the values of the structurally nonzero entries of the matrix.
+    data_rvs : callable
+        Data generation callback. Must accept one single parameter: number of
+        :code:`nnz` elements, and return one single NumPy array of exactly
+        that length.
 
     Returns
     -------
@@ -1552,6 +1562,9 @@ def random(shape, density=0.01, canonical_order=False, random_state=None):
             random_state=random_state
         )
     ).reshape(shape)
+
+    if data_rvs is not None:
+        ar.data = data_rvs(len(ar.data))
 
     if canonical_order:
         ar.sum_duplicates()

@@ -3,6 +3,7 @@ import pytest
 import operator
 import numpy as np
 import scipy.sparse
+import scipy.stats
 from sparse import COO
 
 import sparse
@@ -741,3 +742,21 @@ def test_random_sorted():
     s = sparse.random((2, 3, 4), canonical_order=True)
 
     assert is_lexsorted(s)
+
+
+@pytest.mark.parametrize('rvs, dtype', [
+    (None, np.float64),
+    (scipy.stats.poisson(25, loc=10).rvs, np.int),
+    (lambda x: np.random.choice([True, False], size=x), np.bool),
+])
+@pytest.mark.parametrize('shape', [
+    (2, 4, 5),
+    (20, 40, 50),
+])
+@pytest.mark.parametrize('density', [
+    0.0, 0.01, 0.1, 0.2,
+])
+def test_random_rvs(rvs, dtype, shape, density):
+    x = sparse.random(shape, density, data_rvs=rvs)
+    assert x.shape == shape
+    assert x.dtype == dtype
