@@ -384,6 +384,8 @@ def test_gt():
     (slice(2, 0, -1), slice(None, None), -1),
     (slice(-2, None, None),),
     (slice(-1, None, None), slice(-2, None, None)),
+    ([True, False], slice(1, None), slice(-2, None)),
+    (slice(1, None), slice(-2, None), [True, False, True, False]),
 ])
 def test_slicing(index):
     x = random_x((2, 3, 4))
@@ -417,6 +419,7 @@ def test_custom_dtype_slicing():
     5,
     -5,
     'foo',
+    ([True, False, False]),
 ])
 def test_slicing_errors(index):
     x = random_x((2, 3, 4))

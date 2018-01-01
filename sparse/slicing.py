@@ -109,8 +109,12 @@ def check_index(ind, dimension):
         return
     elif isinstance(ind, (list, np.ndarray)):
         x = np.asanyarray(ind)
-        if (x >= dimension).any() or (x < -dimension).any():
+        if np.issubdtype(x.dtype, np.integer) and \
+                ((x >= dimension).any() or (x < -dimension).any()):
             raise IndexError("Index out of bounds %s" % dimension)
+        elif x.dtype == bool and len(x) != dimension:
+            raise IndexError("boolean index did not match indexed array; dimension is %s "
+                             "but corresponding boolean dimension is %s", (dimension, len(x)))
     elif isinstance(ind, slice):
         return
     elif ind is None:
