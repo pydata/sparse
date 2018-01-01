@@ -1553,6 +1553,23 @@ def random(
     --------
     :obj:`scipy.sparse.rand`
         Equivalent Scipy function.
+
+    Examples
+    --------
+
+    >>> from sparse import random
+    >>> from scipy import stats
+    >>> rvs = lambda x: stats.poisson(25, loc=10).rvs(x, random_state=np.random.RandomState(1))
+    >>> S = random((2, 3, 4), density=0.25, random_state=np.random.RandomState(1), data_rvs=rvs)
+    >>> S.todense()
+    array([[[ 0,  0,  0,  0],
+            [ 0, 34,  0,  0],
+            [33, 34,  0, 29]],
+    <BLANKLINE>
+           [[30,  0,  0, 34],
+            [ 0,  0,  0,  0],
+            [ 0,  0,  0,  0]]])
+
     """
     elements = np.prod(shape)
 
