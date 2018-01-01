@@ -256,7 +256,7 @@ class COO(object):
                 for i in range(1, np.ndim(data)):
                     coords.append(idx[i])
 
-                return COO(coords, data.flatten(),
+                return COO(coords, data[idx].flatten(),
                            shape=self.shape + self.data.dtype[index].shape,
                            has_duplicates=self.has_duplicates,
                            sorted=self.sorted)

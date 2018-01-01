@@ -396,7 +396,7 @@ def test_custom_dtype_slicing():
                    ('part3', np.int_, (2, 2))])
 
     x = np.zeros((2, 3, 4), dtype=dt)
-    x[1, 1, 1] = (0.64, [4, 2], [[1, 2], [3, 4]])
+    x[1, 1, 1] = (0.64, [4, 2], [[1, 2], [3, 0]])
 
     s = COO.from_numpy(x)
 
