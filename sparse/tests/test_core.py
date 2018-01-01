@@ -382,6 +382,8 @@ def test_gt():
     (slice(1, 2, -1), slice(None, None), -1),
     (slice(1, 2, None), slice(None, None, -1), 2),
     (slice(2, 0, -1), slice(None, None), -1),
+    (slice(-2, None, None),),
+    (slice(-1, None, None), slice(-2, None, None)),
 ])
 def test_slicing(index):
     x = random_x((2, 3, 4))

@@ -8,6 +8,8 @@ import operator
 import numpy as np
 import scipy.sparse
 
+from .slicing import normalize_index
+
 # zip_longest with Python 2/3 compat
 try:
     from itertools import zip_longest
@@ -263,25 +265,15 @@ class COO(object):
             else:
                 index = (index,)
 
-        last_ellipsis = False
-
-        if len(index) - index.count(None) - index.count(Ellipsis) > self.ndim:
-            raise IndexError("too many indices for array")
-        if index.count(Ellipsis) > 1:
-            raise IndexError("an index can only have a single ellipsis ('...')")
-        if any(ind is Ellipsis for ind in index):
-            loc = index.index(Ellipsis)
-            n = self.ndim - (len(index) - 1 - index.count(None))
-            if loc == len(index) - 1:
-                last_ellipsis = True
-            index = index[:loc] + (slice(None),) * n + index[loc + 1:]
-        if len(index) != 0 and all(ind == slice(None) for ind in index):
+        last_ellipsis = len(index) > 0 and index[-1] is Ellipsis
+        index = normalize_index(index, self.shape)
+        if len(index) != 0 and all(not isinstance(ind, Iterable) and ind == slice(None) for ind in index):
             return self
         mask = np.ones(self.nnz, dtype=np.bool)
         for i, ind in enumerate([i for i in index if i is not None]):
-            if ind == slice(None):
+            if not isinstance(ind, Iterable) and ind == slice(None):
                 continue
-            mask &= _mask(self.coords[i], ind, self.shape[i], i)
+            mask &= _mask(self.coords[i], ind, self.shape[i])
 
         n = mask.sum()
         coords = []
@@ -292,7 +284,6 @@ class COO(object):
                 i += 1
                 continue
             elif isinstance(ind, slice):
-
                 step = ind.step if ind.step is not None else 1
                 if step > 0:
                     start = ind.start if ind.start is not None else 0
@@ -314,7 +305,7 @@ class COO(object):
                 dt = np.min_scalar_type(min(-(dim - 1) if dim != 0 else -1 for dim in shape))
                 coords.append((self.coords[i, mask].astype(dt) - start) // step)
                 i += 1
-            elif isinstance(ind, list):
+            elif isinstance(ind, Iterable):
                 old = self.coords[i][mask]
                 new = np.empty(shape=old.shape, dtype=old.dtype)
                 for j, item in enumerate(ind):
@@ -1359,13 +1350,8 @@ def _keepdims(original, new, axis):
     return new.reshape(shape)
 
 
-def _mask(coords, idx, shape, axis):
+def _mask(coords, idx, shape):
     if isinstance(idx, numbers.Integral):
-        if idx < -shape or idx >= shape:
-            raise IndexError('index %s is out of bounds for axis %s with size %s' %
-                             (idx, axis, shape))
-        if idx < 0:
-            idx = shape + idx
         return coords == idx
     elif isinstance(idx, slice):
         step = idx.step if idx.step is not None else 1
@@ -1382,7 +1368,7 @@ def _mask(coords, idx, shape, axis):
     elif isinstance(idx, Iterable):
         mask = np.zeros(len(coords), dtype=np.bool)
         for item in idx:
-            mask |= _mask(coords, item, shape, axis)
+            mask |= _mask(coords, item, shape)
         return mask
 
 
