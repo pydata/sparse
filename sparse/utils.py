@@ -2,7 +2,7 @@ import numpy as np
 from .core import COO
 
 
-def assert_eq(x, y, rtol=1.e-5, atol=1.e-8):
+def assert_eq(x, y, **kwargs):
     assert x.shape == y.shape
     assert x.dtype == y.dtype
 
@@ -21,7 +21,7 @@ def assert_eq(x, y, rtol=1.e-5, atol=1.e-8):
         yy = y.todense()
     else:
         yy = y
-    assert np.allclose(xx, yy, rtol=rtol, atol=atol)
+    assert np.allclose(xx, yy, **kwargs)
 
 
 def is_lexsorted(x):
