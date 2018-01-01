@@ -1516,7 +1516,7 @@ def _grouped_reduce(x, groups, method, **kwargs):
     return result, inv_idx, counts
 
 
-def random(shape, density=0.01, dtype=None, canonical_order=False, random_state=None):
+def random(shape, density=0.01, canonical_order=False, random_state=None):
     """ Generate a random sparse multidimensional array
 
     Parameters
@@ -1525,8 +1525,6 @@ def random(shape, density=0.01, dtype=None, canonical_order=False, random_state=
         Shape of the array
     density: :obj:`float`, optional
         Density of the generated array.
-    dtype : numpy.dtype, optional
-        Type of the returned array values.
     canonical_order : bool, optional
         Whether or not to put the output :obj:`COO` object into canonical
         order. :code:`False` by default.
@@ -1540,13 +1538,17 @@ def random(shape, density=0.01, dtype=None, canonical_order=False, random_state=
     -------
     COO
         The generated random matrix.
+
+    See Also
+    --------
+    :obj:`scipy.sparse.rand`
+        Equivalent Scipy function.
     """
     elements = np.prod(shape)
 
     ar = COO.from_scipy_sparse(
         scipy.sparse.rand(
             elements, 1, density,
-            dtype=dtype,
             random_state=random_state
         )
     ).reshape(shape)
