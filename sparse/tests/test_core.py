@@ -760,3 +760,12 @@ def test_random_rvs(rvs, dtype, shape, density):
     x = sparse.random(shape, density, data_rvs=rvs)
     assert x.shape == shape
     assert x.dtype == dtype
+
+
+def test_scalar_shape_construction():
+    x = np.random.rand(5)
+    coords = np.arange(5)[None]
+
+    s = COO(coords, x, shape=5)
+
+    assert_eq(x, s)

@@ -152,6 +152,9 @@ class COO(object):
             else:
                 shape = ()
 
+        if isinstance(shape, numbers.Integral):
+            shape = (shape,)
+
         self.shape = tuple(shape)
         if self.shape:
             dtype = np.min_scalar_type(max(self.shape))
@@ -1554,17 +1557,36 @@ def random(
     :obj:`scipy.sparse.rand`
         Equivalent Scipy function.
     """
+    # Copied, in large part, from scipy.sparse.random
+    # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
+
     elements = np.prod(shape)
 
-    ar = COO.from_scipy_sparse(
-        scipy.sparse.rand(
-            elements, 1, density,
-            random_state=random_state
-        )
-    ).reshape(shape)
+    nnz = int(elements * density)
 
-    if data_rvs is not None:
-        ar.data = data_rvs(len(ar.data))
+    if random_state is None:
+        random_state = np.random
+    elif isinstance(random_state, (int, np.integer)):
+        random_state = np.random.RandomState(random_state)
+    if data_rvs is None:
+        data_rvs = random_state.rand
+
+    # Use the algorithm from python's random.sample for k < mn/3.
+    if elements < 3 * nnz:
+        ind = random_state.choice(elements, size=nnz, replace=False)
+    else:
+        ind = np.empty(nnz, dtype=np.float_)
+        selected = set()
+        for i in range(nnz):
+            j = random_state.randint(elements)
+            while j in selected:
+                j = random_state.randint(elements)
+            selected.add(j)
+            ind[i] = j
+
+    data = data_rvs(nnz)
+
+    ar = COO(ind[None, :], data, shape=nnz).reshape(shape)
 
     if canonical_order:
         ar.sum_duplicates()
