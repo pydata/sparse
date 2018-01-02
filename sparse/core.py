@@ -61,10 +61,10 @@ class COO(object):
     ...           [0, 1, 2, 0, 3],
     ...           [0, 3, 2, 0, 1]]
     >>> data = [1, 2, 3, 4, 5]
-    >>> y = COO(coords, data, shape=(3, 4, 5))
-    >>> y
+    >>> s2 = COO(coords, data, shape=(3, 4, 5))
+    >>> s2
     <COO: shape=(3, 4, 5), dtype=int64, nnz=5, sorted=False, duplicates=True>
-    >>> tensordot(s, y, axes=(0, 1))
+    >>> tensordot(s, s2, axes=(0, 1))
     <COO: shape=(4, 3, 5), dtype=float64, nnz=6, sorted=False, duplicates=False>
 
     Following scipy.sparse conventions you can also pass these as a tuple with
@@ -199,9 +199,9 @@ class COO(object):
 
         Examples
         --------
-        >>> x.enable_caching()  # doctest: +SKIP
-        >>> csr1 = x.transpose((2, 0, 1)).reshape((100, 120)).tocsr()  # doctest: +SKIP
-        >>> csr2 = x.transpose((2, 0, 1)).reshape((100, 120)).tocsr()  # doctest: +SKIP
+        >>> s.enable_caching()  # doctest: +SKIP
+        >>> csr1 = s.transpose((2, 0, 1)).reshape((100, 120)).tocsr()  # doctest: +SKIP
+        >>> csr2 = s.transpose((2, 0, 1)).reshape((100, 120)).tocsr()  # doctest: +SKIP
         >>> csr1 is csr2  # doctest: +SKIP
         True
         """
@@ -222,6 +222,13 @@ class COO(object):
         -------
         COO
             The converted COO array.
+
+        Examples
+        --------
+        >>> x = np.eye(5)
+        >>> s = COO.from_numpy(x)
+        >>> s
+        <COO: shape=(5, 5), dtype=float64, nnz=5, sorted=True, duplicates=False>
         """
         x = np.asanyarray(x)
         if x.shape:
@@ -236,7 +243,9 @@ class COO(object):
 
     def todense(self):
         """
-        Convert this :obj:`COO` array to a dense :obj:`numpy.ndarray`.
+        Convert this :obj:`COO` array to a dense :obj:`numpy.ndarray`. Note that
+        this may take a large amount of memory if the :obj:`COO` object's :code:`shape`
+        is large.
 
         Returns
         -------
@@ -246,6 +255,14 @@ class COO(object):
         See Also
         --------
         scipy.sparse.coo_matrix.todense : Equivalent Scipy method.
+
+        Examples
+        --------
+        >>> x = np.random.randint(100, size=(7, 3))
+        >>> s = COO.from_numpy(x)
+        >>> x2 = s.todense()
+        >>> np.array_equal(x, x2)
+        True
         """
         self.sum_duplicates()
         x = np.zeros(shape=self.shape, dtype=self.dtype)
@@ -264,16 +281,24 @@ class COO(object):
     @classmethod
     def from_scipy_sparse(cls, x):
         """
-        Construct a :code:`COO` array from a :code:`scipy.sparse.spmatrix`
+        Construct a :obj:`COO` array from a :obj:`scipy.sparse.spmatrix`
 
         Parameters
         ----------
         x : scipy.sparse.spmatrix
             The sparse matrix to construct the array from.
+
         Returns
         -------
         COO
-            The converted :code:`COO` object.
+            The converted :obj:`COO` object.
+
+        Examples
+        --------
+        >>> x = scipy.sparse.rand(6, 3, density=0.2)
+        >>> s = COO.from_scipy_sparse(x)
+        >>> np.allclose(x.todense(), s.todense())
+        True
         """
         x = scipy.sparse.coo_matrix(x)
         coords = np.empty((2, x.nnz), dtype=x.row.dtype)
@@ -297,6 +322,15 @@ class COO(object):
         --------
         numpy.ndarray.dtype : Numpy equivalent property.
         scipy.sparse.coo_matrix.dtype : Scipy equivalent property.
+
+        Examples
+        --------
+        >>> x = (200 * np.random.rand(5, 4)).astype(np.int32)
+        >>> s = COO.from_numpy(x)
+        >>> s.dtype
+        dtype('int32')
+        >>> x.dtype == s.dtype
+        True
         """
         return self.data.dtype
 
@@ -313,6 +347,15 @@ class COO(object):
         See Also
         --------
         numpy.ndarray.ndim : Numpy equivalent property.
+
+        Examples
+        --------
+        >>> x = np.random.rand(1, 2, 3, 1, 2)
+        >>> s = COO.from_numpy(x)
+        >>> s.ndim
+        5
+        >>> s.ndim == x.ndim
+        True
         """
         return len(self.shape)
 
@@ -329,8 +372,19 @@ class COO(object):
 
         See Also
         --------
-        numpy.nonzero : A similar Numpy function.
+        numpy.count_nonzero : A similar Numpy function.
         scipy.sparse.coo_matrix.nnz : The Scipy equivalent property.
+
+        Examples
+        --------
+        >>> x = np.array([0, 0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 0])
+        >>> np.count_nonzero(x)
+        6
+        >>> s = COO.from_numpy(x)
+        >>> s.nnz
+        6
+        >>> np.count_nonzero(x) == s.nnz
+        True
         """
         return self.coords.shape[1]
 
@@ -348,6 +402,14 @@ class COO(object):
         See Also
         --------
         numpy.ndarray.nbytes : The equivalent Numpy property.
+
+        Examples
+        --------
+        >>> data = np.arange(6, dtype=np.uint8)
+        >>> coords = np.random.randint(1000, size=(3, 6), dtype=np.uint16)
+        >>> s = COO(coords, data, shape=(1000, 1000, 1000))
+        >>> s.nbytes
+        42
         """
         return self.data.nbytes + self.coords.nbytes
 
@@ -467,7 +529,7 @@ class COO(object):
         ----------
         method : numpy.ufunc
             The method to use for performing the reduction.
-        axis : Iterable[int], optional
+        axis : {int, Iterable[int]}, optional
             The axes along which to perform the reduction. Uses all axes by default.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
@@ -479,9 +541,49 @@ class COO(object):
         COO
             The result of the reduction operation.
 
+        Raises
+        ------
+        ValueError
+            If reducing an all-zero axis would produce a nonzero result.
+
+        Notes
+        -----
+        This function internally calls :obj:`COO.sum_duplicates` to bring the array into
+        canonical form.
+
         See Also
         --------
         numpy.ufunc.reduce : A similar Numpy method.
+
+        Examples
+        --------
+        You can use the :obj:`COO.reduce` method to apply a reduction operation to
+        any Numpy :code:`ufunc`.
+
+        >>> x = np.ones((5, 5), dtype=np.int)
+        >>> s = COO.from_numpy(x)
+        >>> s2 = s.reduce(np.add, axis=1)
+        >>> s2.todense()
+        array([5, 5, 5, 5, 5])
+
+        You can also use the :code:`keepdims` argument to keep the dimensions after the
+        reduction.
+
+        >>> s3 = s.reduce(np.add, axis=1, keepdims=True)
+        >>> s3.shape
+        (5, 1)
+
+        You can also pass in any keyword argument that :obj:`numpy.ufunc.reduce` supports.
+        For example, :code:`dtype`. Note that :code:`out` isn't supported.
+
+        >>> s4 = s.reduce(np.add, axis=1, dtype=np.float16)
+        >>> s4.dtype
+        dtype('float16')
+
+        By default, this reduces the array down to one number, reducing along all axes.
+
+        >>> s.reduce(np.add)
+        25
         """
         zero_reduce_result = method.reduce([_zero_of_dtype(self.dtype)], **kwargs)
 
@@ -501,7 +603,7 @@ class COO(object):
         if set(axis) == set(range(self.ndim)):
             result = method.reduce(self.data, **kwargs)
             if self.nnz != np.prod(self.shape):
-                result = method(result, _zero_of_dtype(np.dtype(result))[()])
+                result = method(result, _zero_of_dtype(self.dtype)[()], **kwargs)
         else:
             axis = tuple(axis)
             neg_axis = tuple(ax for ax in range(self.ndim) if ax not in axis)
@@ -514,7 +616,7 @@ class COO(object):
             result, inv_idx, counts = _grouped_reduce(a.data, a.coords[0], method, **kwargs)
             missing_counts = counts != a.shape[1]
             result[missing_counts] = method(result[missing_counts],
-                                            _zero_of_dtype(result.dtype), **kwargs)
+                                            _zero_of_dtype(self.dtype), **kwargs)
 
             a = COO(np.asarray([a.coords[0, inv_idx]]), result, shape=(np.prod(neg_axis),),
                     has_duplicates=False, sorted=True)
@@ -527,18 +629,251 @@ class COO(object):
         return result
 
     def sum(self, axis=None, keepdims=False, dtype=None, out=None):
+        """
+        Performs a sum operation along the given axes. Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : {int, Iterable[int]}, optional
+            The axes along which to sum. Uses all axes by default.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+        dtype: numpy.dtype
+            The data type of the output array.
+
+        Returns
+        -------
+        COO
+            The reduced output sparse array.
+
+        See Also
+        --------
+        :obj:`numpy.sum` : Equivalent numpy function.
+        scipy.sparse.coo_matrix.sum : Equivalent Scipy function.
+
+        Notes
+        -----
+        * This function internally calls :obj:`COO.sum_duplicates` to bring the array into
+          canonical form.
+        * The :code:`out` parameter is provided just for compatibility with Numpy and
+          isn't actually supported.
+
+        Examples
+        --------
+        You can use :obj:`COO.sum` to sum an array across any dimension.
+
+        >>> x = np.ones((5, 5), dtype=np.int)
+        >>> s = COO.from_numpy(x)
+        >>> s2 = s.sum(axis=1)
+        >>> s2.todense()
+        array([5, 5, 5, 5, 5])
+
+        You can also use the :code:`keepdims` argument to keep the dimensions after the
+        sum.
+
+        >>> s3 = s.sum(axis=1, keepdims=True)
+        >>> s3.shape
+        (5, 1)
+
+        You can pass in an output datatype, if needed.
+
+        >>> s4 = s.sum(axis=1, dtype=np.float16)
+        >>> s4.dtype
+        dtype('float16')
+
+        By default, this reduces the array down to one number, summing along all axes.
+
+        >>> s.sum()
+        25
+        """
         assert out is None
         return self.reduce(np.add, axis=axis, keepdims=keepdims, dtype=dtype)
 
     def max(self, axis=None, keepdims=False, out=None):
+        """
+        Maximize along the given axes. Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : {int, Iterable[int]}, optional
+            The axes along which to maximize. Uses all axes by default.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+        dtype: numpy.dtype
+            The data type of the output array.
+
+        Returns
+        -------
+        COO
+            The reduced output sparse array.
+
+        See Also
+        --------
+        :obj:`numpy.max` : Equivalent numpy function.
+        scipy.sparse.coo_matrix.max : Equivalent Scipy function.
+
+        Notes
+        -----
+        * This function internally calls :obj:`COO.sum_duplicates` to bring the array into
+          canonical form.
+        * The :code:`out` parameter is provided just for compatibility with Numpy and
+          isn't actually supported.
+
+        Examples
+        --------
+        You can use :obj:`COO.max` to maximize an array across any dimension.
+
+        >>> x = np.add.outer(np.arange(5), np.arange(5))
+        >>> x
+        array([[0, 1, 2, 3, 4],
+               [1, 2, 3, 4, 5],
+               [2, 3, 4, 5, 6],
+               [3, 4, 5, 6, 7],
+               [4, 5, 6, 7, 8]])
+        >>> s = COO.from_numpy(x)
+        >>> s2 = s.max(axis=1)
+        >>> s2.todense()
+        array([4, 5, 6, 7, 8])
+
+        You can also use the :code:`keepdims` argument to keep the dimensions after the
+        maximization.
+
+        >>> s3 = s.max(axis=1, keepdims=True)
+        >>> s3.shape
+        (5, 1)
+
+        By default, this reduces the array down to one number, maximizing along all axes.
+
+        >>> s.max()
+        8
+        """
         assert out is None
         return self.reduce(np.maximum, axis=axis, keepdims=keepdims)
 
     def min(self, axis=None, keepdims=False, out=None):
+        """
+        Minimize along the given axes. Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : {int, Iterable[int]}, optional
+            The axes along which to minimize. Uses all axes by default.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+        dtype: numpy.dtype
+            The data type of the output array.
+
+        Returns
+        -------
+        COO
+            The reduced output sparse array.
+
+        See Also
+        --------
+        :obj:`numpy.min` : Equivalent numpy function.
+        scipy.sparse.coo_matrix.min : Equivalent Scipy function.
+
+        Notes
+        -----
+        * This function internally calls :obj:`COO.sum_duplicates` to bring the array into
+          canonical form.
+        * The :code:`out` parameter is provided just for compatibility with Numpy and
+          isn't actually supported.
+
+        Examples
+        --------
+        You can use :obj:`COO.min` to minimize an array across any dimension.
+
+        >>> x = np.add.outer(np.arange(5), np.arange(5))
+        >>> x
+        array([[0, 1, 2, 3, 4],
+               [1, 2, 3, 4, 5],
+               [2, 3, 4, 5, 6],
+               [3, 4, 5, 6, 7],
+               [4, 5, 6, 7, 8]])
+        >>> s = COO.from_numpy(x)
+        >>> s2 = s.min(axis=1)
+        >>> s2.todense()
+        array([0, 1, 2, 3, 4])
+
+        You can also use the :code:`keepdims` argument to keep the dimensions after the
+        minimization.
+
+        >>> s3 = s.min(axis=1, keepdims=True)
+        >>> s3.shape
+        (5, 1)
+
+        By default, this reduces the array down to one number, minimizing along all axes.
+
+        >>> s.min()
+        0
+        """
         assert out is None
         return self.reduce(np.minimum, axis=axis, keepdims=keepdims)
 
     def prod(self, axis=None, keepdims=False, dtype=None, out=None):
+        """
+        Performs a product operation along the given axes. Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : {int, Iterable[int]}, optional
+            The axes along which to multiply. Uses all axes by default.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+        dtype: numpy.dtype
+            The data type of the output array.
+
+        Returns
+        -------
+        COO
+            The reduced output sparse array.
+
+        See Also
+        --------
+        :obj:`numpy.prod` : Equivalent numpy function.
+
+        Notes
+        -----
+        * This function internally calls :obj:`COO.sum_duplicates` to bring the array into
+          canonical form.
+        * The :code:`out` parameter is provided just for compatibility with Numpy and
+          isn't actually supported.
+
+        Examples
+        --------
+        You can use :obj:`COO.prod` to multiply an array across any dimension.
+
+        >>> x = np.add.outer(np.arange(5), np.arange(5))
+        >>> x
+        array([[0, 1, 2, 3, 4],
+               [1, 2, 3, 4, 5],
+               [2, 3, 4, 5, 6],
+               [3, 4, 5, 6, 7],
+               [4, 5, 6, 7, 8]])
+        >>> s = COO.from_numpy(x)
+        >>> s2 = s.prod(axis=1)
+        >>> s2.todense()
+        array([   0,  120,  720, 2520, 6720])
+
+        You can also use the :code:`keepdims` argument to keep the dimensions after the
+        reduction.
+
+        >>> s3 = s.prod(axis=1, keepdims=True)
+        >>> s3.shape
+        (5, 1)
+
+        You can pass in an output datatype, if needed.
+
+        >>> s4 = s.prod(axis=1, dtype=np.float16)
+        >>> s4.dtype
+        dtype('float16')
+
+        By default, this reduces the array down to one number, multiplying along all axes.
+
+        >>> s.prod()
+        0
+        """
         assert out is None
         return self.reduce(np.multiply, axis=axis, keepdims=keepdims, dtype=dtype)
 
@@ -560,6 +895,34 @@ class COO(object):
         See Also
         --------
         numpy.ndarray.transpose : Numpy equivalent function.
+
+        Examples
+        --------
+        We can change the order of the dimensions of any :obj:`COO` array with this
+        function.
+
+        >>> x = np.add.outer(np.arange(5), np.arange(5)[::-1])
+        >>> x
+        array([[4, 3, 2, 1, 0],
+               [5, 4, 3, 2, 1],
+               [6, 5, 4, 3, 2],
+               [7, 6, 5, 4, 3],
+               [8, 7, 6, 5, 4]])
+        >>> s = COO.from_numpy(x)
+        >>> s.transpose((1, 0)).todense()
+        array([[4, 5, 6, 7, 8],
+               [3, 4, 5, 6, 7],
+               [2, 3, 4, 5, 6],
+               [1, 2, 3, 4, 5],
+               [0, 1, 2, 3, 4]])
+
+        Note that by default, this reverses the order of the axes rather than switching
+        the last and second-to-last axes as required by some linear algebra operations.
+
+        >>> x = np.random.rand(2, 3, 4)
+        >>> s = COO.from_numpy(x)
+        >>> s.transpose().shape
+        (4, 3, 2)
         """
         if axes is None:
             axes = list(reversed(range(self.ndim)))
@@ -611,17 +974,44 @@ class COO(object):
     @property
     def T(self):
         """
-        Returns an array which is the same as this array with the order
-        of the axes reversed.
+        Returns a new array which has the order of the axes reversed.
 
         Returns
         -------
         COO
-            The transposed array.
+            The new array with the axes in the desired order.
 
         See Also
         --------
-        numpy.ndarray.T : Equivalent Numpy property.
+        numpy.ndarray.T : Numpy equivalent property.
+
+        Examples
+        --------
+        We can change the order of the dimensions of any :obj:`COO` array with this
+        function.
+
+        >>> x = np.add.outer(np.arange(5), np.arange(5)[::-1])
+        >>> x
+        array([[4, 3, 2, 1, 0],
+               [5, 4, 3, 2, 1],
+               [6, 5, 4, 3, 2],
+               [7, 6, 5, 4, 3],
+               [8, 7, 6, 5, 4]])
+        >>> s = COO.from_numpy(x)
+        >>> s.T.todense()
+        array([[4, 5, 6, 7, 8],
+               [3, 4, 5, 6, 7],
+               [2, 3, 4, 5, 6],
+               [1, 2, 3, 4, 5],
+               [0, 1, 2, 3, 4]])
+
+        Note that by default, this reverses the order of the axes rather than switching
+        the last and second-to-last axes as required by some linear algebra operations.
+
+        >>> x = np.random.rand(2, 3, 4)
+        >>> s = COO.from_numpy(x)
+        >>> s.T.shape
+        (4, 3, 2)
         """
         return self.transpose(tuple(range(self.ndim))[::-1])
 
@@ -631,18 +1021,27 @@ class COO(object):
 
         Parameters
         ----------
-        other : {COO, np.ndarray, scipy.sparse.spmatrix}
+        other : {COO, numpy.ndarray, scipy.sparse.spmatrix}
             The second operand of the dot product operation.
 
         Returns
         -------
-        {COO, np.ndarray}
-            The result of the dot product.
+        {COO, numpy.ndarray}
+            The result of the dot product. If the result turns out to be dense,
+            then a dense array is returned, otherwise, a sparse array.
 
         See Also
         --------
-        numpy.ndarray.dot : Numpy equivalent function.
+        :obj:`numpy.dot` : Numpy equivalent function.
         scipy.sparse.coo_matrix.dot : Scipy equivalent function.
+
+        Examples
+        --------
+        >>> x = np.arange(4).reshape((2, 2))
+        >>> s = COO.from_numpy(x)
+        >>> s.dot(s)
+        array([[ 2,  3],
+               [ 6, 11]], dtype=int64)
         """
         return dot(self, other)
 
@@ -668,7 +1067,8 @@ class COO(object):
 
     def linear_loc(self, signed=False):
         """
-        Returns the coordinates of a flattened version of this array.
+        Returns the nonzero coordinates of a flattened version of this array. Note that
+        the coordinates may be out of order.
 
         Parameters
         ----------
@@ -680,6 +1080,19 @@ class COO(object):
         -------
         numpy.ndarray
             The flattened coordinates.
+
+        See Also
+        --------
+        :obj:`numpy.flatnonzero` : Equivalent Numpy function.
+
+        Examples
+        --------
+        >>> x = np.eye(5)
+        >>> s = COO.from_numpy(x)
+        >>> s.linear_loc()
+        array([ 0,  6, 12, 18, 24], dtype=uint8)
+        >>> np.array_equal(np.flatnonzero(x), s.linear_loc())
+        True
         """
         return self._linear_loc(self.coords, self.shape, signed)
 
@@ -716,6 +1129,17 @@ class COO(object):
         See Also
         --------
         numpy.ndarray.reshape : The equivalent Numpy function.
+
+        Examples
+        --------
+        >>> s = COO.from_numpy(np.arange(25))
+        >>> s2 = s.reshape((5, 5))
+        >>> s2.todense()
+        array([[ 0,  1,  2,  3,  4],
+               [ 5,  6,  7,  8,  9],
+               [10, 11, 12, 13, 14],
+               [15, 16, 17, 18, 19],
+               [20, 21, 22, 23, 24]])
         """
         if self.shape == shape:
             return self
@@ -751,7 +1175,22 @@ class COO(object):
         return result
 
     def to_scipy_sparse(self):
-        assert self.ndim == 2
+        """
+        Converts this :obj:`COO` object into a :obj:`scipy.sparse.coo_matrix`.
+
+        Returns
+        -------
+        :obj:`scipy.sparse.coo_matrix`
+            The converted Scipy sparse matrix.
+
+        Raises
+        ------
+        ValueError
+            If the array is not two-dimensional.
+        """
+        if self.ndim != 2:
+            raise ValueError("Can only convert a 2-dimensional array to a Scipy sparse matrix.")
+
         result = scipy.sparse.coo_matrix((self.data,
                                           (self.coords[0],
                                            self.coords[1])),
@@ -997,7 +1436,7 @@ class COO(object):
         func
             The function to apply to one or two arguments.
         args : tuple, optional
-            The extra arguments to pass to the function. If args[0] is a COO object
+            The extra arguments to pass to the function. If :code:`args[0]` is a COO object
             or a scipy.sparse.spmatrix, the function will be treated as a binary
             function. Otherwise, it will be treated as a unary function.
         kwargs : dict, optional
@@ -1778,7 +2217,6 @@ def dot(a, b):
     See Also
     --------
     numpy.dot : NumPy equivalent function
-
     """
     if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
         raise NotImplementedError(
