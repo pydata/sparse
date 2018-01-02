@@ -30,4 +30,3 @@ setup(name='sparse',
           ],
       },
       zip_safe=False)
-

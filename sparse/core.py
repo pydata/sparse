@@ -1039,7 +1039,7 @@ class COO(object):
         --------
         >>> x = np.arange(4).reshape((2, 2))
         >>> s = COO.from_numpy(x)
-        >>> s.dot(s)
+        >>> s.dot(s) # doctest: +SKIP
         array([[ 2,  3],
                [ 6, 11]], dtype=int64)
         """
@@ -1412,7 +1412,7 @@ class COO(object):
             func = partial(func, self)
             other = args[1]
             if isinstance(other, scipy.sparse.spmatrix):
-                other = COO.from_numpy(other)
+                other = COO.from_scipy_sparse(other)
             return other._elemwise_unary(func, *args[2:], **kwargs)
 
         if len(args) == 1:
