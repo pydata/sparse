@@ -250,13 +250,8 @@ class COO(object):
             if isinstance(index, str):
                 data = self.data[index]
                 idx = np.where(data)
-                coords = []
-
-                for i in range(self.ndim):
-                    coords.append(self.coords[i, idx[0]])
-
-                for i in range(1, np.ndim(data)):
-                    coords.append(idx[i])
+                coords = list(self.coords[:, idx[0]])
+                coords.extend(idx[1:])
 
                 return COO(coords, data[idx].flatten(),
                            shape=self.shape + self.data.dtype[index].shape,
