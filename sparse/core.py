@@ -428,7 +428,7 @@ class COO(object):
         # Normalize all axe indices to posivite values
         try:
             axes = np.arange(self.ndim)[list(axes)]
-        except IndexError as e:
+        except IndexError:
             raise ValueError("invalid axis for this array")
 
         if len(np.unique(axes)) < len(axes):
