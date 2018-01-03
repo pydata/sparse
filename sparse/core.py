@@ -23,7 +23,8 @@ except NameError:
 
 
 class COO(object):
-    """ A Sparse Multidimensional Array
+    """
+    A sparse multidimensional array.
 
     This is stored in COO format.  It depends on NumPy and Scipy.sparse for
     computation, but supports arrays of arbitrary dimension.
@@ -211,7 +212,7 @@ class COO(object):
     @classmethod
     def from_numpy(cls, x):
         """
-        Convert the given :obj:`numpy.ndarray` to a :code:`COO` object.
+        Convert the given :obj:`numpy.ndarray` to a :obj:`COO` object.
 
         Parameters
         ----------
@@ -297,7 +298,7 @@ class COO(object):
         --------
         >>> x = scipy.sparse.rand(6, 3, density=0.2)
         >>> s = COO.from_scipy_sparse(x)
-        >>> np.allclose(x.todense(), s.todense())
+        >>> np.array_equal(x.todense(), s.todense())
         True
         """
         x = scipy.sparse.coo_matrix(x)
@@ -529,7 +530,7 @@ class COO(object):
         ----------
         method : numpy.ufunc
             The method to use for performing the reduction.
-        axis : {int, Iterable[int]}, optional
+        axis : Union[int, Iterable[int]], optional
             The axes along which to perform the reduction. Uses all axes by default.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
@@ -634,7 +635,7 @@ class COO(object):
 
         Parameters
         ----------
-        axis : {int, Iterable[int]}, optional
+        axis : Union[int, Iterable[int]], optional
             The axes along which to sum. Uses all axes by default.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
@@ -695,7 +696,7 @@ class COO(object):
 
         Parameters
         ----------
-        axis : {int, Iterable[int]}, optional
+        axis : Union[int, Iterable[int]], optional
             The axes along which to maximize. Uses all axes by default.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
@@ -756,7 +757,7 @@ class COO(object):
 
         Parameters
         ----------
-        axis : {int, Iterable[int]}, optional
+        axis : Union[int, Iterable[int]], optional
             The axes along which to minimize. Uses all axes by default.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
@@ -817,7 +818,7 @@ class COO(object):
 
         Parameters
         ----------
-        axis : {int, Iterable[int]}, optional
+        axis : Union[int, Iterable[int]], optional
             The axes along which to multiply. Uses all axes by default.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
@@ -1017,11 +1018,11 @@ class COO(object):
 
     def dot(self, other):
         """
-        Performs the equivalent of :code:`x.dot(y)` for :code:`COO`.
+        Performs the equivalent of :code:`x.dot(y)` for :obj:`COO`.
 
         Parameters
         ----------
-        other : {COO, numpy.ndarray, scipy.sparse.spmatrix}
+        other : Union[COO, numpy.ndarray, scipy.sparse.spmatrix]
             The second operand of the dot product operation.
 
         Returns
@@ -1067,7 +1068,7 @@ class COO(object):
 
     def linear_loc(self, signed=False):
         """
-        Returns the nonzero coordinates of a flattened version of this array. Note that
+        The nonzero coordinates of a flattened version of this array. Note that
         the coordinates may be out of order.
 
         Parameters
@@ -1114,7 +1115,7 @@ class COO(object):
 
     def reshape(self, shape):
         """
-        Returns a new :code:`COO` array that is a reshaped version of this array.
+        Returns a new :obj:`COO` array that is a reshaped version of this array.
 
         Parameters
         ----------
@@ -1218,7 +1219,7 @@ class COO(object):
 
     def tocsr(self):
         """
-        Converts this matrix to a :obj:`scipy.sparse.csr_matrix`.
+        Converts this array to a :obj:`scipy.sparse.csr_matrix`.
 
         Returns
         -------
@@ -1252,7 +1253,7 @@ class COO(object):
 
     def tocsc(self):
         """
-        Converts this matrix to a :obj:`scipy.sparse.csc_matrix`.
+        Converts this array to a :obj:`scipy.sparse.csc_matrix`.
 
         Returns
         -------
@@ -1287,7 +1288,7 @@ class COO(object):
 
     def sort_indices(self):
         """
-        Sorts the indices of the array so they are in canonical form.
+        Sorts the coords of this array.
         """
         if self.sorted:
             return
@@ -1305,8 +1306,7 @@ class COO(object):
 
     def sum_duplicates(self):
         """
-        If :code:`x.coords` has any duplicates, this sums the data along those
-        duplicates so there are no duplicates left in :code:`x.coords` anymore.
+        Sums data corresponding to duplicates in :obj:`COO.coords`.
 
         See Also
         --------
@@ -1433,7 +1433,7 @@ class COO(object):
 
         Parameters
         ----------
-        func
+        func : Callable
             The function to apply to one or two arguments.
         args : tuple, optional
             The extra arguments to pass to the function. If :code:`args[0]` is a COO object
@@ -1695,14 +1695,14 @@ class COO(object):
 
         Parameters
         ----------
-        coords : np.ndarray
+        coords : numpy.ndarray
             The coordinates to reduce.
         params : list
             The params from which to check which dimensions to get.
 
         Returns
         -------
-        reduced_coords : np.ndarray
+        reduced_coords : numpy.ndarray
             The reduced coordinates.
         """
         reduced_params = [bool(param) for param in params]
@@ -1718,9 +1718,9 @@ class COO(object):
 
         Parameters
         ----------
-        coords : np.ndarray
+        coords : numpy.ndarray
             The coordinates to expand.
-        data : np.ndarray
+        data : numpy.ndarray
             The data corresponding to the coordinates.
         params : list
             The broadcast parameters.
@@ -1797,7 +1797,8 @@ class COO(object):
 
     def broadcast_to(self, shape):
         """
-        Performs the equivalent of :obj:`numpy.broadcast_to` for COO.
+        Performs the equivalent of :obj:`numpy.broadcast_to` for :obj:`COO`. Note that
+        this function returns a new array instead of a view.
 
         Parameters
         ----------
@@ -1902,7 +1903,8 @@ class COO(object):
         return full_coords[:, mask], full_data[mask]
 
     def __abs__(self):
-        """ Calculate the absolute value element-wise.
+        """
+        Calculate the absolute value element-wise.
 
         See also
         --------
@@ -1913,28 +1915,41 @@ class COO(object):
     abs = __abs__
 
     def exp(self, out=None):
-        """ Calculate the exponential of all elements in the array.
+        """
+        Calculate the exponential of all elements in the array.
 
         See also
         --------
         :obj:`numpy.exp` : NumPy equivalent ufunc.
+
+        Notes
+        -----
+        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
+        actually supported.
         """
         assert out is None
         return self.elemwise(np.exp)
 
     def expm1(self, out=None):
-        """ Calculate :code:`exp(x) - 1` for all elements in the array.
+        """
+        Calculate :code:`exp(x) - 1` for all elements in the array.
 
         See also
         --------
         scipy.sparse.coo_matrix.expm1 : SciPy sparse equivalent function
         :obj:`numpy.expm1` : NumPy equivalent ufunc.
+
+        Notes
+        -----
+        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
+        actually supported.
         """
         assert out is None
         return self.elemwise(np.expm1)
 
     def log1p(self, out=None):
-        """ Return the natural logarithm of one plus the input array, element-wise.
+        """
+        Return the natural logarithm of one plus the input array, element-wise.
 
         Calculates :code:`log(1 + x)`.
 
@@ -1942,34 +1957,52 @@ class COO(object):
         --------
         scipy.sparse.coo_matrix.log1p : SciPy sparse equivalent function
         :obj:`numpy.log1p` : NumPy equivalent ufunc.
+
+        Notes
+        -----
+        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
+        actually supported.
         """
         assert out is None
         return self.elemwise(np.log1p)
 
     def sin(self, out=None):
-        """ Trigonometric sine, element-wise.
+        """
+        Trigonometric sine, element-wise.
 
         See also
         --------
         scipy.sparse.coo_matrix.sin : SciPy sparse equivalent function
         :obj:`numpy.sin` : NumPy equivalent ufunc.
+
+        Notes
+        -----
+        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
+        actually supported.
         """
         assert out is None
         return self.elemwise(np.sin)
 
     def sinh(self, out=None):
-        """ Hyperbolic sine, element-wise.
+        """
+        Hyperbolic sine, element-wise.
 
         See also
         --------
         scipy.sparse.coo_matrix.sinh : SciPy sparse equivalent function
         :obj:`numpy.sinh` : NumPy equivalent ufunc.
+
+        Notes
+        -----
+        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
+        actually supported.
         """
         assert out is None
         return self.elemwise(np.sinh)
 
     def tan(self, out=None):
-        """ Compute tangent element-wise.
+        """
+        Compute tangent element-wise.
 
         See also
         --------
@@ -1980,107 +2013,163 @@ class COO(object):
         return self.elemwise(np.tan)
 
     def tanh(self, out=None):
-        """ Compute hyperbolic tangent element-wise.
+        """
+        Compute hyperbolic tangent element-wise.
 
         See also
         --------
         scipy.sparse.coo_matrix.tanh : SciPy sparse equivalent function
         :obj:`numpy.tanh` : NumPy equivalent ufunc.
+
+        Notes
+        -----
+        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
+        actually supported.
         """
         assert out is None
         return self.elemwise(np.tanh)
 
     def sqrt(self, out=None):
-        """ Return the positive square-root of an array, element-wise.
+        """
+        Return the positive square-root of an array, element-wise.
 
         See also
         --------
         scipy.sparse.coo_matrix.sqrt : SciPy sparse equivalent function
         :obj:`numpy.sqrt` : NumPy equivalent ufunc.
+
+        Notes
+        -----
+        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
+        actually supported.
         """
         assert out is None
         return self.elemwise(np.sqrt)
 
     def ceil(self, out=None):
-        """ Return the ceiling of the input, element-wise.
+        """
+        Return the ceiling of the input, element-wise.
 
         See also
         --------
         scipy.sparse.coo_matrix.ceil : SciPy sparse equivalent function
         :obj:`numpy.ceil` : NumPy equivalent ufunc.
+
+        Notes
+        -----
+        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
+        actually supported.
         """
         assert out is None
         return self.elemwise(np.ceil)
 
     def floor(self, out=None):
-        """ Return the floor of the input, element-wise.
+        """
+        Return the floor of the input, element-wise.
 
         See also
         --------
         scipy.sparse.coo_matrix.floor : SciPy sparse equivalent function
         :obj:`numpy.floor` : NumPy equivalent ufunc.
+
+        Notes
+        -----
+        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
+        actually supported.
         """
         assert out is None
         return self.elemwise(np.floor)
 
     def round(self, decimals=0, out=None):
-        """ Evenly round to the given number of decimals.
+        """
+        Evenly round to the given number of decimals.
 
         See also
         --------
         :obj:`numpy.round` : NumPy equivalent ufunc.
+
+        Notes
+        -----
+        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
+        actually supported.
         """
         assert out is None
         return self.elemwise(np.round, decimals)
 
     def rint(self, out=None):
-        """ Round elements of the array to the nearest integer.
+        """
+        Round elements of the array to the nearest integer.
 
         See also
         --------
         scipy.sparse.coo_matrix.rint : SciPy sparse equivalent function
         :obj:`numpy.rint` : NumPy equivalent ufunc.
+
+        Notes
+        -----
+        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
+        actually supported.
         """
         assert out is None
         return self.elemwise(np.rint)
 
     def conj(self, out=None):
-        """ Return the complex conjugate, element-wise.
+        """
+        Return the complex conjugate, element-wise.
 
         See also
         --------
         conjugate : Equivalent function
         scipy.sparse.coo_matrix.conj : SciPy sparse equivalent function
         :obj:`numpy.conj` : NumPy equivalent ufunc.
+
+        Notes
+        -----
+        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
+        actually supported.
         """
         assert out is None
         return self.elemwise(np.conj)
 
     def conjugate(self, out=None):
-        """ Return the complex conjugate, element-wise.
+        """
+        Return the complex conjugate, element-wise.
 
         See also
         --------
         conj : Equivalent function
         scipy.sparse.coo_matrix.conjugate : SciPy sparse equivalent function
         :obj:`numpy.conj` : NumPy equivalent ufunc.
+
+        Notes
+        -----
+        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
+        actually supported.
         """
         assert out is None
         return self.elemwise(np.conjugate)
 
     def astype(self, dtype, out=None):
-        """ Copy of the array, cast to a specified type.
+        """
+        Copy of the array, cast to a specified type.
 
         See also
         --------
         scipy.sparse.coo_matrix.astype : SciPy sparse equivalent function
         numpy.ndarray.astype : NumPy equivalent ufunc.
+
+        Notes
+        -----
+        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
+        actually supported.
         """
         assert out is None
         return self.elemwise(np.ndarray.astype, dtype)
 
-    def maybe_densify(self, allowed_nnz=1e3, allowed_fraction=0.25):
-        """ Convert to a dense numpy array if not too costly. Err othrewise
+    def maybe_densify(self, allowed_nnz=1000, allowed_fraction=0.25):
+        """
+        Converts this :obj:`COO` array to a :obj:`numpy.ndarray` if not too
+        costly.
 
         Parameters
         ----------
@@ -2098,8 +2187,28 @@ class COO(object):
         -------
         NotImplementedError
             If the returned array would be too large.
+
+        Examples
+        --------
+        Convert a small sparse array to a dense array.
+
+        >>> s = COO.from_numpy(np.random.rand(2, 3, 4))
+        >>> x = s.maybe_densify()
+        >>> np.allclose(x, s.todense())
+        True
+
+        You can also specify the minimum allowed sparsity or the maximum number
+        of nonzero values. If both conditions are unmet, this method will throw
+        an error. For example, the following will raise a :obj:`NotImplementedError`:
+
+        >>> x = np.zeros((5, 5), dtype=np.uint8)
+        >>> x[2, 2] = 1
+        >>> s = COO.from_numpy(x)
+        >>> s.maybe_densify(allowed_nnz=5, allowed_fraction=0.25) # doctest: +SKIP
         """
-        if reduce(operator.mul, self.shape) <= allowed_nnz or self.nnz >= np.prod(self.shape) * allowed_fraction:
+        elements = np.prod(self.shape)
+
+        if elements <= allowed_nnz or self.nnz >= elements * allowed_fraction:
             return self.todense()
         else:
             raise NotImplementedError("Operation would require converting "
@@ -2108,18 +2217,18 @@ class COO(object):
 
 def tensordot(a, b, axes=2):
     """
-    Perform the equivalent of :code:`np.tensordot`.
+    Perform the equivalent of :obj:`numpy.tensordot`.
 
     Parameters
     ----------
-    a, b : {COO, np.ndarray, scipy.sparse.spmatrix}
+    a, b : Union[COO, np.ndarray, scipy.sparse.spmatrix]
         The arrays to perform the :code:`tensordot` operation on.
-    axes : {int, {tuple[tuple[int], tuple[int]]}, tuple[int, int]}, optional
+    axes : tuple[Union[int, tuple[int], Union[int, tuple[int]], optional
         The axes to match when performing the sum.
 
     Returns
     -------
-    {COO, np.ndarray}
+    Union[COO, numpy.ndarray]
         The result of the operation.
 
     See Also
@@ -2202,16 +2311,16 @@ def tensordot(a, b, axes=2):
 
 def dot(a, b):
     """
-    Perform the equivalent of :code:`np.dot` on two arrays.
+    Perform the equivalent of :obj:`numpy.dot` on two arrays.
 
     Parameters
     ----------
-    a, b : {COO, np.ndarray, scipy.sparse.spmatrix}
+    a, b : Union[COO, np.ndarray, scipy.sparse.spmatrix]
         The arrays to perform the :code:`dot` operation on.
 
     Returns
     -------
-    {COO, np.ndarray}
+    Union[COO, numpy.ndarray]
         The result of the operation.
 
     See Also
@@ -2274,7 +2383,7 @@ def concatenate(arrays, axis=0):
 
     Parameters
     ----------
-    arrays : Iterable[{COO, np.ndarray, scipy.sparse.spmatrix}]
+    arrays : Iterable[Union[COO, numpy.ndarray, scipy.sparse.spmatrix]]
         The input arrays to concatenate.
     axis : int, optional
         The axis along which to concatenate the input arrays. The default is zero.
@@ -2322,7 +2431,7 @@ def stack(arrays, axis=0):
 
     Parameters
     ----------
-    arrays : Iterable[{COO, np.ndarray, scipy.sparse.spmatrix}]
+    arrays : Iterable[Union[COO, numpy.ndarray, scipy.sparse.spmatrix]]
         The input arrays to stack.
     axis : int, optional
         The axis along which to stack the input arrays.

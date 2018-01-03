@@ -1,33 +1,27 @@
-{{ fullname | escape | underline}}
+{{ objname | escape | underline}}
 
 .. currentmodule:: {{ module }}
 
 .. autoclass:: {{ objname }}
 
-   {% block methods %}
-   .. automethod:: __init__
-
    {% block attributes %}
    {% if attributes %}
    .. rubric:: Attributes
-
    .. autosummary::
-      :toctree: {{ name }}
+      :toctree:
    {% for item in attributes %}
-      ~{{ name }}.{{ item }}
-   {%- endfor %}
+      {{ name }}.{{ item }}
+   {% endfor %}
    {% endif %}
    {% endblock %}
 
+   {% block methods %}
    {% if methods %}
    .. rubric:: Methods
-
    .. autosummary::
-      :toctree: {{ name }}
+      :toctree:
    {% for item in methods %}
-   {% if item != '__init__' %}
-      ~{{ name }}.{{ item }}
-   {% endif %}
-   {%- endfor %}
+      {{ name }}.{{ item }}
+   {% endfor %}
    {% endif %}
    {% endblock %}
