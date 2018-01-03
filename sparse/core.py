@@ -429,7 +429,7 @@ class COO(object):
         try:
             axes = np.arange(self.ndim)[list(axes)]
         except IndexError as e:
-            raise ValueError("invalid axis for this array") from None
+            raise ValueError("invalid axis for this array")
 
         if len(np.unique(axes)) < len(axes):
             raise ValueError("repeated axis in transpose")
