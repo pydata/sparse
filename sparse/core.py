@@ -423,7 +423,20 @@ class COO(object):
 
     def transpose(self, axes=None):
         if axes is None:
-            axes = reversed(range(self.ndim))
+            axes = list(reversed(range(self.ndim)))
+
+        # Normalize all axe indices to posivite values
+        axes = np.array(axes)
+        axes[axes < 0] += self.ndim
+
+        if np.any(axes >= self.ndim) or np.any(axes < 0):
+            raise ValueError("invalid axis for this array")
+
+        if len(np.unique(axes)) < len(axes):
+            raise ValueError("repeated axis in transpose")
+
+        if not len(axes) == self.ndim:
+            raise ValueError("axes don't match array")
 
         # Normalize all axe indices to posivite values
         try:
