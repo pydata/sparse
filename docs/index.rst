@@ -7,7 +7,7 @@ Welcome to sparse's documentation!
 ==================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 7
    :caption: Contents:
 
    modules

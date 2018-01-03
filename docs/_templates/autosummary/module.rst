@@ -3,28 +3,28 @@
 Description
 -----------
 
-.. automodule:: {{ fullname | escape }}
+.. automodule:: {{ fullname }}
+
+.. currentmodule:: {{ fullname }}
 
 {% if classes %}
-Classes
--------
-.. autosummary:
-    :toctree: _autosummary
+.. rubric:: Classes
 
+.. autosummary::
+    :toctree: {{ name }}
     {% for class in classes %}
-        {{ class }}
+    {{ class }}
     {% endfor %}
 
 {% endif %}
 
 {% if functions %}
-Functions
----------
-.. autosummary:
-    :toctree: _autosummary
+.. rubric:: Functions
 
+.. autosummary::
+    :toctree: {{ name }}
     {% for function in functions %}
-        {{ function }}
+    {{ function }}
     {% endfor %}
 
 {% endif %}

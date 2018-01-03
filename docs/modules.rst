@@ -5,6 +5,6 @@ Modules
 -------
 
 .. autosummary::
-   :toctree: _autosummary
+   :toctree: generated
 
    sparse
