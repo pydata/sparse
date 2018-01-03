@@ -1,7 +1,6 @@
 {{ fullname | escape | underline }}
 
-Description
------------
+.. rubric:: Description
 
 .. automodule:: {{ fullname }}
 

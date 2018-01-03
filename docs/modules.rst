@@ -1,8 +1,7 @@
 API Reference
 =============
 
-Modules
--------
+.. rubric:: Modules
 
 .. autosummary::
    :toctree: generated
