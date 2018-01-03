@@ -44,13 +44,39 @@ def test_ufunc_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     assert_eq(xx, yy, **eqkwargs)
 
 
-@pytest.mark.parametrize('axis', [None, (1, 2, 0), (2, 1, 0), (0, 1, 2)])
+@pytest.mark.parametrize('axis', [
+    None,
+    (1, 2, 0),
+    (2, 1, 0),
+    (0, 1, 2),
+    (0, 1, -1),
+    (0, -2, -1),
+    (-3, -2, -1),
+])
 def test_transpose(axis):
     x = sparse.random((2, 3, 4), density=.25)
     y = x.todense()
     xx = x.transpose(axis)
     yy = y.transpose(axis)
     assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize('axis', [
+    (0, 1),  # too few
+    (0, 1, 2, 3),  # too many
+    (3, 1, 0),  # axis 3 illegal
+    (0, -1, -4),  # axis -4 illegal
+    (0, 0, 1),  # duplicate axis 0
+    (0, -1, 2),  # duplicate axis -1 == 2
+])
+def test_transpose_error(axis):
+    x = sparse.random((2, 3, 4), density=.25)
+    y = x.todense()
+
+    with pytest.raises(ValueError):
+        x.transpose(axis)
+    with pytest.raises(ValueError):
+        y.transpose(axis)
 
 
 @pytest.mark.parametrize('a,b', [

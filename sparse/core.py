@@ -425,6 +425,18 @@ class COO(object):
         if axes is None:
             axes = reversed(range(self.ndim))
 
+        # Normalize all axe indices to posivite values
+        try:
+            axes = np.arange(self.ndim)[list(axes)]
+        except IndexError as e:
+            raise ValueError("invalid axis for this array") from None
+
+        if len(np.unique(axes)) < len(axes):
+            raise ValueError("repeated axis in transpose")
+
+        if not len(axes) == self.ndim:
+            raise ValueError("axes don't match array")
+
         axes = tuple(axes)
 
         if axes == tuple(range(self.ndim)):
