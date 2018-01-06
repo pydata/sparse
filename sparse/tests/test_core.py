@@ -121,8 +121,9 @@ def test_to_scipy_sparse():
     a = s.to_scipy_sparse()
     b = scipy.sparse.coo_matrix(s.todense())
 
-    assert_eq(a.data, b.data)
     assert_eq(a.todense(), b.todense())
+    assert_eq(a.data[np.lexsort((a.row, a.col))],
+              b.data[np.lexsort((b.row, b.col))])
 
 
 @pytest.mark.parametrize('a_shape,b_shape,axes', [
