@@ -605,7 +605,7 @@ def test_broadcast_to(shape1, shape2):
 @pytest.mark.parametrize('scalar', [2, 2.0, 2.5, np.float32(2.0),
                                     np.float(2.0)])
 def test_scalar_multiplication(scalar):
-    a = sparse.random((2, 3, 4))
+    a = sparse.random((2, 3, 4), density=0.5)
     x = a.todense()
 
     assert_eq(x * scalar, a * scalar)

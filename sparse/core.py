@@ -728,6 +728,8 @@ class COO(object):
         self = args[0]
         if isinstance(self, scipy.sparse.spmatrix):
             self = COO.from_numpy(self)
+        if isinstance(self, np.number):
+            self = COO.from_numpy(np.atleast_1d(self))
 
         if len(args) == 1:
             return self._elemwise_unary(func, *args[1:], **kwargs)
