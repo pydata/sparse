@@ -266,8 +266,11 @@ def test_op_scipy_sparse():
     (operator.le, -3),
     (operator.eq, 1)
 ])
-def test_elemwise_scalar(func, scalar):
+@pytest.mark.parametrize('convert_to_np_number', [True, False])
+def test_elemwise_scalar(func, scalar, convert_to_np_number):
     xs = sparse.random((2, 3, 4))
+    if convert_to_np_number:
+        scalar = np.float32(scalar)
     y = scalar
 
     x = xs.todense()
@@ -277,6 +280,33 @@ def test_elemwise_scalar(func, scalar):
     assert xs.nnz >= fs.nnz
 
     assert_eq(fs, func(x, y))
+
+
+@pytest.mark.parametrize('func, scalar', [
+    (operator.mul, 5),
+    (operator.add, 0),
+    (operator.sub, 0),
+    (operator.gt, -5),
+    (operator.lt, 5),
+    (operator.ne, 0),
+    (operator.ge, -5),
+    (operator.le, 3),
+    (operator.eq, 1)
+])
+@pytest.mark.parametrize('convert_to_np_number', [True, False])
+def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number):
+    xs = sparse.random((2, 3, 4), density=0.5)
+    if convert_to_np_number:
+        scalar = np.float32(scalar)
+    y = scalar
+
+    x = xs.todense()
+    fs = func(y, xs)
+
+    assert isinstance(fs, COO)
+    assert xs.nnz >= fs.nnz
+
+    assert_eq(fs, func(y, x))
 
 
 @pytest.mark.parametrize('func, scalar', [
@@ -602,8 +632,7 @@ def test_broadcast_to(shape1, shape2):
     assert_eq(np.broadcast_to(x, shape2), a.broadcast_to(shape2))
 
 
-@pytest.mark.parametrize('scalar', [2, 2.0, 2.5, np.float32(2.0),
-                                    np.float(2.0)])
+@pytest.mark.parametrize('scalar', [2, 2.5, np.float32(2.0), np.int8(3)])
 def test_scalar_multiplication(scalar):
     a = sparse.random((2, 3, 4), density=0.5)
     x = a.todense()
