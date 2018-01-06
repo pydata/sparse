@@ -602,15 +602,16 @@ def test_broadcast_to(shape1, shape2):
     assert_eq(np.broadcast_to(x, shape2), a.broadcast_to(shape2))
 
 
-def test_scalar_multiplication():
+@pytest.mark.parametrize('scalar', [2, 2.0, 2.5, np.float32(2.0),
+                                    np.float(2.0)])
+def test_scalar_multiplication(scalar):
     a = sparse.random((2, 3, 4))
     x = a.todense()
 
-    assert_eq(x * 2, a * 2)
-    assert_eq(2 * x, 2 * a)
-    assert_eq(x / 2, a / 2)
-    assert_eq(x / 2.5, a / 2.5)
-    assert_eq(x // 2.5, a // 2.5)
+    assert_eq(x * scalar, a * scalar)
+    assert_eq(scalar * x, scalar * a)
+    assert_eq(x / scalar, a / scalar)
+    assert_eq(x // scalar, a // scalar)
 
 
 @pytest.mark.filterwarnings('ignore:divide by zero')
