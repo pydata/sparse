@@ -609,9 +609,13 @@ def test_scalar_multiplication(scalar):
     x = a.todense()
 
     assert_eq(x * scalar, a * scalar)
+    assert (a * scalar).nnz == a.nnz
     assert_eq(scalar * x, scalar * a)
+    assert (scalar * a).nnz == a.nnz
     assert_eq(x / scalar, a / scalar)
+    assert (a / scalar).nnz == a.nnz
     assert_eq(x // scalar, a // scalar)
+    # division may reduce nnz.
 
 
 @pytest.mark.filterwarnings('ignore:divide by zero')
