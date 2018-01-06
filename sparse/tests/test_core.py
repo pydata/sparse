@@ -92,7 +92,7 @@ def test_transpose_error(axis):
     [(), ()],
 ])
 def test_reshape(a, b):
-    s = sparse.random(a)
+    s = sparse.random(a, density=0.5)
     x = s.todense()
 
     assert_eq(x.reshape(b), s.reshape(b))
@@ -111,18 +111,17 @@ def test_large_reshape():
 
 
 def test_reshape_same():
-    s = sparse.random((3, 5))
+    s = sparse.random((3, 5), density=0.5)
 
     assert s.reshape(s.shape) is s
 
 
 def test_to_scipy_sparse():
-    s = sparse.random((3, 5))
+    s = sparse.random((3, 5), density=0.5)
     a = s.to_scipy_sparse()
     b = scipy.sparse.coo_matrix(s.todense())
 
-    assert_eq(a.data, b.data)
-    assert_eq(a.todense(), b.todense())
+    assert_eq(a, b)
 
 
 @pytest.mark.parametrize('a_shape,b_shape,axes', [
@@ -138,8 +137,8 @@ def test_to_scipy_sparse():
     [(4,), (4,), 0],
 ])
 def test_tensordot(a_shape, b_shape, axes):
-    sa = sparse.random(a_shape)
-    sb = sparse.random(b_shape)
+    sa = sparse.random(a_shape, density=0.5)
+    sb = sparse.random(b_shape, density=0.5)
 
     a = sa.todense()
     b = sb.todense()
@@ -160,8 +159,8 @@ def test_tensordot(a_shape, b_shape, axes):
 
 def test_dot():
     import operator
-    sa = sparse.random((3, 4, 5))
-    sb = sparse.random((5, 6))
+    sa = sparse.random((3, 4, 5), density=0.5)
+    sb = sparse.random((5, 6), density=0.5)
 
     a = sa.todense()
     b = sb.todense()
@@ -181,8 +180,8 @@ def test_dot():
 
 @pytest.mark.xfail
 def test_dot_nocoercion():
-    sa = sparse.random((3, 4, 5))
-    sb = sparse.random((5, 6))
+    sa = sparse.random((3, 4, 5), density=0.5)
+    sb = sparse.random((5, 6), density=0.5)
 
     a = sa.todense()
     b = sb.todense()
@@ -203,7 +202,7 @@ def test_dot_nocoercion():
                                   lambda x: x.astype('int32'), np.conjugate,
                                   np.conj, lambda x: x.round(decimals=2), abs])
 def test_elemwise(func):
-    s = sparse.random((2, 3, 4))
+    s = sparse.random((2, 3, 4), density=0.5)
     x = s.todense()
 
     fs = func(s)
@@ -219,8 +218,8 @@ def test_elemwise(func):
 ])
 @pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
 def test_elemwise_binary(func, shape):
-    xs = sparse.random(shape)
-    ys = sparse.random(shape)
+    xs = sparse.random(shape, density=0.5)
+    ys = sparse.random(shape, density=0.5)
 
     x = xs.todense()
     y = ys.todense()
@@ -235,16 +234,16 @@ def test_elemwise_binary(func, shape):
 @pytest.mark.filterwarnings('ignore:divide by zero')
 @pytest.mark.filterwarnings('ignore:invalid value')
 def test_auto_densification_fails(func):
-    xs = sparse.random((2, 3, 4))
-    ys = sparse.random((2, 3, 4))
+    xs = sparse.random((2, 3, 4), density=0.5)
+    ys = sparse.random((2, 3, 4), density=0.5)
 
     with pytest.raises(ValueError):
         func(xs, ys)
 
 
 def test_op_scipy_sparse():
-    xs = sparse.random((3, 4))
-    y = sparse.random((3, 4)).todense()
+    xs = sparse.random((3, 4), density=0.5)
+    y = sparse.random((3, 4), density=0.5).todense()
 
     ys = scipy.sparse.csr_matrix(y)
     x = xs.todense()
@@ -268,7 +267,7 @@ def test_op_scipy_sparse():
 ])
 @pytest.mark.parametrize('convert_to_np_number', [True, False])
 def test_elemwise_scalar(func, scalar, convert_to_np_number):
-    xs = sparse.random((2, 3, 4))
+    xs = sparse.random((2, 3, 4), density=0.5)
     if convert_to_np_number:
         scalar = np.float32(scalar)
     y = scalar
@@ -325,7 +324,7 @@ def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number):
 @pytest.mark.filterwarnings('ignore:divide by zero')
 @pytest.mark.filterwarnings('ignore:invalid value')
 def test_scalar_densification_fails(func, scalar):
-    xs = sparse.random((2, 3, 4))
+    xs = sparse.random((2, 3, 4), density=0.5)
     y = scalar
 
     with pytest.raises(ValueError):
@@ -361,7 +360,7 @@ def test_bitwise_binary_bool(func, shape):
 
 def test_elemwise_binary_empty():
     x = COO({}, shape=(10, 10))
-    y = sparse.random((10, 10))
+    y = sparse.random((10, 10), density=0.5)
 
     for z in [x * y, y * x]:
         assert z.nnz == 0
@@ -429,7 +428,7 @@ def test_gt():
     (slice(1, None), slice(-2, None), [True, False, True, False]),
 ])
 def test_slicing(index):
-    s = sparse.random((2, 3, 4))
+    s = sparse.random((2, 3, 4), density=0.5)
     x = s.todense()
 
     assert_eq(x[index], s[index])
@@ -463,7 +462,7 @@ def test_custom_dtype_slicing():
     ([True, False, False]),
 ])
 def test_slicing_errors(index):
-    s = sparse.random((2, 3, 4))
+    s = sparse.random((2, 3, 4), density=0.5)
     x = s.todense()
 
     try:
@@ -501,21 +500,21 @@ def test_canonical():
 
 
 def test_concatenate():
-    xx = sparse.random((2, 3, 4))
+    xx = sparse.random((2, 3, 4), density=0.5)
     x = xx.todense()
-    yy = sparse.random((5, 3, 4))
+    yy = sparse.random((5, 3, 4), density=0.5)
     y = yy.todense()
-    zz = sparse.random((4, 3, 4))
+    zz = sparse.random((4, 3, 4), density=0.5)
     z = zz.todense()
 
     assert_eq(np.concatenate([x, y, z], axis=0),
               sparse.concatenate([xx, yy, zz], axis=0))
 
-    xx = sparse.random((5, 3, 1))
+    xx = sparse.random((5, 3, 1), density=0.5)
     x = xx.todense()
-    yy = sparse.random((5, 3, 3))
+    yy = sparse.random((5, 3, 3), density=0.5)
     y = yy.todense()
-    zz = sparse.random((5, 3, 2))
+    zz = sparse.random((5, 3, 2), density=0.5)
     z = zz.todense()
 
     assert_eq(np.concatenate([x, y, z], axis=2),
@@ -528,7 +527,7 @@ def test_concatenate():
 @pytest.mark.parametrize('axis', [0, 1])
 @pytest.mark.parametrize('func', ['stack', 'concatenate'])
 def test_concatenate_mixed(func, axis):
-    s = sparse.random((10, 10))
+    s = sparse.random((10, 10), density=0.5)
     d = s.todense()
 
     result = getattr(sparse, func)([d, s, s], axis=axis)
@@ -542,11 +541,11 @@ def test_concatenate_mixed(func, axis):
 @pytest.mark.parametrize('shape', [(5,), (2, 3, 4), (5, 2)])
 @pytest.mark.parametrize('axis', [0, 1, -1])
 def test_stack(shape, axis):
-    xx = sparse.random(shape)
+    xx = sparse.random(shape, density=0.5)
     x = xx.todense()
-    yy = sparse.random(shape)
+    yy = sparse.random(shape, density=0.5)
     y = yy.todense()
-    zz = sparse.random(shape)
+    zz = sparse.random(shape, density=0.5)
     z = zz.todense()
 
     assert_eq(np.stack([x, y, z], axis=axis),
@@ -568,7 +567,7 @@ def test_large_concat_stack():
 
 
 def test_coord_dtype():
-    s = sparse.random((2, 3, 4))
+    s = sparse.random((2, 3, 4), density=0.5)
     assert s.coords.dtype == np.uint8
 
     s = COO.from_numpy(np.zeros(1000))
@@ -576,10 +575,10 @@ def test_coord_dtype():
 
 
 def test_addition():
-    a = sparse.random((2, 3, 4))
+    a = sparse.random((2, 3, 4), density=0.5)
     x = a.todense()
 
-    b = sparse.random((2, 3, 4))
+    b = sparse.random((2, 3, 4), density=0.5)
     y = b.todense()
 
     assert_eq(x + y, a + b)
@@ -608,10 +607,10 @@ def test_addition_not_ok_when_large_and_sparse():
                                            ((3, 4, 1), (3, 4, 2)),
                                            ((1, 5), (5, 1))])
 def test_broadcasting(func, shape1, shape2):
-    a = sparse.random(shape1)
+    a = sparse.random(shape1, density=0.5)
     x = a.todense()
 
-    c = sparse.random(shape2)
+    c = sparse.random(shape2, density=0.5)
     z = c.todense()
 
     expected = func(x, z)
@@ -626,7 +625,7 @@ def test_broadcasting(func, shape1, shape2):
                                            ((3, 1, 4), (3, 2, 4)),
                                            ((3, 4, 1), (3, 4, 2))])
 def test_broadcast_to(shape1, shape2):
-    a = sparse.random(shape1)
+    a = sparse.random(shape1, density=0.5)
     x = a.todense()
 
     assert_eq(np.broadcast_to(x, shape2), a.broadcast_to(shape2))
@@ -649,7 +648,7 @@ def test_scalar_multiplication(scalar):
 
 @pytest.mark.filterwarnings('ignore:divide by zero')
 def test_scalar_exponentiation():
-    a = sparse.random((2, 3, 4))
+    a = sparse.random((2, 3, 4), density=0.5)
     x = a.todense()
 
     assert_eq(x ** 2, a ** 2)
@@ -705,7 +704,7 @@ def test_scipy_sparse_interface():
 
 
 def test_cache_csr():
-    x = sparse.random((10, 5)).todense()
+    x = sparse.random((10, 5), density=0.5).todense()
     s = COO(x, cache=True)
 
     assert isinstance(s.tocsr(), scipy.sparse.csr_matrix)
@@ -799,7 +798,7 @@ def test_scalar_slicing():
     ((4, 4), 1000),
 ])
 def test_triul(shape, k):
-    s = sparse.random(shape)
+    s = sparse.random(shape, density=0.5)
     x = s.todense()
 
     assert_eq(np.triu(x, k), sparse.triu(s, k))
