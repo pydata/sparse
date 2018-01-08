@@ -39,6 +39,13 @@ class COO(object):
     shape: tuple[int] (ndim,), optional
         The shape of the array
 
+    Attributes
+    ----------
+    coords : numpy.ndarray (ndim, nnz)
+        An array holding the coordinates of every nonzero element.
+    data : numpy.ndarray (nnz,)
+        An array holding the values corresponding to :obj:`COO.coords`.
+
     Examples
     --------
     >>> x = np.eye(4)
@@ -895,6 +902,7 @@ class COO(object):
 
         See Also
         --------
+        :obj:`COO.T` : A quick property to reverse the order of the axes.
         numpy.ndarray.transpose : Numpy equivalent function.
 
         Examples
@@ -984,6 +992,7 @@ class COO(object):
 
         See Also
         --------
+        :obj:`COO.transpose` : A method where you can specify the order of the axes.
         numpy.ndarray.T : Numpy equivalent property.
 
         Examples
@@ -1188,6 +1197,11 @@ class COO(object):
         ------
         ValueError
             If the array is not two-dimensional.
+
+        See Also
+        --------
+        COO.tocsr : Convert to a :obj:`scipy.sparse.csr_matrix`.
+        COO.tocsc : Convert to a :obj:`scipy.sparse.csc_matrix`.
         """
         if self.ndim != 2:
             raise ValueError("Can only convert a 2-dimensional array to a Scipy sparse matrix.")
@@ -1233,6 +1247,8 @@ class COO(object):
 
         See Also
         --------
+        COO.tocsc : Convert to a :obj:`scipy.sparse.csc_matrix`.
+        COO.to_scipy_sparse : Convert to a :obj:`scipy.sparse.coo_matrix`.
         scipy.sparse.coo_matrix.tocsr : Equivalent Scipy function.
         """
         if self._cache is not None:
@@ -1267,6 +1283,8 @@ class COO(object):
 
         See Also
         --------
+        COO.tocsr : Convert to a :obj:`scipy.sparse.csr_matrix`.
+        COO.to_scipy_sparse : Convert to a :obj:`scipy.sparse.coo_matrix`.
         scipy.sparse.coo_matrix.tocsc : Equivalent Scipy function.
         """
         if self._cache is not None:
@@ -1288,7 +1306,19 @@ class COO(object):
 
     def sort_indices(self):
         """
-        Sorts the coords of this array.
+        Sorts the :obj:`COO.coords` attribute. Also sorts the data in
+        :obj:`COO.data` to match.
+
+        Examples
+        --------
+        >>> coords = np.array([[1, 2, 0]], dtype=np.uint8)
+        >>> data = np.array([4, 1, 3], dtype=np.uint8)
+        >>> s = COO(coords, data)
+        >>> s.sort_indices()
+        >>> s.coords
+        array([[0, 1, 2]], dtype=uint8)
+        >>> s.data
+        array([3, 4, 1], dtype=uint8)
         """
         if self.sorted:
             return
@@ -1311,6 +1341,17 @@ class COO(object):
         See Also
         --------
         scipy.sparse.coo_matrix.sum_duplicates : Equivalent Scipy function.
+
+        Examples
+        --------
+        >>> coords = np.array([[0, 1, 1, 2]], dtype=np.uint8)
+        >>> data = np.array([6, 5, 2, 2], dtype=np.uint8)
+        >>> s = COO(coords, data)
+        >>> s.sum_duplicates()
+        >>> s.coords
+        array([[0, 1, 2]], dtype=uint8)
+        >>> s.data
+        array([6, 7, 2], dtype=uint8)
         """
         # Inspired by scipy/sparse/coo.py::sum_duplicates
         # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
@@ -1436,8 +1477,8 @@ class COO(object):
         func : Callable
             The function to apply to one or two arguments.
         args : tuple, optional
-            The extra arguments to pass to the function. If :code:`args[0]` is a COO object
-            or a scipy.sparse.spmatrix, the function will be treated as a binary
+            The extra arguments to pass to the function. If :code:`args[0]` is a COO object,
+            a scipy.sparse.spmatrix or a scalar; the function will be treated as a binary
             function. Otherwise, it will be treated as a unary function.
         kwargs : dict, optional
             The kwargs to pass to the function.
@@ -1446,6 +1487,11 @@ class COO(object):
         -------
         COO
             The result of applying the function.
+
+        Raises
+        ------
+        ValueError
+            If the operation would result in a dense matrix.
 
         See Also
         --------
@@ -1921,6 +1967,8 @@ class COO(object):
         See also
         --------
         :obj:`numpy.exp` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
 
         Notes
         -----
@@ -1938,6 +1986,8 @@ class COO(object):
         --------
         scipy.sparse.coo_matrix.expm1 : SciPy sparse equivalent function
         :obj:`numpy.expm1` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
 
         Notes
         -----
@@ -1957,6 +2007,8 @@ class COO(object):
         --------
         scipy.sparse.coo_matrix.log1p : SciPy sparse equivalent function
         :obj:`numpy.log1p` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
 
         Notes
         -----
@@ -1974,6 +2026,8 @@ class COO(object):
         --------
         scipy.sparse.coo_matrix.sin : SciPy sparse equivalent function
         :obj:`numpy.sin` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
 
         Notes
         -----
@@ -1991,6 +2045,8 @@ class COO(object):
         --------
         scipy.sparse.coo_matrix.sinh : SciPy sparse equivalent function
         :obj:`numpy.sinh` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
 
         Notes
         -----
@@ -2008,6 +2064,8 @@ class COO(object):
         --------
         scipy.sparse.coo_matrix.tan : SciPy sparse equivalent function
         :obj:`numpy.tan` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
         """
         assert out is None
         return self.elemwise(np.tan)
@@ -2020,6 +2078,8 @@ class COO(object):
         --------
         scipy.sparse.coo_matrix.tanh : SciPy sparse equivalent function
         :obj:`numpy.tanh` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
 
         Notes
         -----
@@ -2037,6 +2097,8 @@ class COO(object):
         --------
         scipy.sparse.coo_matrix.sqrt : SciPy sparse equivalent function
         :obj:`numpy.sqrt` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
 
         Notes
         -----
@@ -2054,6 +2116,8 @@ class COO(object):
         --------
         scipy.sparse.coo_matrix.ceil : SciPy sparse equivalent function
         :obj:`numpy.ceil` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
 
         Notes
         -----
@@ -2071,6 +2135,8 @@ class COO(object):
         --------
         scipy.sparse.coo_matrix.floor : SciPy sparse equivalent function
         :obj:`numpy.floor` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
 
         Notes
         -----
@@ -2087,6 +2153,8 @@ class COO(object):
         See also
         --------
         :obj:`numpy.round` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
 
         Notes
         -----
@@ -2104,6 +2172,8 @@ class COO(object):
         --------
         scipy.sparse.coo_matrix.rint : SciPy sparse equivalent function
         :obj:`numpy.rint` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
 
         Notes
         -----
@@ -2122,6 +2192,8 @@ class COO(object):
         conjugate : Equivalent function
         scipy.sparse.coo_matrix.conj : SciPy sparse equivalent function
         :obj:`numpy.conj` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
 
         Notes
         -----
@@ -2140,6 +2212,8 @@ class COO(object):
         conj : Equivalent function
         scipy.sparse.coo_matrix.conjugate : SciPy sparse equivalent function
         :obj:`numpy.conj` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
 
         Notes
         -----
@@ -2157,6 +2231,8 @@ class COO(object):
         --------
         scipy.sparse.coo_matrix.astype : SciPy sparse equivalent function
         numpy.ndarray.astype : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
 
         Notes
         -----
@@ -2539,7 +2615,7 @@ def tril(x, k=0):
 
 def _zero_of_dtype(dtype):
     """
-    Creates a ()-shaped 0-sized array of a given dtype.
+    Creates a ()-shaped 0-dimensional zero array of a given dtype.
 
     Parameters
     ----------
@@ -2645,19 +2721,19 @@ def random(
 
     Parameters
     ----------
-    shape: :obj:`tuple` of :obj:`int`
+    shape: Tuple[int]
         Shape of the array
-    density: :obj:`float`, optional
+    density: float, optional
         Density of the generated array.
     canonical_order : bool, optional
         Whether or not to put the output :obj:`COO` object into canonical
         order. :code:`False` by default.
-    random_state : {numpy.random.RandomState, int}, optional
+    random_state : Union[numpy.random.RandomState, int], optional
         Random number generator or random seed. If not given, the
         singleton numpy.random will be used. This random state will be used
         for sampling the sparsity structure, but not necessarily for sampling
         the values of the structurally nonzero entries of the matrix.
-    data_rvs : callable
+    data_rvs : Callable
         Data generation callback. Must accept one single parameter: number of
         :code:`nnz` elements, and return one single NumPy array of exactly
         that length.
@@ -2671,6 +2747,8 @@ def random(
     --------
     :obj:`scipy.sparse.rand`
         Equivalent Scipy function.
+    :obj:`numpy.random.rand`
+        Similar Numpy function.
 
     Examples
     --------
@@ -2678,8 +2756,8 @@ def random(
     >>> from sparse import random
     >>> from scipy import stats
     >>> rvs = lambda x: stats.poisson(25, loc=10).rvs(x, random_state=np.random.RandomState(1))
-    >>> S = random((2, 3, 4), density=0.25, random_state=np.random.RandomState(1), data_rvs=rvs)
-    >>> S.todense()
+    >>> s = random((2, 3, 4), density=0.25, random_state=np.random.RandomState(1), data_rvs=rvs)
+    >>> s.todense()
     array([[[ 0,  0,  0,  0],
             [ 0, 34,  0,  0],
             [33, 34,  0, 29]],
