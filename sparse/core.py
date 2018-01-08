@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import Iterable, defaultdict, deque
-from functools import reduce
+from functools import reduce, partial
 import numbers
 import operator
 
@@ -728,6 +728,13 @@ class COO(object):
         self = args[0]
         if isinstance(self, scipy.sparse.spmatrix):
             self = COO.from_numpy(self)
+        elif np.isscalar(self) or (isinstance(self, np.ndarray)
+                                   and self.ndim == 0):
+            func = partial(func, self)
+            other = args[1]
+            if isinstance(other, scipy.sparse.spmatrix):
+                other = COO.from_numpy(other)
+            return other._elemwise_unary(func, *args[2:], **kwargs)
 
         if len(args) == 1:
             return self._elemwise_unary(func, *args[1:], **kwargs)
