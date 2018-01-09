@@ -29,16 +29,6 @@ class COO(object):
     This is stored in COO format.  It depends on NumPy and Scipy.sparse for
     computation, but supports arrays of arbitrary dimension.
 
-    Parameters
-    ----------
-    coords: numpy.ndarray (ndim, nnz)
-        An array holding the index locations of every value
-        Should have shape (number of dimensions, number of non-zeros)
-    data: numpy.ndarray (nnz,)
-        An array of Values
-    shape: tuple[int] (ndim,), optional
-        The shape of the array
-
     Attributes
     ----------
     coords : numpy.ndarray (ndim, nnz)
@@ -48,6 +38,8 @@ class COO(object):
 
     Examples
     --------
+    It's possible to create :obj:`COO` objects from Numpy arrays.
+
     >>> x = np.eye(4)
     >>> x[2, 3] = 5
     >>> s = COO(x)
@@ -59,59 +51,131 @@ class COO(object):
     array([[0, 1, 2, 2, 3],
            [0, 1, 2, 3, 3]], dtype=uint8)
 
+    :obj:`COO` objects support basic arithmetic and binary operations.
+
+    >>> x2 = np.eye(4)
+    >>> x2[3, 2] = 5
+    >>> s2 = COO(x2)
+    >>> (s + s2).todense()
+    array([[ 2.,  0.,  0.,  0.],
+           [ 0.,  2.,  0.,  0.],
+           [ 0.,  0.,  2.,  5.],
+           [ 0.,  0.,  5.,  2.]])
+    >>> (s * s2).todense()
+    array([[ 1.,  0.,  0.,  0.],
+           [ 0.,  1.,  0.,  0.],
+           [ 0.,  0.,  1.,  0.],
+           [ 0.,  0.,  0.,  1.]])
+
+    Binary operations support broadcasting.
+    >>> x3 = np.zeros((4, 1))
+    >>> x3[2, 0] = 1
+    >>> s3 = COO(x3)
+    >>> (s * s3).todense()
+    array([[ 0.,  0.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.],
+           [ 0.,  0.,  1.,  5.],
+           [ 0.,  0.,  0.,  0.]])
+
+    :obj:`COO` objects also support dot products and reductions.
+
     >>> s.dot(s.T).sum(axis=0).todense()
     array([  1.,   1.,  31.,   6.])
 
-    Make a sparse array by passing in an array of coordinates and an array of
-    values.
+    You can use Numpy :code:`ufunc` operations on :obj:`COO` arrays as well.
 
-    >>> coords = [[0, 0, 0, 1, 1],
-    ...           [0, 1, 2, 0, 3],
-    ...           [0, 3, 2, 0, 1]]
-    >>> data = [1, 2, 3, 4, 5]
-    >>> s2 = COO(coords, data, shape=(3, 4, 5))
-    >>> s2
-    <COO: shape=(3, 4, 5), dtype=int64, nnz=5, sorted=False, duplicates=True>
-    >>> tensordot(s, s2, axes=(0, 1))
-    <COO: shape=(4, 3, 5), dtype=float64, nnz=6, sorted=False, duplicates=False>
+    >>> np.sum(s, axis=1).todense()
+    array([ 1.,  1.,  6.,  1.])
+    >>> np.round(np.sqrt(s), decimals=1).todense()
+    array([[ 1. ,  0. ,  0. ,  0. ],
+           [ 0. ,  1. ,  0. ,  0. ],
+           [ 0. ,  0. ,  1. ,  2.2],
+           [ 0. ,  0. ,  0. ,  1. ]])
 
-    Following scipy.sparse conventions you can also pass these as a tuple with
-    rows and columns
+    Operations that will result in a dense array will raise a :obj:`ValueError`,
+    such as the following.
 
-    >>> rows = [0, 1, 2, 3, 4]
-    >>> cols = [0, 0, 0, 1, 1]
-    >>> data = [10, 20, 30, 40, 50]
-    >>> z = COO((data, (rows, cols)))
-    >>> z.todense()
-    array([[10,  0],
-           [20,  0],
-           [30,  0],
-           [ 0, 40],
-           [ 0, 50]])
-
-    You can also pass a dictionary or iterable of index/value pairs. Repeated
-    indices imply summation:
-
-    >>> d = {(0, 0, 0): 1, (1, 2, 3): 2, (1, 1, 0): 3}
-    >>> COO(d)
-    <COO: shape=(2, 3, 4), dtype=int64, nnz=3, sorted=False, duplicates=False>
-
-    >>> L = [((0, 0), 1),
-    ...      ((1, 1), 2),
-    ...      ((0, 0), 3)]
-    >>> COO(L).todense()
-    array([[4, 0],
-           [0, 2]])
-
-    See Also
-    --------
-    COO.from_numpy : Generate sparse array from NumPy array
-    COO.from_scipy_sparse : Generate sparse array from SciPy sparse matrix
+    >>> np.exp(s)
+    Traceback (most recent call last):
+        ...
+    ValueError: Performing this operation would produce a dense result: <ufunc 'exp'>
     """
     __array_priority__ = 12
 
     def __init__(self, coords, data=None, shape=None, has_duplicates=True,
                  sorted=False, cache=False):
+        """
+        Make a sparse array by passing in an array of coordinates and an array of
+        values.
+
+        Parameters
+        ----------
+        coords : numpy.ndarray (ndim, nnz)
+            An array holding the index locations of every value
+            Should have shape (number of dimensions, number of non-zeros)
+        data : numpy.ndarray (nnz,)
+            An array of Values
+        shape : tuple[int] (ndim,), optional
+            The shape of the array
+        has_duplicates : bool, optional
+            A value indicating whether the supplied value for :code:`coords` has
+            duplicates. Note that setting this to `False` when :code:`coords` does have
+            duplicates may result in undefined behaviour. See :obj:`COO.sum_duplicates`
+        sorted : bool, optional
+            A value indicating whether the values in `coords` are sorted. Note
+            that setting this to `False` when :code:`coords` isn't sorted may
+            result in undefined behaviour. See :obj:`COO.sort_indices`.
+        cache : bool, optional
+            Whether to enable cacheing for various operations. See
+            :obj:`COO.enable_caching`
+
+        Examples
+        --------
+        >>> x = np.eye(4)
+        >>> x[2, 3] = 5
+        >>> s = COO(x)
+        >>> coords = [[0, 0, 0, 1, 1],
+        ...           [0, 1, 2, 0, 3],
+        ...           [0, 3, 2, 0, 1]]
+        >>> data = [1, 2, 3, 4, 5]
+        >>> s2 = COO(coords, data, shape=(3, 4, 5))
+        >>> s2
+        <COO: shape=(3, 4, 5), dtype=int64, nnz=5, sorted=False, duplicates=True>
+        >>> tensordot(s, s2, axes=(0, 1))
+        <COO: shape=(4, 3, 5), dtype=float64, nnz=6, sorted=False, duplicates=False>
+
+        Following scipy.sparse conventions you can also pass these as a tuple with
+        rows and columns
+
+        >>> rows = [0, 1, 2, 3, 4]
+        >>> cols = [0, 0, 0, 1, 1]
+        >>> data = [10, 20, 30, 40, 50]
+        >>> z = COO((data, (rows, cols)))
+        >>> z.todense()
+        array([[10,  0],
+               [20,  0],
+               [30,  0],
+               [ 0, 40],
+               [ 0, 50]])
+
+        You can also pass a dictionary or iterable of index/value pairs. Repeated
+        indices imply summation:
+
+        >>> d = {(0, 0, 0): 1, (1, 2, 3): 2, (1, 1, 0): 3}
+        >>> COO(d)
+        <COO: shape=(2, 3, 4), dtype=int64, nnz=3, sorted=False, duplicates=False>
+        >>> L = [((0, 0), 1),
+        ...      ((1, 1), 2),
+        ...      ((0, 0), 3)]
+        >>> COO(L).todense()
+        array([[4, 0],
+               [0, 2]])
+
+        See Also
+        --------
+        COO.from_numpy : Generate sparse array from NumPy array
+        COO.from_scipy_sparse : Generate sparse array from SciPy sparse matrix
+        """
         self._cache = None
         if cache:
             self.enable_caching()
@@ -2275,12 +2339,15 @@ class COO(object):
 
         You can also specify the minimum allowed sparsity or the maximum number
         of nonzero values. If both conditions are unmet, this method will throw
-        an error. For example, the following will raise a :obj:`NotImplementedError`:
+        an error.
 
         >>> x = np.zeros((5, 5), dtype=np.uint8)
         >>> x[2, 2] = 1
         >>> s = COO.from_numpy(x)
-        >>> s.maybe_densify(allowed_nnz=5, allowed_fraction=0.25) # doctest: +SKIP
+        >>> s.maybe_densify(allowed_nnz=5, allowed_fraction=0.25)
+        Traceback (most recent call last):
+            ...
+        NotImplementedError: Operation would require converting large sparse array to dense
         """
         elements = np.prod(self.shape)
 
@@ -2711,11 +2778,11 @@ def _grouped_reduce(x, groups, method, **kwargs):
 
 
 def random(
-    shape,
-    density=0.01,
-    canonical_order=False,
-    random_state=None,
-    data_rvs=None,
+        shape,
+        density=0.01,
+        canonical_order=False,
+        random_state=None,
+        data_rvs=None,
 ):
     """ Generate a random sparse multidimensional array
 
