@@ -68,7 +68,7 @@ class COO(object):
            [ 0.,  0.,  0.,  1.]])
 
     Binary operations support broadcasting.
-    
+
     >>> x3 = np.zeros((4, 1))
     >>> x3[2, 0] = 1
     >>> s3 = COO(x3)
