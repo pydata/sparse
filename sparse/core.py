@@ -511,6 +511,14 @@ class COO(object):
         """
         return self.shape[0]
 
+    @property
+    def size(self):
+        return np.prod(self.shape)
+
+    @property
+    def density(self):
+        return self.nnz / self.size
+
     def __sizeof__(self):
         return self.nbytes
 
