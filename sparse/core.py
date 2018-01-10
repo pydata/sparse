@@ -253,6 +253,9 @@ class COO(object):
     def nbytes(self):
         return self.data.nbytes + self.coords.nbytes
 
+    def __len__(self):
+        return self.shape[0]
+
     def __sizeof__(self):
         return self.nbytes
 
