@@ -38,3 +38,4 @@ can jump to the :doc:`API reference <api>`. You can also see the contents in the
    self
    getting_started
    api
+   contributing

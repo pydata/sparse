@@ -42,54 +42,54 @@ class COO(object):
     --------
     You can create :obj:`COO` objects from Numpy arrays.
 
-    >>> x = np.eye(4)
+    >>> x = np.eye(4, dtype=np.uint8)
     >>> x[2, 3] = 5
     >>> s = COO(x)
     >>> s
-    <COO: shape=(4, 4), dtype=float64, nnz=5, sorted=True, duplicates=False>
+    <COO: shape=(4, 4), dtype=uint8, nnz=5, sorted=True, duplicates=False>
     >>> s.data  # doctest: +NORMALIZE_WHITESPACE
-    array([ 1.,  1.,  1.,  5.,  1.])
+    array([1, 1, 1, 5, 1], dtype=uint8)
     >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
     array([[0, 1, 2, 2, 3],
            [0, 1, 2, 3, 3]], dtype=uint8)
 
     :obj:`COO` objects support basic arithmetic and binary operations.
 
-    >>> x2 = np.eye(4)
+    >>> x2 = np.eye(4, dtype=np.uint8)
     >>> x2[3, 2] = 5
     >>> s2 = COO(x2)
     >>> (s + s2).todense()  # doctest: +NORMALIZE_WHITESPACE
-    array([[ 2.,  0.,  0.,  0.],
-           [ 0.,  2.,  0.,  0.],
-           [ 0.,  0.,  2.,  5.],
-           [ 0.,  0.,  5.,  2.]])
+    array([[2, 0, 0, 0],
+           [0, 2, 0, 0],
+           [0, 0, 2, 5],
+           [0, 0, 5, 2]], dtype=uint8)
     >>> (s * s2).todense()  # doctest: +NORMALIZE_WHITESPACE
-    array([[ 1.,  0.,  0.,  0.],
-           [ 0.,  1.,  0.,  0.],
-           [ 0.,  0.,  1.,  0.],
-           [ 0.,  0.,  0.,  1.]])
+    array([[1, 0, 0, 0],
+           [0, 1, 0, 0],
+           [0, 0, 1, 0],
+           [0, 0, 0, 1]], dtype=uint8)
 
     Binary operations support broadcasting.
 
-    >>> x3 = np.zeros((4, 1))
+    >>> x3 = np.zeros((4, 1), dtype=np.uint8)
     >>> x3[2, 0] = 1
     >>> s3 = COO(x3)
     >>> (s * s3).todense()  # doctest: +NORMALIZE_WHITESPACE
-    array([[ 0.,  0.,  0.,  0.],
-           [ 0.,  0.,  0.,  0.],
-           [ 0.,  0.,  1.,  5.],
-           [ 0.,  0.,  0.,  0.]])
+    array([[0, 0, 0, 0],
+           [0, 0, 0, 0],
+           [0, 0, 1, 5],
+           [0, 0, 0, 0]], dtype=uint8)
 
     :obj:`COO` objects also support dot products and reductions.
 
     >>> s.dot(s.T).sum(axis=0).todense()   # doctest: +NORMALIZE_WHITESPACE
-    array([  1.,   1.,  31.,   6.])
+    array([ 1,  1, 31,  6], dtype=uint64)
 
     You can use Numpy :code:`ufunc` operations on :obj:`COO` arrays as well.
 
     >>> np.sum(s, axis=1).todense()  # doctest: +NORMALIZE_WHITESPACE
-    array([ 1.,  1.,  6.,  1.])
-    >>> np.round(np.sqrt(s), decimals=1).todense()   # doctest: +NORMALIZE_WHITESPACE
+    array([1, 1, 6, 1], dtype=uint64)
+    >>> np.round(np.sqrt(s, dtype=np.float64), decimals=1).todense()   # doctest: +SKIP
     array([[ 1. ,  0. ,  0. ,  0. ],
            [ 0. ,  1. ,  0. ,  0. ],
            [ 0. ,  0. ,  1. ,  2.2],
@@ -1109,6 +1109,7 @@ class COO(object):
 
         See Also
         --------
+        dot : Equivalent function for two arguments.
         :obj:`numpy.dot` : Numpy equivalent function.
         scipy.sparse.coo_matrix.dot : Scipy equivalent function.
 
@@ -2471,7 +2472,8 @@ def dot(a, b):
 
     See Also
     --------
-    numpy.dot : NumPy equivalent function
+    numpy.dot : NumPy equivalent function.
+    COO.dot : Equivalent function for COO objects.
     """
     if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
         raise NotImplementedError(

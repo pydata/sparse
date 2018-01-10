@@ -1,11 +1,11 @@
 .. currentmodule:: sparse
 
-Constructing :obj:`COO` objects
-===============================
+Constructing :obj:`COO` arrays
+==============================
 
 From coordinates and data
 -------------------------
-This is the preferred way of constructing :obj:`COO` objects. The
+This is the preferred way of constructing :obj:`COO` arrays. The
 constructor for :obj:`COO` (see :obj:`COO.__init__`) can create these
 objects from two main variables: :code:`coords` and :code:`data`.
 
@@ -46,10 +46,10 @@ explicitly. For example, if we did the following without the
 
 From :obj:`scipy.sparse.spmatrix` objects
 -----------------------------------------
-To construct :obj:`COO` objects from :obj:`scipy.sparse.spmatrix`
+To construct :obj:`COO` array from :obj:`scipy.sparse.spmatrix`
 objects, you can use the :obj:`COO.from_scipy_sparse` method. As an
 example, if :code:`x` is a :obj:`scipy.sparse.spmatrix`, you can
-do the following to get an equivalent :obj:`COO` object:
+do the following to get an equivalent :obj:`COO` array:
 
 .. code-block:: python
 
@@ -57,10 +57,10 @@ do the following to get an equivalent :obj:`COO` object:
 
 From :obj:`numpy.ndarray` objects
 ---------------------------------
-To construct :obj:`COO` objects from :obj:`numpy.ndarray`
+To construct :obj:`COO` arrays from :obj:`numpy.ndarray`
 objects, you can use the :obj:`COO.from_numpy` method. As an
 example, if :code:`x` is a :obj:`numpy.ndarray`, you can
-do the following to get an equivalent :obj:`COO` object:
+do the following to get an equivalent :obj:`COO` array:
 
 .. code-block:: python
 
@@ -69,7 +69,7 @@ do the following to get an equivalent :obj:`COO` object:
 Generating random :obj:`COO` objects
 ------------------------------------
 The :obj:`sparse.random` method can be used to create random
-:obj:`COO` objects. For example, the following will generate
+:obj:`COO` arrays. For example, the following will generate
 a :math:`10 \times 10` matrix with :math:`10` nonzero entries,
 each in the interval :math:`[0, 1)`.
 

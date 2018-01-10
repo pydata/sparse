@@ -22,7 +22,7 @@ setup(name='sparse',
               'pytest-cov',
               'pytest-flake8',
           ],
-          'docs' : [
+          'docs': [
               'sphinx',
               'sphinxcontrib-napoleon',
               'sphinx_rtd_theme',
