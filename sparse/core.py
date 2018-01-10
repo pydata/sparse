@@ -488,13 +488,30 @@ class COO(object):
         """
         return self.data.nbytes + self.coords.nbytes
 
-    @property
-    def __array_interface__(self):
-        return {
-            'shape': self.shape,
-            'data': self.todense(),
-            'typestr': self.dtype.str,
-        }
+    def __array__(self, dtype=None):
+        """
+        Helper function to speed up :code:`np.array(x)` conversion
+
+        Parameters
+        ----------
+        dtype: type
+            Datatype of dense array. The sparse array is cast before densification.
+
+        Returns
+        -------
+        array_like
+            The dense array.
+
+        See Also
+        --------
+        numpy.ndarray.__array__ : Numpy equivalent function.
+
+        """
+        if dtype is not None:
+            tmp = self.astype(dtype)
+        else:
+            tmp = self
+        return tmp.todense()
 
     def __len__(self):
         """
