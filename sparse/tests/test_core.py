@@ -1082,4 +1082,4 @@ def test_density():
 
 def test_size():
     s = sparse.random((20, 30, 40))
-    assert s.density == 20 * 30 * 40
+    assert s.size == 20 * 30 * 40
