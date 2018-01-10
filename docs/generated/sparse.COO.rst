@@ -5,106 +5,80 @@ COO
 
 .. autoclass:: COO
 
-   
-   
    .. rubric:: Attributes
    .. autosummary::
       :toctree:
-   
-      COO.T
-   
-      COO.dtype
-   
-      COO.nbytes
-   
-      COO.ndim
-   
-      COO.nnz
-   
-   
-   
 
-   
-   
-   .. rubric:: Methods
+      COO.T
+      COO.dtype
+      COO.nbytes
+      COO.ndim
+      COO.nnz
+
+   .. rubric:: :doc:`Constructing COO objects <../getting_started/constructing>`
    .. autosummary::
       :toctree:
-   
+
       COO.__init__
-   
-      COO.abs
-   
-      COO.astype
-   
-      COO.broadcast_to
-   
-      COO.ceil
-   
-      COO.conj
-   
-      COO.conjugate
-   
-      COO.dot
-   
-      COO.elemwise
-   
-      COO.enable_caching
-   
-      COO.exp
-   
-      COO.expm1
-   
-      COO.floor
-   
       COO.from_numpy
-   
       COO.from_scipy_sparse
-   
-      COO.linear_loc
-   
+
+   .. rubric:: :doc:`Element-wise operations <../getting_started/operations/elemwise>`
+   .. autosummary::
+      :toctree:
+
+      COO.elemwise
+      COO.abs
+      COO.astype
+      COO.ceil
+      COO.conj
+      COO.conjugate
+      COO.exp
+      COO.expm1
+      COO.floor
       COO.log1p
-   
-      COO.max
-   
-      COO.maybe_densify
-   
-      COO.min
-   
-      COO.prod
-   
-      COO.reduce
-   
-      COO.reshape
-   
       COO.rint
-   
       COO.round
-   
       COO.sin
-   
       COO.sinh
-   
-      COO.sort_indices
-   
       COO.sqrt
-   
-      COO.sum
-   
-      COO.sum_duplicates
-   
       COO.tan
-   
       COO.tanh
-   
-      COO.to_scipy_sparse
-   
-      COO.tocsc
-   
-      COO.tocsr
-   
+
+   .. rubric:: :doc:`Reductions <../getting_started/operations/reductions>`
+   .. autosummary::
+      :toctree:
+
+      COO.reduce
+      COO.sum
+      COO.max
+      COO.min
+      COO.prod
+
+   .. rubric:: :doc:`Converting to other formats <../getting_started/converting>`
+   .. autosummary::
+      :toctree:
+
       COO.todense
-   
+      COO.maybe_densify
+      COO.to_scipy_sparse
+      COO.tocsc
+      COO.tocsr
+
+   .. rubric:: :doc:`Other operations <../getting_started/operations/other>`
+   .. autosummary::
+      :toctree:
+
+      COO.dot
+      COO.reshape
       COO.transpose
-   
-   
-   
+
+   .. rubric:: Utility functions
+   .. autosummary::
+      :toctree:
+
+      COO.broadcast_to
+      COO.enable_caching
+      COO.linear_loc
+      COO.sort_indices
+      COO.sum_duplicates
