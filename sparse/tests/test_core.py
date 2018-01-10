@@ -1077,7 +1077,7 @@ def test_len():
 
 def test_density():
     s = sparse.random((20, 30, 40), density=0.1)
-    assert 0.09 < s.density < 0.11
+    assert np.isclose(s.density, 0.1)
 
 
 def test_size():
