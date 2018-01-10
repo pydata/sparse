@@ -11,4 +11,5 @@ common operations <operations/other>`_
    operations/basic
    operations/elemwise
    operations/reductions
+   operations/indexing
    operations/other
