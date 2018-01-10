@@ -1,5 +1,6 @@
 import pytest
 
+from packaging import version
 import operator
 import numpy as np
 import scipy.sparse
@@ -459,7 +460,13 @@ def test_custom_dtype_slicing():
     5,
     -5,
     'foo',
-    ([True, False, False]),
+    pytest.param(
+        [True, False, False],
+        marks=pytest.mark.skipif(
+            version.parse(np.version.version) < version.parse("1.13.0"),
+            reason="NumPy < 1.13.0 does not raise these Exceptions"
+        )
+    ),
 ])
 def test_slicing_errors(index):
     s = sparse.random((2, 3, 4), density=0.5)
