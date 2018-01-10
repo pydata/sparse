@@ -488,6 +488,14 @@ class COO(object):
         """
         return self.data.nbytes + self.coords.nbytes
 
+    @property
+    def __array_interface__(self):
+        return {
+            'shape': self.shape,
+            'data': self.todense(),
+            'typestr': self.dtype.str,
+        }
+
     def __len__(self):
         """
         Get "length" of array, which is by definition the size of the first
