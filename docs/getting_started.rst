@@ -12,3 +12,4 @@ this object.
    :maxdepth: 3
 
    getting_started/constructing
+   getting_started/operations

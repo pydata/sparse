@@ -40,16 +40,16 @@ class COO(object):
 
     Examples
     --------
-    It's possible to create :obj:`COO` objects from Numpy arrays.
+    You can create :obj:`COO` objects from Numpy arrays.
 
     >>> x = np.eye(4)
     >>> x[2, 3] = 5
     >>> s = COO(x)
     >>> s
     <COO: shape=(4, 4), dtype=float64, nnz=5, sorted=True, duplicates=False>
-    >>> s.data
+    >>> s.data  # doctest: +NORMALIZE_WHITESPACE
     array([ 1.,  1.,  1.,  5.,  1.])
-    >>> s.coords
+    >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
     array([[0, 1, 2, 2, 3],
            [0, 1, 2, 3, 3]], dtype=uint8)
 
@@ -58,12 +58,12 @@ class COO(object):
     >>> x2 = np.eye(4)
     >>> x2[3, 2] = 5
     >>> s2 = COO(x2)
-    >>> (s + s2).todense()
+    >>> (s + s2).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[ 2.,  0.,  0.,  0.],
            [ 0.,  2.,  0.,  0.],
            [ 0.,  0.,  2.,  5.],
            [ 0.,  0.,  5.,  2.]])
-    >>> (s * s2).todense()
+    >>> (s * s2).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[ 1.,  0.,  0.,  0.],
            [ 0.,  1.,  0.,  0.],
            [ 0.,  0.,  1.,  0.],
@@ -74,7 +74,7 @@ class COO(object):
     >>> x3 = np.zeros((4, 1))
     >>> x3[2, 0] = 1
     >>> s3 = COO(x3)
-    >>> (s * s3).todense()
+    >>> (s * s3).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[ 0.,  0.,  0.,  0.],
            [ 0.,  0.,  0.,  0.],
            [ 0.,  0.,  1.,  5.],
@@ -82,14 +82,14 @@ class COO(object):
 
     :obj:`COO` objects also support dot products and reductions.
 
-    >>> s.dot(s.T).sum(axis=0).todense()
+    >>> s.dot(s.T).sum(axis=0).todense()   # doctest: +NORMALIZE_WHITESPACE
     array([  1.,   1.,  31.,   6.])
 
     You can use Numpy :code:`ufunc` operations on :obj:`COO` arrays as well.
 
-    >>> np.sum(s, axis=1).todense()
+    >>> np.sum(s, axis=1).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([ 1.,  1.,  6.,  1.])
-    >>> np.round(np.sqrt(s), decimals=1).todense()
+    >>> np.round(np.sqrt(s), decimals=1).todense()   # doctest: +NORMALIZE_WHITESPACE
     array([[ 1. ,  0. ,  0. ,  0. ],
            [ 0. ,  1. ,  0. ,  0. ],
            [ 0. ,  0. ,  1. ,  2.2],
@@ -154,7 +154,7 @@ class COO(object):
         >>> cols = [0, 0, 0, 1, 1]
         >>> data = [10, 20, 30, 40, 50]
         >>> z = COO((data, (rows, cols)))
-        >>> z.todense()
+        >>> z.todense()  # doctest: +NORMALIZE_WHITESPACE
         array([[10,  0],
                [20,  0],
                [30,  0],
@@ -170,7 +170,7 @@ class COO(object):
         >>> L = [((0, 0), 1),
         ...      ((1, 1), 2),
         ...      ((0, 0), 3)]
-        >>> COO(L).todense()
+        >>> COO(L).todense()  # doctest: +NORMALIZE_WHITESPACE
         array([[4, 0],
                [0, 2]])
 
@@ -638,7 +638,7 @@ class COO(object):
         >>> x = np.ones((5, 5), dtype=np.int)
         >>> s = COO.from_numpy(x)
         >>> s2 = s.reduce(np.add, axis=1)
-        >>> s2.todense()
+        >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
         array([5, 5, 5, 5, 5])
 
         You can also use the :code:`keepdims` argument to keep the dimensions after the
@@ -740,7 +740,7 @@ class COO(object):
         >>> x = np.ones((5, 5), dtype=np.int)
         >>> s = COO.from_numpy(x)
         >>> s2 = s.sum(axis=1)
-        >>> s2.todense()
+        >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
         array([5, 5, 5, 5, 5])
 
         You can also use the :code:`keepdims` argument to keep the dimensions after the
@@ -799,7 +799,7 @@ class COO(object):
         You can use :obj:`COO.max` to maximize an array across any dimension.
 
         >>> x = np.add.outer(np.arange(5), np.arange(5))
-        >>> x
+        >>> x  # doctest: +NORMALIZE_WHITESPACE
         array([[0, 1, 2, 3, 4],
                [1, 2, 3, 4, 5],
                [2, 3, 4, 5, 6],
@@ -807,7 +807,7 @@ class COO(object):
                [4, 5, 6, 7, 8]])
         >>> s = COO.from_numpy(x)
         >>> s2 = s.max(axis=1)
-        >>> s2.todense()
+        >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
         array([4, 5, 6, 7, 8])
 
         You can also use the :code:`keepdims` argument to keep the dimensions after the
@@ -860,7 +860,7 @@ class COO(object):
         You can use :obj:`COO.min` to minimize an array across any dimension.
 
         >>> x = np.add.outer(np.arange(5), np.arange(5))
-        >>> x
+        >>> x  # doctest: +NORMALIZE_WHITESPACE
         array([[0, 1, 2, 3, 4],
                [1, 2, 3, 4, 5],
                [2, 3, 4, 5, 6],
@@ -868,7 +868,7 @@ class COO(object):
                [4, 5, 6, 7, 8]])
         >>> s = COO.from_numpy(x)
         >>> s2 = s.min(axis=1)
-        >>> s2.todense()
+        >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
         array([0, 1, 2, 3, 4])
 
         You can also use the :code:`keepdims` argument to keep the dimensions after the
@@ -920,7 +920,7 @@ class COO(object):
         You can use :obj:`COO.prod` to multiply an array across any dimension.
 
         >>> x = np.add.outer(np.arange(5), np.arange(5))
-        >>> x
+        >>> x  # doctest: +NORMALIZE_WHITESPACE
         array([[0, 1, 2, 3, 4],
                [1, 2, 3, 4, 5],
                [2, 3, 4, 5, 6],
@@ -928,7 +928,7 @@ class COO(object):
                [4, 5, 6, 7, 8]])
         >>> s = COO.from_numpy(x)
         >>> s2 = s.prod(axis=1)
-        >>> s2.todense()
+        >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
         array([   0,  120,  720, 2520, 6720])
 
         You can also use the :code:`keepdims` argument to keep the dimensions after the
@@ -978,14 +978,14 @@ class COO(object):
         function.
 
         >>> x = np.add.outer(np.arange(5), np.arange(5)[::-1])
-        >>> x
+        >>> x  # doctest: +NORMALIZE_WHITESPACE
         array([[4, 3, 2, 1, 0],
                [5, 4, 3, 2, 1],
                [6, 5, 4, 3, 2],
                [7, 6, 5, 4, 3],
                [8, 7, 6, 5, 4]])
         >>> s = COO.from_numpy(x)
-        >>> s.transpose((1, 0)).todense()
+        >>> s.transpose((1, 0)).todense()  # doctest: +NORMALIZE_WHITESPACE
         array([[4, 5, 6, 7, 8],
                [3, 4, 5, 6, 7],
                [2, 3, 4, 5, 6],
@@ -1068,14 +1068,14 @@ class COO(object):
         function.
 
         >>> x = np.add.outer(np.arange(5), np.arange(5)[::-1])
-        >>> x
+        >>> x  # doctest: +NORMALIZE_WHITESPACE
         array([[4, 3, 2, 1, 0],
                [5, 4, 3, 2, 1],
                [6, 5, 4, 3, 2],
                [7, 6, 5, 4, 3],
                [8, 7, 6, 5, 4]])
         >>> s = COO.from_numpy(x)
-        >>> s.T.todense()
+        >>> s.T.todense()  # doctest: +NORMALIZE_WHITESPACE
         array([[4, 5, 6, 7, 8],
                [3, 4, 5, 6, 7],
                [2, 3, 4, 5, 6],
@@ -1166,7 +1166,7 @@ class COO(object):
         --------
         >>> x = np.eye(5)
         >>> s = COO.from_numpy(x)
-        >>> s.linear_loc()
+        >>> s.linear_loc()  # doctest: +NORMALIZE_WHITESPACE
         array([ 0,  6, 12, 18, 24], dtype=uint8)
         >>> np.array_equal(np.flatnonzero(x), s.linear_loc())
         True
@@ -1211,7 +1211,7 @@ class COO(object):
         --------
         >>> s = COO.from_numpy(np.arange(25))
         >>> s2 = s.reshape((5, 5))
-        >>> s2.todense()
+        >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
         array([[ 0,  1,  2,  3,  4],
                [ 5,  6,  7,  8,  9],
                [10, 11, 12, 13, 14],
@@ -1382,9 +1382,9 @@ class COO(object):
         >>> data = np.array([4, 1, 3], dtype=np.uint8)
         >>> s = COO(coords, data)
         >>> s.sort_indices()
-        >>> s.coords
+        >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
         array([[0, 1, 2]], dtype=uint8)
-        >>> s.data
+        >>> s.data  # doctest: +NORMALIZE_WHITESPACE
         array([3, 4, 1], dtype=uint8)
         """
         if self.sorted:
@@ -1415,9 +1415,9 @@ class COO(object):
         >>> data = np.array([6, 5, 2, 2], dtype=np.uint8)
         >>> s = COO(coords, data)
         >>> s.sum_duplicates()
-        >>> s.coords
+        >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
         array([[0, 1, 2]], dtype=uint8)
-        >>> s.data
+        >>> s.data  # doctest: +NORMALIZE_WHITESPACE
         array([6, 7, 2], dtype=uint8)
         """
         # Inspired by scipy/sparse/coo.py::sum_duplicates
@@ -2827,7 +2827,7 @@ def random(
     >>> from scipy import stats
     >>> rvs = lambda x: stats.poisson(25, loc=10).rvs(x, random_state=np.random.RandomState(1))
     >>> s = random((2, 3, 4), density=0.25, random_state=np.random.RandomState(1), data_rvs=rvs)
-    >>> s.todense()
+    >>> s.todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[[ 0,  0,  0,  0],
             [ 0, 34,  0,  0],
             [33, 34,  0, 29]],
