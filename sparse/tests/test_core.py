@@ -1073,3 +1073,13 @@ def test_scalar_shape_construction():
 def test_len():
     s = sparse.random((20, 30, 40))
     assert len(s) == 20
+
+
+def test_density():
+    s = sparse.random((20, 30, 40), density=0.1)
+    assert 0.09 < s.density < 0.11
+
+
+def test_size():
+    s = sparse.random((20, 30, 40))
+    assert s.density == 20 * 30 * 40

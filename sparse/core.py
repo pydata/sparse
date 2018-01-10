@@ -513,10 +513,50 @@ class COO(object):
 
     @property
     def size(self):
+        """
+        The number of all elements (including zeros) in this array.
+
+        Returns
+        -------
+        int
+            The number of elements.
+
+        See Also
+        --------
+        numpy.ndarray.size : Numpy equivalent property.
+
+        Examples
+        --------
+        >>> x = np.zeros(10, 10)
+        >>> s = COO.from_numpy(x)
+        >>> s.size
+        100
+        """
         return np.prod(self.shape)
 
     @property
     def density(self):
+        """
+        The ratio of nonzero to all elements in this array.
+
+        Returns
+        -------
+        float
+            The ratio of nonzero to all elements.
+
+        See Also
+        --------
+        COO.size : Number of elements.
+        COO.nnz : Number of nonzero elements.
+
+        Examples
+        --------
+        >>> x = np.zeros(10, 10)
+        >>> x[0, :] = 1
+        >>> s = COO.from_numpy(x)
+        >>> s.density
+        0.10000000000000001
+        """
         return self.nnz / self.size
 
     def __sizeof__(self):
