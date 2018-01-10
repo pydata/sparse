@@ -269,7 +269,7 @@ class COO(object):
 
         Examples
         --------
-        >>> x = np.zeros(10, 10)
+        >>> x = np.zeros((10, 10))
         >>> s = COO.from_numpy(x)
         >>> len(s)
         10
