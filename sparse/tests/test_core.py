@@ -875,3 +875,8 @@ def test_scalar_shape_construction():
     s = COO(coords, x, shape=5)
 
     assert_eq(x, s)
+
+
+def test_len():
+    s = sparse.random((20, 30, 40))
+    assert len(s) == 20
