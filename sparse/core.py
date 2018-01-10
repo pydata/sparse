@@ -237,7 +237,7 @@ class COO(object):
         if self.coords.ndim == 1:
             self.coords = self.coords[None, :]
 
-        if shape and not np.prod(self.coords.shape):
+        if shape and not self.coords.size:
             self.coords = np.zeros((len(shape), 0), dtype=np.uint64)
 
         if shape is None:
@@ -748,7 +748,7 @@ class COO(object):
 
         if set(axis) == set(range(self.ndim)):
             result = method.reduce(self.data, **kwargs)
-            if self.nnz != np.prod(self.shape):
+            if self.nnz != self.size:
                 result = method(result, _zero_of_dtype(self.dtype)[()], **kwargs)
         else:
             axis = tuple(axis)
@@ -1277,7 +1277,7 @@ class COO(object):
         if self.shape == shape:
             return self
         if any(d == -1 for d in shape):
-            extra = int(np.prod(self.shape) /
+            extra = int(self.size /
                         np.prod([d for d in shape if d != -1]))
             shape = tuple([d if d != -1 else extra for d in shape])
 
@@ -1289,7 +1289,7 @@ class COO(object):
                 if sh == shape:
                     return value
 
-        # TODO: this np.prod(self.shape) enforces a 2**64 limit to array size
+        # TODO: this self.size enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
 
         max_shape = max(shape) if len(shape) != 0 else 1
@@ -1480,7 +1480,7 @@ class COO(object):
         # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
         if not self.has_duplicates:
             return
-        if not np.prod(self.coords.shape):
+        if not self.coords.size:
             return
 
         self.sort_indices()
@@ -2029,9 +2029,7 @@ class COO(object):
             ...
         NotImplementedError: Operation would require converting large sparse array to dense
         """
-        elements = np.prod(self.shape)
-
-        if elements <= allowed_nnz or self.nnz >= elements * allowed_fraction:
+        if self.size <= allowed_nnz or self.density >= allowed_fraction:
             return self.todense()
         else:
             raise NotImplementedError("Operation would require converting "
