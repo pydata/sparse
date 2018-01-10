@@ -35,6 +35,8 @@ class COO(object):
         An array holding the coordinates of every nonzero element.
     data : numpy.ndarray (nnz,)
         An array holding the values corresponding to :obj:`COO.coords`.
+    shape : tuple[int] (ndim,)
+        The dimensions of this array.
 
     Examples
     --------
