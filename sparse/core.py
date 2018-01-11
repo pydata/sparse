@@ -163,7 +163,7 @@ class COO(object):
                 shape = ()
 
         if isinstance(shape, numbers.Integral):
-            shape = (shape,)
+            shape = (int(shape),)
 
         self.shape = tuple(shape)
         if self.shape:
@@ -525,23 +525,7 @@ class COO(object):
         This is used internally to check for duplicates, re-order, reshape,
         etc..
         """
-        return self._linear_loc(self.coords, self.shape, signed)
-
-    @staticmethod
-    def _linear_loc(coords, shape, signed=False):
-        n = reduce(operator.mul, shape, 1)
-        if signed:
-            n = -n
-        dtype = np.min_scalar_type(n)
-        out = np.zeros(coords.shape[1], dtype=dtype)
-        tmp = np.zeros(coords.shape[1], dtype=dtype)
-        strides = 1
-        for i, d in enumerate(shape[::-1]):
-            # out += self.coords[-(i + 1), :].astype(dtype) * strides
-            np.multiply(coords[-(i + 1), :], strides, out=tmp, dtype=dtype)
-            np.add(tmp, out, out=out)
-            strides *= d
-        return out
+        return _linear_loc(self.coords, self.shape, signed)
 
     def reshape(self, shape):
         if self.shape == shape:
@@ -685,7 +669,8 @@ class COO(object):
     def __add__(self, other):
         return self.elemwise(operator.add, other)
 
-    __radd__ = __add__
+    def __radd__(self, other):
+        return self.elemwise(_reverse_self_other(operator.add), other)
 
     def __neg__(self):
         return self.elemwise(operator.neg)
@@ -694,32 +679,61 @@ class COO(object):
         return self.elemwise(operator.sub, other)
 
     def __rsub__(self, other):
-        return -(self - other)
+        return self.elemwise(_reverse_self_other(operator.sub), other)
 
     def __mul__(self, other):
         return self.elemwise(operator.mul, other)
 
-    __rmul__ = __mul__
+    def __rmul__(self, other):
+        return self.elemwise(_reverse_self_other(operator.mul), other)
 
     def __truediv__(self, other):
         return self.elemwise(operator.truediv, other)
 
+    def __rtruediv__(self, other):
+        return self.elemwise(_reverse_self_other(operator.truediv), other)
+
     def __floordiv__(self, other):
         return self.elemwise(operator.floordiv, other)
 
+    def __rfloordiv__(self, other):
+        return self.elemwise(_reverse_self_other(operator.floordiv), other)
+
     __div__ = __truediv__
+    __rdiv__ = __rtruediv__
 
     def __pow__(self, other):
         return self.elemwise(operator.pow, other)
 
+    def __rpow__(self, other):
+        return self.elemwise(_reverse_self_other(operator.pow), other)
+
+    def __mod__(self, other):
+        return self.elemwise(operator.mod, other)
+
+    def __rmod__(self, other):
+        return self.elemwise(_reverse_self_other(operator.mod), other)
+
     def __and__(self, other):
         return self.elemwise(operator.and_, other)
+
+    def __rand__(self, other):
+        return self.elemwise(_reverse_self_other(operator.and_), other)
 
     def __xor__(self, other):
         return self.elemwise(operator.xor, other)
 
+    def __rxor__(self, other):
+        return self.elemwise(_reverse_self_other(operator.xor), other)
+
     def __or__(self, other):
         return self.elemwise(operator.or_, other)
+
+    def __ror__(self, other):
+        return self.elemwise(_reverse_self_other(operator.or_), other)
+
+    def __invert__(self):
+        return self.elemwise(operator.invert)
 
     def __gt__(self, other):
         return self.elemwise(operator.gt, other)
@@ -742,12 +756,20 @@ class COO(object):
     def __lshift__(self, other):
         return self.elemwise(operator.lshift, other)
 
+    def __rlshift__(self, other):
+        return self.elemwise(_reverse_self_other(operator.lshift), other)
+
     def __rshift__(self, other):
         return self.elemwise(operator.rshift, other)
 
+    def __rrshift__(self, other):
+        return self.elemwise(_reverse_self_other(operator.rshift), other)
+
     @staticmethod
     def _elemwise(func, *args, **kwargs):
-        assert len(args) >= 1
+        if len(args) == 0:
+            return func()
+
         self = args[0]
         if isinstance(self, scipy.sparse.spmatrix):
             self = COO.from_numpy(self)
@@ -757,19 +779,19 @@ class COO(object):
             other = args[1]
             if isinstance(other, scipy.sparse.spmatrix):
                 other = COO.from_numpy(other)
-            return other._elemwise_unary(func, *args[2:], **kwargs)
+            return _elemwise_unary(func, other, *args[2:], **kwargs)
 
         if len(args) == 1:
-            return self._elemwise_unary(func, *args[1:], **kwargs)
+            return _elemwise_unary(func, self, *args[1:], **kwargs)
         else:
             other = args[1]
-            if isinstance(other, COO):
-                return self._elemwise_binary(func, *args[1:], **kwargs)
-            elif isinstance(other, scipy.sparse.spmatrix):
+            if isinstance(other, scipy.sparse.spmatrix):
                 other = COO.from_scipy_sparse(other)
-                return self._elemwise_binary(func, other, *args[2:], **kwargs)
+
+            if isinstance(other, COO) or isinstance(other, np.ndarray):
+                return _elemwise_binary(func, self, other, *args[2:], **kwargs)
             else:
-                return self._elemwise_unary(func, *args[1:], **kwargs)
+                return _elemwise_unary(func, self, *args[1:], **kwargs)
 
     def elemwise(self, func, *args, **kwargs):
         """
@@ -793,347 +815,6 @@ class COO(object):
         """
         return COO._elemwise(func, self, *args, **kwargs)
 
-    def _elemwise_unary(self, func, *args, **kwargs):
-        check = kwargs.pop('check', True)
-        data_zero = _zero_of_dtype(self.dtype)
-        func_zero = _zero_of_dtype(func(data_zero, *args, **kwargs).dtype)
-        if check and func(data_zero, *args, **kwargs) != func_zero:
-            raise ValueError("Performing this operation would produce "
-                             "a dense result: %s" % str(func))
-
-        data_func = func(self.data, *args, **kwargs)
-        nonzero = data_func != func_zero
-
-        return COO(self.coords[:, nonzero], data_func[nonzero],
-                   shape=self.shape,
-                   has_duplicates=self.has_duplicates,
-                   sorted=self.sorted)
-
-    def _elemwise_binary(self, func, other, *args, **kwargs):
-        assert isinstance(other, COO)
-        check = kwargs.pop('check', True)
-        self_zero = _zero_of_dtype(self.dtype)
-        other_zero = _zero_of_dtype(other.dtype)
-        func_zero = _zero_of_dtype(func(self_zero, other_zero, *args, **kwargs).dtype)
-        if check and func(self_zero, other_zero, *args, **kwargs) != func_zero:
-            raise ValueError("Performing this operation would produce "
-                             "a dense result: %s" % str(func))
-        self_shape, other_shape = self.shape, other.shape
-
-        result_shape = self._get_broadcast_shape(self_shape, other_shape)
-        self_params = self._get_broadcast_parameters(self.shape, result_shape)
-        other_params = self._get_broadcast_parameters(other.shape, result_shape)
-        combined_params = [p1 and p2 for p1, p2 in zip(self_params, other_params)]
-        self_reduce_params = combined_params[-self.ndim:]
-        other_reduce_params = combined_params[-other.ndim:]
-
-        self.sum_duplicates()  # TODO: document side-effect or make copy
-        other.sum_duplicates()  # TODO: document side-effect or make copy
-
-        self_coords = self.coords
-        self_data = self.data
-
-        self_reduced_coords, self_reduced_shape = \
-            self._get_reduced_coords(self_coords, self_shape,
-                                     self_reduce_params)
-        self_reduced_linear = self._linear_loc(self_reduced_coords, self_reduced_shape)
-        i = np.argsort(self_reduced_linear)
-        self_reduced_linear = self_reduced_linear[i]
-        self_coords = self_coords[:, i]
-        self_data = self_data[i]
-
-        # Store coords
-        other_coords = other.coords
-        other_data = other.data
-
-        other_reduced_coords, other_reduced_shape = \
-            self._get_reduced_coords(other_coords, other_shape,
-                                     other_reduce_params)
-        other_reduced_linear = self._linear_loc(other_reduced_coords, other_reduced_shape)
-        i = np.argsort(other_reduced_linear)
-        other_reduced_linear = other_reduced_linear[i]
-        other_coords = other_coords[:, i]
-        other_data = other_data[i]
-
-        # Find matches between self.coords and other.coords
-        matched_self, matched_other = _match_arrays(self_reduced_linear,
-                                                    other_reduced_linear)
-
-        # Start with an empty list. This may reduce computation in many cases.
-        data_list = []
-        coords_list = []
-
-        # Add the matched part.
-        matched_coords = self._get_matching_coords(self_coords[:, matched_self],
-                                                   other_coords[:, matched_other],
-                                                   self_shape, other_shape)
-
-        data_list.append(func(self_data[matched_self],
-                              other_data[matched_other],
-                              *args, **kwargs))
-        coords_list.append(matched_coords)
-
-        self_func = func(self_data, other_zero, *args, **kwargs)
-        # Add unmatched parts as necessary.
-        if (self_func != func_zero).any():
-            self_unmatched_coords, self_unmatched_func = \
-                self._get_unmatched_coords_data(self_coords, self_func, self_shape,
-                                                result_shape, matched_self,
-                                                matched_coords)
-
-            data_list.extend(self_unmatched_func)
-            coords_list.extend(self_unmatched_coords)
-
-        other_func = func(self_zero, other_data, *args, **kwargs)
-
-        if (other_func != func_zero).any():
-            other_unmatched_coords, other_unmatched_func = \
-                self._get_unmatched_coords_data(other_coords, other_func, other_shape,
-                                                result_shape, matched_other,
-                                                matched_coords)
-
-            coords_list.extend(other_unmatched_coords)
-            data_list.extend(other_unmatched_func)
-
-        # Concatenate matches and mismatches
-        data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=self.dtype)
-        coords = np.concatenate(coords_list, axis=1) if len(coords_list) else \
-            np.empty((0, len(result_shape)), dtype=self.coords.dtype)
-
-        nonzero = data != func_zero
-        data = data[nonzero]
-        coords = coords[:, nonzero]
-
-        return COO(coords, data, shape=result_shape, has_duplicates=False)
-
-    @staticmethod
-    def _get_unmatched_coords_data(coords, data, shape, result_shape, matched_idx,
-                                   matched_coords):
-        """
-        Get the unmatched coordinates and data - both those that are unmatched with
-        any point of the other data as well as those which are added because of
-        broadcasting.
-
-        Parameters
-        ----------
-        coords : np.ndarray
-            The coordinates to get the unmatched coordinates from.
-        data : np.ndarray
-            The data corresponding to these coordinates.
-        shape : tuple[int]
-            The shape corresponding to these coordinates.
-        result_shape : tuple[int]
-            The result broadcasting shape.
-        matched_idx : np.ndarray
-            The indices into the coords array where it matches with the other array.
-        matched_coords : np.ndarray
-            The overall coordinates that match from both arrays.
-
-        Returns
-        -------
-        coords_list : list[np.ndarray]
-            The list of unmatched/broadcasting coordinates.
-        data_list : list[np.ndarray]
-            The data corresponding to the coordinates.
-        """
-        params = COO._get_broadcast_parameters(shape, result_shape)
-        matched = np.zeros(len(data), dtype=np.bool)
-        matched[matched_idx] = True
-        unmatched = ~matched
-        data_zero = _zero_of_dtype(data.dtype)
-        nonzero = data != data_zero
-
-        unmatched &= nonzero
-        matched &= nonzero
-
-        coords_list = []
-        data_list = []
-
-        unmatched_coords, unmatched_data = \
-            COO._get_expanded_coords_data(coords[:, unmatched],
-                                          data[unmatched],
-                                          params,
-                                          result_shape)
-
-        coords_list.append(unmatched_coords)
-        data_list.append(unmatched_data)
-
-        if shape != result_shape:
-            broadcast_coords, broadcast_data = \
-                COO._get_broadcast_coords_data(coords[:, matched],
-                                               matched_coords,
-                                               data[matched],
-                                               params,
-                                               result_shape)
-
-            coords_list.append(broadcast_coords)
-            data_list.append(broadcast_data)
-
-        return coords_list, data_list
-
-    @staticmethod
-    def _get_broadcast_shape(shape1, shape2, is_result=False):
-        """
-        Get the overall broadcasted shape.
-
-        Parameters
-        ----------
-        shape1, shape2 : tuple[int]
-            The input shapes to broadcast together.
-        is_result : bool
-            Whether or not shape2 is also the result shape.
-
-        Returns
-        -------
-        result_shape : tuple[int]
-            The overall shape of the result.
-
-        Raises
-        ------
-        ValueError
-            If the two shapes cannot be broadcast together.
-        """
-        # https://stackoverflow.com/a/47244284/774273
-        if not all((l1 == l2) or (l1 == 1) or ((l2 == 1) and not is_result) for l1, l2 in
-                   zip(shape1[::-1], shape2[::-1])):
-            raise ValueError('operands could not be broadcast together with shapes %s, %s' %
-                             (shape1, shape2))
-
-        result_shape = tuple(max(l1, l2) for l1, l2 in
-                             zip_longest(shape1[::-1], shape2[::-1], fillvalue=1))[::-1]
-
-        return result_shape
-
-    @staticmethod
-    def _get_broadcast_parameters(shape, broadcast_shape):
-        """
-        Get the broadcast parameters.
-
-        Parameters
-        ----------
-        shape : tuple[int]
-            The input shape.
-        broadcast_shape
-            The shape to broadcast to.
-
-        Returns
-        -------
-        params : list
-            A list containing None if the dimension isn't in the original array, False if
-            it needs to be broadcast, and True if it doesn't.
-        """
-        params = [None if l1 is None else l1 == l2 for l1, l2
-                  in zip_longest(shape[::-1], broadcast_shape[::-1], fillvalue=None)][::-1]
-
-        return params
-
-    @staticmethod
-    def _get_reduced_coords(coords, shape, params):
-        """
-        Gets only those dimensions of the coordinates that don't need to be broadcast.
-
-        Parameters
-        ----------
-        coords : np.ndarray
-            The coordinates to reduce.
-        params : list
-            The params from which to check which dimensions to get.
-
-        Returns
-        -------
-        reduced_coords : np.ndarray
-            The reduced coordinates.
-        """
-        reduced_params = [bool(param) for param in params]
-        reduced_shape = tuple(l for l, p in zip(shape, params) if p)
-
-        return coords[reduced_params], reduced_shape
-
-    @staticmethod
-    def _get_expanded_coords_data(coords, data, params, broadcast_shape):
-        """
-        Expand coordinates/data to broadcast_shape. Does most of the heavy lifting for broadcast_to.
-        Produces sorted output for sorted inputs.
-
-        Parameters
-        ----------
-        coords : np.ndarray
-            The coordinates to expand.
-        data : np.ndarray
-            The data corresponding to the coordinates.
-        params : list
-            The broadcast parameters.
-        broadcast_shape : tuple[int]
-            The shape to broadcast to.
-
-        Returns
-        -------
-        expanded_coords : np.ndarray
-            List of 1-D arrays. Each item in the list has one dimension of coordinates.
-        expanded_data : np.ndarray
-            The data corresponding to expanded_coords.
-        """
-        first_dim = -1
-        expand_shapes = []
-        for d, p, l in zip(range(len(broadcast_shape)), params, broadcast_shape):
-            if p and first_dim == -1:
-                expand_shapes.append(coords.shape[1])
-                first_dim = d
-
-            if not p:
-                expand_shapes.append(l)
-
-        all_idx = COO._cartesian_product(*(np.arange(d, dtype=np.min_scalar_type(d - 1)) for d in expand_shapes))
-        dt = np.result_type(*(np.min_scalar_type(l - 1) for l in broadcast_shape))
-
-        false_dim = 0
-        dim = 0
-
-        expanded_coords = np.empty((len(broadcast_shape), all_idx.shape[1]), dtype=dt)
-        expanded_data = data[all_idx[first_dim]]
-
-        for d, p, l in zip(range(len(broadcast_shape)), params, broadcast_shape):
-            if p:
-                expanded_coords[d] = coords[dim, all_idx[first_dim]]
-            else:
-                expanded_coords[d] = all_idx[false_dim + (d > first_dim)]
-                false_dim += 1
-
-            if p is not None:
-                dim += 1
-
-        return np.asarray(expanded_coords), np.asarray(expanded_data)
-
-    # (c) senderle
-    # Taken from https://stackoverflow.com/a/11146645/774273
-    # License: https://creativecommons.org/licenses/by-sa/3.0/
-    @staticmethod
-    def _cartesian_product(*arrays):
-        """
-        Get the cartesian product of a number of arrays.
-
-        Parameters
-        ----------
-        arrays : Iterable[np.ndarray]
-            The arrays to get a cartesian product of. Always sorted with respect
-            to the original array.
-
-        Returns
-        -------
-        out : np.ndarray
-            The overall cartesian product of all the input arrays.
-        """
-        broadcastable = np.ix_(*arrays)
-        broadcasted = np.broadcast_arrays(*broadcastable)
-        rows, cols = np.prod(broadcasted[0].shape), len(broadcasted)
-        dtype = np.result_type(*arrays)
-        out = np.empty(rows * cols, dtype=dtype)
-        start, end = 0, rows
-        for a in broadcasted:
-            out[start:end] = a.reshape(-1)
-            start, end = end, end + rows
-        return out.reshape(cols, rows)
-
     def broadcast_to(self, shape):
         """
         Performs the equivalent of np.broadcast_to for COO.
@@ -1152,88 +833,12 @@ class COO(object):
         ValueError
             If the operand cannot be broadcast to the given shape.
         """
-        result_shape = self._get_broadcast_shape(self.shape, shape, is_result=True)
-        params = self._get_broadcast_parameters(self.shape, result_shape)
-        coords, data = self._get_expanded_coords_data(self.coords, self.data, params, result_shape)
+        result_shape = _get_broadcast_shape(self.shape, shape, is_result=True)
+        params = _get_broadcast_parameters(self.shape, result_shape)
+        coords, data = _get_expanded_coords_data(self.coords, self.data, params, result_shape)
 
         return COO(coords, data, shape=result_shape, has_duplicates=self.has_duplicates,
                    sorted=self.sorted)
-
-    @staticmethod
-    def _get_matching_coords(coords1, coords2, shape1, shape2):
-        """
-        Takes in the matching coordinates in both dimensions (only those dimensions that
-        don't need to be broadcast in both arrays and returns the coordinates that will
-        overlap in the output array, i.e., the coordinates for which both broadcast arrays
-        will be nonzero.
-
-        Parameters
-        ----------
-        coords1, coords2 : np.ndarray
-        shape1, shape2 : tuple[int]
-
-        Returns
-        -------
-        matching_coords : np.ndarray
-            The coordinates of the output array for which both inputs will be nonzero.
-        """
-        result_shape = COO._get_broadcast_shape(shape1, shape2)
-        params1 = COO._get_broadcast_parameters(shape1, result_shape)
-        params2 = COO._get_broadcast_parameters(shape2, result_shape)
-
-        matching_coords = []
-        dim1 = 0
-        dim2 = 0
-
-        for p1, p2 in zip(params1, params2):
-            if p1:
-                matching_coords.append(coords1[dim1])
-            else:
-                matching_coords.append(coords2[dim2])
-
-            if p1 is not None:
-                dim1 += 1
-
-            if p2 is not None:
-                dim2 += 1
-
-        return np.asarray(matching_coords)
-
-    @staticmethod
-    def _get_broadcast_coords_data(coords, matched_coords, data, params, broadcast_shape):
-        """
-        Get data that matched in the reduced coordinates but still had a partial overlap because of
-        the broadcast, i.e., it didn't match in one of the other dimensions.
-
-        Parameters
-        ----------
-        coords : np.ndarray
-            The list of coordinates of the required array. Must be sorted.
-        matched_coords : np.ndarray
-            The list of coordinates that match. Must be sorted.
-        data : np.ndarray
-            The data corresponding to coords.
-        params : list
-            The broadcast parameters.
-        broadcast_shape : tuple[int]
-            The shape to get the broadcast coordinates.
-
-        Returns
-        -------
-        broadcast_coords : np.ndarray
-            The broadcasted coordinates. Is sorted.
-        broadcasted_data : np.ndarray
-            The data corresponding to those coordinates.
-        """
-        full_coords, full_data = COO._get_expanded_coords_data(coords, data, params, broadcast_shape)
-        linear_full_coords = COO._linear_loc(full_coords, broadcast_shape)
-        linear_matched_coords = COO._linear_loc(matched_coords, broadcast_shape)
-
-        overlapping_coords, _ = _match_arrays(linear_full_coords, linear_matched_coords)
-        mask = np.ones(full_coords.shape[1], dtype=np.bool)
-        mask[overlapping_coords] = False
-
-        return full_coords[:, mask], full_data[mask]
 
     def __abs__(self):
         return self.elemwise(abs)
@@ -1615,11 +1220,11 @@ def _grouped_reduce(x, groups, method, **kwargs):
 
 
 def random(
-    shape,
-    density=0.01,
-    canonical_order=False,
-    random_state=None,
-    data_rvs=None,
+        shape,
+        density=0.01,
+        canonical_order=False,
+        random_state=None,
+        data_rvs=None,
 ):
     """ Generate a random sparse multidimensional array
 
@@ -1704,3 +1309,486 @@ def random(
         ar.sum_duplicates()
 
     return ar
+
+
+def _elemwise_binary(func, self, other, *args, **kwargs):
+    check = kwargs.pop('check', True)
+    self_zero = _zero_of_dtype(self.dtype)
+    other_zero = _zero_of_dtype(other.dtype)
+
+    func_zero = _zero_of_dtype(func(self_zero, other_zero, *args, **kwargs).dtype)
+    if check and func(self_zero, other_zero, *args, **kwargs) != func_zero:
+        raise ValueError("Performing this operation would produce "
+                         "a dense result: %s" % str(func))
+
+    if not isinstance(self, COO):
+        if not check or np.array_equiv(func(self, other_zero, *args, **kwargs), func_zero):
+            return _elemwise_binary_self_dense(func, self, other, *args, **kwargs)
+        else:
+            raise ValueError("Performing this operation would produce "
+                             "a dense result: %s" % str(func))
+
+    if not isinstance(other, COO):
+        if not check or np.array_equiv(func(self_zero, other, *args, **kwargs), func_zero):
+            temp_func = _reverse_self_other(func)
+            return _elemwise_binary_self_dense(temp_func, other, self, *args, **kwargs)
+        else:
+            raise ValueError("Performing this operation would produce "
+                             "a dense result: %s" % str(func))
+
+    self_shape, other_shape = self.shape, other.shape
+
+    result_shape = _get_broadcast_shape(self_shape, other_shape)
+    self_params = _get_broadcast_parameters(self.shape, result_shape)
+    other_params = _get_broadcast_parameters(other.shape, result_shape)
+    combined_params = [p1 and p2 for p1, p2 in zip(self_params, other_params)]
+    self_reduce_params = combined_params[-self.ndim:]
+    other_reduce_params = combined_params[-other.ndim:]
+
+    self.sum_duplicates()  # TODO: document side-effect or make copy
+    other.sum_duplicates()  # TODO: document side-effect or make copy
+
+    self_coords = self.coords
+    self_data = self.data
+
+    self_reduced_coords, self_reduced_shape = \
+        _get_reduced_coords(self_coords, self_shape,
+                            self_reduce_params)
+    self_reduced_linear = _linear_loc(self_reduced_coords, self_reduced_shape)
+    i = np.argsort(self_reduced_linear)
+    self_reduced_linear = self_reduced_linear[i]
+    self_coords = self_coords[:, i]
+    self_data = self_data[i]
+
+    # Store coords
+    other_coords = other.coords
+    other_data = other.data
+
+    other_reduced_coords, other_reduced_shape = \
+        _get_reduced_coords(other_coords, other_shape,
+                            other_reduce_params)
+    other_reduced_linear = _linear_loc(other_reduced_coords, other_reduced_shape)
+    i = np.argsort(other_reduced_linear)
+    other_reduced_linear = other_reduced_linear[i]
+    other_coords = other_coords[:, i]
+    other_data = other_data[i]
+
+    # Find matches between self.coords and other.coords
+    matched_self, matched_other = _match_arrays(self_reduced_linear,
+                                                other_reduced_linear)
+
+    # Start with an empty list. This may reduce computation in many cases.
+    data_list = []
+    coords_list = []
+
+    # Add the matched part.
+    matched_coords = _get_matching_coords(self_coords[:, matched_self],
+                                          other_coords[:, matched_other],
+                                          self_shape, other_shape)
+
+    data_list.append(func(self_data[matched_self],
+                          other_data[matched_other],
+                          *args, **kwargs))
+    coords_list.append(matched_coords)
+
+    self_func = func(self_data, other_zero, *args, **kwargs)
+    # Add unmatched parts as necessary.
+    if (self_func != func_zero).any():
+        self_unmatched_coords, self_unmatched_func = \
+            _get_unmatched_coords_data(self_coords, self_func, self_shape,
+                                       result_shape, matched_self,
+                                       matched_coords)
+
+        data_list.extend(self_unmatched_func)
+        coords_list.extend(self_unmatched_coords)
+
+    other_func = func(self_zero, other_data, *args, **kwargs)
+
+    if (other_func != func_zero).any():
+        other_unmatched_coords, other_unmatched_func = \
+            _get_unmatched_coords_data(other_coords, other_func, other_shape,
+                                       result_shape, matched_other,
+                                       matched_coords)
+
+        coords_list.extend(other_unmatched_coords)
+        data_list.extend(other_unmatched_func)
+
+    # Concatenate matches and mismatches
+    data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=self.dtype)
+    coords = np.concatenate(coords_list, axis=1) if len(coords_list) else \
+        np.empty((0, len(result_shape)), dtype=self.coords.dtype)
+
+    nonzero = data != func_zero
+    data = data[nonzero]
+    coords = coords[:, nonzero]
+
+    return COO(coords, data, shape=result_shape, has_duplicates=False)
+
+
+def _elemwise_binary_self_dense(func, self, other, *args, **kwargs):
+    assert isinstance(self, np.ndarray)
+    assert isinstance(other, COO)
+
+    result_shape = _get_broadcast_shape(self.shape, other.shape)
+
+    if result_shape != other.shape:
+        other = other.broadcast_to(result_shape)
+
+    self = np.broadcast_to(self, result_shape)
+
+    self_coords = tuple([other.coords[i, :] for i in range(other.ndim)])
+
+    self_data = self[self_coords]
+
+    func_data = func(self_data, other.data, *args, **kwargs)
+    mask = func_data != 0
+    func_data = func_data[mask]
+    func_coords = other.coords[:, mask]
+
+    return COO(func_coords, func_data, shape=result_shape,
+               has_duplicates=other.has_duplicates,
+               sorted=other.sorted)
+
+
+def _reverse_self_other(func):
+    def wrapper(*args, **kwargs):
+        return func(args[1], args[0], *args[2:], **kwargs)
+
+    return wrapper
+
+
+def _get_unmatched_coords_data(coords, data, shape, result_shape, matched_idx,
+                               matched_coords):
+    """
+    Get the unmatched coordinates and data - both those that are unmatched with
+    any point of the other data as well as those which are added because of
+    broadcasting.
+
+    Parameters
+    ----------
+    coords : np.ndarray
+        The coordinates to get the unmatched coordinates from.
+    data : np.ndarray
+        The data corresponding to these coordinates.
+    shape : tuple[int]
+        The shape corresponding to these coordinates.
+    result_shape : tuple[int]
+        The result broadcasting shape.
+    matched_idx : np.ndarray
+        The indices into the coords array where it matches with the other array.
+    matched_coords : np.ndarray
+        The overall coordinates that match from both arrays.
+
+    Returns
+    -------
+    coords_list : list[np.ndarray]
+        The list of unmatched/broadcasting coordinates.
+    data_list : list[np.ndarray]
+        The data corresponding to the coordinates.
+    """
+    params = _get_broadcast_parameters(shape, result_shape)
+    matched = np.zeros(len(data), dtype=np.bool)
+    matched[matched_idx] = True
+    unmatched = ~matched
+    data_zero = _zero_of_dtype(data.dtype)
+    nonzero = data != data_zero
+
+    unmatched &= nonzero
+    matched &= nonzero
+
+    coords_list = []
+    data_list = []
+
+    unmatched_coords, unmatched_data = \
+        _get_expanded_coords_data(coords[:, unmatched],
+                                  data[unmatched],
+                                  params,
+                                  result_shape)
+
+    coords_list.append(unmatched_coords)
+    data_list.append(unmatched_data)
+
+    if shape != result_shape:
+        broadcast_coords, broadcast_data = \
+            _get_broadcast_coords_data(coords[:, matched],
+                                       matched_coords,
+                                       data[matched],
+                                       params,
+                                       result_shape)
+
+        coords_list.append(broadcast_coords)
+        data_list.append(broadcast_data)
+
+    return coords_list, data_list
+
+
+def _get_broadcast_shape(shape1, shape2, is_result=False):
+    """
+    Get the overall broadcasted shape.
+
+    Parameters
+    ----------
+    shape1, shape2 : tuple[int]
+        The input shapes to broadcast together.
+    is_result : bool
+        Whether or not shape2 is also the result shape.
+
+    Returns
+    -------
+    result_shape : tuple[int]
+        The overall shape of the result.
+
+    Raises
+    ------
+    ValueError
+        If the two shapes cannot be broadcast together.
+    """
+    # https://stackoverflow.com/a/47244284/774273
+    if not all((l1 == l2) or (l1 == 1) or ((l2 == 1) and not is_result) for l1, l2 in
+               zip(shape1[::-1], shape2[::-1])):
+        raise ValueError('operands could not be broadcast together with shapes %s, %s' %
+                         (shape1, shape2))
+
+    result_shape = tuple(max(l1, l2) for l1, l2 in
+                         zip_longest(shape1[::-1], shape2[::-1], fillvalue=1))[::-1]
+
+    return result_shape
+
+
+def _get_broadcast_parameters(shape, broadcast_shape):
+    """
+    Get the broadcast parameters.
+
+    Parameters
+    ----------
+    shape : tuple[int]
+        The input shape.
+    broadcast_shape
+        The shape to broadcast to.
+
+    Returns
+    -------
+    params : list
+        A list containing None if the dimension isn't in the original array, False if
+        it needs to be broadcast, and True if it doesn't.
+    """
+    params = [None if l1 is None else l1 == l2 for l1, l2
+              in zip_longest(shape[::-1], broadcast_shape[::-1], fillvalue=None)][::-1]
+
+    return params
+
+
+def _get_reduced_coords(coords, shape, params):
+    """
+    Gets only those dimensions of the coordinates that don't need to be broadcast.
+
+    Parameters
+    ----------
+    coords : np.ndarray
+        The coordinates to reduce.
+    params : list
+        The params from which to check which dimensions to get.
+
+    Returns
+    -------
+    reduced_coords : np.ndarray
+        The reduced coordinates.
+    """
+    reduced_params = [bool(param) for param in params]
+    reduced_shape = tuple(l for l, p in zip(shape, params) if p)
+
+    return coords[reduced_params], reduced_shape
+
+
+def _get_expanded_coords_data(coords, data, params, broadcast_shape):
+    """
+    Expand coordinates/data to broadcast_shape. Does most of the heavy lifting for broadcast_to.
+    Produces sorted output for sorted inputs.
+
+    Parameters
+    ----------
+    coords : np.ndarray
+        The coordinates to expand.
+    data : np.ndarray
+        The data corresponding to the coordinates.
+    params : list
+        The broadcast parameters.
+    broadcast_shape : tuple[int]
+        The shape to broadcast to.
+
+    Returns
+    -------
+    expanded_coords : np.ndarray
+        List of 1-D arrays. Each item in the list has one dimension of coordinates.
+    expanded_data : np.ndarray
+        The data corresponding to expanded_coords.
+    """
+    first_dim = -1
+    expand_shapes = []
+    for d, p, l in zip(range(len(broadcast_shape)), params, broadcast_shape):
+        if p and first_dim == -1:
+            expand_shapes.append(coords.shape[1])
+            first_dim = d
+
+        if not p:
+            expand_shapes.append(l)
+
+    all_idx = _cartesian_product(*(np.arange(d, dtype=np.min_scalar_type(d - 1)) for d in expand_shapes))
+    dt = np.result_type(*(np.min_scalar_type(l - 1) for l in broadcast_shape))
+
+    false_dim = 0
+    dim = 0
+
+    expanded_coords = np.empty((len(broadcast_shape), all_idx.shape[1]), dtype=dt)
+    expanded_data = data[all_idx[first_dim]]
+
+    for d, p, l in zip(range(len(broadcast_shape)), params, broadcast_shape):
+        if p:
+            expanded_coords[d] = coords[dim, all_idx[first_dim]]
+        else:
+            expanded_coords[d] = all_idx[false_dim + (d > first_dim)]
+            false_dim += 1
+
+        if p is not None:
+            dim += 1
+
+    return np.asarray(expanded_coords), np.asarray(expanded_data)
+
+
+# (c) senderle
+# Taken from https://stackoverflow.com/a/11146645/774273
+# License: https://creativecommons.org/licenses/by-sa/3.0/
+def _cartesian_product(*arrays):
+    """
+    Get the cartesian product of a number of arrays.
+
+    Parameters
+    ----------
+    arrays : Tuple[np.ndarray]
+        The arrays to get a cartesian product of. Always sorted with respect
+        to the original array.
+
+    Returns
+    -------
+    out : np.ndarray
+        The overall cartesian product of all the input arrays.
+    """
+    broadcastable = np.ix_(*arrays)
+    broadcasted = np.broadcast_arrays(*broadcastable)
+    rows, cols = np.prod(broadcasted[0].shape), len(broadcasted)
+    dtype = np.result_type(*arrays)
+    out = np.empty(rows * cols, dtype=dtype)
+    start, end = 0, rows
+    for a in broadcasted:
+        out[start:end] = a.reshape(-1)
+        start, end = end, end + rows
+    return out.reshape(cols, rows)
+
+
+def _elemwise_unary(func, self, *args, **kwargs):
+    check = kwargs.pop('check', True)
+    data_zero = _zero_of_dtype(self.dtype)
+    func_zero = _zero_of_dtype(func(data_zero, *args, **kwargs).dtype)
+    if check and func(data_zero, *args, **kwargs) != func_zero:
+        raise ValueError("Performing this operation would produce "
+                         "a dense result: %s" % str(func))
+
+    data_func = func(self.data, *args, **kwargs)
+    nonzero = data_func != func_zero
+
+    return COO(self.coords[:, nonzero], data_func[nonzero],
+               shape=self.shape,
+               has_duplicates=self.has_duplicates,
+               sorted=self.sorted)
+
+
+def _get_matching_coords(coords1, coords2, shape1, shape2):
+    """
+    Takes in the matching coordinates in both dimensions (only those dimensions that
+    don't need to be broadcast in both arrays and returns the coordinates that will
+    overlap in the output array, i.e., the coordinates for which both broadcast arrays
+    will be nonzero.
+
+    Parameters
+    ----------
+    coords1, coords2 : np.ndarray
+    shape1, shape2 : tuple[int]
+
+    Returns
+    -------
+    matching_coords : np.ndarray
+        The coordinates of the output array for which both inputs will be nonzero.
+    """
+    result_shape = _get_broadcast_shape(shape1, shape2)
+    params1 = _get_broadcast_parameters(shape1, result_shape)
+    params2 = _get_broadcast_parameters(shape2, result_shape)
+
+    matching_coords = []
+    dim1 = 0
+    dim2 = 0
+
+    for p1, p2 in zip(params1, params2):
+        if p1:
+            matching_coords.append(coords1[dim1])
+        else:
+            matching_coords.append(coords2[dim2])
+
+        if p1 is not None:
+            dim1 += 1
+
+        if p2 is not None:
+            dim2 += 1
+
+    return np.asarray(matching_coords)
+
+
+def _get_broadcast_coords_data(coords, matched_coords, data, params, broadcast_shape):
+    """
+    Get data that matched in the reduced coordinates but still had a partial overlap because of
+    the broadcast, i.e., it didn't match in one of the other dimensions.
+
+    Parameters
+    ----------
+    coords : np.ndarray
+        The list of coordinates of the required array. Must be sorted.
+    matched_coords : np.ndarray
+        The list of coordinates that match. Must be sorted.
+    data : np.ndarray
+        The data corresponding to coords.
+    params : list
+        The broadcast parameters.
+    broadcast_shape : tuple[int]
+        The shape to get the broadcast coordinates.
+
+    Returns
+    -------
+    broadcast_coords : np.ndarray
+        The broadcasted coordinates. Is sorted.
+    broadcasted_data : np.ndarray
+        The data corresponding to those coordinates.
+    """
+    full_coords, full_data = _get_expanded_coords_data(coords, data, params, broadcast_shape)
+    linear_full_coords = _linear_loc(full_coords, broadcast_shape)
+    linear_matched_coords = _linear_loc(matched_coords, broadcast_shape)
+
+    overlapping_coords, _ = _match_arrays(linear_full_coords, linear_matched_coords)
+    mask = np.ones(full_coords.shape[1], dtype=np.bool)
+    mask[overlapping_coords] = False
+
+    return full_coords[:, mask], full_data[mask]
+
+
+def _linear_loc(coords, shape, signed=False):
+    n = reduce(operator.mul, shape, 1)
+    if signed:
+        n = -n
+    dtype = np.min_scalar_type(n)
+    out = np.zeros(coords.shape[1], dtype=dtype)
+    tmp = np.zeros(coords.shape[1], dtype=dtype)
+    strides = 1
+    for i, d in enumerate(shape[::-1]):
+        # out += self.coords[-(i + 1), :].astype(dtype) * strides
+        np.multiply(coords[-(i + 1), :], strides, out=tmp, dtype=dtype)
+        np.add(tmp, out, out=out)
+        strides *= d
+    return out

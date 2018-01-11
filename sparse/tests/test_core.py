@@ -346,6 +346,17 @@ def test_bitwise_binary(func, shape):
     assert_eq(func(xs, ys), func(x, y))
 
 
+@pytest.mark.parametrize('func', [operator.invert])
+@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+def test_bitwise_densification_fails(func, shape):
+    # Small arrays need high density to have nnz entries
+    # Casting floats to int will result in all zeros, hence the * 100
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+
+    with pytest.raises(ValueError):
+        func(xs)
+
+
 @pytest.mark.parametrize('func', [operator.and_, operator.or_, operator.xor])
 @pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
 def test_bitwise_binary_bool(func, shape):
