@@ -508,10 +508,9 @@ class COO(object):
 
         """
         if dtype is not None:
-            tmp = self.astype(dtype)
+            return self.astype(dtype).todense()
         else:
-            tmp = self
-        return tmp.todense()
+            return self.todense()
 
     def __len__(self):
         """
