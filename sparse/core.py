@@ -508,9 +508,9 @@ class COO(object):
 
         """
         if dtype is not None:
-            return self.astype(dtype).todense()
+            return self.astype(dtype).maybe_densify()
         else:
-            return self.todense()
+            return self.maybe_densify()
 
     def __len__(self):
         """
@@ -2406,7 +2406,8 @@ class COO(object):
             return self.todense()
         else:
             raise NotImplementedError("Operation would require converting "
-                                      "large sparse array to dense")
+                                      "large sparse array to dense. Use "
+                                      ".todense() to force densification.")
 
 
 def tensordot(a, b, axes=2):
