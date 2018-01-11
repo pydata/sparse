@@ -551,11 +551,11 @@ class COO(object):
 
         Examples
         --------
-        >>> x = np.zeros((10, 10))
+        >>> x = np.zeros((8, 8))
         >>> x[0, :] = 1
         >>> s = COO.from_numpy(x)
         >>> s.density
-        0.10000000000000001
+        0.125
         """
         return self.nnz / self.size
 
