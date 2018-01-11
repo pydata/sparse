@@ -21,6 +21,7 @@ setup(name='sparse',
               'pytest',
               'pytest-cov',
               'pytest-flake8',
+              'packaging',
           ],
       },
       zip_safe=False)

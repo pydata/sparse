@@ -45,13 +45,13 @@ class COO(object):
     >>> s = COO(x)
     >>> s
     <COO: shape=(4, 4), dtype=float64, nnz=5, sorted=True, duplicates=False>
-    >>> s.data
+    >>> s.data  # doctest: +SKIP
     array([ 1.,  1.,  1.,  5.,  1.])
     >>> s.coords
     array([[0, 1, 2, 2, 3],
            [0, 1, 2, 3, 3]], dtype=uint8)
 
-    >>> s.dot(s.T).sum(axis=0).todense()
+    >>> s.dot(s.T).sum(axis=0).todense()  # doctest: +SKIP
     array([  1.,   1.,  31.,   6.])
 
     Make a sparse array by passing in an array of coordinates and an array of
