@@ -4,6 +4,7 @@ from collections import Iterable, defaultdict, deque
 from functools import reduce, partial
 import numbers
 import operator
+import copy
 
 import numpy as np
 import scipy.sparse
@@ -638,6 +639,8 @@ class COO(object):
         return csc
 
     def sort_indices(self):
+        """ Sort indices inplace
+        """
         if self.sorted:
             return
 
@@ -645,21 +648,31 @@ class COO(object):
 
         if (np.diff(linear) > 0).all():  # already sorted
             self.sorted = True
-            return self
+            return
 
         order = np.argsort(linear)
         self.coords = self.coords[:, order]
         self.data = self.data[order]
         self.sorted = True
-        return self
+
+    def sorted_indices(self):
+        """ Return a new :code:`COO` array with sorted indices. If indices
+        were already sorted, a shallow copy with views on the original data and
+        coordinates is returned.
+        """
+        out = copy.copy(self)
+        out.sort_indices()
+        return out
 
     def sum_duplicates(self):
+        """ Sum duplicates inplace
+        """
         # Inspired by scipy/sparse/coo.py::sum_duplicates
         # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
         if not self.has_duplicates:
-            return self
+            return
         if not np.prod(self.coords.shape):
-            return self
+            return
 
         self.sort_indices()
 
@@ -668,7 +681,7 @@ class COO(object):
 
         if unique_mask.sum() == len(unique_mask):  # already unique
             self.has_duplicates = False
-            return self
+            return
 
         unique_mask = np.append(True, unique_mask)
 
@@ -680,7 +693,14 @@ class COO(object):
         self.coords = coords
         self.has_duplicates = False
 
-        return self
+    def summed_duplicates(self):
+        """ Return a new :code:`COO` array with summed dupicates. If there were
+        no duplicates, a shallow copy with views on the original data and
+        coordinates is returned.
+        """
+        out = copy.copy(self)
+        out.sum_duplicates()
+        return out
 
     def __add__(self, other):
         return self.elemwise(operator.add, other)
