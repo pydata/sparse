@@ -6,8 +6,8 @@ COO
 .. autoclass:: COO
 
    .. note::
-      :obj:`COO` objects also support :doc:`operators <../getting_started/operations/basic>`
-      and :doc:`indexing <../getting_started/operations/indexing>`
+      :obj:`COO` objects also support :doc:`operators <../user_manual/operations/basic>`
+      and :doc:`indexing <../user_manual/operations/indexing>`
 
    .. rubric:: Attributes
    .. autosummary::
