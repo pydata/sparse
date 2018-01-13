@@ -26,7 +26,7 @@ creating a fork:
 
    git pull https://github.com/<username>/sparse.git
    git remote add upstream https://github.com/mrocklin/sparse.git
-   git install -e .[docs, tests]
+   pip install -e .[docs, tests]
 
 Then you can make changes to a branch on your fork and open a pull request
 on GitHub. There, it can be discussed, and if the community decides it's
