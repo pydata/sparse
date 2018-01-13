@@ -15,7 +15,7 @@ COO
       COO.ndim
       COO.nnz
 
-   .. rubric:: :doc:`Constructing COO objects <../getting_started/constructing>`
+   .. rubric:: :doc:`Constructing COO objects <../user_manual/constructing>`
    .. autosummary::
       :toctree:
 
@@ -23,7 +23,7 @@ COO
       COO.from_numpy
       COO.from_scipy_sparse
 
-   .. rubric:: :doc:`Element-wise operations <../getting_started/operations/elemwise>`
+   .. rubric:: :doc:`Element-wise operations <../user_manual/operations/elemwise>`
    .. autosummary::
       :toctree:
 
@@ -45,7 +45,7 @@ COO
       COO.tan
       COO.tanh
 
-   .. rubric:: :doc:`Reductions <../getting_started/operations/reductions>`
+   .. rubric:: :doc:`Reductions <../user_manual/operations/reductions>`
    .. autosummary::
       :toctree:
 
@@ -55,7 +55,7 @@ COO
       COO.min
       COO.prod
 
-   .. rubric:: :doc:`Converting to other formats <../getting_started/converting>`
+   .. rubric:: :doc:`Converting to other formats <../user_manual/converting>`
    .. autosummary::
       :toctree:
 
@@ -65,7 +65,7 @@ COO
       COO.tocsc
       COO.tocsr
 
-   .. rubric:: :doc:`Other operations <../getting_started/operations/other>`
+   .. rubric:: :doc:`Other operations <../user_manual/operations/other>`
    .. autosummary::
       :toctree:
 

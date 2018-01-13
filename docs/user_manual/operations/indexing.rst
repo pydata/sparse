@@ -1,3 +1,5 @@
+.. currentmodule:: sparse
+
 Indexing
 ========
 :obj:`COO` arrays can be :obj:`indexed <numpy.doc.indexing>` just like regular

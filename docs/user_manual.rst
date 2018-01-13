@@ -1,5 +1,5 @@
-Getting Started
-===============
+User Manual
+===========
 
 .. currentmodule:: sparse
 
@@ -11,6 +11,8 @@ this object.
 .. toctree::
    :maxdepth: 2
 
-   getting_started/constructing
-   getting_started/operations
-   getting_started/converting
+   user_manual/installing
+   user_manual/getting_started
+   user_manual/constructing
+   user_manual/operations
+   user_manual/converting

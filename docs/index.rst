@@ -27,7 +27,7 @@ this isn't possible. It also supports general N-dimensional arrays.
 
 Where to from here?
 -------------------
-If you're new to this library, you can visit the :doc:`getting started <getting_started>`
+If you're new to this library, you can visit the :doc:`user manual <user_manual>`
 page. If you're already familiar with this library, or you want to dive straight in, you
 can jump to the :doc:`API reference <api>`. You can also see the contents in the sidebar.
 
@@ -36,6 +36,6 @@ can jump to the :doc:`API reference <api>`. You can also see the contents in the
    :hidden:
 
    self
-   getting_started
+   user_manual
    api
    contributing
