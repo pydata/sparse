@@ -660,13 +660,13 @@ def test_canonical():
 
     old = COO(coords, data, shape=(2, 2, 5))
     x = COO(coords, data, shape=(2, 2, 5))
-    y = x.sum_duplicates()
+    x.sum_duplicates()
 
-    assert_eq(old, y)
+    assert_eq(old, x)
     # assert x.nnz == 5
     # assert x.has_duplicates
-    assert y.nnz == 3
-    assert not y.has_duplicates
+    assert x.nnz == 3
+    assert not x.has_duplicates
 
 
 def test_concatenate():
