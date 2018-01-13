@@ -28,3 +28,5 @@ All of the following will raise an :obj:`IndexError`, like in Numpy 1.13 and lat
    z[1, 4, 8]
    z[-6]
    z[[True, True, False, True], 3, 4]
+
+.. note:: Numpy advanced indexing is currently not supported.

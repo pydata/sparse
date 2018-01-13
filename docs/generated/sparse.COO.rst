@@ -5,6 +5,10 @@ COO
 
 .. autoclass:: COO
 
+   .. note::
+      :obj:`COO` objects also support :doc:`operators <../getting_started/operations/basic>`
+      and :doc:`indexing <../getting_started/operations/indexing>`
+
    .. rubric:: Attributes
    .. autosummary::
       :toctree:

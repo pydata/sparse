@@ -488,6 +488,29 @@ class COO(object):
         """
         return self.data.nbytes + self.coords.nbytes
 
+    def __len__(self):
+        """
+        Get "length" of array, which is by definition the size of the first
+        dimension.
+
+        Returns
+        -------
+        int
+            The size of the first dimension.
+
+        See Also
+        --------
+        numpy.ndarray.__len__ : Numpy equivalent property.
+
+        Examples
+        --------
+        >>> x = np.zeros((10, 10))
+        >>> s = COO.from_numpy(x)
+        >>> len(s)
+        10
+        """
+        return self.shape[0]
+
     def __sizeof__(self):
         return self.nbytes
 
