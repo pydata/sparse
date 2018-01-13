@@ -23,6 +23,7 @@ To get started, you can do something along the lines of the following, after
 creating a fork:
 
 .. code-block:: bash
+
    git pull https://github.com/<username>/sparse.git
    git remote add upstream https://github.com/mrocklin/sparse.git
    git install -e .[docs, tests]
@@ -46,6 +47,7 @@ yourself. Once you've configured your environment, you can just :code:`cd` to
 the root of your repository and run
 
 .. code-block:: bash
+
    py.test
 
 Adding/Building the Documentation
@@ -67,6 +69,7 @@ To build the documentation, you can :code:`cd` into the :code:`docs` directory
 and run
 
 .. code-block:: bash
+
    sphinx-build -b html . _build/html
 
 After this, you can find an HTML version of the documentation in :code:`docs/_build/html/index.html`.
