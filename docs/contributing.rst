@@ -13,25 +13,9 @@ If you haven't contributed to open-source before, we recommend you read
 <https://opensource.guide/how-to-contribute/>`_. The guide is long,
 so you can gloss over things you're familiar with.
 
-Guidelines Specific to this Project
------------------------------------
 If you're not already familiar with it, we follow the `fork and pull model
 <https://help.github.com/articles/about-collaborative-development-models/>`_
 on GitHub.
-
-To get started, you can do something along the lines of the following, after
-creating a fork:
-
-.. code-block:: bash
-
-   git pull https://github.com/<username>/sparse.git
-   git remote add upstream https://github.com/mrocklin/sparse.git
-   pip install -e .[docs, tests]
-
-Then you can make changes to a branch on your fork and open a pull request
-on GitHub. There, it can be discussed, and if the community decides it's
-best, it will be merged into the main codebase. Afterwards, you can
-`sync your fork on GitHub <https://help.github.com/articles/syncing-a-fork/>`_
 
 Running/Adding Unit Tests
 -------------------------
