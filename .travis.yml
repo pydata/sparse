@@ -2,10 +2,9 @@ sudo: False
 
 language: python
 
-matrix:
-  include:
-    - python: 2.7
-    - python: 3.6
+python:
+  - 2.7
+  - 3.6
 
 env:
   - NUMPY=1.12
