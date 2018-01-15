@@ -1986,7 +1986,7 @@ class COO(object):
         assert out is None
         return self.elemwise(np.ndarray.astype, dtype)
 
-    def maybe_densify(self, max_size=1000, min_fraction=0.25):
+    def maybe_densify(self, max_size=1000, min_density=0.25):
         """
         Converts this :obj:`COO` array to a :obj:`numpy.ndarray` if not too
         costly.
@@ -1995,7 +1995,7 @@ class COO(object):
         ----------
         max_size : int
             Maximum number of elements in output
-        min_fraction : float
+        min_density : float
             Minimum density of output
 
         Returns
@@ -2024,12 +2024,12 @@ class COO(object):
         >>> x = np.zeros((5, 5), dtype=np.uint8)
         >>> x[2, 2] = 1
         >>> s = COO.from_numpy(x)
-        >>> s.maybe_densify(max_size=5, min_fraction=0.25)
+        >>> s.maybe_densify(max_size=5, min_density=0.25)
         Traceback (most recent call last):
             ...
         NotImplementedError: Operation would require converting large sparse array to dense
         """
-        if self.size <= max_size or self.density >= min_fraction:
+        if self.size <= max_size or self.density >= min_density:
             return self.todense()
         else:
             raise ValueError("Operation would require converting "
