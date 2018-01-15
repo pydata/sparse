@@ -230,7 +230,7 @@ def test_elemwise_binary(func, shape):
 
 @pytest.mark.parametrize('func', [
     operator.pow, operator.truediv, operator.floordiv,
-    operator.ge, operator.le, operator.eq
+    operator.ge, operator.le, operator.eq, operator.mod
 ])
 @pytest.mark.filterwarnings('ignore:divide by zero')
 @pytest.mark.filterwarnings('ignore:invalid value')
@@ -242,14 +242,18 @@ def test_auto_densification_fails(func):
         func(xs, ys)
 
 
-def test_op_scipy_sparse():
+@pytest.mark.parametrize('func', [
+    operator.mul, operator.add, operator.sub, operator.gt,
+    operator.lt, operator.ne
+])
+def test_op_scipy_sparse(func):
     xs = sparse.random((3, 4), density=0.5)
     y = sparse.random((3, 4), density=0.5).todense()
 
     ys = scipy.sparse.csr_matrix(y)
     x = xs.todense()
 
-    assert_eq(x + y, xs + ys)
+    assert_eq(func(x, y), func(xs, ys))
 
 
 @pytest.mark.parametrize('func, scalar', [
@@ -264,7 +268,8 @@ def test_op_scipy_sparse():
     (operator.ne, 0),
     (operator.ge, 5),
     (operator.le, -3),
-    (operator.eq, 1)
+    (operator.eq, 1),
+    (operator.mod, 5)
 ])
 @pytest.mark.parametrize('convert_to_np_number', [True, False])
 def test_elemwise_scalar(func, scalar, convert_to_np_number):
@@ -291,7 +296,7 @@ def test_elemwise_scalar(func, scalar, convert_to_np_number):
     (operator.ne, 0),
     (operator.ge, -5),
     (operator.le, 3),
-    (operator.eq, 1)
+    (operator.eq, 1),
 ])
 @pytest.mark.parametrize('convert_to_np_number', [True, False])
 def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number):
@@ -332,8 +337,15 @@ def test_scalar_densification_fails(func, scalar):
         func(xs, y)
 
 
-@pytest.mark.parametrize('func', [operator.and_, operator.or_, operator.xor])
-@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+@pytest.mark.parametrize('func', [
+    operator.and_, operator.or_, operator.xor
+])
+@pytest.mark.parametrize('shape', [
+    (2,),
+    (2, 3),
+    (2, 3, 4),
+    (2, 3, 4, 5)
+])
 def test_bitwise_binary(func, shape):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
@@ -344,6 +356,115 @@ def test_bitwise_binary(func, shape):
     y = ys.todense()
 
     assert_eq(func(xs, ys), func(x, y))
+
+
+@pytest.mark.parametrize('func', [
+    operator.lshift, operator.rshift
+])
+@pytest.mark.parametrize('shape', [
+    (2,),
+    (2, 3),
+    (2, 3, 4),
+    (2, 3, 4, 5)
+])
+def test_bitshift_binary(func, shape):
+    # Small arrays need high density to have nnz entries
+    # Casting floats to int will result in all zeros, hence the * 100
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+
+    # Can't merge into test_bitwise_binary because left/right shifting
+    # with something >= 64 isn't defined.
+    ys = (sparse.random(shape, density=0.5) * 64).astype(np.int_)
+
+    x = xs.todense()
+    y = ys.todense()
+
+    assert_eq(func(xs, ys), func(x, y))
+
+
+@pytest.mark.parametrize('func', [
+    operator.and_
+])
+@pytest.mark.parametrize('shape', [
+    (2,),
+    (2, 3),
+    (2, 3, 4),
+    (2, 3, 4, 5)
+])
+def test_bitwise_scalar(func, shape):
+    # Small arrays need high density to have nnz entries
+    # Casting floats to int will result in all zeros, hence the * 100
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+
+    # Can't merge into test_bitwise_binary because left/right shifting
+    # with something >= 64 isn't defined.
+    y = np.random.randint(100)
+
+    x = xs.todense()
+
+    assert_eq(func(xs, y), func(x, y))
+    assert_eq(func(y, xs), func(y, x))
+
+
+@pytest.mark.parametrize('func', [
+    operator.lshift, operator.rshift
+])
+@pytest.mark.parametrize('shape', [
+    (2,),
+    (2, 3),
+    (2, 3, 4),
+    (2, 3, 4, 5)
+])
+def test_bitshift_scalar(func, shape):
+    # Small arrays need high density to have nnz entries
+    # Casting floats to int will result in all zeros, hence the * 100
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+
+    # Can't merge into test_bitwise_binary because left/right shifting
+    # with something >= 64 isn't defined.
+    y = np.random.randint(64)
+
+    x = xs.todense()
+
+    assert_eq(func(xs, y), func(x, y))
+
+
+@pytest.mark.parametrize('func', [operator.invert])
+@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+def test_unary_bitwise_densification_fails(func, shape):
+    # Small arrays need high density to have nnz entries
+    # Casting floats to int will result in all zeros, hence the * 100
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+
+    with pytest.raises(ValueError):
+        func(xs)
+
+
+@pytest.mark.parametrize('func', [operator.or_, operator.xor])
+@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+def test_binary_bitwise_densification_fails(func, shape):
+    # Small arrays need high density to have nnz entries
+    # Casting floats to int will result in all zeros, hence the * 100
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+    y = np.random.randint(1, 100)
+
+    with pytest.raises(ValueError):
+        func(xs, y)
+
+    with pytest.raises(ValueError):
+        func(y, xs)
+
+
+@pytest.mark.parametrize('func', [operator.lshift, operator.rshift])
+@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+def test_binary_bitshift_densification_fails(func, shape):
+    # Small arrays need high density to have nnz entries
+    # Casting floats to int will result in all zeros, hence the * 100
+    x = np.random.randint(1, 100)
+    ys = (sparse.random(shape, density=0.5) * 64).astype(np.int_)
+
+    with pytest.raises(ValueError):
+        func(x, ys)
 
 
 @pytest.mark.parametrize('func', [operator.and_, operator.or_, operator.xor])
@@ -357,6 +478,48 @@ def test_bitwise_binary_bool(func, shape):
     y = ys.todense()
 
     assert_eq(func(xs, ys), func(x, y))
+
+
+@pytest.mark.parametrize('func', [operator.mul])
+@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+def test_numpy_mixed_binary(func, shape):
+    xs = sparse.random(shape, density=0.5)
+    y = np.random.rand(*shape)
+
+    x = xs.todense()
+
+    fs1 = func(xs, y)
+
+    assert isinstance(fs1, COO)
+    assert fs1.nnz <= xs.nnz
+    assert_eq(fs1, func(x, y))
+
+    fs2 = func(y, xs)
+
+    assert isinstance(fs2, COO)
+    assert fs2.nnz <= xs.nnz
+    assert_eq(fs2, func(y, x))
+
+
+@pytest.mark.parametrize('func', [operator.and_])
+@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+def test_numpy_mixed_binary_bitwise(func, shape):
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+    y = np.random.randint(100, size=shape)
+
+    x = xs.todense()
+
+    fs1 = func(xs, y)
+
+    assert isinstance(fs1, COO)
+    assert fs1.nnz <= xs.nnz
+    assert_eq(fs1, func(x, y))
+
+    fs2 = func(y, xs)
+
+    assert isinstance(fs2, COO)
+    assert fs2.nnz <= xs.nnz
+    assert_eq(fs2, func(y, x))
 
 
 def test_elemwise_binary_empty():
@@ -614,14 +777,37 @@ def test_addition_not_ok_when_large_and_sparse():
                                            ((3, 4, 1), (3, 4, 2)),
                                            ((1, 5), (5, 1))])
 def test_broadcasting(func, shape1, shape2):
-    a = sparse.random(shape1, density=0.5)
-    x = a.todense()
+    xs = sparse.random(shape1, density=0.5)
+    x = xs.todense()
 
-    c = sparse.random(shape2, density=0.5)
-    z = c.todense()
+    ys = sparse.random(shape2, density=0.5)
+    y = ys.todense()
 
-    expected = func(x, z)
-    actual = func(a, c)
+    expected = func(x, y)
+    actual = func(xs, ys)
+
+    assert_eq(expected, actual)
+
+    assert np.count_nonzero(expected) == actual.nnz
+
+
+@pytest.mark.parametrize('func', [operator.mul])
+@pytest.mark.parametrize('shape1,shape2', [((2, 3, 4), (3, 4)),
+                                           ((3, 4), (2, 3, 4)),
+                                           ((3, 1, 4), (3, 2, 4)),
+                                           ((1, 3, 4), (3, 4)),
+                                           ((3, 4, 1), (3, 4, 2)),
+                                           ((1, 5), (5, 1))])
+def test_numpy_mixed_broadcasting(func, shape1, shape2):
+    xs = sparse.random(shape1, density=0.5)
+    x = xs.todense()
+
+    y = np.random.rand(*shape2)
+
+    expected = func(x, y)
+    actual = func(xs, y)
+
+    assert isinstance(actual, COO)
 
     assert_eq(expected, actual)
 
