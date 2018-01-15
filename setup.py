@@ -18,6 +18,7 @@ setup(name='sparse',
       install_requires=list(open('requirements.txt').read().strip().split('\n')),
       extras_require={
           'tests': [
+              'tox',
               'pytest',
               'pytest-cov',
               'pytest-flake8',
