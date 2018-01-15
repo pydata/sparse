@@ -7,6 +7,10 @@ matrix:
     - python: 2.7
     - python: 3.6
 
+env:
+  - NUMPY=1.12
+  - NUMPY=*
+
 install:
   # Install conda
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
@@ -16,7 +20,7 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test-sparse python=$TRAVIS_PYTHON_VERSION pytest numpy scipy flake8 nomkl
+  - conda create -n test-sparse python=$TRAVIS_PYTHON_VERSION pytest numpy=$NUMPY scipy flake8 nomkl
   - source activate test-sparse
 
   - pip install -e .[tests]
