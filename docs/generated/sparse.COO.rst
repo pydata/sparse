@@ -18,6 +18,8 @@ COO
       COO.nbytes
       COO.ndim
       COO.nnz
+      COO.size
+      COO.density
 
    .. rubric:: :doc:`Constructing COO objects <../user_manual/constructing>`
    .. autosummary::
