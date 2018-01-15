@@ -2032,8 +2032,8 @@ class COO(object):
         if self.size <= allowed_nnz or self.density >= allowed_fraction:
             return self.todense()
         else:
-            raise NotImplementedError("Operation would require converting "
-                                      "large sparse array to dense")
+            raise ValueError("Operation would require converting "
+                             "large sparse array to dense")
 
 
 def tensordot(a, b, axes=2):
