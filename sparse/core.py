@@ -503,7 +503,9 @@ class COO(object):
         Returns
         -------
         NotImplemented
-            We do not implement this function, so this is what we return.
+            We do not implement this function, so we return
+            :obj:`NotImplemented`.
+
         See Also
         --------
         numpy.ndarray.__array__ : Numpy equivalent function.

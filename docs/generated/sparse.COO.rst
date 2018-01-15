@@ -68,6 +68,7 @@ COO
       COO.to_scipy_sparse
       COO.tocsc
       COO.tocsr
+      COO.__array__
 
    .. rubric:: :doc:`Other operations <../user_manual/operations/other>`
    .. autosummary::
