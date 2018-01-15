@@ -490,27 +490,26 @@ class COO(object):
 
     def __array__(self, dtype=None):
         """
-        Helper function to speed up :code:`np.array(x)` conversion
+        Helper function that gets called during :code:`np.array(x)` conversion.
+        We deliberately return :code:`NotImplemented` to prevent accidental
+        densification.
 
         Parameters
         ----------
         dtype: type
-            Datatype of dense array. The sparse array is cast before densification.
+            Datatype requested by :code:`np.array(x)`. Has no effect on
+            output.
 
         Returns
         -------
-        array_like
-            The dense array.
-
+        NotImplemented
+            We do not implement this function, so this is what we return.
         See Also
         --------
         numpy.ndarray.__array__ : Numpy equivalent function.
 
         """
-        if dtype is not None:
-            return self.astype(dtype).maybe_densify()
-        else:
-            return self.maybe_densify()
+        return NotImplemented
 
     def __len__(self):
         """

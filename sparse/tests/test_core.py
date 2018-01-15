@@ -892,5 +892,11 @@ def test_len():
 def test_numpy_todense():
     # make sure that .astype(int) is never all zeros
     s = sparse.random((20, 30, 40)) * 100
-    assert np.allclose(np.array(s, dtype=int), s.astype(int).todense())
-    assert np.allclose(np.array(s), s.todense())
+    with pytest.raises(ValueError):
+        assert np.array(s)
+
+    with pytest.raises(ValueError):
+        assert np.array(s, dtype=int)
+
+    with pytest.raises(ValueError):
+        assert np.allclose(s, s.todense())
