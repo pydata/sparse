@@ -2005,7 +2005,7 @@ class COO(object):
 
         Raises
         -------
-        NotImplementedError
+        ValueError
             If the returned array would be too large.
 
         Examples
