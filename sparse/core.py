@@ -2397,7 +2397,8 @@ class COO(object):
         >>> s.maybe_densify(allowed_nnz=5, allowed_fraction=0.25)
         Traceback (most recent call last):
             ...
-        NotImplementedError: Operation would require converting large sparse array to dense
+        NotImplementedError: Operation would require converting large sparse \
+array to dense. Use .todense() to force densification.
         """
         elements = np.prod(self.shape)
 
