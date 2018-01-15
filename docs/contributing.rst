@@ -48,6 +48,8 @@ as its markup language for adding code.
 We use the `Sphinx Autosummary extension <http://www.sphinx-doc.org/en/stable/ext/autosummary.html>`_
 to generate API references. In particular, you may want do look at the :code:`docs/generated`
 directory to see how these files look and where to add new functions, classes or modules.
+For example, if you add a new function to the :code:`sparse.COO` class, you would open up
+:code:`docs/generated/sparse.COO.rst`, and add in the name of the function where appropriate.
 
 To build the documentation, you can :code:`cd` into the :code:`docs` directory
 and run
