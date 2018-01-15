@@ -2027,7 +2027,7 @@ class COO(object):
         >>> s.maybe_densify(max_size=5, min_density=0.25)
         Traceback (most recent call last):
             ...
-        NotImplementedError: Operation would require converting large sparse array to dense
+        ValueError: Operation would require converting large sparse array to dense
         """
         if self.size <= max_size or self.density >= min_density:
             return self.todense()
