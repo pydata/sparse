@@ -237,7 +237,7 @@ class COO(object):
         if self.coords.ndim == 1:
             self.coords = self.coords[None, :]
 
-        if shape and not np.prod(self.coords.shape):
+        if shape and not self.coords.size:
             self.coords = np.zeros((len(shape), 0), dtype=np.uint64)
 
         if shape is None:
@@ -511,6 +511,54 @@ class COO(object):
         """
         return self.shape[0]
 
+    @property
+    def size(self):
+        """
+        The number of all elements (including zeros) in this array.
+
+        Returns
+        -------
+        int
+            The number of elements.
+
+        See Also
+        --------
+        numpy.ndarray.size : Numpy equivalent property.
+
+        Examples
+        --------
+        >>> x = np.zeros((10, 10))
+        >>> s = COO.from_numpy(x)
+        >>> s.size
+        100
+        """
+        return np.prod(self.shape)
+
+    @property
+    def density(self):
+        """
+        The ratio of nonzero to all elements in this array.
+
+        Returns
+        -------
+        float
+            The ratio of nonzero to all elements.
+
+        See Also
+        --------
+        COO.size : Number of elements.
+        COO.nnz : Number of nonzero elements.
+
+        Examples
+        --------
+        >>> x = np.zeros((8, 8))
+        >>> x[0, :] = 1
+        >>> s = COO.from_numpy(x)
+        >>> s.density
+        0.125
+        """
+        return self.nnz / self.size
+
     def __sizeof__(self):
         return self.nbytes
 
@@ -700,7 +748,7 @@ class COO(object):
 
         if set(axis) == set(range(self.ndim)):
             result = method.reduce(self.data, **kwargs)
-            if self.nnz != np.prod(self.shape):
+            if self.nnz != self.size:
                 result = method(result, _zero_of_dtype(self.dtype)[()], **kwargs)
         else:
             axis = tuple(axis)
@@ -1229,7 +1277,7 @@ class COO(object):
         if self.shape == shape:
             return self
         if any(d == -1 for d in shape):
-            extra = int(np.prod(self.shape) /
+            extra = int(self.size /
                         np.prod([d for d in shape if d != -1]))
             shape = tuple([d if d != -1 else extra for d in shape])
 
@@ -1241,7 +1289,7 @@ class COO(object):
                 if sh == shape:
                     return value
 
-        # TODO: this np.prod(self.shape) enforces a 2**64 limit to array size
+        # TODO: this self.size enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
 
         max_shape = max(shape) if len(shape) != 0 else 1
@@ -1432,7 +1480,7 @@ class COO(object):
         # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
         if not self.has_duplicates:
             return
-        if not np.prod(self.coords.shape):
+        if not self.coords.size:
             return
 
         self.sort_indices()
@@ -1938,17 +1986,17 @@ class COO(object):
         assert out is None
         return self.elemwise(np.ndarray.astype, dtype)
 
-    def maybe_densify(self, allowed_nnz=1000, allowed_fraction=0.25):
+    def maybe_densify(self, max_size=1000, min_density=0.25):
         """
         Converts this :obj:`COO` array to a :obj:`numpy.ndarray` if not too
         costly.
 
         Parameters
         ----------
-        allowed_nnz : int
-            Allowed number of nonzero values
-        allowed_fraction : float
-            Allowed density of nonzero values
+        max_size : int
+            Maximum number of elements in output
+        min_density : float
+            Minimum density of output
 
         Returns
         -------
@@ -1957,7 +2005,7 @@ class COO(object):
 
         Raises
         -------
-        NotImplementedError
+        ValueError
             If the returned array would be too large.
 
         Examples
@@ -1969,25 +2017,23 @@ class COO(object):
         >>> np.allclose(x, s.todense())
         True
 
-        You can also specify the minimum allowed sparsity or the maximum number
-        of nonzero values. If both conditions are unmet, this method will throw
+        You can also specify the minimum allowed density or the maximum number
+        of output elements. If both conditions are unmet, this method will throw
         an error.
 
         >>> x = np.zeros((5, 5), dtype=np.uint8)
         >>> x[2, 2] = 1
         >>> s = COO.from_numpy(x)
-        >>> s.maybe_densify(allowed_nnz=5, allowed_fraction=0.25)
+        >>> s.maybe_densify(max_size=5, min_density=0.25)
         Traceback (most recent call last):
             ...
-        NotImplementedError: Operation would require converting large sparse array to dense
+        ValueError: Operation would require converting large sparse array to dense
         """
-        elements = np.prod(self.shape)
-
-        if elements <= allowed_nnz or self.nnz >= elements * allowed_fraction:
+        if self.size <= max_size or self.density >= min_density:
             return self.todense()
         else:
-            raise NotImplementedError("Operation would require converting "
-                                      "large sparse array to dense")
+            raise ValueError("Operation would require converting "
+                             "large sparse array to dense")
 
 
 def tensordot(a, b, axes=2):
