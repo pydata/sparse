@@ -1073,3 +1073,16 @@ def test_scalar_shape_construction():
 def test_len():
     s = sparse.random((20, 30, 40))
     assert len(s) == 20
+
+
+def test_numpy_todense():
+    # make sure that .astype(int) is never all zeros
+    s = sparse.random((20, 30, 40)) * 100
+    with pytest.raises(ValueError):
+        assert np.array(s)
+
+    with pytest.raises(ValueError):
+        assert np.array(s, dtype=int)
+
+    with pytest.raises(ValueError):
+        assert np.allclose(s, s.todense())

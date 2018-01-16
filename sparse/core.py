@@ -488,6 +488,31 @@ class COO(object):
         """
         return self.data.nbytes + self.coords.nbytes
 
+    def __array__(self, dtype=None):
+        """
+        Helper function that gets called during :code:`np.array(x)` conversion.
+        We deliberately return :code:`NotImplemented` to prevent accidental
+        densification.
+
+        Parameters
+        ----------
+        dtype: type
+            Datatype requested by :code:`np.array(x)`. Has no effect on
+            output.
+
+        Returns
+        -------
+        NotImplemented
+            We do not implement this function, so we return
+            :obj:`NotImplemented`.
+
+        See Also
+        --------
+        numpy.ndarray.__array__ : Numpy equivalent function.
+
+        """
+        return NotImplemented
+
     def __len__(self):
         """
         Get "length" of array, which is by definition the size of the first
@@ -1979,7 +2004,8 @@ class COO(object):
         >>> s.maybe_densify(allowed_nnz=5, allowed_fraction=0.25)
         Traceback (most recent call last):
             ...
-        NotImplementedError: Operation would require converting large sparse array to dense
+        NotImplementedError: Operation would require converting large sparse \
+array to dense. Use .todense() to force densification.
         """
         elements = np.prod(self.shape)
 
@@ -1987,7 +2013,8 @@ class COO(object):
             return self.todense()
         else:
             raise NotImplementedError("Operation would require converting "
-                                      "large sparse array to dense")
+                                      "large sparse array to dense. Use "
+                                      ".todense() to force densification.")
 
 
 def tensordot(a, b, axes=2):
