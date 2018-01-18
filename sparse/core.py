@@ -763,8 +763,8 @@ class COO(object):
             missing_counts = counts != a.shape[1]
             result[missing_counts] = method(result[missing_counts],
                                             _zero_of_dtype(self.dtype), **kwargs)
-
-            a = COO(np.asarray([a.coords[0, inv_idx]]), result, shape=(np.prod(neg_axis),),
+            coords = a.coords[0:1, inv_idx]
+            a = COO(coords, result, shape=(a.shape[0],),
                     has_duplicates=False, sorted=True)
 
             a = a.reshape([self.shape[d] for d in neg_axis])
@@ -2450,7 +2450,7 @@ def _grouped_reduce(x, groups, method, **kwargs):
     # Partial credit to @shoyer
     # Ref: https://gist.github.com/shoyer/f538ac78ae904c936844
     flag = np.concatenate(([True] if len(x) != 0 else [], groups[1:] != groups[:-1]))
-    inv_idx, = flag.nonzero()
+    inv_idx = np.flatnonzero(flag)
     result = method.reduceat(x, inv_idx, **kwargs)
     counts = np.diff(np.concatenate((inv_idx, [len(x)])))
     return result, inv_idx, counts
