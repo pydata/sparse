@@ -1533,10 +1533,8 @@ class COO(NDArrayOperatorsMixin):
             return func()
 
         self = args[0]
-        if isinstance(self, scipy.sparse.spmatrix):
-            self = COO.from_scipy_sparse(self)
-        elif np.isscalar(self) or (isinstance(self, np.ndarray)
-                                   and self.ndim == 0):
+        if np.isscalar(self) or (isinstance(self, np.ndarray)
+                                 and self.ndim == 0):
             func = partial(func, self)
             other = args[1]
             if isinstance(other, scipy.sparse.spmatrix):
@@ -1547,8 +1545,6 @@ class COO(NDArrayOperatorsMixin):
             return _elemwise_unary(func, self, *args[1:], **kwargs)
         else:
             other = args[1]
-            if isinstance(other, scipy.sparse.spmatrix):
-                other = COO.from_scipy_sparse(other)
 
             if isinstance(other, COO) or isinstance(other, np.ndarray):
                 return _elemwise_binary(func, self, other, *args[2:], **kwargs)
@@ -1565,7 +1561,7 @@ class COO(NDArrayOperatorsMixin):
             The function to apply to one or two arguments.
         args : tuple, optional
             The extra arguments to pass to the function. If :code:`args[0]` is a COO object,
-            a scipy.sparse.spmatrix or a scalar; the function will be treated as a binary
+            or a scalar; the function will be treated as a binary
             function. Otherwise, it will be treated as a unary function.
         kwargs : dict, optional
             The kwargs to pass to the function.
@@ -1584,6 +1580,11 @@ class COO(NDArrayOperatorsMixin):
         --------
         :obj:`numpy.ufunc` : A similar Numpy construct. Note that any :code:`ufunc` can be used
             as the :code:`func` input to this function.
+
+        Notes
+        -----
+        In the future, this function may support functions of more than two arguments. Therefore,
+        it is best to pass in any additional arguments as keyword arguments.
         """
         return COO._elemwise(func, self, *args, **kwargs)
 

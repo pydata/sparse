@@ -26,14 +26,15 @@ However, the following are all unsupported and will raise a :obj:`ValueError`:
    np.log(x)
 
 Notice that you can apply any unary or binary :obj:`numpy.ufunc` to :obj:`COO`
-arrays, :obj:`scipy.sparse.spmatrix` objects and scalars and it will work so
-long as the result is not dense.
+arrays, and :obj:`numpy.ndarray` objects and scalars and it will work so
+long as the result is not dense. When applying to :obj:`numpy.ndarray` objects,
+we check that operating on the array with zero would always produce a zero.
 
 :obj:`COO.elemwise`
 -------------------
 This function allows you to apply any arbitrary unary or binary function where
 the first object is :obj:`COO`, and the second is a scalar, :obj:`COO`, or
-a :obj:`scipy.sparse.spmatrix`. For example, the following will add two
+a :obj:`numpy.ndarray`. For example, the following will add two
 :obj:`COO` objects:
 
 .. code-block:: python

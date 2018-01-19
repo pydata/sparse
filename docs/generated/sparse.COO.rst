@@ -6,7 +6,7 @@ COO
 .. autoclass:: COO
 
    .. note::
-      :obj:`COO` objects also support :doc:`operators <../user_manual/operations/basic>`
+      :obj:`COO` objects also support :doc:`operators <../user_manual/operations/operators>`
       and :doc:`indexing <../user_manual/operations/indexing>`
 
    .. rubric:: Attributes

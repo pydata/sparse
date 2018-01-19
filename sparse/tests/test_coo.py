@@ -242,38 +242,6 @@ def test_auto_densification_fails(func):
         func(xs, ys)
 
 
-@pytest.mark.parametrize('func', [
-    operator.mul, operator.add, operator.sub, operator.gt,
-    operator.lt, operator.ne
-])
-def test_op_scipy_sparse(func):
-    xs = sparse.random((3, 4), density=0.5)
-    y = sparse.random((3, 4), density=0.5).todense()
-
-    ys = scipy.sparse.csr_matrix(y)
-    x = xs.todense()
-
-    assert_eq(func(x, y), func(xs, ys))
-
-
-@pytest.mark.parametrize('func', [
-    operator.mul,
-    operator.add,
-    operator.sub,
-    pytest.mark.xfail(operator.gt, reason='Scipy sparse doesn\'t support this yet.'),
-    pytest.mark.xfail(operator.lt, reason='Scipy sparse doesn\'t support this yet.'),
-    pytest.mark.xfail(operator.ne, reason='Scipy sparse doesn\'t support this yet.'),
-])
-def test_op_scipy_sparse_left(func):
-    ys = sparse.random((3, 4), density=0.5)
-    x = sparse.random((3, 4), density=0.5).todense()
-
-    xs = scipy.sparse.csr_matrix(x)
-    y = ys.todense()
-
-    assert_eq(func(x, y), func(xs, ys))
-
-
 @pytest.mark.parametrize('func, scalar', [
     (operator.mul, 5),
     (operator.add, 0),

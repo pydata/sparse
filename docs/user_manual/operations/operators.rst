@@ -1,9 +1,9 @@
 .. currentmodule:: sparse
 
-Basic Operations
-================
+Operators
+=========
 :obj:`COO` objects can have a number of operators applied to them. They support
-operations with scalars, :obj:`scipy.sparse.spmatrix` objects, and other
+operations with scalars, :obj:`numpy.ndarray` objects, and other
 :obj:`COO` objects. For example, to get the sum of two :obj:`COO` objects, you
 would do the following:
 
@@ -53,6 +53,26 @@ If densification is needed, it must be explicit. In other words, you must call
 :obj:`COO.todense` on the :obj:`COO` object. If both operands are :obj:`COO`,
 both must be densified.
 
+Operations with :obj:`numpy.ndarray`
+------------------------------------
+Certain operations with :obj:`numpy.ndarray` are also supported. For example,
+the following are all allowed if :code:`x` is a :obj:`numpy.ndarray` and
+:code:`(x == 0).all()` evaluates to :code:`True`:
+
+.. code-block:: python
+
+   x + y
+   x - y
+
+The following is true so long as there are no infinities or NaNs in :code:`x`:
+
+.. code-block:: python
+
+   x * y
+
+In general, if operating on the :code:`numpy.ndarray` with a zero would produce
+all-zeros then the operation is supported.
+
 Broadcasting
 ------------
 All binary operators support :obj:`broadcasting <numpy.doc.broadcasting>`.
@@ -67,7 +87,7 @@ will raise a :obj:`ValueError`.
 Full List of Operators
 ----------------------
 Here, :code:`x` and :code:`y` can be :obj:`COO` arrays,
-:obj:`scipy.sparse.spmatrix` objects or scalars, keeping in mind :ref:`auto
+:obj:`numpy.ndarray` objects or scalars, keeping in mind :ref:`auto
 densification rules <auto-densification>`. The following operators are supported:
 
 * Basic algebraic operations
