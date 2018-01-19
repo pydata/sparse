@@ -1629,6 +1629,8 @@ class COO(NDArrayOperatorsMixin):
         """
         return self.elemwise(abs)
 
+    __abs__ = abs
+
     def exp(self, out=None):
         """
         Calculate the exponential of all elements in the array.
