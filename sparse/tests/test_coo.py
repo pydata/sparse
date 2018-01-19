@@ -256,6 +256,20 @@ def test_op_scipy_sparse(func):
     assert_eq(func(x, y), func(xs, ys))
 
 
+@pytest.mark.parametrize('func', [
+    operator.mul, operator.add, operator.sub, operator.gt,
+    operator.lt, operator.ne
+])
+def test_op_scipy_sparse_left(func):
+    ys = sparse.random((3, 4), density=0.5)
+    x = sparse.random((3, 4), density=0.5).todense()
+
+    xs = scipy.sparse.csr_matrix(x)
+    y = ys.todense()
+
+    assert_eq(func(x, y), func(xs, ys))
+
+
 @pytest.mark.parametrize('func, scalar', [
     (operator.mul, 5),
     (operator.add, 0),

@@ -7,6 +7,7 @@ import operator
 
 import numpy as np
 import scipy.sparse
+from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .slicing import normalize_index
 from .utils import _zero_of_dtype
@@ -20,7 +21,7 @@ except NameError:
     pass
 
 
-class COO(object):
+class COO(NDArrayOperatorsMixin):
     """
     A sparse multidimensional array.
 
@@ -1221,6 +1222,10 @@ class COO(object):
             return NotImplemented
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        out = kwargs.pop('out', None)
+        if out is not None:
+            return NotImplemented
+
         if method == '__call__':
             return COO._elemwise(ufunc, *inputs, **kwargs)
         elif method == 'reduce':
@@ -1522,105 +1527,6 @@ class COO(object):
         self.coords = coords
         self.has_duplicates = False
 
-    def __add__(self, other):
-        return self.elemwise(operator.add, other)
-
-    def __radd__(self, other):
-        return self.elemwise(_reverse_self_other(operator.add), other)
-
-    def __neg__(self):
-        return self.elemwise(operator.neg)
-
-    def __sub__(self, other):
-        return self.elemwise(operator.sub, other)
-
-    def __rsub__(self, other):
-        return self.elemwise(_reverse_self_other(operator.sub), other)
-
-    def __mul__(self, other):
-        return self.elemwise(operator.mul, other)
-
-    def __rmul__(self, other):
-        return self.elemwise(_reverse_self_other(operator.mul), other)
-
-    def __truediv__(self, other):
-        return self.elemwise(operator.truediv, other)
-
-    def __rtruediv__(self, other):
-        return self.elemwise(_reverse_self_other(operator.truediv), other)
-
-    def __floordiv__(self, other):
-        return self.elemwise(operator.floordiv, other)
-
-    def __rfloordiv__(self, other):
-        return self.elemwise(_reverse_self_other(operator.floordiv), other)
-
-    __div__ = __truediv__
-    __rdiv__ = __rtruediv__
-
-    def __pow__(self, other):
-        return self.elemwise(operator.pow, other)
-
-    def __rpow__(self, other):
-        return self.elemwise(_reverse_self_other(operator.pow), other)
-
-    def __mod__(self, other):
-        return self.elemwise(operator.mod, other)
-
-    def __rmod__(self, other):
-        return self.elemwise(_reverse_self_other(operator.mod), other)
-
-    def __and__(self, other):
-        return self.elemwise(operator.and_, other)
-
-    def __rand__(self, other):
-        return self.elemwise(_reverse_self_other(operator.and_), other)
-
-    def __xor__(self, other):
-        return self.elemwise(operator.xor, other)
-
-    def __rxor__(self, other):
-        return self.elemwise(_reverse_self_other(operator.xor), other)
-
-    def __or__(self, other):
-        return self.elemwise(operator.or_, other)
-
-    def __ror__(self, other):
-        return self.elemwise(_reverse_self_other(operator.or_), other)
-
-    def __invert__(self):
-        return self.elemwise(operator.invert)
-
-    def __gt__(self, other):
-        return self.elemwise(operator.gt, other)
-
-    def __ge__(self, other):
-        return self.elemwise(operator.ge, other)
-
-    def __lt__(self, other):
-        return self.elemwise(operator.lt, other)
-
-    def __le__(self, other):
-        return self.elemwise(operator.le, other)
-
-    def __eq__(self, other):
-        return self.elemwise(operator.eq, other)
-
-    def __ne__(self, other):
-        return self.elemwise(operator.ne, other)
-
-    def __lshift__(self, other):
-        return self.elemwise(operator.lshift, other)
-
-    def __rlshift__(self, other):
-        return self.elemwise(_reverse_self_other(operator.lshift), other)
-
-    def __rshift__(self, other):
-        return self.elemwise(operator.rshift, other)
-
-    def __rrshift__(self, other):
-        return self.elemwise(_reverse_self_other(operator.rshift), other)
-
     @staticmethod
     def _elemwise(func, *args, **kwargs):
         if len(args) == 0:
@@ -1628,7 +1534,7 @@ class COO(object):
 
         self = args[0]
         if isinstance(self, scipy.sparse.spmatrix):
-            self = COO.from_numpy(self)
+            self = COO.from_scipy_sparse(self)
         elif np.isscalar(self) or (isinstance(self, np.ndarray)
                                    and self.ndim == 0):
             func = partial(func, self)
@@ -1712,7 +1618,7 @@ class COO(object):
         return COO(coords, data, shape=result_shape, has_duplicates=self.has_duplicates,
                    sorted=self.sorted)
 
-    def __abs__(self):
+    def abs(self):
         """
         Calculate the absolute value element-wise.
 
@@ -1721,8 +1627,6 @@ class COO(object):
         :obj:`numpy.absolute` : NumPy equivalent ufunc.
         """
         return self.elemwise(abs)
-
-    abs = __abs__
 
     def exp(self, out=None):
         """
@@ -2464,7 +2368,8 @@ def _elemwise_binary(func, self, other, *args, **kwargs):
     self_zero = _zero_of_dtype(self.dtype)
     other_zero = _zero_of_dtype(other.dtype)
 
-    func_zero = _zero_of_dtype(func(self_zero, other_zero, *args, **kwargs).dtype)
+    func_value = func(self_zero, other_zero, *args, **kwargs)
+    func_zero = _zero_of_dtype(np.dtype(func_value))
     if check and func(self_zero, other_zero, *args, **kwargs) != func_zero:
         raise ValueError("Performing this operation would produce "
                          "a dense result: %s" % str(func))
