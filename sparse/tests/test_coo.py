@@ -257,8 +257,12 @@ def test_op_scipy_sparse(func):
 
 
 @pytest.mark.parametrize('func', [
-    operator.mul, operator.add, operator.sub, operator.gt,
-    operator.lt, operator.ne
+    operator.mul,
+    operator.add,
+    operator.sub,
+    pytest.mark.xfail(operator.gt, reason='Scipy sparse doesn\'t support this yet.'),
+    pytest.mark.xfail(operator.lt, reason='Scipy sparse doesn\'t support this yet.'),
+    pytest.mark.xfail(operator.ne, reason='Scipy sparse doesn\'t support this yet.'),
 ])
 def test_op_scipy_sparse_left(func):
     ys = sparse.random((3, 4), density=0.5)
