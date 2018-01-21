@@ -9,12 +9,10 @@ import numpy as np
 import scipy.sparse
 
 from .slicing import normalize_index
+from .utils import _zero_of_dtype
 
 # zip_longest with Python 2/3 compat
-try:
-    from itertools import zip_longest
-except ImportError:
-    from itertools import izip_longest as zip_longest
+from six.moves import range, zip_longest
 
 try:  # Windows compatibility
     int = long
@@ -183,10 +181,7 @@ class COO(object):
         if cache:
             self.enable_caching()
         if data is None:
-            # {(i, j, k): x, (i, j, k): y, ...}
-            if isinstance(coords, dict):
-                coords = list(coords.items())
-                has_duplicates = False
+            from .dok import DOK
 
             if isinstance(coords, COO):
                 self.coords = coords.coords
@@ -195,6 +190,15 @@ class COO(object):
                 self.sorted = coords.sorted
                 self.shape = coords.shape
                 return
+
+            if isinstance(coords, DOK):
+                shape = coords.shape
+                coords = coords.dict
+
+            # {(i, j, k): x, (i, j, k): y, ...}
+            if isinstance(coords, dict):
+                coords = list(coords.items())
+                has_duplicates = False
 
             if isinstance(coords, np.ndarray):
                 result = COO.from_numpy(coords)
@@ -2357,23 +2361,6 @@ def tril(x, k=0):
     data = x.data[mask]
 
     return COO(coords, data, x.shape, x.has_duplicates, x.sorted)
-
-
-def _zero_of_dtype(dtype):
-    """
-    Creates a ()-shaped 0-dimensional zero array of a given dtype.
-
-    Parameters
-    ----------
-    dtype : numpy.dtype
-        The dtype for the array.
-
-    Returns
-    -------
-    np.ndarray
-        The zero array.
-    """
-    return np.zeros((), dtype=dtype)
 
 
 # (c) Paul Panzer
