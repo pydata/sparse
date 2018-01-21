@@ -11,6 +11,8 @@ sparse
     :toctree:
     
     COO
+
+    DOK
     
 
 

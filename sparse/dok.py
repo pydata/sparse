@@ -19,7 +19,61 @@ except NameError:
 
 
 class DOK:
+    """
+    A class for building sparse multidimensional arrays.
+
+    Attributes
+    ----------
+    dtype : numpy.dtype
+        The datatype of this array. Can be :code:`None` if no elements
+        have been set yet.
+    shape : tuple[int]
+        The shape of this array.
+    dict : dict
+        The keys of this dictionary contain all the indices and the values
+        contain the nonzero entries.
+
+    Examples
+    --------
+    You can create :obj:`DOK` objects from Numpy arrays.
+
+    >>> x = np.eye(5, dtype=np.uint8)
+    >>> x[2, 3] = 5
+    >>> s = DOK(x)
+    >>> s
+    <DOK: shape=(5, 5), dtype=uint8, nnz=6>
+
+    You can also create them from just shapes, and use slicing assignment.
+
+    >>> s2 = DOK((5, 5))
+    >>> s2[1:3, 1:3] = [[4, 5], [6, 7]]
+    >>> s2
+    <DOK: shape=(5, 5), dtype=int64, nnz=4>
+
+    You can convert :obj:`DOK` objects to :obj:`COO` arrays, or :obj:`numpy.ndarray`
+    objects.
+
+    >>> from sparse import COO
+    >>> s3 = COO(s2)
+    >>> s3
+    <COO: shape=(5, 5), dtype=int64, nnz=4, sorted=False, duplicates=False>
+    >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[0, 0, 0, 0, 0],
+           [0, 4, 5, 0, 0],
+           [0, 6, 7, 0, 0],
+           [0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0]])
+    """
     def __init__(self, shape, values=None, dtype=None):
+        """
+
+
+        Parameters
+        ----------
+        shape
+        values
+        dtype
+        """
         from .coo import COO
         self.dict = {}
 
@@ -134,7 +188,13 @@ class DOK:
                 raise IndexError('All indices must be slices or integers'
                                  ' when setting an item.')
 
-        self.dict[tuple(key_list)] = value[()]
+        if value != _zero_of_dtype(self.dtype):
+            self.dict[tuple(key_list)] = value[()]
+
+    def __str__(self):
+        return "<DOK: shape=%s, dtype=%s, nnz=%d>" % (self.shape, self.dtype, self.nnz)
+
+    __repr__ = __str__
 
     def todense(self):
         result = np.zeros(self.shape, dtype=self.dtype)

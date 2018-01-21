@@ -111,12 +111,12 @@ class COO(object):
 
         Parameters
         ----------
-        coords : numpy.ndarray (ndim, nnz)
+        coords : numpy.ndarray (COO.ndim, COO.nnz)
             An array holding the index locations of every value
             Should have shape (number of dimensions, number of non-zeros)
-        data : numpy.ndarray (nnz,)
+        data : numpy.ndarray (COO.nnz,)
             An array of Values
-        shape : tuple[int] (ndim,), optional
+        shape : tuple[int] (COO.ndim,), optional
             The shape of the array
         has_duplicates : bool, optional
             A value indicating whether the supplied value for :code:`coords` has
