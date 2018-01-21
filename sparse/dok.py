@@ -35,24 +35,23 @@ class DOK:
         if isinstance(shape, np.ndarray):
             coords = np.nonzero(shape)
             data = shape[coords]
+            self.dtype = shape.dtype
             self.shape = shape.shape
 
             for c in zip(data, *coords):
-                c, d = c[0], c[1:]
+                d, c = c[0], c[1:]
                 self.dict[c] = d
 
             return
 
         self.dtype = dtype
-
         if isinstance(shape, Integral):
-            shape = (int(shape),)
+            self.shape = (int(shape),)
         elif isinstance(shape, Iterable):
-            for l in shape:
-                if not isinstance(l, Integral) or int(l) < 0:
-                    raise ValueError('shape must be an iterable of non-negative integers.')
+            if not all(isinstance(l, Integral) or int(l) < 0 for l in shape):
+                raise ValueError('shape must be an iterable of non-negative integers.')
 
-            shape = self.shape = tuple(shape)
+            self.shape = tuple(shape)
 
         if not values:
             values = {}
@@ -63,10 +62,6 @@ class DOK:
         else:
             raise ValueError('values must be a dict.')
 
-        self.shape = shape
-        if dtype:
-            self.dtype = dtype
-
     @property
     def ndim(self):
         return len(self.shape)
@@ -75,19 +70,22 @@ class DOK:
     def nnz(self):
         return len(self.dict)
 
-    def __getitem__(self, item):
-        item = normalize_index(item, self.shape)
+    def __getitem__(self, key):
+        key = normalize_index(key, self.shape)
 
-        for i in item:
-            if not isinstance(i, Integral):
-                raise IndexError('All indices must be integers'
-                                 ' when getting an item.')
+        if not all(isinstance(i, Integral) for i in key):
+            raise NotImplementedError('All indices must be integers'
+                                      ' when getting an item.')
 
-        if not len(item) == self.ndim:
-            raise IndexError('Can only get single elements.')
+        if len(key) != self.ndim:
+            raise NotImplementedError('Can only get single elements. '
+                                      'Expected key of length %d, got %s'
+                                      % (self.ndim, str(key)))
 
-        if item in self.dict.keys():
-            return self.dict[item]
+        key = tuple(int(k) for k in key)
+
+        if key in self.dict:
+            return self.dict[key]
         else:
             return _zero_of_dtype(self.dtype)[()]
 
@@ -105,7 +103,7 @@ class DOK:
         self._setitem(key_list, value)
 
     def _setitem(self, key_list, value):
-        value_missing_dims = self.ndim - value.ndim
+        value_missing_dims = len([ind for ind in key_list if isinstance(ind, slice)]) - value.ndim
 
         for i, ind in enumerate(key_list):
             if isinstance(ind, slice):
@@ -128,7 +126,7 @@ class DOK:
                 for v_idx, ki in enumerate(range(start, stop, step)):
                     key_list_temp = list(key_list)
                     key_list_temp[i] = ki
-                    vi = value if i < value_missing_dims else value[v_idx]
+                    vi = value if value_missing_dims > 0 else value[v_idx]
                     self._setitem(key_list_temp, vi)
 
                 return
