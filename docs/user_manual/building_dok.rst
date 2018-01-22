@@ -13,7 +13,8 @@ element.
 
 .. code-block:: python
 
-   s = DOK((6, 5, 2), [dtype=np.float64])
+   s = DOK((6, 5, 2))
+   s2 = DOK((2, 3, 4), dtype=np.float64)
 
 After this, you can build the array by assigning arrays or scalars to elements
 or slices of the original array. Broadcasting rules are followed.
