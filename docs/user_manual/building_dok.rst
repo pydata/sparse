@@ -8,8 +8,8 @@ arrays provide a simple builder interface to build :obj:`COO` arrays, but at
 this time, they can do little else.
 
 You can get started by defining the shape (and optionally, datatype) of the
-:obj:`DOK` array. If you do not specify a dtype, it is inferred from the first
-element.
+:obj:`DOK` array. If you do not specify a dtype, it is inferred from the value
+dictionary or is set to :code:`dtype('float64')` if that is not present.
 
 .. code-block:: python
 
