@@ -18,9 +18,19 @@ except NameError:
     pass
 
 
-class DOK:
+class DOK(object):
     """
     A class for building sparse multidimensional arrays.
+
+    Parameters
+    ----------
+    shape : tuple[int]
+        The shape of the array
+    data : dict, optional
+        The key-value pairs for the data in this array.
+    dtype : np.dtype, optional
+        The data type of this array. If left empty, it is inferred from
+        the first element.
 
     Attributes
     ----------
@@ -29,7 +39,7 @@ class DOK:
         have been set yet.
     shape : tuple[int]
         The shape of this array.
-    dict : dict
+    data : dict
         The keys of this dictionary contain all the indices and the values
         contain the nonzero entries.
 
@@ -43,7 +53,7 @@ class DOK:
 
     >>> x = np.eye(5, dtype=np.uint8)
     >>> x[2, 3] = 5
-    >>> s = DOK(x)
+    >>> s = DOK.from_numpy(x)
     >>> s
     <DOK: shape=(5, 5), dtype=uint8, nnz=6>
 
@@ -67,71 +77,42 @@ class DOK:
            [0, 6, 7, 0, 0],
            [0, 0, 0, 0, 0],
            [0, 0, 0, 0, 0]])
+
+    >>> s4 = COO.from_numpy(np.eye(4, dtype=np.uint8))
+    >>> s4
+    <COO: shape=(4, 4), dtype=uint8, nnz=4, sorted=True, duplicates=False>
+    >>> s5 = DOK.from_coo(s4)
+    >>> s5
+    <DOK: shape=(4, 4), dtype=uint8, nnz=4>
+
+    You can also create :obj:`DOK` arrays from a shape and a dict of
+    values. Zeros are automatically ignored.
+
+    >>> values = {
+    ...     (1, 2, 3): 4,
+    ...     (3, 2, 1): 0,
+    ... }
+    >>> s6 = DOK((5, 5, 5), values)
+    >>> s6
+    <DOK: shape=(5, 5, 5), dtype=int64, nnz=1>
     """
-    def __init__(self, shape, values=None, dtype=None):
-        """
-        Create a :obj:`DOK` array from a Numpy array, :obj:`COO`, or a dict.
 
-        Parameters
-        ----------
-        shape : tuple[int]
-            The shape of the created array.
-        values : dict
-            The key-value pairs of indices and their corresponding data.
-        dtype : np.dtype
-            The data type of the array.
-
-        Examples
-        --------
-        You can create :obj:`DOK` objects from Numpy arrays or :obj:`COO` arrays.
-
-        >>> x = np.eye(5, dtype=np.uint8)
-        >>> x[2, 3] = 5
-        >>> s = DOK(x)
-        >>> s
-        <DOK: shape=(5, 5), dtype=uint8, nnz=6>
-
-        >>> from sparse import COO
-        >>> s2 = COO.from_numpy(np.eye(4, dtype=np.uint8))
-        >>> s2
-        <COO: shape=(4, 4), dtype=uint8, nnz=4, sorted=True, duplicates=False>
-        >>> s3 = DOK(s2)
-        >>> s3
-        <DOK: shape=(4, 4), dtype=uint8, nnz=4>
-
-        You can also create :obj:`DOK` arrays from a shape and a dict of
-        values. Zeros are automatically ignored.
-
-        >>> values = {
-        ...     (1, 2, 3): 4,
-        ...     (3, 2, 1): 0,
-        ... }
-        >>> s4 = DOK((5, 5, 5), values)
-        >>> s4
-        <DOK: shape=(5, 5, 5), dtype=int64, nnz=1>
-        """
+    def __init__(self, shape, data=None, dtype=None):
         from .coo import COO
-        self.dict = {}
+        self.data = {}
 
         if isinstance(shape, COO):
-            self.dtype = shape.dtype
-            self.shape = shape.shape
-
-            for c, d in zip(shape.coords.T, shape.data):
-                self.dict[tuple(c)] = d
-
+            ar = DOK.from_coo(shape)
+            self.shape = ar.shape
+            self.dtype = ar.dtype
+            self.data = ar.data
             return
 
         if isinstance(shape, np.ndarray):
-            coords = np.nonzero(shape)
-            data = shape[coords]
-            self.dtype = shape.dtype
-            self.shape = shape.shape
-
-            for c in zip(data, *coords):
-                d, c = c[0], c[1:]
-                self.dict[c] = d
-
+            ar = DOK.from_numpy(shape)
+            self.shape = ar.shape
+            self.dtype = ar.dtype
+            self.data = ar.data
             return
 
         self.dtype = dtype
@@ -143,14 +124,98 @@ class DOK:
 
             self.shape = tuple(shape)
 
-        if not values:
-            values = {}
+        if not data:
+            data = {}
 
-        if isinstance(values, dict):
-            for c, d in six.iteritems(values):
+        if isinstance(data, dict):
+            for c, d in six.iteritems(data):
                 self[c] = d
         else:
-            raise ValueError('values must be a dict.')
+            raise ValueError('data must be a dict.')
+
+    @classmethod
+    def from_coo(cls, x):
+        """
+        Get a :obj:`DOK` array from a :obj:`COO` array.
+
+        Parameters
+        ----------
+        x : COO
+            The array to convert.
+
+        Returns
+        -------
+        DOK
+            The equivalent :obj:`DOK` array.
+
+        Examples
+        --------
+        >>> from sparse import COO
+        >>> s = COO.from_numpy(np.eye(4))
+        >>> s2 = DOK.from_coo(s)
+        >>> s2
+        <DOK: shape=(4, 4), dtype=float64, nnz=4>
+        """
+        ar = cls(x.shape, dtype=x.dtype)
+
+        for c, d in zip(x.coords.T, x.data):
+            ar.data[tuple(c)] = d
+
+        return ar
+
+    def to_coo(self):
+        """
+        Convert this :obj:`DOK` array to a :obj:`COO` array.
+
+        Returns
+        -------
+        COO
+            The equivalent :obj:`COO` array.
+
+        Examples
+        --------
+        >>> s = DOK((5, 5))
+        >>> s[1:3, 1:3] = [[4, 5], [6, 7]]
+        >>> s
+        <DOK: shape=(5, 5), dtype=int64, nnz=4>
+        >>> s2 = s.to_coo()
+        >>> s2
+        <COO: shape=(5, 5), dtype=int64, nnz=4, sorted=False, duplicates=False>
+        """
+        from .coo import COO
+        return COO(self)
+
+    @classmethod
+    def from_numpy(cls, x):
+        """
+        Get a :obj:`DOK` array from a Numpy array.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            The array to convert.
+
+        Returns
+        -------
+        DOK
+            The equivalent :obj:`DOK` array.
+
+        Examples
+        --------
+        >>> s = DOK.from_numpy(np.eye(4))
+        >>> s
+        <DOK: shape=(4, 4), dtype=float64, nnz=4>
+        """
+        ar = cls(x.shape, dtype=x.dtype)
+
+        coords = np.nonzero(x)
+        data = x[coords]
+
+        for c in zip(data, *coords):
+            d, c = c[0], c[1:]
+            ar.data[c] = d
+
+        return ar
 
     @property
     def ndim(self):
@@ -201,7 +266,7 @@ class DOK:
         >>> s.nnz
         1
         """
-        return len(self.dict)
+        return len(self.data)
 
     def __getitem__(self, key):
         key = normalize_index(key, self.shape)
@@ -217,8 +282,8 @@ class DOK:
 
         key = tuple(int(k) for k in key)
 
-        if key in self.dict:
-            return self.dict[key]
+        if key in self.data:
+            return self.data[key]
         else:
             return _zero_of_dtype(self.dtype)[()]
 
@@ -272,7 +337,7 @@ class DOK:
                                  ' when setting an item.')
 
         if value != _zero_of_dtype(self.dtype):
-            self.dict[tuple(key_list)] = value[()]
+            self.data[tuple(key_list)] = value[()]
 
     def __str__(self):
         return "<DOK: shape=%s, dtype=%s, nnz=%d>" % (self.shape, self.dtype, self.nnz)
@@ -306,7 +371,7 @@ class DOK:
         """
         result = np.zeros(self.shape, dtype=self.dtype)
 
-        for c, d in six.iteritems(self.dict):
+        for c, d in six.iteritems(self.data):
             result[c] = d
 
         return result

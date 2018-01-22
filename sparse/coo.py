@@ -27,6 +27,27 @@ class COO(object):
     This is stored in COO format.  It depends on NumPy and Scipy.sparse for
     computation, but supports arrays of arbitrary dimension.
 
+    Parameters
+    ----------
+    coords : numpy.ndarray (COO.ndim, COO.nnz)
+        An array holding the index locations of every value
+        Should have shape (number of dimensions, number of non-zeros)
+    data : numpy.ndarray (COO.nnz,)
+        An array of Values
+    shape : tuple[int] (COO.ndim,), optional
+        The shape of the array
+    has_duplicates : bool, optional
+        A value indicating whether the supplied value for :code:`coords` has
+        duplicates. Note that setting this to `False` when :code:`coords` does have
+        duplicates may result in undefined behaviour. See :obj:`COO.sum_duplicates`
+    sorted : bool, optional
+        A value indicating whether the values in `coords` are sorted. Note
+        that setting this to `False` when :code:`coords` isn't sorted may
+        result in undefined behaviour. See :obj:`COO.sort_indices`.
+    cache : bool, optional
+        Whether to enable cacheing for various operations. See
+        :obj:`COO.enable_caching`
+
     Attributes
     ----------
     coords : numpy.ndarray (ndim, nnz)
@@ -46,7 +67,7 @@ class COO(object):
 
     >>> x = np.eye(4, dtype=np.uint8)
     >>> x[2, 3] = 5
-    >>> s = COO(x)
+    >>> s = COO.from_numpy(x)
     >>> s
     <COO: shape=(4, 4), dtype=uint8, nnz=5, sorted=True, duplicates=False>
     >>> s.data  # doctest: +NORMALIZE_WHITESPACE
@@ -59,7 +80,7 @@ class COO(object):
 
     >>> x2 = np.eye(4, dtype=np.uint8)
     >>> x2[3, 2] = 5
-    >>> s2 = COO(x2)
+    >>> s2 = COO.from_numpy(x2)
     >>> (s + s2).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[2, 0, 0, 0],
            [0, 2, 0, 0],
@@ -75,7 +96,7 @@ class COO(object):
 
     >>> x3 = np.zeros((4, 1), dtype=np.uint8)
     >>> x3[2, 0] = 1
-    >>> s3 = COO(x3)
+    >>> s3 = COO.from_numpy(x3)
     >>> (s * s3).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[0, 0, 0, 0],
            [0, 0, 0, 0],
@@ -104,100 +125,65 @@ class COO(object):
     Traceback (most recent call last):
         ...
     ValueError: Performing this operation would produce a dense result: <ufunc 'exp'>
+
+    You can also create :obj:`COO` arrays from coordinates and data.
+
+    >>> coords = [[0, 0, 0, 1, 1],
+    ...           [0, 1, 2, 0, 3],
+    ...           [0, 3, 2, 0, 1]]
+    >>> data = [1, 2, 3, 4, 5]
+    >>> s4 = COO(coords, data, shape=(3, 4, 5))
+    >>> s4
+    <COO: shape=(3, 4, 5), dtype=int64, nnz=5, sorted=False, duplicates=True>
+
+    Following scipy.sparse conventions you can also pass these as a tuple with
+    rows and columns
+
+    >>> rows = [0, 1, 2, 3, 4]
+    >>> cols = [0, 0, 0, 1, 1]
+    >>> data = [10, 20, 30, 40, 50]
+    >>> z = COO((data, (rows, cols)))
+    >>> z.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[10,  0],
+           [20,  0],
+           [30,  0],
+           [ 0, 40],
+           [ 0, 50]])
+
+    You can also pass a dictionary or iterable of index/value pairs. Repeated
+    indices imply summation:
+
+    >>> d = {(0, 0, 0): 1, (1, 2, 3): 2, (1, 1, 0): 3}
+    >>> COO(d)
+    <COO: shape=(2, 3, 4), dtype=int64, nnz=3, sorted=False, duplicates=False>
+    >>> L = [((0, 0), 1),
+    ...      ((1, 1), 2),
+    ...      ((0, 0), 3)]
+    >>> COO(L).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[4, 0],
+           [0, 2]])
+
+    You can convert :obj:`DOK` arrays to :obj:`COO` arrays.
+
+    >>> from sparse import DOK
+    >>> s5 = DOK((5, 5))
+    >>> s5[1:3, 1:3] = [[4, 5], [6, 7]]
+    >>> s5
+    <DOK: shape=(5, 5), dtype=int64, nnz=4>
+    >>> s6 = COO(s5)
+    >>> s6
+    <COO: shape=(5, 5), dtype=int64, nnz=4, sorted=False, duplicates=False>
+    >>> s6.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[0, 0, 0, 0, 0],
+           [0, 4, 5, 0, 0],
+           [0, 6, 7, 0, 0],
+           [0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0]])
     """
     __array_priority__ = 12
 
     def __init__(self, coords, data=None, shape=None, has_duplicates=True,
                  sorted=False, cache=False):
-        """
-        Make a sparse array by passing in an array of coordinates and an array of
-        values.
-
-        Parameters
-        ----------
-        coords : numpy.ndarray (COO.ndim, COO.nnz)
-            An array holding the index locations of every value
-            Should have shape (number of dimensions, number of non-zeros)
-        data : numpy.ndarray (COO.nnz,)
-            An array of Values
-        shape : tuple[int] (COO.ndim,), optional
-            The shape of the array
-        has_duplicates : bool, optional
-            A value indicating whether the supplied value for :code:`coords` has
-            duplicates. Note that setting this to `False` when :code:`coords` does have
-            duplicates may result in undefined behaviour. See :obj:`COO.sum_duplicates`
-        sorted : bool, optional
-            A value indicating whether the values in `coords` are sorted. Note
-            that setting this to `False` when :code:`coords` isn't sorted may
-            result in undefined behaviour. See :obj:`COO.sort_indices`.
-        cache : bool, optional
-            Whether to enable cacheing for various operations. See
-            :obj:`COO.enable_caching`
-
-        See Also
-        --------
-        COO.from_numpy : Generate sparse array from NumPy array
-        COO.from_scipy_sparse : Generate sparse array from SciPy sparse matrix
-
-        Examples
-        --------
-        >>> x = np.eye(4)
-        >>> x[2, 3] = 5
-        >>> s = COO(x)
-        >>> coords = [[0, 0, 0, 1, 1],
-        ...           [0, 1, 2, 0, 3],
-        ...           [0, 3, 2, 0, 1]]
-        >>> data = [1, 2, 3, 4, 5]
-        >>> s2 = COO(coords, data, shape=(3, 4, 5))
-        >>> s2
-        <COO: shape=(3, 4, 5), dtype=int64, nnz=5, sorted=False, duplicates=True>
-        >>> tensordot(s, s2, axes=(0, 1))
-        <COO: shape=(4, 3, 5), dtype=float64, nnz=6, sorted=False, duplicates=False>
-
-        Following scipy.sparse conventions you can also pass these as a tuple with
-        rows and columns
-
-        >>> rows = [0, 1, 2, 3, 4]
-        >>> cols = [0, 0, 0, 1, 1]
-        >>> data = [10, 20, 30, 40, 50]
-        >>> z = COO((data, (rows, cols)))
-        >>> z.todense()  # doctest: +NORMALIZE_WHITESPACE
-        array([[10,  0],
-               [20,  0],
-               [30,  0],
-               [ 0, 40],
-               [ 0, 50]])
-
-        You can also pass a dictionary or iterable of index/value pairs. Repeated
-        indices imply summation:
-
-        >>> d = {(0, 0, 0): 1, (1, 2, 3): 2, (1, 1, 0): 3}
-        >>> COO(d)
-        <COO: shape=(2, 3, 4), dtype=int64, nnz=3, sorted=False, duplicates=False>
-        >>> L = [((0, 0), 1),
-        ...      ((1, 1), 2),
-        ...      ((0, 0), 3)]
-        >>> COO(L).todense()  # doctest: +NORMALIZE_WHITESPACE
-        array([[4, 0],
-               [0, 2]])
-
-        You can convert :obj:`DOK` arrays to :obj:`COO` arrays.
-
-        >>> from sparse import DOK
-        >>> s3 = DOK((5, 5))
-        >>> s3[1:3, 1:3] = [[4, 5], [6, 7]]
-        >>> s3
-        <DOK: shape=(5, 5), dtype=int64, nnz=4>
-        >>> s4 = COO(s3)
-        >>> s4
-        <COO: shape=(5, 5), dtype=int64, nnz=4, sorted=False, duplicates=False>
-        >>> s4.todense()  # doctest: +NORMALIZE_WHITESPACE
-        array([[0, 0, 0, 0, 0],
-               [0, 4, 5, 0, 0],
-               [0, 6, 7, 0, 0],
-               [0, 0, 0, 0, 0],
-               [0, 0, 0, 0, 0]])
-        """
         self._cache = None
         if cache:
             self.enable_caching()
@@ -214,7 +200,7 @@ class COO(object):
 
             if isinstance(coords, DOK):
                 shape = coords.shape
-                coords = coords.dict
+                coords = coords.data
 
             # {(i, j, k): x, (i, j, k): y, ...}
             if isinstance(coords, dict):
@@ -1506,7 +1492,7 @@ class COO(object):
         """
         # Inspired by scipy/sparse/coo.py::sum_duplicates
         # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
-        if not self.has_duplicates:
+        if not self.has_duplicates and self.sorted:
             return
         if not self.coords.size:
             return

@@ -26,6 +26,12 @@ DOK
    
       DOK.__init__
    
+      DOK.from_coo
+   
+      DOK.from_numpy
+   
+      DOK.to_coo
+   
       DOK.todense
    
    
