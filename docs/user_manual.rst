@@ -14,5 +14,6 @@ this object.
    user_manual/installing
    user_manual/getting_started
    user_manual/constructing
+   user_manual/building_dok
    user_manual/operations
    user_manual/converting

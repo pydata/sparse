@@ -36,6 +36,10 @@ class COO(object):
     shape : tuple[int] (ndim,)
         The dimensions of this array.
 
+    See Also
+    --------
+    DOK : A mostly write-only sparse array.
+
     Examples
     --------
     You can create :obj:`COO` objects from Numpy arrays.
@@ -130,6 +134,11 @@ class COO(object):
             Whether to enable cacheing for various operations. See
             :obj:`COO.enable_caching`
 
+        See Also
+        --------
+        COO.from_numpy : Generate sparse array from NumPy array
+        COO.from_scipy_sparse : Generate sparse array from SciPy sparse matrix
+
         Examples
         --------
         >>> x = np.eye(4)
@@ -188,11 +197,6 @@ class COO(object):
                [0, 6, 7, 0, 0],
                [0, 0, 0, 0, 0],
                [0, 0, 0, 0, 0]])
-
-        See Also
-        --------
-        COO.from_numpy : Generate sparse array from NumPy array
-        COO.from_scipy_sparse : Generate sparse array from SciPy sparse matrix
         """
         self._cache = None
         if cache:
@@ -350,6 +354,7 @@ class COO(object):
 
         See Also
         --------
+        DOK.todense : Equivalent :obj:`DOK` array method.
         scipy.sparse.coo_matrix.todense : Equivalent Scipy method.
 
         Examples
@@ -442,6 +447,7 @@ class COO(object):
 
         See Also
         --------
+        DOK.ndim : Equivalent property for :obj:`DOK` arrays.
         numpy.ndarray.ndim : Numpy equivalent property.
 
         Examples
@@ -468,6 +474,7 @@ class COO(object):
 
         See Also
         --------
+        DOK.nnz : Equivalent :obj:`DOK` array property.
         numpy.count_nonzero : A similar Numpy function.
         scipy.sparse.coo_matrix.nnz : The Scipy equivalent property.
 

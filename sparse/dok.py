@@ -33,6 +33,10 @@ class DOK:
         The keys of this dictionary contain all the indices and the values
         contain the nonzero entries.
 
+    See Also
+    --------
+    COO : A read-only sparse array.
+
     Examples
     --------
     You can create :obj:`DOK` objects from Numpy arrays.
@@ -158,6 +162,11 @@ class DOK:
         int
             The number of dimensions.
 
+        See Also
+        --------
+        COO.ndim : Equivalent property for :obj:`COO` arrays.
+        numpy.ndarray.ndim : Numpy equivalent property.
+
         Examples
         --------
         >>> s = DOK((1, 2, 3))
@@ -175,6 +184,12 @@ class DOK:
         -------
         int
             The number of nonzero elements.
+
+        See Also
+        --------
+        COO.nnz : Equivalent :obj:`COO` array property.
+        numpy.count_nonzero : A similar Numpy function.
+        scipy.sparse.dok_matrix.nnz : The Scipy equivalent property.
 
         Examples
         --------
@@ -244,10 +259,11 @@ class DOK:
                     if start < stop:
                         start = stop
 
+                key_list_temp = key_list[:]
                 for v_idx, ki in enumerate(range(start, stop, step)):
-                    key_list_temp = list(key_list)
                     key_list_temp[i] = ki
-                    vi = value if value_missing_dims > 0 else value[v_idx]
+                    vi = value if value_missing_dims > 0 else \
+                        (value[0] if value.shape[0] == 1 else value[v_idx])
                     self._setitem(key_list_temp, vi)
 
                 return
@@ -271,6 +287,11 @@ class DOK:
         -------
         numpy.ndarray
             The equivalent dense array.
+
+        See Also
+        --------
+        COO.todense : Equivalent :obj:`COO` array method.
+        scipy.sparse.dok_matrix.todense : Equivalent Scipy method.
 
         Examples
         --------
