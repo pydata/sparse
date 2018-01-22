@@ -59,7 +59,7 @@ class DOK(object):
 
     You can also create them from just shapes, and use slicing assignment.
 
-    >>> s2 = DOK((5, 5))
+    >>> s2 = DOK((5, 5), dtype=np.int64)
     >>> s2[1:3, 1:3] = [[4, 5], [6, 7]]
     >>> s2
     <DOK: shape=(5, 5), dtype=int64, nnz=4>
@@ -115,7 +115,7 @@ class DOK(object):
             self.data = ar.data
             return
 
-        self.dtype = dtype
+        self.dtype = np.dtype(dtype)
         if isinstance(shape, Integral):
             self.shape = (int(shape),)
         elif isinstance(shape, Iterable):
@@ -128,6 +128,12 @@ class DOK(object):
             data = {}
 
         if isinstance(data, dict):
+            if not dtype:
+                if not len(data):
+                    self.dtype = np.dtype('float64')
+                else:
+                    self.dtype = np.result_type(*map(lambda x: np.asarray(x).dtype, data.values()))
+
             for c, d in six.iteritems(data):
                 self[c] = d
         else:
@@ -177,10 +183,10 @@ class DOK(object):
         >>> s = DOK((5, 5))
         >>> s[1:3, 1:3] = [[4, 5], [6, 7]]
         >>> s
-        <DOK: shape=(5, 5), dtype=int64, nnz=4>
+        <DOK: shape=(5, 5), dtype=float64, nnz=4>
         >>> s2 = s.to_coo()
         >>> s2
-        <COO: shape=(5, 5), dtype=int64, nnz=4, sorted=False, duplicates=False>
+        <COO: shape=(5, 5), dtype=float64, nnz=4, sorted=False, duplicates=False>
         """
         from .coo import COO
         return COO(self)
@@ -291,10 +297,7 @@ class DOK(object):
         key = normalize_index(key, self.shape)
         value = np.asanyarray(value)
 
-        if not self.dtype:
-            self.dtype = value.dtype
-        else:
-            value = value.astype(self.dtype)
+        value = value.astype(self.dtype)
 
         key_list = [int(k) if isinstance(k, Integral) else k for k in key]
 
@@ -362,12 +365,12 @@ class DOK(object):
         --------
         >>> s = DOK((5, 5))
         >>> s[1:3, 1:3] = [[4, 5], [6, 7]]
-        >>> s.todense()  # doctest: +NORMALIZE_WHITESPACE
-        array([[0, 0, 0, 0, 0],
-               [0, 4, 5, 0, 0],
-               [0, 6, 7, 0, 0],
-               [0, 0, 0, 0, 0],
-               [0, 0, 0, 0, 0]])
+        >>> s.todense()  # doctest: +SKIP
+        array([[0., 0., 0., 0., 0.],
+               [0., 4., 5., 0., 0.],
+               [0., 6., 7., 0., 0.],
+               [0., 0., 0., 0., 0.],
+               [0., 0., 0., 0., 0.]])
         """
         result = np.zeros(self.shape, dtype=self.dtype)
 

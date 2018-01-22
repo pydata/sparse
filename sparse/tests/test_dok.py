@@ -54,7 +54,7 @@ def test_convert_to_numpy():
     assert_eq(x, s)
 
 
-@pytest.mark.parametrize('shape, values', [
+@pytest.mark.parametrize('shape, data', [
     (2, {
         0: 1
     }),
@@ -68,11 +68,11 @@ def test_convert_to_numpy():
         (1, 1): [6, 5, 4, 1]
     }),
 ])
-def test_construct(shape, values):
-    s = DOK(shape, values)
+def test_construct(shape, data):
+    s = DOK(shape, data)
     x = np.zeros(shape, dtype=s.dtype)
 
-    for c, d in six.iteritems(values):
+    for c, d in six.iteritems(data):
         x[c] = d
 
     assert_eq(x, s)
@@ -121,3 +121,31 @@ def test_setitem(shape, index, value):
     x[index] = value
 
     assert_eq(x, s)
+
+
+def test_default_dtype():
+    s = DOK((5,))
+
+    assert s.dtype == np.float64
+
+
+def test_int_dtype():
+    data = {
+        1: np.uint8(1),
+        2: np.uint16(2),
+    }
+
+    s = DOK((5,), data)
+
+    assert s.dtype == np.uint16
+
+
+def test_float_dtype():
+    data = {
+        1: np.uint8(1),
+        2: np.float32(2),
+    }
+
+    s = DOK((5,), data)
+
+    assert s.dtype == np.float32

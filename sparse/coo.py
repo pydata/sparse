@@ -166,7 +166,7 @@ class COO(object):
     You can convert :obj:`DOK` arrays to :obj:`COO` arrays.
 
     >>> from sparse import DOK
-    >>> s5 = DOK((5, 5))
+    >>> s5 = DOK((5, 5), dtype=np.int64)
     >>> s5[1:3, 1:3] = [[4, 5], [6, 7]]
     >>> s5
     <DOK: shape=(5, 5), dtype=int64, nnz=4>
