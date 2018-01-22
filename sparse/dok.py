@@ -132,7 +132,7 @@ class DOK(object):
                 if not len(data):
                     self.dtype = np.dtype('float64')
                 else:
-                    self.dtype = np.result_type(*map(lambda x: np.asarray(x).dtype, data.values()))
+                    self.dtype = np.result_type(*map(lambda x: np.asarray(x).dtype, six.itervalues(data)))
 
             for c, d in six.iteritems(data):
                 self[c] = d
