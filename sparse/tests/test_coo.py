@@ -1017,6 +1017,8 @@ def test_empty_reduction():
 def test_random_shape(shape, density):
     s = sparse.random(shape, density)
 
+    assert isinstance(s, COO)
+
     assert s.shape == shape
     expected_nnz = density * np.prod(shape)
     assert np.floor(expected_nnz) <= s.nnz <= np.ceil(expected_nnz)

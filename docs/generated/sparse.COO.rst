@@ -25,7 +25,6 @@ COO
    .. autosummary::
       :toctree:
 
-      COO.__init__
       COO.from_numpy
       COO.from_scipy_sparse
 

@@ -9,12 +9,10 @@ import numpy as np
 import scipy.sparse
 
 from .slicing import normalize_index
+from .utils import _zero_of_dtype
 
 # zip_longest with Python 2/3 compat
-try:
-    from itertools import zip_longest
-except ImportError:
-    from itertools import izip_longest as zip_longest
+from six.moves import range, zip_longest
 
 try:  # Windows compatibility
     int = long
@@ -29,6 +27,27 @@ class COO(object):
     This is stored in COO format.  It depends on NumPy and Scipy.sparse for
     computation, but supports arrays of arbitrary dimension.
 
+    Parameters
+    ----------
+    coords : numpy.ndarray (COO.ndim, COO.nnz)
+        An array holding the index locations of every value
+        Should have shape (number of dimensions, number of non-zeros)
+    data : numpy.ndarray (COO.nnz,)
+        An array of Values
+    shape : tuple[int] (COO.ndim,), optional
+        The shape of the array
+    has_duplicates : bool, optional
+        A value indicating whether the supplied value for :code:`coords` has
+        duplicates. Note that setting this to `False` when :code:`coords` does have
+        duplicates may result in undefined behaviour. See :obj:`COO.sum_duplicates`
+    sorted : bool, optional
+        A value indicating whether the values in `coords` are sorted. Note
+        that setting this to `False` when :code:`coords` isn't sorted may
+        result in undefined behaviour. See :obj:`COO.sort_indices`.
+    cache : bool, optional
+        Whether to enable cacheing for various operations. See
+        :obj:`COO.enable_caching`
+
     Attributes
     ----------
     coords : numpy.ndarray (ndim, nnz)
@@ -38,13 +57,17 @@ class COO(object):
     shape : tuple[int] (ndim,)
         The dimensions of this array.
 
+    See Also
+    --------
+    DOK : A mostly write-only sparse array.
+
     Examples
     --------
     You can create :obj:`COO` objects from Numpy arrays.
 
     >>> x = np.eye(4, dtype=np.uint8)
     >>> x[2, 3] = 5
-    >>> s = COO(x)
+    >>> s = COO.from_numpy(x)
     >>> s
     <COO: shape=(4, 4), dtype=uint8, nnz=5, sorted=True, duplicates=False>
     >>> s.data  # doctest: +NORMALIZE_WHITESPACE
@@ -57,7 +80,7 @@ class COO(object):
 
     >>> x2 = np.eye(4, dtype=np.uint8)
     >>> x2[3, 2] = 5
-    >>> s2 = COO(x2)
+    >>> s2 = COO.from_numpy(x2)
     >>> (s + s2).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[2, 0, 0, 0],
            [0, 2, 0, 0],
@@ -73,7 +96,7 @@ class COO(object):
 
     >>> x3 = np.zeros((4, 1), dtype=np.uint8)
     >>> x3[2, 0] = 1
-    >>> s3 = COO(x3)
+    >>> s3 = COO.from_numpy(x3)
     >>> (s * s3).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[0, 0, 0, 0],
            [0, 0, 0, 0],
@@ -102,91 +125,70 @@ class COO(object):
     Traceback (most recent call last):
         ...
     ValueError: Performing this operation would produce a dense result: <ufunc 'exp'>
+
+    You can also create :obj:`COO` arrays from coordinates and data.
+
+    >>> coords = [[0, 0, 0, 1, 1],
+    ...           [0, 1, 2, 0, 3],
+    ...           [0, 3, 2, 0, 1]]
+    >>> data = [1, 2, 3, 4, 5]
+    >>> s4 = COO(coords, data, shape=(3, 4, 5))
+    >>> s4
+    <COO: shape=(3, 4, 5), dtype=int64, nnz=5, sorted=False, duplicates=True>
+
+    Following scipy.sparse conventions you can also pass these as a tuple with
+    rows and columns
+
+    >>> rows = [0, 1, 2, 3, 4]
+    >>> cols = [0, 0, 0, 1, 1]
+    >>> data = [10, 20, 30, 40, 50]
+    >>> z = COO((data, (rows, cols)))
+    >>> z.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[10,  0],
+           [20,  0],
+           [30,  0],
+           [ 0, 40],
+           [ 0, 50]])
+
+    You can also pass a dictionary or iterable of index/value pairs. Repeated
+    indices imply summation:
+
+    >>> d = {(0, 0, 0): 1, (1, 2, 3): 2, (1, 1, 0): 3}
+    >>> COO(d)
+    <COO: shape=(2, 3, 4), dtype=int64, nnz=3, sorted=False, duplicates=False>
+    >>> L = [((0, 0), 1),
+    ...      ((1, 1), 2),
+    ...      ((0, 0), 3)]
+    >>> COO(L).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[4, 0],
+           [0, 2]])
+
+    You can convert :obj:`DOK` arrays to :obj:`COO` arrays.
+
+    >>> from sparse import DOK
+    >>> s5 = DOK((5, 5), dtype=np.int64)
+    >>> s5[1:3, 1:3] = [[4, 5], [6, 7]]
+    >>> s5
+    <DOK: shape=(5, 5), dtype=int64, nnz=4>
+    >>> s6 = COO(s5)
+    >>> s6
+    <COO: shape=(5, 5), dtype=int64, nnz=4, sorted=False, duplicates=False>
+    >>> s6.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[0, 0, 0, 0, 0],
+           [0, 4, 5, 0, 0],
+           [0, 6, 7, 0, 0],
+           [0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0]])
     """
     __array_priority__ = 12
 
     def __init__(self, coords, data=None, shape=None, has_duplicates=True,
                  sorted=False, cache=False):
-        """
-        Make a sparse array by passing in an array of coordinates and an array of
-        values.
-
-        Parameters
-        ----------
-        coords : numpy.ndarray (ndim, nnz)
-            An array holding the index locations of every value
-            Should have shape (number of dimensions, number of non-zeros)
-        data : numpy.ndarray (nnz,)
-            An array of Values
-        shape : tuple[int] (ndim,), optional
-            The shape of the array
-        has_duplicates : bool, optional
-            A value indicating whether the supplied value for :code:`coords` has
-            duplicates. Note that setting this to `False` when :code:`coords` does have
-            duplicates may result in undefined behaviour. See :obj:`COO.sum_duplicates`
-        sorted : bool, optional
-            A value indicating whether the values in `coords` are sorted. Note
-            that setting this to `False` when :code:`coords` isn't sorted may
-            result in undefined behaviour. See :obj:`COO.sort_indices`.
-        cache : bool, optional
-            Whether to enable cacheing for various operations. See
-            :obj:`COO.enable_caching`
-
-        Examples
-        --------
-        >>> x = np.eye(4)
-        >>> x[2, 3] = 5
-        >>> s = COO(x)
-        >>> coords = [[0, 0, 0, 1, 1],
-        ...           [0, 1, 2, 0, 3],
-        ...           [0, 3, 2, 0, 1]]
-        >>> data = [1, 2, 3, 4, 5]
-        >>> s2 = COO(coords, data, shape=(3, 4, 5))
-        >>> s2
-        <COO: shape=(3, 4, 5), dtype=int64, nnz=5, sorted=False, duplicates=True>
-        >>> tensordot(s, s2, axes=(0, 1))
-        <COO: shape=(4, 3, 5), dtype=float64, nnz=6, sorted=False, duplicates=False>
-
-        Following scipy.sparse conventions you can also pass these as a tuple with
-        rows and columns
-
-        >>> rows = [0, 1, 2, 3, 4]
-        >>> cols = [0, 0, 0, 1, 1]
-        >>> data = [10, 20, 30, 40, 50]
-        >>> z = COO((data, (rows, cols)))
-        >>> z.todense()  # doctest: +NORMALIZE_WHITESPACE
-        array([[10,  0],
-               [20,  0],
-               [30,  0],
-               [ 0, 40],
-               [ 0, 50]])
-
-        You can also pass a dictionary or iterable of index/value pairs. Repeated
-        indices imply summation:
-
-        >>> d = {(0, 0, 0): 1, (1, 2, 3): 2, (1, 1, 0): 3}
-        >>> COO(d)
-        <COO: shape=(2, 3, 4), dtype=int64, nnz=3, sorted=False, duplicates=False>
-        >>> L = [((0, 0), 1),
-        ...      ((1, 1), 2),
-        ...      ((0, 0), 3)]
-        >>> COO(L).todense()  # doctest: +NORMALIZE_WHITESPACE
-        array([[4, 0],
-               [0, 2]])
-
-        See Also
-        --------
-        COO.from_numpy : Generate sparse array from NumPy array
-        COO.from_scipy_sparse : Generate sparse array from SciPy sparse matrix
-        """
         self._cache = None
         if cache:
             self.enable_caching()
         if data is None:
-            # {(i, j, k): x, (i, j, k): y, ...}
-            if isinstance(coords, dict):
-                coords = list(coords.items())
-                has_duplicates = False
+            from .dok import DOK
 
             if isinstance(coords, COO):
                 self.coords = coords.coords
@@ -195,6 +197,15 @@ class COO(object):
                 self.sorted = coords.sorted
                 self.shape = coords.shape
                 return
+
+            if isinstance(coords, DOK):
+                shape = coords.shape
+                coords = coords.data
+
+            # {(i, j, k): x, (i, j, k): y, ...}
+            if isinstance(coords, dict):
+                coords = list(coords.items())
+                has_duplicates = False
 
             if isinstance(coords, np.ndarray):
                 result = COO.from_numpy(coords)
@@ -329,6 +340,7 @@ class COO(object):
 
         See Also
         --------
+        DOK.todense : Equivalent :obj:`DOK` array method.
         scipy.sparse.coo_matrix.todense : Equivalent Scipy method.
 
         Examples
@@ -421,6 +433,7 @@ class COO(object):
 
         See Also
         --------
+        DOK.ndim : Equivalent property for :obj:`DOK` arrays.
         numpy.ndarray.ndim : Numpy equivalent property.
 
         Examples
@@ -447,6 +460,7 @@ class COO(object):
 
         See Also
         --------
+        DOK.nnz : Equivalent :obj:`DOK` array property.
         numpy.count_nonzero : A similar Numpy function.
         scipy.sparse.coo_matrix.nnz : The Scipy equivalent property.
 
@@ -1478,7 +1492,7 @@ class COO(object):
         """
         # Inspired by scipy/sparse/coo.py::sum_duplicates
         # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
-        if not self.has_duplicates:
+        if not self.has_duplicates and self.sorted:
             return
         if not self.coords.size:
             return
@@ -2359,23 +2373,6 @@ def tril(x, k=0):
     return COO(coords, data, x.shape, x.has_duplicates, x.sorted)
 
 
-def _zero_of_dtype(dtype):
-    """
-    Creates a ()-shaped 0-dimensional zero array of a given dtype.
-
-    Parameters
-    ----------
-    dtype : numpy.dtype
-        The dtype for the array.
-
-    Returns
-    -------
-    np.ndarray
-        The zero array.
-    """
-    return np.zeros((), dtype=dtype)
-
-
 # (c) Paul Panzer
 # Taken from https://stackoverflow.com/a/47833496/774273
 # License: https://creativecommons.org/licenses/by-sa/3.0/
@@ -2454,100 +2451,6 @@ def _grouped_reduce(x, groups, method, **kwargs):
     result = method.reduceat(x, inv_idx, **kwargs)
     counts = np.diff(np.concatenate((inv_idx, [len(x)])))
     return result, inv_idx, counts
-
-
-def random(
-        shape,
-        density=0.01,
-        canonical_order=False,
-        random_state=None,
-        data_rvs=None,
-):
-    """ Generate a random sparse multidimensional array
-
-    Parameters
-    ----------
-    shape: Tuple[int]
-        Shape of the array
-    density: float, optional
-        Density of the generated array.
-    canonical_order : bool, optional
-        Whether or not to put the output :obj:`COO` object into canonical
-        order. :code:`False` by default.
-    random_state : Union[numpy.random.RandomState, int], optional
-        Random number generator or random seed. If not given, the
-        singleton numpy.random will be used. This random state will be used
-        for sampling the sparsity structure, but not necessarily for sampling
-        the values of the structurally nonzero entries of the matrix.
-    data_rvs : Callable
-        Data generation callback. Must accept one single parameter: number of
-        :code:`nnz` elements, and return one single NumPy array of exactly
-        that length.
-
-    Returns
-    -------
-    COO
-        The generated random matrix.
-
-    See Also
-    --------
-    :obj:`scipy.sparse.rand`
-        Equivalent Scipy function.
-    :obj:`numpy.random.rand`
-        Similar Numpy function.
-
-    Examples
-    --------
-
-    >>> from sparse import random
-    >>> from scipy import stats
-    >>> rvs = lambda x: stats.poisson(25, loc=10).rvs(x, random_state=np.random.RandomState(1))
-    >>> s = random((2, 3, 4), density=0.25, random_state=np.random.RandomState(1), data_rvs=rvs)
-    >>> s.todense()  # doctest: +NORMALIZE_WHITESPACE
-    array([[[ 0,  0,  0,  0],
-            [ 0, 34,  0,  0],
-            [33, 34,  0, 29]],
-    <BLANKLINE>
-           [[30,  0,  0, 34],
-            [ 0,  0,  0,  0],
-            [ 0,  0,  0,  0]]])
-
-    """
-    # Copied, in large part, from scipy.sparse.random
-    # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
-
-    elements = np.prod(shape)
-
-    nnz = int(elements * density)
-
-    if random_state is None:
-        random_state = np.random
-    elif isinstance(random_state, numbers.Integral):
-        random_state = np.random.RandomState(random_state)
-    if data_rvs is None:
-        data_rvs = random_state.rand
-
-    # Use the algorithm from python's random.sample for k < mn/3.
-    if elements < 3 * nnz:
-        ind = random_state.choice(elements, size=nnz, replace=False)
-    else:
-        ind = np.empty(nnz, dtype=np.min_scalar_type(elements - 1))
-        selected = set()
-        for i in range(nnz):
-            j = random_state.randint(elements)
-            while j in selected:
-                j = random_state.randint(elements)
-            selected.add(j)
-            ind[i] = j
-
-    data = data_rvs(nnz)
-
-    ar = COO(ind[None, :], data, shape=nnz).reshape(shape)
-
-    if canonical_order:
-        ar.sum_duplicates()
-
-    return ar
 
 
 def _elemwise_binary(func, self, other, *args, **kwargs):
