@@ -24,8 +24,6 @@ DOK
    .. autosummary::
       :toctree:
    
-      DOK.__init__
-   
       DOK.from_coo
    
       DOK.from_numpy
