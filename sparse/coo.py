@@ -172,6 +172,23 @@ class COO(object):
         array([[4, 0],
                [0, 2]])
 
+        You can convert :obj:`DOK` arrays to :obj:`COO` arrays.
+
+        >>> from sparse import DOK
+        >>> s3 = DOK((5, 5))
+        >>> s3[1:3, 1:3] = [[4, 5], [6, 7]]
+        >>> s3
+        <DOK: shape=(5, 5), dtype=int64, nnz=4>
+        >>> s4 = COO(s3)
+        >>> s4
+        <COO: shape=(5, 5), dtype=int64, nnz=4, sorted=False, duplicates=False>
+        >>> s4.todense()  # doctest: +NORMALIZE_WHITESPACE
+        array([[0, 0, 0, 0, 0],
+               [0, 4, 5, 0, 0],
+               [0, 6, 7, 0, 0],
+               [0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0]])
+
         See Also
         --------
         COO.from_numpy : Generate sparse array from NumPy array

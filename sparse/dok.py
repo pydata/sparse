@@ -50,7 +50,7 @@ class DOK:
     >>> s2
     <DOK: shape=(5, 5), dtype=int64, nnz=4>
 
-    You can convert :obj:`DOK` objects to :obj:`COO` arrays, or :obj:`numpy.ndarray`
+    You can convert :obj:`DOK` arrays to :obj:`COO` arrays, or :obj:`numpy.ndarray`
     objects.
 
     >>> from sparse import COO
@@ -66,13 +66,45 @@ class DOK:
     """
     def __init__(self, shape, values=None, dtype=None):
         """
-
+        Create a :obj:`DOK` array from a Numpy array, :obj:`COO`, or a dict.
 
         Parameters
         ----------
-        shape
-        values
-        dtype
+        shape : tuple[int]
+            The shape of the created array.
+        values : dict
+            The key-value pairs of indices and their corresponding data.
+        dtype : np.dtype
+            The data type of the array.
+
+        Examples
+        --------
+        You can create :obj:`DOK` objects from Numpy arrays or :obj:`COO` arrays.
+
+        >>> x = np.eye(5, dtype=np.uint8)
+        >>> x[2, 3] = 5
+        >>> s = DOK(x)
+        >>> s
+        <DOK: shape=(5, 5), dtype=uint8, nnz=6>
+
+        >>> from sparse import COO
+        >>> s2 = COO.from_numpy(np.eye(4, dtype=np.uint8))
+        >>> s2
+        <COO: shape=(4, 4), dtype=uint8, nnz=4, sorted=True, duplicates=False>
+        >>> s3 = DOK(s2)
+        >>> s3
+        <DOK: shape=(4, 4), dtype=uint8, nnz=4>
+
+        You can also create :obj:`DOK` arrays from a shape and a dict of
+        values. Zeros are automatically ignored.
+
+        >>> values = {
+        ...     (1, 2, 3): 4,
+        ...     (3, 2, 1): 0,
+        ... }
+        >>> s4 = DOK((5, 5, 5), values)
+        >>> s4
+        <DOK: shape=(5, 5, 5), dtype=int64, nnz=1>
         """
         from .coo import COO
         self.dict = {}
@@ -118,10 +150,42 @@ class DOK:
 
     @property
     def ndim(self):
+        """
+        The number of dimensions in this array.
+
+        Returns
+        -------
+        int
+            The number of dimensions.
+
+        Examples
+        --------
+        >>> s = DOK((1, 2, 3))
+        >>> s.ndim
+        3
+        """
         return len(self.shape)
 
     @property
     def nnz(self):
+        """
+        The number of nonzero elements in this array.
+
+        Returns
+        -------
+        int
+            The number of nonzero elements.
+
+        Examples
+        --------
+        >>> values = {
+        ...     (1, 2, 3): 4,
+        ...     (3, 2, 1): 0,
+        ... }
+        >>> s = DOK((5, 5, 5), values)
+        >>> s.nnz
+        1
+        """
         return len(self.dict)
 
     def __getitem__(self, key):
@@ -158,6 +222,9 @@ class DOK:
 
     def _setitem(self, key_list, value):
         value_missing_dims = len([ind for ind in key_list if isinstance(ind, slice)]) - value.ndim
+
+        if value_missing_dims < 0:
+            raise ValueError('setting an array element with a sequence.')
 
         for i, ind in enumerate(key_list):
             if isinstance(ind, slice):
@@ -197,6 +264,25 @@ class DOK:
     __repr__ = __str__
 
     def todense(self):
+        """
+        Convert this :obj:`DOK` array into a Numpy array.
+
+        Returns
+        -------
+        numpy.ndarray
+            The equivalent dense array.
+
+        Examples
+        --------
+        >>> s = DOK((5, 5))
+        >>> s[1:3, 1:3] = [[4, 5], [6, 7]]
+        >>> s.todense()  # doctest: +NORMALIZE_WHITESPACE
+        array([[0, 0, 0, 0, 0],
+               [0, 4, 5, 0, 0],
+               [0, 6, 7, 0, 0],
+               [0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0]])
+        """
         result = np.zeros(self.shape, dtype=self.dtype)
 
         for c, d in six.iteritems(self.dict):
