@@ -1537,8 +1537,6 @@ class COO(NDArrayOperatorsMixin):
                                  and self.ndim == 0):
             func = partial(func, self)
             other = args[1]
-            if isinstance(other, scipy.sparse.spmatrix):
-                other = COO.from_scipy_sparse(other)
             return _elemwise_unary(func, other, *args[2:], **kwargs)
 
         if len(args) == 1:
