@@ -2510,14 +2510,14 @@ def _elemwise_binary(func, self, other, *args, **kwargs):
 
     func_zero = _zero_of_dtype(func(self_zero, other_zero, *args, **kwargs).dtype)
 
-    if isinstance(self, np.ndarray):
+    if not isinstance(self, COO):
         if np.array_equiv(func(self, other_zero, *args, **kwargs), func_zero):
             return _elemwise_binary_self_dense(func, self, other, *args, **kwargs)
         else:
             other.densification_config.check(str(func), self, other)
             return func(self, other.todense(), *args, **kwargs)
 
-    if isinstance(other, np.ndarray):
+    if not isinstance(other, COO):
         if np.array_equiv(func(self_zero, other, *args, **kwargs), func_zero):
             temp_func = _reverse_self_other(func)
             return _elemwise_binary_self_dense(temp_func, other, self, *args, **kwargs)
@@ -2526,8 +2526,12 @@ def _elemwise_binary(func, self, other, *args, **kwargs):
             return func(self.todense(), other, *args, **kwargs)
 
     if func(self_zero, other_zero, *args, **kwargs) != func_zero:
-        raise ValueError("Performing this operation would produce "
-                         "a dense result: %s" % str(func))
+        DensificationConfig.from_many([
+            self.densification_config,
+            other.densification_config
+        ]).check(str(func), self, other)
+
+        return func(self.todense(), other.todense(), *args, **kwargs)
 
     self_shape, other_shape = self.shape, other.shape
     result_shape = _get_broadcast_shape(self_shape, other_shape)
@@ -2849,11 +2853,11 @@ def _cartesian_product(*arrays):
 
 
 def _elemwise_unary(func, self, *args, **kwargs):
-    check = kwargs.pop('check', True)
     data_zero = _zero_of_dtype(self.dtype)
     func_zero = _zero_of_dtype(func(data_zero, *args, **kwargs).dtype)
-    if check and func(data_zero, *args, **kwargs) != func_zero:
+    if func(data_zero, *args, **kwargs) != func_zero:
         self.densification_config.check(str(func), self)
+        return func(self.todense(), *args, **kwargs)
 
     data_func = func(self.data, *args, **kwargs)
     nonzero = data_func != func_zero
