@@ -894,6 +894,7 @@ def test_scipy_sparse_interface():
 
     assert_eq(x, xx)
     assert_eq(x.T.dot(x), xx.T.dot(xx))
+    assert isinstance(x + xx, (COO, scipy.sparse.spmatrix))
 
 
 def test_cache_csr():
@@ -1085,3 +1086,10 @@ def test_density():
 def test_size():
     s = sparse.random((20, 30, 40))
     assert s.size == 20 * 30 * 40
+
+
+def test_np_array():
+    s = sparse.random((20, 30, 40))
+    x = np.array(s)
+    assert isinstance(x, np.ndarray)
+    assert_eq(x, s)
