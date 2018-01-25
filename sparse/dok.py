@@ -10,7 +10,7 @@ from numbers import Integral
 from collections import Iterable
 
 from .slicing import normalize_index
-from .utils import _zero_of_dtype
+from .utils import _zero_of_dtype, SparseArray
 
 try:  # Windows compatibility
     int = long
@@ -18,7 +18,7 @@ except NameError:
     pass
 
 
-class DOK(object):
+class DOK(SparseArray):
     """
     A class for building sparse multidimensional arrays.
 
@@ -341,6 +341,8 @@ class DOK(object):
 
         if value != _zero_of_dtype(self.dtype):
             self.data[tuple(key_list)] = value[()]
+        else:
+            self.data.pop(tuple(key_list), None)
 
     def __str__(self):
         return "<DOK: shape=%s, dtype=%s, nnz=%d>" % (self.shape, self.dtype, self.nnz)

@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import Iterable, defaultdict, deque
+from contextlib import contextmanager
 from functools import reduce, partial
 import numbers
 import operator
@@ -9,7 +10,8 @@ import numpy as np
 import scipy.sparse
 
 from .slicing import normalize_index
-from .utils import _zero_of_dtype
+from .utils import _zero_of_dtype, _get_broadcast_shape, SparseArray
+from .densification import DensificationConfig
 
 # zip_longest with Python 2/3 compat
 from six.moves import range, zip_longest
@@ -20,7 +22,7 @@ except NameError:
     pass
 
 
-class COO(object):
+class COO(SparseArray):
     """
     A sparse multidimensional array.
 
@@ -183,7 +185,7 @@ class COO(object):
     __array_priority__ = 12
 
     def __init__(self, coords, data=None, shape=None, has_duplicates=True,
-                 sorted=False, cache=False):
+                 sorted=False, cache=False, densification_config=None):
         self._cache = None
         if cache:
             self.enable_caching()
@@ -191,11 +193,7 @@ class COO(object):
             from .dok import DOK
 
             if isinstance(coords, COO):
-                self.coords = coords.coords
-                self.data = coords.data
-                self.has_duplicates = coords.has_duplicates
-                self.sorted = coords.sorted
-                self.shape = coords.shape
+                self._make_shallow_copy(coords)
                 return
 
             if isinstance(coords, DOK):
@@ -209,20 +207,12 @@ class COO(object):
 
             if isinstance(coords, np.ndarray):
                 result = COO.from_numpy(coords)
-                self.coords = result.coords
-                self.data = result.data
-                self.has_duplicates = result.has_duplicates
-                self.sorted = result.sorted
-                self.shape = result.shape
+                self._make_shallow_copy(result)
                 return
 
             if isinstance(coords, scipy.sparse.spmatrix):
                 result = COO.from_scipy_sparse(coords)
-                self.coords = result.coords
-                self.data = result.data
-                self.has_duplicates = result.has_duplicates
-                self.sorted = result.sorted
-                self.shape = result.shape
+                self._make_shallow_copy(result)
                 return
 
             # []
@@ -269,6 +259,24 @@ class COO(object):
         assert not self.shape or len(data) == self.coords.shape[1]
         self.has_duplicates = has_duplicates
         self.sorted = sorted
+
+        if densification_config is None:
+            self._densification_config = DensificationConfig(densify=False)
+        else:
+            self._densification_config = densification_config
+
+    def _make_shallow_copy(self, other):
+        self.coords = other.coords
+        self.data = other.data
+        self.has_duplicates = other.has_duplicates
+        self.sorted = other.sorted
+        self.shape = other.shape
+
+        densification_config = other._densification_config
+
+        self._densification_config = set(densification_config) \
+            if isinstance(densification_config, Iterable) \
+            else DensificationConfig(densification_config)
 
     def enable_caching(self):
         """ Enable caching of reshape, transpose, and tocsr/csc operations
@@ -2006,7 +2014,30 @@ class COO(object):
         assert out is None
         return self.elemwise(np.ndarray.astype, dtype)
 
-    def maybe_densify(self, max_size=1000, min_density=0.25):
+    @contextmanager
+    def configure_densification(self, densify, max_size=None, min_density=None):
+        old_densification_config = self._densification_config
+        self._densification_config = DensificationConfig(densify, max_size, min_density)
+        yield
+        self._densification_config = old_densification_config
+
+    @property
+    def densification_config(self):
+        if isinstance(self._densification_config, Iterable):
+            return DensificationConfig.from_many(self._densification_config)
+        else:
+            return self._densification_config
+
+    @densification_config.setter
+    def densification_config(self, value):
+        DensificationConfig.validate(value)
+
+        if isinstance(value, Iterable):
+            self._densification_config = set(value)
+        else:
+            self._densification_config = value
+
+    def maybe_densify(self):
         """
         Converts this :obj:`COO` array to a :obj:`numpy.ndarray` if not too
         costly.
@@ -2030,30 +2061,44 @@ class COO(object):
 
         Examples
         --------
-        Convert a small sparse array to a dense array.
+        Convert a small sparse array to a dense array. Uses the default
+        densification config.
 
         >>> s = COO.from_numpy(np.random.rand(2, 3, 4))
         >>> x = s.maybe_densify()
-        >>> np.allclose(x, s.todense())
-        True
+        Traceback (most recent call last):
+            ...
+        ValueError: Performing this operation would produce a dense result: maybe_densify
 
         You can also specify the minimum allowed density or the maximum number
         of output elements. If both conditions are unmet, this method will throw
-        an error.
+        an exception.
 
         >>> x = np.zeros((5, 5), dtype=np.uint8)
         >>> x[2, 2] = 1
         >>> s = COO.from_numpy(x)
-        >>> s.maybe_densify(max_size=5, min_density=0.25)
+        >>> with s.configure_densification(densify=True):
+        ...     s.maybe_densify()
+        array([[0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0],
+               [0, 0, 1, 0, 0],
+               [0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0]], dtype=uint8)
+        >>> with s.configure_densification(densify=None, max_size=100):
+        ...     s.maybe_densify()
+        array([[0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0],
+               [0, 0, 1, 0, 0],
+               [0, 0, 0, 0, 0],
+               [0, 0, 0, 0, 0]], dtype=uint8)
+        >>> with s.configure_densification(densify=None, max_size=1, min_density=0.5):
+        ...     s.maybe_densify()
         Traceback (most recent call last):
             ...
-        ValueError: Operation would require converting large sparse array to dense
+        ValueError: Performing this operation would produce a dense result: maybe_densify
         """
-        if self.size <= max_size or self.density >= min_density:
-            return self.todense()
-        else:
-            raise ValueError("Operation would require converting "
-                             "large sparse array to dense")
+        self.densification_config.check('maybe_densify', self)
+        return self.todense()
 
 
 def tensordot(a, b, axes=2):
@@ -2460,33 +2505,33 @@ def _grouped_reduce(x, groups, method, **kwargs):
 
 
 def _elemwise_binary(func, self, other, *args, **kwargs):
-    check = kwargs.pop('check', True)
     self_zero = _zero_of_dtype(self.dtype)
     other_zero = _zero_of_dtype(other.dtype)
 
     func_zero = _zero_of_dtype(func(self_zero, other_zero, *args, **kwargs).dtype)
-    if check and func(self_zero, other_zero, *args, **kwargs) != func_zero:
-        raise ValueError("Performing this operation would produce "
-                         "a dense result: %s" % str(func))
 
-    if not isinstance(self, COO):
-        if not check or np.array_equiv(func(self, other_zero, *args, **kwargs), func_zero):
+    if isinstance(self, np.ndarray):
+        if np.array_equiv(func(self, other_zero, *args, **kwargs), func_zero):
             return _elemwise_binary_self_dense(func, self, other, *args, **kwargs)
         else:
-            raise ValueError("Performing this operation would produce "
-                             "a dense result: %s" % str(func))
+            other.densification_config.check(str(func), self, other)
+            return func(self, other.todense(), *args, **kwargs)
 
-    if not isinstance(other, COO):
-        if not check or np.array_equiv(func(self_zero, other, *args, **kwargs), func_zero):
+    if isinstance(other, np.ndarray):
+        if np.array_equiv(func(self_zero, other, *args, **kwargs), func_zero):
             temp_func = _reverse_self_other(func)
             return _elemwise_binary_self_dense(temp_func, other, self, *args, **kwargs)
         else:
-            raise ValueError("Performing this operation would produce "
-                             "a dense result: %s" % str(func))
+            self.densification_config.check(str(func), self, other)
+            return func(self.todense(), other, *args, **kwargs)
+
+    if func(self_zero, other_zero, *args, **kwargs) != func_zero:
+        raise ValueError("Performing this operation would produce "
+                         "a dense result: %s" % str(func))
 
     self_shape, other_shape = self.shape, other.shape
-
     result_shape = _get_broadcast_shape(self_shape, other_shape)
+
     self_params = _get_broadcast_parameters(self.shape, result_shape)
     other_params = _get_broadcast_parameters(other.shape, result_shape)
     combined_params = [p1 and p2 for p1, p2 in zip(self_params, other_params)]
@@ -2570,7 +2615,10 @@ def _elemwise_binary(func, self, other, *args, **kwargs):
     data = data[nonzero]
     coords = coords[:, nonzero]
 
-    return COO(coords, data, shape=result_shape, has_duplicates=False)
+    densification_config = DensificationConfig.combine(self._densification_config,
+                                                       other._densification_config)
+    return COO(coords, data, shape=result_shape, has_duplicates=False,
+               densification_config=densification_config)
 
 
 def _elemwise_binary_self_dense(func, self, other, *args, **kwargs):
@@ -2668,39 +2716,6 @@ def _get_unmatched_coords_data(coords, data, shape, result_shape, matched_idx,
         data_list.append(broadcast_data)
 
     return coords_list, data_list
-
-
-def _get_broadcast_shape(shape1, shape2, is_result=False):
-    """
-    Get the overall broadcasted shape.
-
-    Parameters
-    ----------
-    shape1, shape2 : tuple[int]
-        The input shapes to broadcast together.
-    is_result : bool
-        Whether or not shape2 is also the result shape.
-
-    Returns
-    -------
-    result_shape : tuple[int]
-        The overall shape of the result.
-
-    Raises
-    ------
-    ValueError
-        If the two shapes cannot be broadcast together.
-    """
-    # https://stackoverflow.com/a/47244284/774273
-    if not all((l1 == l2) or (l1 == 1) or ((l2 == 1) and not is_result) for l1, l2 in
-               zip(shape1[::-1], shape2[::-1])):
-        raise ValueError('operands could not be broadcast together with shapes %s, %s' %
-                         (shape1, shape2))
-
-    result_shape = tuple(max(l1, l2) for l1, l2 in
-                         zip_longest(shape1[::-1], shape2[::-1], fillvalue=1))[::-1]
-
-    return result_shape
 
 
 def _get_broadcast_parameters(shape, broadcast_shape):
@@ -2838,16 +2853,17 @@ def _elemwise_unary(func, self, *args, **kwargs):
     data_zero = _zero_of_dtype(self.dtype)
     func_zero = _zero_of_dtype(func(data_zero, *args, **kwargs).dtype)
     if check and func(data_zero, *args, **kwargs) != func_zero:
-        raise ValueError("Performing this operation would produce "
-                         "a dense result: %s" % str(func))
+        self.densification_config.check(str(func), self)
 
     data_func = func(self.data, *args, **kwargs)
     nonzero = data_func != func_zero
 
+    densification_config = DensificationConfig.combine(self._densification_config)
+
     return COO(self.coords[:, nonzero], data_func[nonzero],
                shape=self.shape,
                has_duplicates=self.has_duplicates,
-               sorted=self.sorted)
+               sorted=self.sorted, densification_config=densification_config)
 
 
 def _get_matching_coords(coords1, coords2, shape1, shape2):
