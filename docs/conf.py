@@ -42,6 +42,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
     'sphinx.ext.inheritance_diagram',
+    'sphinx.ext.extlinks',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -181,4 +182,9 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'numpy': ('https://docs.scipy.org/doc/numpy/', None),
     'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None)
+}
+
+extlinks = {
+    'issue': ('https://github.com/mrocklin/sparse/issues/%s', 'GH#'),
+    'pr': ('https://github.com/mrocklin/sparse/pull/%s', 'GH#'),
 }

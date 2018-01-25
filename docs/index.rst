@@ -39,3 +39,4 @@ can jump to the :doc:`API reference <api>`. You can also see the contents in the
    user_manual
    api
    contributing
+   changelog
