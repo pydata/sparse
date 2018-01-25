@@ -1539,10 +1539,16 @@ class COO(NDArrayOperatorsMixin):
             other = args[1]
             return _elemwise_unary(func, other, *args[2:], **kwargs)
 
+        if isinstance(self, scipy.sparse.spmatrix):
+            self = COO.from_scipy_sparse(self)
+
         if len(args) == 1:
             return _elemwise_unary(func, self, *args[1:], **kwargs)
         else:
             other = args[1]
+
+            if isinstance(other, scipy.sparse.spmatrix):
+                other = COO.from_scipy_sparse(other)
 
             if isinstance(other, COO) or isinstance(other, np.ndarray):
                 return _elemwise_binary(func, self, other, *args[2:], **kwargs)
@@ -1625,9 +1631,7 @@ class COO(NDArrayOperatorsMixin):
         --------
         :obj:`numpy.absolute` : NumPy equivalent ufunc.
         """
-        return self.elemwise(abs)
-
-    __abs__ = abs
+        return self.elemwise(np.abs)
 
     def exp(self, out=None):
         """
@@ -1909,7 +1913,7 @@ class COO(NDArrayOperatorsMixin):
         actually supported.
         """
         assert out is None
-        return self.elemwise(np.ndarray.astype, dtype)
+        return self.elemwise(np.ndarray.astype, dtype=dtype)
 
     def maybe_densify(self, max_size=1000, min_density=0.25):
         """

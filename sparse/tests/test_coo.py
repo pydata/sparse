@@ -894,6 +894,38 @@ def test_scipy_sparse_interaction(scipy_format):
     assert_eq(sp, coo)
 
 
+@pytest.mark.parametrize('func', [
+    operator.mul, operator.add, operator.sub, operator.gt,
+    operator.lt, operator.ne
+])
+def test_op_scipy_sparse(func):
+    xs = sparse.random((3, 4), density=0.5)
+    y = sparse.random((3, 4), density=0.5).todense()
+
+    ys = scipy.sparse.csr_matrix(y)
+    x = xs.todense()
+
+    assert_eq(func(x, y), func(xs, ys))
+
+
+@pytest.mark.parametrize('func', [
+    operator.add,
+    operator.sub,
+    pytest.mark.xfail(operator.mul, reason='Scipy sparse auto-densifies in this case.'),
+    pytest.mark.xfail(operator.gt, reason='Scipy sparse doesn\'t support this yet.'),
+    pytest.mark.xfail(operator.lt, reason='Scipy sparse doesn\'t support this yet.'),
+    pytest.mark.xfail(operator.ne, reason='Scipy sparse doesn\'t support this yet.'),
+])
+def test_op_scipy_sparse_left(func):
+    ys = sparse.random((3, 4), density=0.5)
+    x = sparse.random((3, 4), density=0.5).todense()
+
+    xs = scipy.sparse.csr_matrix(x)
+    y = ys.todense()
+
+    assert_eq(func(x, y), func(xs, ys))
+
+
 def test_cache_csr():
     x = sparse.random((10, 5), density=0.5).todense()
     s = COO(x, cache=True)
