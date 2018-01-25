@@ -1,3 +1,5 @@
+*   Update changelog in docs/changelog.rst
+
 *   Tag commit
 
         git tag -a x.x.x -m 'Version x.x.x'

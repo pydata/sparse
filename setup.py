@@ -5,8 +5,8 @@ from setuptools import setup
 
 
 setup(name='sparse',
-      version='0.1.1',
-      description='Sparse',
+      version='0.2.0',
+      description='Sparse n-dimensional arrays',
       url='http://github.com/mrocklin/sparse/',
       maintainer='Matthew Rocklin',
       maintainer_email='mrocklin@gmail.com',
