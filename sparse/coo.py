@@ -1232,8 +1232,6 @@ class COO(object):
         x = self.todense()
         if dtype and x.dtype != dtype:
             x = x.astype(dtype)
-        if not isinstance(x, np.ndarray):
-            x = np.array(x)
         return x
 
     def linear_loc(self, signed=False):
