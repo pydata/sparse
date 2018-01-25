@@ -73,6 +73,26 @@ The following is true so long as there are no infinities or NaNs in :code:`x`:
 In general, if operating on the :code:`numpy.ndarray` with a zero would produce
 all-zeros then the operation is supported.
 
+Operations with :obj:`scipy.sparse.spmatrix`
+--------------------------------------------
+Certain operations with :obj:`scipy.sparse.spmatrix` are also supported.
+For example, the following are all allowed if :code:`y` is a :obj:`scipy.sparse.spmatrix`:
+
+.. code-block:: python
+
+   x + y
+   x - y
+   x * y
+   x > y
+   x < y
+
+In general, if operating on a :code:`scipy.sparse.spmatrix` is the same as operating
+on :obj:`COO`, as long as it is to the right of the operator.
+
+.. note:: Results are not guaranteed if :code:`x` is a :obj:`scipy.sparse.spmatrix`.
+   For this reason, we recommend that all Scipy sparse matrices should be explicitly
+   converted to :obj:`COO` before any operations.
+
 Broadcasting
 ------------
 All binary operators support :obj:`broadcasting <numpy.doc.broadcasting>`.
@@ -88,7 +108,8 @@ Full List of Operators
 ----------------------
 Here, :code:`x` and :code:`y` can be :obj:`COO` arrays,
 :obj:`numpy.ndarray` objects or scalars, keeping in mind :ref:`auto
-densification rules <auto-densification>`. The following operators are supported:
+densification rules <auto-densification>`. In addition, :code:`y` can also
+be a :obj:`scipy.sparse.spmatrix` The following operators are supported:
 
 * Basic algebraic operations
 
@@ -119,3 +140,5 @@ densification rules <auto-densification>`. The following operators are supported
 
    * :obj:`operator.lshift` (:code:`x << y`)
    * :obj:`operator.rshift` (:code:`x >> y`)
+
+.. note:: In-place operators are not supported at this time.
