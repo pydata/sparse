@@ -894,6 +894,18 @@ def test_scipy_sparse_interface():
 
     assert_eq(x, xx)
     assert_eq(x.T.dot(x), xx.T.dot(xx))
+    assert isinstance(x + xx, COO)
+    assert isinstance(xx + x, COO)
+
+
+@pytest.mark.parametrize('scipy_format', ['coo', 'csr', 'dok', 'csc'])
+def test_scipy_sparse_interaction(scipy_format):
+    x = sparse.random((10, 20), density=0.2).todense()
+    sp = getattr(scipy.sparse, scipy_format + '_matrix')(x)
+    coo = COO(x)
+    assert isinstance(sp + coo, COO)
+    assert isinstance(coo + sp, COO)
+    assert_eq(sp, coo)
 
 
 def test_cache_csr():
@@ -1085,3 +1097,10 @@ def test_density():
 def test_size():
     s = sparse.random((20, 30, 40))
     assert s.size == 20 * 30 * 40
+
+
+def test_np_array():
+    s = sparse.random((20, 30, 40))
+    x = np.array(s)
+    assert isinstance(x, np.ndarray)
+    assert_eq(x, s)

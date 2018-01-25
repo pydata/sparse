@@ -1228,6 +1228,12 @@ class COO(object):
         else:
             return NotImplemented
 
+    def __array__(self, dtype=None, **kwargs):
+        x = self.todense()
+        if dtype and x.dtype != dtype:
+            x = x.astype(dtype)
+        return x
+
     def linear_loc(self, signed=False):
         """
         The nonzero coordinates of a flattened version of this array. Note that
