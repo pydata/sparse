@@ -1155,6 +1155,7 @@ def test_densification_config(func, kwargs):
     lambda s1, s2: -(s1 - s2),
 ])
 @pytest.mark.parametrize('kwargs', [
+    {'densify': False},
     {'densify': True},
     {
         'densify': None,
@@ -1164,6 +1165,11 @@ def test_densification_config(func, kwargs):
     {
         'densify': None,
         'max_size': 25,
+        'min_density': 0.7,
+    },
+    {
+        'densify': None,
+        'max_size': 0,
         'min_density': 0.7,
     },
 ])
@@ -1194,3 +1200,26 @@ def test_densification_config_sparse(func, kwargs):
         s1._densification_config,
         s2._densification_config,
     ])
+
+
+@pytest.mark.parametrize('func', [
+    lambda s1, s2: np.exp(s1),
+    lambda s1, s2: np.cos(s1),
+    lambda s1, s2: s1 + 1
+])
+@pytest.mark.parametrize('kwargs', [
+    {'densify': False},
+    {
+        'densify': None,
+        'max_size': 0,
+        'min_density': 0.7,
+    },
+])
+def test_densification_config_fails(func, kwargs):
+    s1 = sparse.random((2, 3, 4), density=0.5)
+    s2 = sparse.random((2, 3, 4), density=0.5)
+
+    with s1.configure_densification(**kwargs), \
+         s2.configure_densification(**kwargs), \
+         pytest.raises(ValueError):
+        func(s1, s2)

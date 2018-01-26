@@ -118,10 +118,17 @@ class DensificationConfig(object):
 
         for manager in managers:
             densify = _three_way_and(densify, manager.densify)
-            max_size = max(max_size, manager.max_size)
+            max_size = min(max_size, manager.max_size)
             min_density = max(min_density, manager.min_density)
 
         return DensificationConfig(densify, max_size, min_density)
+
+    def __str__(self):
+        if isinstance(self.densify, bool):
+            return '<DensificationConfig: densify=%s>' % self.densify
+        else:
+            return '<DensificationConfig: max_size=%s, min_density=%s>' % \
+                   (self.max_size, self.min_density)
 
 
 def _three_way_and(flag1, flag2):
