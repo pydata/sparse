@@ -1,0 +1,141 @@
+.. currentmodule:: sparse
+
+Construct Sparse Arrays
+=======================
+
+From coordinates and data
+-------------------------
+You can construct :obj:`COO` arrays from coordinates and value data.
+
+The :code:`coords` parameter contains the indices where the data is nonzero,
+and the :code:`data` parameter contains the data corresponding to those indices.
+For example, the following code will generate a :math:`5 \times 5` identity
+matrix:
+
+.. code-block:: python
+
+   import sparse
+
+   coords = [[0, 1, 2, 3, 4],
+             [0, 1, 2, 3, 4]]
+   data = [10, 20, 30, 40, 50]
+   s = sparse.COO(coords, data)
+
+   >>> s.todense()
+   array([[10,  0,  0,  0,  0],
+          [ 0, 20,  0,  0,  0],
+          [ 0,  0, 30,  0,  0],
+          [ 0,  0,  0, 40,  0],
+          [ 0,  0,  0,  0, 50]])
+
+
+In general :code:`coords` should be a :code:`(ndim, nnz)` shaped
+array. Each row of :code:`coords` contains one dimension of the
+desired sparse array, and each column contains the index
+corresponding to that nonzero element. :code:`data` contains
+the nonzero elements of the array corresponding to the indices
+in :code:`coords`. Its shape should be :code:`(nnz,)`
+
+You can, and should, pass in :obj:`numpy.ndarray` objects for
+:code:`coords` and :code:`data`.
+
+In this case, the shape of the resulting array was determined from
+the maximum index in each dimension. If the array extends beyond
+the maximum index in :code:`coords`, you should supply a shape
+explicitly. For example, if we did the following without the
+:code:`shape` keyword argument, it would result in a
+:math:`4 \times 5` matrix, but maybe we wanted one that was actually
+:math:`5 \times 5`.
+
+.. code-block:: python
+
+   coords = [[0, 3, 2, 1], [4, 1, 2, 0]]
+   data = [1, 4, 2, 1]
+   s = COO(coords, data, shape=(5, 5))
+
+From :obj:`scipy.sparse.spmatrix` objects
+-----------------------------------------
+To construct :obj:`COO` array from :obj:`scipy.sparse.spmatrix`
+objects, you can use the :obj:`COO.from_scipy_sparse` method. As an
+example, if :code:`x` is a :obj:`scipy.sparse.spmatrix`, you can
+do the following to get an equivalent :obj:`COO` array:
+
+.. code-block:: python
+
+   s = COO.from_scipy_sparse(x)
+
+From :obj:`numpy.ndarray` objects
+---------------------------------
+To construct :obj:`COO` arrays from :obj:`numpy.ndarray`
+objects, you can use the :obj:`COO.from_numpy` method. As an
+example, if :code:`x` is a :obj:`numpy.ndarray`, you can
+do the following to get an equivalent :obj:`COO` array:
+
+.. code-block:: python
+
+   s = COO.from_numpy(x)
+
+Generating random :obj:`COO` objects
+------------------------------------
+The :obj:`sparse.random` method can be used to create random
+:obj:`COO` arrays. For example, the following will generate
+a :math:`10 \times 10` matrix with :math:`10` nonzero entries,
+each in the interval :math:`[0, 1)`.
+
+.. code-block:: python
+
+   s = sparse.random((10, 10), density=0.1)
+
+Building :obj:`COO` Arrays from :obj:`DOK` Arrays
+-------------------------------------------------
+It's possible to build :obj:`COO` arrays from :obj:`DOK` arrays, if it is not
+easy to construct the :code:`coords` and :obj:`data` in a simple way. :obj:`DOK`
+arrays provide a simple builder interface to build :obj:`COO` arrays, but at
+this time, they can do little else.
+
+You can get started by defining the shape (and optionally, datatype) of the
+:obj:`DOK` array. If you do not specify a dtype, it is inferred from the value
+dictionary or is set to :code:`dtype('float64')` if that is not present.
+
+.. code-block:: python
+
+   s = DOK((6, 5, 2))
+   s2 = DOK((2, 3, 4), dtype=np.float64)
+
+After this, you can build the array by assigning arrays or scalars to elements
+or slices of the original array. Broadcasting rules are followed.
+
+.. code-block:: python
+
+   s[1:3, 3:1:-1] = [[6, 5]]
+
+At the end, you can convert the :obj:`DOK` array to a :obj:`COO` array, and
+perform arithmetic or other operations on it.
+
+.. code-block:: python
+
+   s2 = COO(s)
+
+In addition, it is possible to access single elements of the :obj:`DOK` array
+using normal Numpy indexing.
+
+.. code-block:: python
+
+   s[1, 2, 1]  # 5
+   s[5, 1, 1]  # 0
+
+Converting :obj:`COO` objects to other Formats
+----------------------------------------------
+:obj:`COO` arrays can be converted to :obj:`numpy.ndarray` objects,
+or to some :obj:`scipy.sparse.spmatrix` subclasses via the following
+methods:
+
+* :obj:`COO.todense`: Converts to a :obj:`numpy.ndarray` unconditionally.
+* :obj:`COO.maybe_densify`: Converts to a :obj:`numpy.ndarray` based on
+   certain constraints.
+* :obj:`COO.to_scipy_sparse`: Converts to a :obj:`scipy.sparse.coo_matrix` if
+   the array is two dimensional.
+* :obj:`COO.tocsr`: Converts to a :obj:`scipy.sparse.csr_matrix` if
+   the array is two dimensional.
+* :obj:`COO.tocsc`: Converts to a :obj:`scipy.sparse.csc_matrix` if
+   the array is two dimensional.
