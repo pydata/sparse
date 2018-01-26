@@ -33,22 +33,8 @@ COO
       :toctree:
 
       COO.elemwise
-      COO.abs
       COO.astype
-      COO.ceil
-      COO.conj
-      COO.conjugate
-      COO.exp
-      COO.expm1
-      COO.floor
-      COO.log1p
-      COO.rint
       COO.round
-      COO.sin
-      COO.sinh
-      COO.sqrt
-      COO.tan
-      COO.tanh
 
    .. rubric:: :doc:`Reductions <../user_manual/operations/reductions>`
    .. autosummary::

@@ -10,18 +10,18 @@ To illustrate, the following are all possible, and will produce another
 
 .. code-block:: python
 
-   x.abs()
+   np.abs(x)
    np.sin(x)
    np.sqrt(x)
-   x.conj()
-   x.expm1()
+   np.conj(x)
+   np.expm1(x)
    np.log1p(x)
 
 However, the following are all unsupported and will raise a :obj:`ValueError`:
 
 .. code-block:: python
 
-   x.exp()
+   np.exp(x)
    np.cos(x)
    np.log(x)
 
@@ -41,24 +41,3 @@ a :obj:`numpy.ndarray`. For example, the following will add two
 
    x.elemwise(np.add, y)
 
-Partial List of Supported :obj:`numpy.ufunc` s
-----------------------------------------------
-Although any unary or binary :obj:`numpy.ufunc` should work if the result is
-not dense, when calling in the form :code:`x.func()`, the following operations
-are supported:
-
-* :obj:`COO.abs`
-* :obj:`COO.expm1`
-* :obj:`COO.log1p`
-* :obj:`COO.sin`
-* :obj:`COO.sinh`
-* :obj:`COO.tan`
-* :obj:`COO.tanh`
-* :obj:`COO.sqrt`
-* :obj:`COO.ceil`
-* :obj:`COO.floor`
-* :obj:`COO.round`
-* :obj:`COO.rint`
-* :obj:`COO.conj`
-* :obj:`COO.conjugate`
-* :obj:`COO.astype`
