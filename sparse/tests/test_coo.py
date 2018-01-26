@@ -1189,18 +1189,6 @@ def test_densification_config_sparse(func, kwargs):
         assert isinstance(func_s, COO)
         assert_eq(func_x, func_s)
 
-        assert isinstance(func_s._densification_config, set)
-
-        assert func_s._densification_config.issubset([
-            s1._densification_config,
-            s2._densification_config,
-        ])
-
-    assert func_s._densification_config.issubset([
-        s1._densification_config,
-        s2._densification_config,
-    ])
-
 
 @pytest.mark.parametrize('func', [
     lambda s1, s2: np.exp(s1),

@@ -1,5 +1,6 @@
 import numpy as np
 from numbers import Integral
+from functools import total_ordering
 from abc import ABCMeta
 
 from six.moves import range, zip_longest
@@ -30,6 +31,36 @@ def assert_eq(x, y, **kwargs):
     else:
         yy = y
     assert np.allclose(xx, yy, **kwargs)
+
+
+# (c) kindall
+# Taken from https://stackoverflow.com/a/9504358/774273
+# License: https://creativecommons.org/licenses/by-sa/3.0/
+@total_ordering
+class TriState(object):
+    def __init__(self, value=None):
+        if any(value is v for v in (True, False, None)):
+            self.value = value
+        else:
+            raise ValueError("Tristate value must be True, False, or None")
+
+    def __eq__(self, other):
+        return (self.value is other.value if isinstance(other, TriState)
+        else self.value is other)
+
+    def __le__(self, other):
+        if self.value is False:
+            return True
+        elif self.value is None:
+            return other.value is not False
+        else:
+            return other.value is True
+
+    def __str__(self):
+        return str(self.value)
+
+    def __repr__(self):
+        return "Tristate(%s)" % self.value
 
 
 def is_lexsorted(x):

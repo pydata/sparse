@@ -1,10 +1,11 @@
 import sys
 from numbers import Integral, Number
 from collections import Iterable
+import threading
 
 import numpy as np
 
-from .utils import _get_broadcast_shape, SparseArray
+from .utils import _get_broadcast_shape, SparseArray, TriState
 
 try:  # Windows compatibility
     int = long
@@ -18,17 +19,7 @@ except NameError:
 
 
 class DensificationConfig(object):
-    def __init__(self, densify=None, max_size=None, min_density=None):
-        if isinstance(densify, (Iterable, DensificationConfig)):
-            self.make_copy_of(densify)
-            return
-
-        if max_size is None:
-            max_size = 10000
-
-        if min_density is None:
-            min_density = 0.25
-
+    def __init__(self, densify=None, max_size=10000, min_density=0.25):
         if not isinstance(densify, bool) and densify is not None:
             raise ValueError('always_densify must be a bool or None.')
 
@@ -38,24 +29,19 @@ class DensificationConfig(object):
         if not isinstance(min_density, Number) or not (0.0 <= min_density <= 1.0):
             raise ValueError('min_density must be a number between 0 and 1.')
 
-        self.densify = densify
+        self.densify = TriState(densify)
         self.max_size = int(max_size)
         self.min_density = float(min_density)
-
-    def make_copy_of(self, other):
-        if isinstance(other, Iterable):
-            single = DensificationConfig.from_many(other)
-        else:
-            single = other
-
-        self.densify = single.densify
-        self.max_size = single.max_size
-        self.min_density = single.min_density
+        self.children = None
+        self.parents = None
+        self._disconnected_parents = 0
+        self._parents_with_children = 0
+        self._lock = threading.Lock()
 
     def _should_densify(self, size, density):
-        if self.densify:
+        if self.densify.value is True:
             return True
-        elif self.densify is False:
+        elif self.densify.value is False:
             return False
         else:
             return self.max_size >= size or self.min_density <= density
@@ -66,6 +52,7 @@ class DensificationConfig(object):
                              "a dense result: %s" % name)
 
     def check(self, name, *arrays):
+        config = self._reduce_from_parents()
         result_shape = ()
         density = 1.0
 
@@ -76,7 +63,7 @@ class DensificationConfig(object):
 
         size = np.prod(result_shape, dtype=np.uint64)
 
-        self._raise_if_fails(size, density, name)
+        config._raise_if_fails(size, density, name)
 
     @staticmethod
     def validate(configs):
@@ -94,47 +81,78 @@ class DensificationConfig(object):
             raise ValueError('Invalid DensificationConfig.')
 
     @staticmethod
-    def combine(*configs):
-        result = set()
+    def from_parents(parents):
+        root_parents = set()
 
-        for config in configs:
-            if isinstance(config, Iterable):
-                DensificationConfig.validate(config)
-                result.update(config)
-            elif isinstance(config, DensificationConfig):
-                DensificationConfig._validate_single(config)
-                result.add(config)
+        for parent in parents:
+            DensificationConfig._validate_single(parent)
+            root_parents.update(parent._get_all_parents())
 
-        return result
+            result = DensificationConfig()
+            result.parents = root_parents
 
-    @staticmethod
-    def from_many(managers):
-        if isinstance(managers, DensificationConfig):
-            return DensificationConfig(managers)
+            for parent in root_parents:
+                if isinstance(parent.children, set):
+                    parent.children.add(result)
+                    result._parents_with_children += 1
 
-        densify = True
+            if not result._parents_with_children:
+                result._reduce_from_parents(in_place=True)
+
+            return result
+
+    def _get_all_parents(self):
+        if isinstance(self.parents, Iterable):
+            return self.parents
+
+        parents = set()
+        parents.add(self)
+
+        return parents
+
+    def _reduce_from_parents(self, in_place=False):
+        if not isinstance(self.parents, Iterable):
+            return self
+
         max_size = _max_size
         min_density = 0.0
+        densify = TriState(True)
 
-        for manager in managers:
-            densify = _three_way_and(densify, manager.densify)
-            max_size = min(max_size, manager.max_size)
-            min_density = max(min_density, manager.min_density)
+        for parent in self.parents:
+            max_size = min(max_size, parent.max_size)
+            min_density = max(min_density, parent.min_density)
+            densify = min(densify, parent.densify)
+
+        if in_place:
+            self.parents = None
+            self._disconnected_parents = 0
+            self._parents_with_children = 0
+            self.max_size = max_size
+            self.min_density = min_density
+            self.densify = densify
+            return self
 
         return DensificationConfig(densify, max_size, min_density)
 
+    def __enter__(self):
+        self.children = set()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for child in self.children:
+            child._lock.acquire()
+            child._disconnected_parents += 1
+            if child._disconnected_parents == child._parents_with_children:
+                self._reduce_from_parents(in_place=True)
+
+            child._lock.release()
+
+        self.children = None
+
     def __str__(self):
-        if isinstance(self.densify, bool):
-            return '<DensificationConfig: densify=%s>' % self.densify
+        if isinstance(self.parents, set):
+            return '<DensificationConfig: parents=%s>' % len(self.parents)
+        elif isinstance(self.densify.value, bool):
+            return '<DensificationConfig: densify=%s>' % self.densify.value
         else:
             return '<DensificationConfig: max_size=%s, min_density=%s>' % \
                    (self.max_size, self.min_density)
-
-
-def _three_way_and(flag1, flag2):
-    if flag1:
-        return flag2
-    elif flag1 is None:
-        return False if flag2 is False else None
-    else:
-        return False

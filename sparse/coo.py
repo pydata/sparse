@@ -21,6 +21,8 @@ try:  # Windows compatibility
 except NameError:
     pass
 
+_DEFAULT_DENSIFICATION_CONFIG = DensificationConfig(densify=False)
+
 
 class COO(SparseArray):
     """
@@ -261,9 +263,9 @@ class COO(SparseArray):
         self.sorted = sorted
 
         if densification_config is None:
-            self._densification_config = DensificationConfig(densify=False)
+            self.densification_config = _DEFAULT_DENSIFICATION_CONFIG
         else:
-            self._densification_config = densification_config
+            self.densification_config = densification_config
 
     def _make_shallow_copy(self, other):
         self.coords = other.coords
@@ -271,12 +273,7 @@ class COO(SparseArray):
         self.has_duplicates = other.has_duplicates
         self.sorted = other.sorted
         self.shape = other.shape
-
-        densification_config = other._densification_config
-
-        self._densification_config = set(densification_config) \
-            if isinstance(densification_config, Iterable) \
-            else DensificationConfig(densification_config)
+        self.densification_config = other.densification_config
 
     def enable_caching(self):
         """ Enable caching of reshape, transpose, and tocsr/csc operations
@@ -592,10 +589,15 @@ class COO(SparseArray):
                 coords = list(self.coords[:, idx[0]])
                 coords.extend(idx[1:])
 
+                densification_config = DensificationConfig.from_parents([
+                    self.densification_config
+                ])
+
                 return COO(coords, data[idx].flatten(),
                            shape=self.shape + self.data.dtype[index].shape,
                            has_duplicates=self.has_duplicates,
-                           sorted=self.sorted)
+                           sorted=self.sorted,
+                           densification_config=densification_config)
             else:
                 index = (index,)
 
@@ -668,9 +670,14 @@ class COO(SparseArray):
         shape = tuple(shape)
         data = self.data[mask]
 
+        densification_config = DensificationConfig.from_parents([
+            self.densification_config
+        ])
+
         return COO(coords, data, shape=shape,
                    has_duplicates=self.has_duplicates,
-                   sorted=self.sorted)
+                   sorted=self.sorted,
+                   densification_config=densification_config)
 
     def __str__(self):
         return "<COO: shape=%s, dtype=%s, nnz=%d, sorted=%s, duplicates=%s>" % (
@@ -786,8 +793,14 @@ class COO(SparseArray):
             result[missing_counts] = method(result[missing_counts],
                                             _zero_of_dtype(self.dtype), **kwargs)
             coords = a.coords[0:1, inv_idx]
+
+            densification_config = DensificationConfig.from_parents([
+                self.densification_config
+            ])
+
             a = COO(coords, result, shape=(a.shape[0],),
-                    has_duplicates=False, sorted=True)
+                    has_duplicates=False, sorted=True,
+                    densification_config=densification_config)
 
             a = a.reshape([self.shape[d] for d in neg_axis])
             result = a
@@ -1131,10 +1144,15 @@ class COO(SparseArray):
                 if ax == axes:
                     return value
 
+        densification_config = DensificationConfig.from_parents([
+            self.densification_config
+        ])
+
         shape = tuple(self.shape[ax] for ax in axes)
         result = COO(self.coords[axes, :], self.data, shape,
                      has_duplicates=self.has_duplicates,
-                     cache=self._cache is not None)
+                     cache=self._cache is not None,
+                     densification_config=densification_config)
 
         if self._cache is not None:
             self._cache['transpose'].append((axes, result))
@@ -1237,7 +1255,8 @@ class COO(SparseArray):
             return NotImplemented
 
     def __array__(self, dtype=None, **kwargs):
-        x = self.maybe_densify()
+        self.densification_config.check('array', self)
+        x = self.todense()
         if dtype and x.dtype != dtype:
             x = x.astype(dtype)
         return x
@@ -1327,9 +1346,14 @@ class COO(SparseArray):
             coords[-(i + 1), :] = (linear_loc // strides) % d
             strides *= d
 
+        densification_config = DensificationConfig.from_parents([
+            self.densification_config
+        ])
+
         result = COO(coords, self.data, shape,
                      has_duplicates=self.has_duplicates,
-                     sorted=self.sorted, cache=self._cache is not None)
+                     sorted=self.sorted, cache=self._cache is not None,
+                     densification_config=densification_config)
 
         if self._cache is not None:
             self._cache['reshape'].append((shape, result))
@@ -1717,8 +1741,12 @@ class COO(SparseArray):
         params = _get_broadcast_parameters(self.shape, result_shape)
         coords, data = _get_expanded_coords_data(self.coords, self.data, params, result_shape)
 
+        densification_config = DensificationConfig.from_parents([
+            self.densification_config
+        ])
+
         return COO(coords, data, shape=result_shape, has_duplicates=self.has_duplicates,
-                   sorted=self.sorted)
+                   sorted=self.sorted, densification_config=densification_config)
 
     def __abs__(self):
         """
@@ -2016,35 +2044,14 @@ class COO(SparseArray):
 
     @contextmanager
     def configure_densification(self, densify, max_size=None, min_density=None):
-        if isinstance(self._densification_config, DensificationConfig):
-            old_densification_config = DensificationConfig(self._densification_config)
-            self._densification_config.make_copy_of(DensificationConfig(densify, max_size, min_density))
-        else:
-            old_densification_config = self._densification_config
-            self._densification_config = DensificationConfig(densify, max_size, min_density)
+        old_densification_config = self.densification_config
+        self.densification_config = DensificationConfig(densify=densify,
+                                                        max_size=max_size,
+                                                        min_density=min_density)
 
         yield
 
-        if isinstance(old_densification_config, DensificationConfig):
-            self._densification_config.make_copy_of(old_densification_config)
-        else:
-            self._densification_config = old_densification_config
-
-    @property
-    def densification_config(self):
-        if isinstance(self._densification_config, Iterable):
-            return DensificationConfig.from_many(self._densification_config)
-        else:
-            return self._densification_config
-
-    @densification_config.setter
-    def densification_config(self, value):
-        DensificationConfig.validate(value)
-
-        if isinstance(value, Iterable):
-            self._densification_config = set(value)
-        else:
-            self._densification_config = value
+        self.densification_config = old_densification_config
 
     def maybe_densify(self):
         """
@@ -2317,8 +2324,13 @@ def concatenate(arrays, axis=0):
 
     has_duplicates = any(x.has_duplicates for x in arrays)
 
+    densification_config = DensificationConfig.from_parents([
+        x.densification_config for x in arrays
+    ])
+
     return COO(coords, data, shape=shape, has_duplicates=has_duplicates,
-               sorted=(axis == 0) and all(a.sorted for a in arrays))
+               sorted=(axis == 0) and all(a.sorted for a in arrays),
+               densification_config=densification_config)
 
 
 def stack(arrays, axis=0):
@@ -2365,8 +2377,13 @@ def stack(arrays, axis=0):
     coords.insert(axis, new)
     coords = np.stack(coords, axis=0)
 
+    densification_config = DensificationConfig.from_parents([
+        x.densification_config for x in arrays
+    ])
+
     return COO(coords, data, shape=shape, has_duplicates=has_duplicates,
-               sorted=(axis == 0) and all(a.sorted for a in arrays))
+               sorted=(axis == 0) and all(a.sorted for a in arrays),
+               densification_config=densification_config)
 
 
 def triu(x, k=0):
@@ -2398,7 +2415,12 @@ def triu(x, k=0):
     coords = x.coords[:, mask]
     data = x.data[mask]
 
-    return COO(coords, data, x.shape, x.has_duplicates, x.sorted)
+    densification_config = DensificationConfig.from_parents([
+        x.densification_config
+    ])
+
+    return COO(coords, data, x.shape, x.has_duplicates, x.sorted,
+               densification_config=densification_config)
 
 
 def tril(x, k=0):
@@ -2430,7 +2452,12 @@ def tril(x, k=0):
     coords = x.coords[:, mask]
     data = x.data[mask]
 
-    return COO(coords, data, x.shape, x.has_duplicates, x.sorted)
+    densification_config = DensificationConfig.from_parents([
+        x.densification_config
+    ])
+
+    return COO(coords, data, x.shape, x.has_duplicates, x.sorted,
+               densification_config=densification_config)
 
 
 # (c) Paul Panzer
@@ -2535,7 +2562,7 @@ def _elemwise_binary(func, self, other, *args, **kwargs):
             return func(self.todense(), other, *args, **kwargs)
 
     if func(self_zero, other_zero, *args, **kwargs) != func_zero:
-        DensificationConfig.from_many([
+        DensificationConfig.from_parents([
             self.densification_config,
             other.densification_config
         ]).check(str(func), self, other)
@@ -2628,8 +2655,10 @@ def _elemwise_binary(func, self, other, *args, **kwargs):
     data = data[nonzero]
     coords = coords[:, nonzero]
 
-    densification_config = DensificationConfig.combine(self._densification_config,
-                                                       other._densification_config)
+    densification_config = DensificationConfig.from_parents([
+        self.densification_config,
+        other.densification_config
+    ])
     return COO(coords, data, shape=result_shape, has_duplicates=False,
                densification_config=densification_config)
 
@@ -2654,9 +2683,14 @@ def _elemwise_binary_self_dense(func, self, other, *args, **kwargs):
     func_data = func_data[mask]
     func_coords = other.coords[:, mask]
 
+    densification_config = DensificationConfig.from_parents([
+        other.densification_config
+    ])
+
     return COO(func_coords, func_data, shape=result_shape,
                has_duplicates=other.has_duplicates,
-               sorted=other.sorted)
+               sorted=other.sorted,
+               densification_config=densification_config)
 
 
 def _reverse_self_other(func):
@@ -2871,12 +2905,15 @@ def _elemwise_unary(func, self, *args, **kwargs):
     data_func = func(self.data, *args, **kwargs)
     nonzero = data_func != func_zero
 
-    densification_config = DensificationConfig.combine(self._densification_config)
+    densification_config = DensificationConfig.from_parents([
+        self.densification_config
+    ])
 
     return COO(self.coords[:, nonzero], data_func[nonzero],
                shape=self.shape,
                has_duplicates=self.has_duplicates,
-               sorted=self.sorted, densification_config=densification_config)
+               sorted=self.sorted,
+               densification_config=densification_config)
 
 
 def _get_matching_coords(coords1, coords2, shape1, shape2):
