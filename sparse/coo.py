@@ -2043,11 +2043,9 @@ class COO(SparseArray):
         return self.elemwise(np.ndarray.astype, dtype)
 
     @contextmanager
-    def configure_densification(self, densify, max_size=None, min_density=None):
+    def configure_densification(self, **kwargs):
         old_densification_config = self.densification_config
-        self.densification_config = DensificationConfig(densify=densify,
-                                                        max_size=max_size,
-                                                        min_density=min_density)
+        self.densification_config = DensificationConfig(**kwargs)
 
         yield
 
