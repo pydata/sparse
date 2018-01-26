@@ -1237,7 +1237,7 @@ class COO(SparseArray):
             return NotImplemented
 
     def __array__(self, dtype=None, **kwargs):
-        x = self.todense()
+        x = self.maybe_densify()
         if dtype and x.dtype != dtype:
             x = x.astype(dtype)
         return x
@@ -2016,10 +2016,19 @@ class COO(SparseArray):
 
     @contextmanager
     def configure_densification(self, densify, max_size=None, min_density=None):
-        old_densification_config = self._densification_config
-        self._densification_config = DensificationConfig(densify, max_size, min_density)
+        if isinstance(self._densification_config, DensificationConfig):
+            old_densification_config = DensificationConfig(self._densification_config)
+            self._densification_config.make_copy_of(DensificationConfig(densify, max_size, min_density))
+        else:
+            old_densification_config = self._densification_config
+            self._densification_config = DensificationConfig(densify, max_size, min_density)
+
         yield
-        self._densification_config = old_densification_config
+
+        if isinstance(old_densification_config, DensificationConfig):
+            self._densification_config.make_copy_of(old_densification_config)
+        else:
+            self._densification_config = old_densification_config
 
     @property
     def densification_config(self):

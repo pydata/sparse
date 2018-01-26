@@ -19,10 +19,8 @@ except NameError:
 
 class DensificationConfig(object):
     def __init__(self, densify=None, max_size=None, min_density=None):
-        if isinstance(densify, DensificationConfig):
-            self.densify = densify.densify
-            self.max_size = densify.max_size
-            self.min_density = densify.min_density
+        if isinstance(densify, (Iterable, DensificationConfig)):
+            self.make_copy_of(densify)
             return
 
         if max_size is None:
@@ -43,6 +41,16 @@ class DensificationConfig(object):
         self.densify = densify
         self.max_size = int(max_size)
         self.min_density = float(min_density)
+
+    def make_copy_of(self, other):
+        if isinstance(other, Iterable):
+            single = DensificationConfig.from_many(other)
+        else:
+            single = other
+
+        self.densify = single.densify
+        self.max_size = single.max_size
+        self.min_density = single.min_density
 
     def _should_densify(self, size, density):
         if self.densify:
@@ -74,11 +82,15 @@ class DensificationConfig(object):
     def validate(configs):
         if isinstance(configs, Iterable):
             for config in configs:
-                DensificationConfig.validate(config)
+                DensificationConfig._validate_single(config)
 
             return
 
-        if not isinstance(configs, DensificationConfig):
+        DensificationConfig._validate_single(configs)
+
+    @staticmethod
+    def _validate_single(config):
+        if not isinstance(config, DensificationConfig):
             raise ValueError('Invalid DensificationConfig.')
 
     @staticmethod
@@ -90,21 +102,24 @@ class DensificationConfig(object):
                 DensificationConfig.validate(config)
                 result.update(config)
             elif isinstance(config, DensificationConfig):
-                DensificationConfig.validate(config)
+                DensificationConfig._validate_single(config)
                 result.add(config)
 
         return result
 
     @staticmethod
     def from_many(managers):
+        if isinstance(managers, DensificationConfig):
+            return DensificationConfig(managers)
+
         densify = True
         max_size = _max_size
-        min_density = 1.0
+        min_density = 0.0
 
         for manager in managers:
             densify = _three_way_and(densify, manager.densify)
             max_size = max(max_size, manager.max_size)
-            min_density = min(min_density, manager.min_density)
+            min_density = max(min_density, manager.min_density)
 
         return DensificationConfig(densify, max_size, min_density)
 
