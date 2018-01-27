@@ -5,9 +5,8 @@ COO
 
 .. autoclass:: COO
 
-   .. note::
-      :obj:`COO` objects also support :doc:`operators <../user_manual/operations/operators>`
-      and :doc:`indexing <../user_manual/operations/indexing>`
+   .. note:: :obj:`COO` objects also support :ref:`operators <operations-operators>`
+      and :ref:`indexing <operations-indexing>`
 
    .. rubric:: Attributes
    .. autosummary::
@@ -21,14 +20,14 @@ COO
       COO.size
       COO.density
 
-   .. rubric:: :doc:`Constructing COO objects <../user_manual/constructing>`
+   .. rubric:: :doc:`Constructing COO objects <../construct>`
    .. autosummary::
       :toctree:
 
       COO.from_numpy
       COO.from_scipy_sparse
 
-   .. rubric:: :doc:`Element-wise operations <../user_manual/operations/elemwise>`
+   .. rubric:: :ref:`Element-wise operations <operations-elemwise>`
    .. autosummary::
       :toctree:
 
@@ -36,7 +35,7 @@ COO
       COO.astype
       COO.round
 
-   .. rubric:: :doc:`Reductions <../user_manual/operations/reductions>`
+   .. rubric:: :ref:`Reductions <operations-reductions>`
    .. autosummary::
       :toctree:
 
@@ -46,7 +45,7 @@ COO
       COO.min
       COO.prod
 
-   .. rubric:: :doc:`Converting to other formats <../user_manual/converting>`
+   .. rubric:: :ref:`Converting to other formats <converting>`
    .. autosummary::
       :toctree:
 
@@ -56,7 +55,7 @@ COO
       COO.tocsc
       COO.tocsr
 
-   .. rubric:: :doc:`Other operations <../user_manual/operations/other>`
+   .. rubric:: :ref:`Other operations <operations-other>`
    .. autosummary::
       :toctree:
 
