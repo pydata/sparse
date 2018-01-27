@@ -1085,8 +1085,8 @@ def test_scalar_shape_construction():
 
 
 def test_len():
-    s = sparse.random((20, 30, 40))
-    assert len(s) == 20
+    s = sparse.random((2, 3, 4))
+    assert len(s) == 2
 
 
 def test_density():
@@ -1095,12 +1095,119 @@ def test_density():
 
 
 def test_size():
-    s = sparse.random((20, 30, 40))
-    assert s.size == 20 * 30 * 40
+    s = sparse.random((2, 3, 4))
+    assert s.size == 2 * 3 * 4
 
 
 def test_np_array():
-    s = sparse.random((20, 30, 40))
-    x = np.array(s)
+    s = sparse.random((2, 3, 4))
+    with s.configure_densification(densify=True):
+        x = np.array(s)
     assert isinstance(x, np.ndarray)
     assert_eq(x, s)
+
+
+@pytest.mark.parametrize('func', [
+    lambda s1, s2: np.exp(s1),
+    lambda s1, s2: np.cos(s1),
+    lambda s1, s2: s1 + 1,
+    lambda s1, s2: s1 + s2 + 1,
+    lambda s1, s2: -(s1 + s2) + 1,
+])
+@pytest.mark.parametrize('kwargs', [
+    {'densify': True},
+    {
+        'densify': None,
+        'max_size': 0,
+        'min_density': 0.3,
+    },
+    {
+        'densify': None,
+        'max_size': 25,
+        'min_density': 0.7,
+    },
+])
+def test_densification_config(func, kwargs):
+    s1 = sparse.random((2, 3, 4), density=0.5)
+    s2 = sparse.random((2, 3, 4), density=0.5)
+
+    x1 = s1.todense()
+    x2 = s2.todense()
+
+    func_x = func(x1, x2)
+
+    with s1.configure_densification(**kwargs), \
+         s2.configure_densification(**kwargs):
+        func_s = func(s1, s2)
+
+        assert isinstance(func_s, np.ndarray)
+        assert_eq(func_x, func_s)
+
+    with pytest.raises(ValueError):
+        func(s1, s2)
+
+
+@pytest.mark.parametrize('func', [
+    lambda s1, s2: np.sin(s1),
+    lambda s1, s2: np.expm1(s1),
+    lambda s1, s2: s1 + 0,
+    lambda s1, s2: s1 + s2,
+    lambda s1, s2: -(s1 - s2),
+])
+@pytest.mark.parametrize('kwargs', [
+    {'densify': False},
+    {'densify': True},
+    {
+        'densify': None,
+        'max_size': 0,
+        'min_density': 0.3,
+    },
+    {
+        'densify': None,
+        'max_size': 25,
+        'min_density': 0.7,
+    },
+    {
+        'densify': None,
+        'max_size': 0,
+        'min_density': 0.7,
+    },
+])
+def test_densification_config_sparse(func, kwargs):
+    s1 = sparse.random((2, 3, 4), density=0.5)
+    s2 = sparse.random((2, 3, 4), density=0.5)
+
+    x1 = s1.todense()
+    x2 = s2.todense()
+
+    func_x = func(x1, x2)
+
+    with s1.configure_densification(**kwargs), \
+         s2.configure_densification(**kwargs):
+        func_s = func(s1, s2)
+
+        assert isinstance(func_s, COO)
+        assert_eq(func_x, func_s)
+
+
+@pytest.mark.parametrize('func', [
+    lambda s1, s2: np.exp(s1),
+    lambda s1, s2: np.cos(s1),
+    lambda s1, s2: s1 + 1
+])
+@pytest.mark.parametrize('kwargs', [
+    {'densify': False},
+    {
+        'densify': None,
+        'max_size': 0,
+        'min_density': 0.7,
+    },
+])
+def test_densification_config_fails(func, kwargs):
+    s1 = sparse.random((2, 3, 4), density=0.5)
+    s2 = sparse.random((2, 3, 4), density=0.5)
+
+    with s1.configure_densification(**kwargs), \
+         s2.configure_densification(**kwargs), \
+         pytest.raises(ValueError):
+        func(s1, s2)

@@ -1,5 +1,13 @@
 import numpy as np
 from numbers import Integral
+from functools import total_ordering
+from abc import ABCMeta
+
+from six.moves import range, zip_longest
+
+
+class SparseArray(object):
+    __metaclass__ = ABCMeta
 
 
 def assert_eq(x, y, **kwargs):
@@ -23,6 +31,36 @@ def assert_eq(x, y, **kwargs):
     else:
         yy = y
     assert np.allclose(xx, yy, **kwargs)
+
+
+# (c) kindall
+# Taken from https://stackoverflow.com/a/9504358/774273
+# License: https://creativecommons.org/licenses/by-sa/3.0/
+@total_ordering
+class TriState(object):
+    def __init__(self, value=None):
+        if any(value is v for v in (True, False, None)):
+            self.value = value
+        else:
+            raise ValueError("Tristate value must be True, False, or None")
+
+    def __eq__(self, other):
+        return (self.value is other.value if isinstance(other, TriState)
+        else self.value is other)
+
+    def __le__(self, other):
+        if self.value is False:
+            return True
+        elif self.value is None:
+            return other.value is not False
+        else:
+            return other.value is True
+
+    def __str__(self):
+        return str(self.value)
+
+    def __repr__(self):
+        return "Tristate(%s)" % self.value
 
 
 def is_lexsorted(x):
@@ -146,3 +184,36 @@ def random(
         ar = DOK(ar)
 
     return ar
+
+
+def _get_broadcast_shape(shape1, shape2, is_result=False):
+    """
+    Get the overall broadcasted shape.
+
+    Parameters
+    ----------
+    shape1, shape2 : tuple[int]
+        The input shapes to broadcast together.
+    is_result : bool
+        Whether or not shape2 is also the result shape.
+
+    Returns
+    -------
+    result_shape : tuple[int]
+        The overall shape of the result.
+
+    Raises
+    ------
+    ValueError
+        If the two shapes cannot be broadcast together.
+    """
+    # https://stackoverflow.com/a/47244284/774273
+    if not all((l1 == l2) or (l1 == 1) or ((l2 == 1) and not is_result) for l1, l2 in
+               zip(shape1[::-1], shape2[::-1])):
+        raise ValueError('operands could not be broadcast together with shapes %s, %s' %
+                         (shape1, shape2))
+
+    result_shape = tuple(max(l1, l2) for l1, l2 in
+                         zip_longest(shape1[::-1], shape2[::-1], fillvalue=1))[::-1]
+
+    return result_shape
