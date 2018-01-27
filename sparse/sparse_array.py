@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 from abc import ABCMeta, abstractmethod
+from collections import Iterable
+from numbers import Integral
 from functools import reduce
 import operator
 
@@ -7,10 +9,15 @@ import operator
 class SparseArray(object):
     __metaclass__ = ABCMeta
 
-    @property
-    @abstractmethod
-    def shape(self):
-        pass
+    def __init__(self, shape):
+        if not isinstance(shape, Iterable):
+            shape = (int(shape),)
+
+        if not all(isinstance(l, Integral) and int(l) >= 0 for l in shape):
+            raise ValueError('shape must be an non-negative integer or a tuple '
+                             'of non-negative integers.')
+
+        self.shape = tuple(int(l) for l in shape)
 
     @property
     @abstractmethod

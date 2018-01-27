@@ -185,11 +185,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             from .dok import DOK
 
             if isinstance(coords, COO):
-                self.coords = coords.coords
-                self.data = coords.data
-                self.has_duplicates = coords.has_duplicates
-                self.sorted = coords.sorted
-                self.shape = coords.shape
+                self._make_shallow_copy_of(coords)
                 return
 
             if isinstance(coords, DOK):
@@ -203,20 +199,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
             if isinstance(coords, np.ndarray):
                 result = COO.from_numpy(coords)
-                self.coords = result.coords
-                self.data = result.data
-                self.has_duplicates = result.has_duplicates
-                self.sorted = result.sorted
-                self.shape = result.shape
+                self._make_shallow_copy_of(result)
                 return
 
             if isinstance(coords, scipy.sparse.spmatrix):
                 result = COO.from_scipy_sparse(coords)
-                self.coords = result.coords
-                self.data = result.data
-                self.has_duplicates = result.has_duplicates
-                self.sorted = result.sorted
-                self.shape = result.shape
+                self._make_shallow_copy_of(result)
                 return
 
             # []
@@ -251,18 +239,22 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             else:
                 shape = ()
 
-        if isinstance(shape, numbers.Integral):
-            shape = (int(shape),)
-
-        self.shape = tuple(shape)
+        super(COO, self).__init__(shape)
         if self.shape:
             dtype = np.min_scalar_type(max(self.shape))
         else:
-            dtype = np.int_
+            dtype = np.uint8
         self.coords = self.coords.astype(dtype)
         assert not self.shape or len(data) == self.coords.shape[1]
         self.has_duplicates = has_duplicates
         self.sorted = sorted
+
+    def _make_shallow_copy_of(self, other):
+        self.coords = other.coords
+        self.data = other.data
+        self.has_duplicates = other.has_duplicates
+        self.sorted = other.sorted
+        super(COO, self).__init__(other.shape)
 
     @property
     def shape(self):

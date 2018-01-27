@@ -1,6 +1,5 @@
 from builtins import dict, int
 from numbers import Integral
-from collections import Iterable
 
 import numpy as np
 
@@ -94,29 +93,19 @@ class DOK(SparseArray):
 
         if isinstance(shape, COO):
             ar = DOK.from_coo(shape)
-            self.shape = ar.shape
-            self.dtype = ar.dtype
-            self.data = ar.data
+            self._make_shallow_copy_of(ar)
             return
 
         if isinstance(shape, np.ndarray):
             ar = DOK.from_numpy(shape)
-            self.shape = ar.shape
-            self.dtype = ar.dtype
-            self.data = ar.data
+            self._make_shallow_copy_of(ar)
             return
 
         self.dtype = np.dtype(dtype)
-        if isinstance(shape, Integral):
-            self.shape = (int(shape),)
-        elif isinstance(shape, Iterable):
-            if not all(isinstance(l, Integral) or int(l) < 0 for l in shape):
-                raise ValueError('shape must be an iterable of non-negative integers.')
-
-            self.shape = tuple(shape)
+        super(DOK, self).__init__(shape)
 
         if not data:
-            data = {}
+            data = dict()
 
         if isinstance(data, dict):
             if not dtype:
@@ -129,6 +118,11 @@ class DOK(SparseArray):
                 self[c] = d
         else:
             raise ValueError('data must be a dict.')
+
+    def _make_shallow_copy_of(self, other):
+        super(DOK, self).__init__(other.shape)
+        self.dtype = other.dtype
+        self.data = other.data
 
     @classmethod
     def from_coo(cls, x):
