@@ -8,7 +8,7 @@ common operations <operations/other>`_
 .. toctree::
    :maxdepth: 2
 
-   operations/basic
+   operations/operators
    operations/elemwise
    operations/reductions
    operations/indexing

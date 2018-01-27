@@ -7,6 +7,7 @@ import operator
 
 import numpy as np
 import scipy.sparse
+from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .slicing import normalize_index
 from .utils import _zero_of_dtype
@@ -20,7 +21,7 @@ except NameError:
     pass
 
 
-class COO(object):
+class COO(NDArrayOperatorsMixin):
     """
     A sparse multidimensional array.
 
@@ -1221,6 +1222,10 @@ class COO(object):
             return NotImplemented
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        out = kwargs.pop('out', None)
+        if out is not None:
+            return NotImplemented
+
         if method == '__call__':
             return COO._elemwise(ufunc, *inputs, **kwargs)
         elif method == 'reduce':
@@ -1522,125 +1527,26 @@ class COO(object):
         self.coords = coords
         self.has_duplicates = False
 
-    def __add__(self, other):
-        return self.elemwise(operator.add, other)
-
-    def __radd__(self, other):
-        return self.elemwise(_reverse_self_other(operator.add), other)
-
-    def __neg__(self):
-        return self.elemwise(operator.neg)
-
-    def __sub__(self, other):
-        return self.elemwise(operator.sub, other)
-
-    def __rsub__(self, other):
-        return self.elemwise(_reverse_self_other(operator.sub), other)
-
-    def __mul__(self, other):
-        return self.elemwise(operator.mul, other)
-
-    def __rmul__(self, other):
-        return self.elemwise(_reverse_self_other(operator.mul), other)
-
-    def __truediv__(self, other):
-        return self.elemwise(operator.truediv, other)
-
-    def __rtruediv__(self, other):
-        return self.elemwise(_reverse_self_other(operator.truediv), other)
-
-    def __floordiv__(self, other):
-        return self.elemwise(operator.floordiv, other)
-
-    def __rfloordiv__(self, other):
-        return self.elemwise(_reverse_self_other(operator.floordiv), other)
-
-    __div__ = __truediv__
-    __rdiv__ = __rtruediv__
-
-    def __pow__(self, other):
-        return self.elemwise(operator.pow, other)
-
-    def __rpow__(self, other):
-        return self.elemwise(_reverse_self_other(operator.pow), other)
-
-    def __mod__(self, other):
-        return self.elemwise(operator.mod, other)
-
-    def __rmod__(self, other):
-        return self.elemwise(_reverse_self_other(operator.mod), other)
-
-    def __and__(self, other):
-        return self.elemwise(operator.and_, other)
-
-    def __rand__(self, other):
-        return self.elemwise(_reverse_self_other(operator.and_), other)
-
-    def __xor__(self, other):
-        return self.elemwise(operator.xor, other)
-
-    def __rxor__(self, other):
-        return self.elemwise(_reverse_self_other(operator.xor), other)
-
-    def __or__(self, other):
-        return self.elemwise(operator.or_, other)
-
-    def __ror__(self, other):
-        return self.elemwise(_reverse_self_other(operator.or_), other)
-
-    def __invert__(self):
-        return self.elemwise(operator.invert)
-
-    def __gt__(self, other):
-        return self.elemwise(operator.gt, other)
-
-    def __ge__(self, other):
-        return self.elemwise(operator.ge, other)
-
-    def __lt__(self, other):
-        return self.elemwise(operator.lt, other)
-
-    def __le__(self, other):
-        return self.elemwise(operator.le, other)
-
-    def __eq__(self, other):
-        return self.elemwise(operator.eq, other)
-
-    def __ne__(self, other):
-        return self.elemwise(operator.ne, other)
-
-    def __lshift__(self, other):
-        return self.elemwise(operator.lshift, other)
-
-    def __rlshift__(self, other):
-        return self.elemwise(_reverse_self_other(operator.lshift), other)
-
-    def __rshift__(self, other):
-        return self.elemwise(operator.rshift, other)
-
-    def __rrshift__(self, other):
-        return self.elemwise(_reverse_self_other(operator.rshift), other)
-
     @staticmethod
     def _elemwise(func, *args, **kwargs):
         if len(args) == 0:
             return func()
 
         self = args[0]
-        if isinstance(self, scipy.sparse.spmatrix):
-            self = COO.from_numpy(self)
-        elif np.isscalar(self) or (isinstance(self, np.ndarray)
-                                   and self.ndim == 0):
+        if np.isscalar(self) or (isinstance(self, np.ndarray)
+                                 and self.ndim == 0):
             func = partial(func, self)
             other = args[1]
-            if isinstance(other, scipy.sparse.spmatrix):
-                other = COO.from_scipy_sparse(other)
             return _elemwise_unary(func, other, *args[2:], **kwargs)
+
+        if isinstance(self, scipy.sparse.spmatrix):
+            self = COO.from_scipy_sparse(self)
 
         if len(args) == 1:
             return _elemwise_unary(func, self, *args[1:], **kwargs)
         else:
             other = args[1]
+
             if isinstance(other, scipy.sparse.spmatrix):
                 other = COO.from_scipy_sparse(other)
 
@@ -1659,7 +1565,7 @@ class COO(object):
             The function to apply to one or two arguments.
         args : tuple, optional
             The extra arguments to pass to the function. If :code:`args[0]` is a COO object,
-            a scipy.sparse.spmatrix or a scalar; the function will be treated as a binary
+            or a scalar; the function will be treated as a binary
             function. Otherwise, it will be treated as a unary function.
         kwargs : dict, optional
             The kwargs to pass to the function.
@@ -1678,6 +1584,11 @@ class COO(object):
         --------
         :obj:`numpy.ufunc` : A similar Numpy construct. Note that any :code:`ufunc` can be used
             as the :code:`func` input to this function.
+
+        Notes
+        -----
+        In the future, this function may support functions of more than two arguments. Therefore,
+        it is best to pass in any additional arguments as keyword arguments.
         """
         return COO._elemwise(func, self, *args, **kwargs)
 
@@ -1712,204 +1623,6 @@ class COO(object):
         return COO(coords, data, shape=result_shape, has_duplicates=self.has_duplicates,
                    sorted=self.sorted)
 
-    def __abs__(self):
-        """
-        Calculate the absolute value element-wise.
-
-        See also
-        --------
-        :obj:`numpy.absolute` : NumPy equivalent ufunc.
-        """
-        return self.elemwise(abs)
-
-    abs = __abs__
-
-    def exp(self, out=None):
-        """
-        Calculate the exponential of all elements in the array.
-
-        See also
-        --------
-        :obj:`numpy.exp` : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
-            arguments.
-
-        Notes
-        -----
-        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
-        actually supported.
-        """
-        assert out is None
-        return self.elemwise(np.exp)
-
-    def expm1(self, out=None):
-        """
-        Calculate :code:`exp(x) - 1` for all elements in the array.
-
-        See also
-        --------
-        scipy.sparse.coo_matrix.expm1 : SciPy sparse equivalent function
-        :obj:`numpy.expm1` : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
-            arguments.
-
-        Notes
-        -----
-        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
-        actually supported.
-        """
-        assert out is None
-        return self.elemwise(np.expm1)
-
-    def log1p(self, out=None):
-        """
-        Return the natural logarithm of one plus the input array, element-wise.
-
-        Calculates :code:`log(1 + x)`.
-
-        See also
-        --------
-        scipy.sparse.coo_matrix.log1p : SciPy sparse equivalent function
-        :obj:`numpy.log1p` : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
-            arguments.
-
-        Notes
-        -----
-        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
-        actually supported.
-        """
-        assert out is None
-        return self.elemwise(np.log1p)
-
-    def sin(self, out=None):
-        """
-        Trigonometric sine, element-wise.
-
-        See also
-        --------
-        scipy.sparse.coo_matrix.sin : SciPy sparse equivalent function
-        :obj:`numpy.sin` : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
-            arguments.
-
-        Notes
-        -----
-        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
-        actually supported.
-        """
-        assert out is None
-        return self.elemwise(np.sin)
-
-    def sinh(self, out=None):
-        """
-        Hyperbolic sine, element-wise.
-
-        See also
-        --------
-        scipy.sparse.coo_matrix.sinh : SciPy sparse equivalent function
-        :obj:`numpy.sinh` : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
-            arguments.
-
-        Notes
-        -----
-        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
-        actually supported.
-        """
-        assert out is None
-        return self.elemwise(np.sinh)
-
-    def tan(self, out=None):
-        """
-        Compute tangent element-wise.
-
-        See also
-        --------
-        scipy.sparse.coo_matrix.tan : SciPy sparse equivalent function
-        :obj:`numpy.tan` : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
-            arguments.
-        """
-        assert out is None
-        return self.elemwise(np.tan)
-
-    def tanh(self, out=None):
-        """
-        Compute hyperbolic tangent element-wise.
-
-        See also
-        --------
-        scipy.sparse.coo_matrix.tanh : SciPy sparse equivalent function
-        :obj:`numpy.tanh` : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
-            arguments.
-
-        Notes
-        -----
-        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
-        actually supported.
-        """
-        assert out is None
-        return self.elemwise(np.tanh)
-
-    def sqrt(self, out=None):
-        """
-        Return the positive square-root of an array, element-wise.
-
-        See also
-        --------
-        scipy.sparse.coo_matrix.sqrt : SciPy sparse equivalent function
-        :obj:`numpy.sqrt` : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
-            arguments.
-
-        Notes
-        -----
-        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
-        actually supported.
-        """
-        assert out is None
-        return self.elemwise(np.sqrt)
-
-    def ceil(self, out=None):
-        """
-        Return the ceiling of the input, element-wise.
-
-        See also
-        --------
-        scipy.sparse.coo_matrix.ceil : SciPy sparse equivalent function
-        :obj:`numpy.ceil` : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
-            arguments.
-
-        Notes
-        -----
-        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
-        actually supported.
-        """
-        assert out is None
-        return self.elemwise(np.ceil)
-
-    def floor(self, out=None):
-        """
-        Return the floor of the input, element-wise.
-
-        See also
-        --------
-        scipy.sparse.coo_matrix.floor : SciPy sparse equivalent function
-        :obj:`numpy.floor` : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
-            arguments.
-
-        Notes
-        -----
-        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
-        actually supported.
-        """
-        assert out is None
-        return self.elemwise(np.floor)
-
     def round(self, decimals=0, out=None):
         """
         Evenly round to the given number of decimals.
@@ -1928,65 +1641,6 @@ class COO(object):
         assert out is None
         return self.elemwise(np.round, decimals)
 
-    def rint(self, out=None):
-        """
-        Round elements of the array to the nearest integer.
-
-        See also
-        --------
-        scipy.sparse.coo_matrix.rint : SciPy sparse equivalent function
-        :obj:`numpy.rint` : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
-            arguments.
-
-        Notes
-        -----
-        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
-        actually supported.
-        """
-        assert out is None
-        return self.elemwise(np.rint)
-
-    def conj(self, out=None):
-        """
-        Return the complex conjugate, element-wise.
-
-        See also
-        --------
-        conjugate : Equivalent function
-        scipy.sparse.coo_matrix.conj : SciPy sparse equivalent function
-        :obj:`numpy.conj` : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
-            arguments.
-
-        Notes
-        -----
-        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
-        actually supported.
-        """
-        assert out is None
-        return self.elemwise(np.conj)
-
-    def conjugate(self, out=None):
-        """
-        Return the complex conjugate, element-wise.
-
-        See also
-        --------
-        conj : Equivalent function
-        scipy.sparse.coo_matrix.conjugate : SciPy sparse equivalent function
-        :obj:`numpy.conj` : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
-            arguments.
-
-        Notes
-        -----
-        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
-        actually supported.
-        """
-        assert out is None
-        return self.elemwise(np.conjugate)
-
     def astype(self, dtype, out=None):
         """
         Copy of the array, cast to a specified type.
@@ -2004,7 +1658,7 @@ class COO(object):
         actually supported.
         """
         assert out is None
-        return self.elemwise(np.ndarray.astype, dtype)
+        return self.elemwise(np.ndarray.astype, dtype=dtype)
 
     def maybe_densify(self, max_size=1000, min_density=0.25):
         """
@@ -2464,7 +2118,8 @@ def _elemwise_binary(func, self, other, *args, **kwargs):
     self_zero = _zero_of_dtype(self.dtype)
     other_zero = _zero_of_dtype(other.dtype)
 
-    func_zero = _zero_of_dtype(func(self_zero, other_zero, *args, **kwargs).dtype)
+    func_value = func(self_zero, other_zero, *args, **kwargs)
+    func_zero = _zero_of_dtype(np.dtype(func_value))
     if check and func(self_zero, other_zero, *args, **kwargs) != func_zero:
         raise ValueError("Performing this operation would produce "
                          "a dense result: %s" % str(func))
