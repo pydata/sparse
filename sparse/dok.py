@@ -1,24 +1,15 @@
-import six
-
-import numpy as np
-
-# Zip with Python 2/3 compat
-# Consumes less memory than Py2 zip
-from six.moves import zip, range
-
+from builtins import dict, int
 from numbers import Integral
 from collections import Iterable
 
+import numpy as np
+
 from .slicing import normalize_index
 from .utils import _zero_of_dtype
-
-try:  # Windows compatibility
-    int = long
-except NameError:
-    pass
+from .sparse_array import SparseArray
 
 
-class DOK(object):
+class DOK(SparseArray):
     """
     A class for building sparse multidimensional arrays.
 
@@ -99,7 +90,7 @@ class DOK(object):
 
     def __init__(self, shape, data=None, dtype=None):
         from .coo import COO
-        self.data = {}
+        self.data = dict()
 
         if isinstance(shape, COO):
             ar = DOK.from_coo(shape)
@@ -132,9 +123,9 @@ class DOK(object):
                 if not len(data):
                     self.dtype = np.dtype('float64')
                 else:
-                    self.dtype = np.result_type(*map(lambda x: np.asarray(x).dtype, six.itervalues(data)))
+                    self.dtype = np.result_type(*map(lambda x: np.asarray(x).dtype, data.values()))
 
-            for c, d in six.iteritems(data):
+            for c, d in data.items():
                 self[c] = d
         else:
             raise ValueError('data must be a dict.')
@@ -224,27 +215,12 @@ class DOK(object):
         return ar
 
     @property
-    def ndim(self):
-        """
-        The number of dimensions in this array.
+    def shape(self):
+        return self._shape
 
-        Returns
-        -------
-        int
-            The number of dimensions.
-
-        See Also
-        --------
-        COO.ndim : Equivalent property for :obj:`COO` arrays.
-        numpy.ndarray.ndim : Numpy equivalent property.
-
-        Examples
-        --------
-        >>> s = DOK((1, 2, 3))
-        >>> s.ndim
-        3
-        """
-        return len(self.shape)
+    @shape.setter
+    def shape(self, value):
+        self._shape = value
 
     @property
     def nnz(self):
@@ -377,7 +353,7 @@ class DOK(object):
         """
         result = np.zeros(self.shape, dtype=self.dtype)
 
-        for c, d in six.iteritems(self.data):
+        for c, d in self.data.items():
             result[c] = d
 
         return result
