@@ -149,3 +149,12 @@ def test_float_dtype():
     s = DOK((5,), data)
 
     assert s.dtype == np.float32
+
+
+def test_set_zero():
+    s = DOK((1,), dtype=np.uint8)
+    s[0] = 1
+    s[0] = 0
+
+    assert s[0] == 0
+    assert s.nnz == 0

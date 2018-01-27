@@ -339,8 +339,11 @@ class DOK(object):
                 raise IndexError('All indices must be slices or integers'
                                  ' when setting an item.')
 
+        key = tuple(key_list)
         if value != _zero_of_dtype(self.dtype):
-            self.data[tuple(key_list)] = value[()]
+            self.data[key] = value[()]
+        elif key in self.data:
+            del self.data[key]
 
     def __str__(self):
         return "<DOK: shape=%s, dtype=%s, nnz=%d>" % (self.shape, self.dtype, self.nnz)
