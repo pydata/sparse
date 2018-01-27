@@ -17,8 +17,6 @@ DOK
 
       DOK.nnz
 
-      DOK.shape
-
       DOK.size
    
 

@@ -17,7 +17,6 @@ COO
       COO.nbytes
       COO.ndim
       COO.nnz
-      COO.shape
       COO.size
       COO.density
 

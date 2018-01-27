@@ -30,6 +30,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         Should have shape (number of dimensions, number of non-zeros)
     data : numpy.ndarray (COO.nnz,)
         An array of Values
+    shape : tuple[int] (COO.ndim,)
+        The shape of the array.
     has_duplicates : bool, optional
         A value indicating whether the supplied value for :code:`coords` has
         duplicates. Note that setting this to `False` when :code:`coords` does have

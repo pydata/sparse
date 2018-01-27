@@ -105,3 +105,8 @@ class SparseArray(object):
         0.125
         """
         return self.nnz / self.size
+
+    @property
+    @abstractmethod
+    def dtype(self):
+        pass

@@ -14,8 +14,8 @@ class DOK(SparseArray):
 
     Parameters
     ----------
-    shape : tuple[int]
-        The shape of the array
+    shape : tuple[int] (DOK.ndim,)
+        The shape of the array.
     data : dict, optional
         The key-value pairs for the data in this array.
     dtype : np.dtype, optional
@@ -101,7 +101,7 @@ class DOK(SparseArray):
             self._make_shallow_copy_of(ar)
             return
 
-        self.dtype = np.dtype(dtype)
+        self._dtype = np.dtype(dtype)
         super(DOK, self).__init__(shape)
 
         if not data:
@@ -110,18 +110,22 @@ class DOK(SparseArray):
         if isinstance(data, dict):
             if not dtype:
                 if not len(data):
-                    self.dtype = np.dtype('float64')
+                    self._dtype = np.dtype('float64')
                 else:
-                    self.dtype = np.result_type(*map(lambda x: np.asarray(x).dtype, data.values()))
+                    self._dtype = np.result_type(*map(lambda x: np.asarray(x).dtype, data.values()))
 
             for c, d in data.items():
                 self[c] = d
         else:
             raise ValueError('data must be a dict.')
 
+    @property
+    def dtype(self):
+        return self._dtype
+
     def _make_shallow_copy_of(self, other):
         super(DOK, self).__init__(other.shape)
-        self.dtype = other.dtype
+        self._dtype = other.dtype
         self.data = other.data
 
     @classmethod
