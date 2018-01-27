@@ -216,6 +216,21 @@ class DOK(SparseArray):
 
     @property
     def shape(self):
+        """
+        The shape of this array.
+
+        Returns
+        -------
+        tuple[int]
+            The shape of this array.
+
+        Examples
+        --------
+        >>> x = np.zeros((10, 10))
+        >>> s = DOK.from_numpy(x)
+        >>> s.shape
+        (10, 10)
+        """
         return self._shape
 
     @shape.setter
