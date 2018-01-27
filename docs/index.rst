@@ -32,6 +32,6 @@ this isn't possible. It also supports general N-dimensional arrays.
    quickstart
    construct
    operations
-   api
+   generated/sparse
    contribute
    changelog
