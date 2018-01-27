@@ -1,5 +1,9 @@
+.. currentmodule:: sparse
+
 Operations on :obj:`COO` arrays
 ===============================
+
+.. _operations-operators:
 
 Operators
 ---------
@@ -16,9 +20,9 @@ results for both Numpy arrays, COO arrays, or a mix of the two:
 
    np.log(X.dot(beta.T) + 1)
 
-However some operations are not supported, like inplace operation,
+However some operations are not supported, like inplace operations,
 operations that implicitly cause dense structures,
-or numpy functions that are not yet implemented for sprase arrays
+or numpy functions that are not yet implemented for sparse arrays
 
 .. code-block:: python
 
@@ -28,39 +32,6 @@ or numpy functions that are not yet implemented for sprase arrays
 
 
 This page describes those valid operations, and their limitations.
-
-.. _auto-densification:
-
-
-Element-wise Operations
------------------------
-:obj:`COO` arrays support a variety of element-wise operations. However, as
-with operators, operations that map zero to a nonzero value are not supported.
-
-To illustrate, the following are all possible, and will produce another
-:obj:`COO` array:
-
-.. code-block:: python
-
-   np.abs(x)
-   np.sin(x)
-   np.sqrt(x)
-   np.conj(x)
-   np.expm1(x)
-   np.log1p(x)
-
-However, the following are all unsupported and will raise a :obj:`ValueError`:
-
-.. code-block:: python
-
-   np.exp(x)
-   np.cos(x)
-   np.log(x)
-
-Notice that you can apply any unary or binary :obj:`numpy.ufunc` to :obj:`COO`
-arrays, and :obj:`numpy.ndarray` objects and scalars and it will work so
-long as the result is not dense. When applying to :obj:`numpy.ndarray` objects,
-we check that operating on the array with zero would always produce a zero.
 
 :obj:`COO.elemwise`
 ~~~~~~~~~~~~~~~~~~~
@@ -73,6 +44,7 @@ a :obj:`numpy.ndarray`. For example, the following will add two
 
    x.elemwise(np.add, y)
 
+.. _operations-auto-densification:
 
 Auto-Densification
 ~~~~~~~~~~~~~~~~~~
@@ -165,7 +137,7 @@ Full List of Operators
 ----------------------
 Here, :code:`x` and :code:`y` can be :obj:`COO` arrays,
 :obj:`numpy.ndarray` objects or scalars, keeping in mind :ref:`auto
-densification rules <auto-densification>`. In addition, :code:`y` can also
+densification rules <operations-auto-densification>`. In addition, :code:`y` can also
 be a :obj:`scipy.sparse.spmatrix` The following operators are supported:
 
 * Basic algebraic operations
@@ -200,6 +172,39 @@ be a :obj:`scipy.sparse.spmatrix` The following operators are supported:
 
 .. note:: In-place operators are not supported at this time.
 
+.. _operations-elemwise:
+
+Element-wise Operations
+-----------------------
+:obj:`COO` arrays support a variety of element-wise operations. However, as
+with operators, operations that map zero to a nonzero value are not supported.
+
+To illustrate, the following are all possible, and will produce another
+:obj:`COO` array:
+
+.. code-block:: python
+
+   np.abs(x)
+   np.sin(x)
+   np.sqrt(x)
+   np.conj(x)
+   np.expm1(x)
+   np.log1p(x)
+
+However, the following are all unsupported and will raise a :obj:`ValueError`:
+
+.. code-block:: python
+
+   np.exp(x)
+   np.cos(x)
+   np.log(x)
+
+Notice that you can apply any unary or binary :obj:`numpy.ufunc` to :obj:`COO`
+arrays, and :obj:`numpy.ndarray` objects and scalars and it will work so
+long as the result is not dense. When applying to :obj:`numpy.ndarray` objects,
+we check that operating on the array with zero would always produce a zero.
+
+.. _operations-reductions:
 
 Reductions
 ----------
@@ -245,6 +250,7 @@ in the form :code:`x.reduction()`, the following reductions are supported:
 * :obj:`COO.min`
 * :obj:`COO.prod`
 
+.. _operations-indexing:
 
 Indexing
 --------
@@ -277,6 +283,7 @@ All of the following will raise an :obj:`IndexError`, like in Numpy 1.13 and lat
 
 .. note:: Numpy advanced indexing is currently not supported.
 
+.. _operations-other:
 
 Other Operations
 ----------------

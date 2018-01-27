@@ -124,6 +124,8 @@ using normal Numpy indexing.
    s[1, 2, 1]  # 5
    s[5, 1, 1]  # 0
 
+.. _converting:
+
 Converting :obj:`COO` objects to other Formats
 ----------------------------------------------
 :obj:`COO` arrays can be converted to :obj:`numpy.ndarray` objects,

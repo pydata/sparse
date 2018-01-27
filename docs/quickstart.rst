@@ -8,7 +8,7 @@ Install
 
 If you haven't already, install the ``sparse`` library
 
-..
+.. code-block:: bash
 
    pip install sparse
 
