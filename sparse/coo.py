@@ -256,29 +256,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         self.sorted = other.sorted
         super(COO, self).__init__(other.shape)
 
-    @property
-    def shape(self):
-        """
-        The shape of this array.
-
-        Returns
-        -------
-        tuple[int]
-            The shape of this array.
-
-        Examples
-        --------
-        >>> x = np.zeros((10, 10))
-        >>> s = COO.from_numpy(x)
-        >>> s.shape
-        (10, 10)
-        """
-        return self._shape
-
-    @shape.setter
-    def shape(self, value):
-        self._shape = value
-
     def enable_caching(self):
         """ Enable caching of reshape, transpose, and tocsr/csc operations
 

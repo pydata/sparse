@@ -209,29 +209,6 @@ class DOK(SparseArray):
         return ar
 
     @property
-    def shape(self):
-        """
-        The shape of this array.
-
-        Returns
-        -------
-        tuple[int]
-            The shape of this array.
-
-        Examples
-        --------
-        >>> x = np.zeros((10, 10))
-        >>> s = DOK.from_numpy(x)
-        >>> s.shape
-        (10, 10)
-        """
-        return self._shape
-
-    @shape.setter
-    def shape(self, value):
-        self._shape = value
-
-    @property
     def nnz(self):
         """
         The number of nonzero elements in this array.
