@@ -1,6 +1,4 @@
 from __future__ import absolute_import, division, print_function
-from builtins import range, int
-from future.moves.itertools import zip_longest
 
 from collections import Iterable, defaultdict, deque
 from functools import reduce, partial
@@ -14,6 +12,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from .slicing import normalize_index
 from .utils import _zero_of_dtype
 from .sparse_array import SparseArray
+from .py23 import int, zip_longest, range, zip
 
 
 class COO(SparseArray, NDArrayOperatorsMixin):
