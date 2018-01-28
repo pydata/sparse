@@ -10,10 +10,18 @@ DOK
    .. rubric:: Attributes
    .. autosummary::
       :toctree:
-   
+
+      DOK.density
+
       DOK.ndim
-   
+
       DOK.nnz
+
+      DOK.size
+   
+
+
+
    
    
    

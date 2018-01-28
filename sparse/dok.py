@@ -1,31 +1,21 @@
-import six
+from numbers import Integral
 
 import numpy as np
 
-# Zip with Python 2/3 compat
-# Consumes less memory than Py2 zip
-from six.moves import zip, range
-
-from numbers import Integral
-from collections import Iterable
-
 from .slicing import normalize_index
 from .utils import _zero_of_dtype
-
-try:  # Windows compatibility
-    int = long
-except NameError:
-    pass
+from .sparse_array import SparseArray
+from .compatibility import int, range, zip
 
 
-class DOK(object):
+class DOK(SparseArray):
     """
     A class for building sparse multidimensional arrays.
 
     Parameters
     ----------
-    shape : tuple[int]
-        The shape of the array
+    shape : tuple[int] (DOK.ndim,)
+        The shape of the array.
     data : dict, optional
         The key-value pairs for the data in this array.
     dtype : np.dtype, optional
@@ -99,45 +89,40 @@ class DOK(object):
 
     def __init__(self, shape, data=None, dtype=None):
         from .coo import COO
-        self.data = {}
+        self.data = dict()
 
         if isinstance(shape, COO):
             ar = DOK.from_coo(shape)
-            self.shape = ar.shape
-            self.dtype = ar.dtype
-            self.data = ar.data
+            self._make_shallow_copy_of(ar)
             return
 
         if isinstance(shape, np.ndarray):
             ar = DOK.from_numpy(shape)
-            self.shape = ar.shape
-            self.dtype = ar.dtype
-            self.data = ar.data
+            self._make_shallow_copy_of(ar)
             return
 
         self.dtype = np.dtype(dtype)
-        if isinstance(shape, Integral):
-            self.shape = (int(shape),)
-        elif isinstance(shape, Iterable):
-            if not all(isinstance(l, Integral) or int(l) < 0 for l in shape):
-                raise ValueError('shape must be an iterable of non-negative integers.')
-
-            self.shape = tuple(shape)
+        super(DOK, self).__init__(shape)
 
         if not data:
-            data = {}
+            data = dict()
 
         if isinstance(data, dict):
             if not dtype:
                 if not len(data):
                     self.dtype = np.dtype('float64')
                 else:
-                    self.dtype = np.result_type(*map(lambda x: np.asarray(x).dtype, six.itervalues(data)))
+                    self.dtype = np.result_type(*map(lambda x: np.asarray(x).dtype, data.values()))
 
-            for c, d in six.iteritems(data):
+            for c, d in data.items():
                 self[c] = d
         else:
             raise ValueError('data must be a dict.')
+
+    def _make_shallow_copy_of(self, other):
+        super(DOK, self).__init__(other.shape)
+        self.dtype = other.dtype
+        self.data = other.data
 
     @classmethod
     def from_coo(cls, x):
@@ -222,29 +207,6 @@ class DOK(object):
             ar.data[c] = d
 
         return ar
-
-    @property
-    def ndim(self):
-        """
-        The number of dimensions in this array.
-
-        Returns
-        -------
-        int
-            The number of dimensions.
-
-        See Also
-        --------
-        COO.ndim : Equivalent property for :obj:`COO` arrays.
-        numpy.ndarray.ndim : Numpy equivalent property.
-
-        Examples
-        --------
-        >>> s = DOK((1, 2, 3))
-        >>> s.ndim
-        3
-        """
-        return len(self.shape)
 
     @property
     def nnz(self):
@@ -377,7 +339,7 @@ class DOK(object):
         """
         result = np.zeros(self.shape, dtype=self.dtype)
 
-        for c, d in six.iteritems(self.data):
+        for c, d in self.data.items():
             result[c] = d
 
         return result

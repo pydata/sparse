@@ -11,17 +11,11 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .slicing import normalize_index
 from .utils import _zero_of_dtype
-
-# zip_longest with Python 2/3 compat
-from six.moves import range, zip_longest
-
-try:  # Windows compatibility
-    int = long
-except NameError:
-    pass
+from .sparse_array import SparseArray
+from .compatibility import int, zip_longest, range, zip
 
 
-class COO(NDArrayOperatorsMixin):
+class COO(SparseArray, NDArrayOperatorsMixin):
     """
     A sparse multidimensional array.
 
@@ -35,8 +29,8 @@ class COO(NDArrayOperatorsMixin):
         Should have shape (number of dimensions, number of non-zeros)
     data : numpy.ndarray (COO.nnz,)
         An array of Values
-    shape : tuple[int] (COO.ndim,), optional
-        The shape of the array
+    shape : tuple[int] (COO.ndim,)
+        The shape of the array.
     has_duplicates : bool, optional
         A value indicating whether the supplied value for :code:`coords` has
         duplicates. Note that setting this to `False` when :code:`coords` does have
@@ -192,11 +186,7 @@ class COO(NDArrayOperatorsMixin):
             from .dok import DOK
 
             if isinstance(coords, COO):
-                self.coords = coords.coords
-                self.data = coords.data
-                self.has_duplicates = coords.has_duplicates
-                self.sorted = coords.sorted
-                self.shape = coords.shape
+                self._make_shallow_copy_of(coords)
                 return
 
             if isinstance(coords, DOK):
@@ -210,20 +200,12 @@ class COO(NDArrayOperatorsMixin):
 
             if isinstance(coords, np.ndarray):
                 result = COO.from_numpy(coords)
-                self.coords = result.coords
-                self.data = result.data
-                self.has_duplicates = result.has_duplicates
-                self.sorted = result.sorted
-                self.shape = result.shape
+                self._make_shallow_copy_of(result)
                 return
 
             if isinstance(coords, scipy.sparse.spmatrix):
                 result = COO.from_scipy_sparse(coords)
-                self.coords = result.coords
-                self.data = result.data
-                self.has_duplicates = result.has_duplicates
-                self.sorted = result.sorted
-                self.shape = result.shape
+                self._make_shallow_copy_of(result)
                 return
 
             # []
@@ -258,18 +240,22 @@ class COO(NDArrayOperatorsMixin):
             else:
                 shape = ()
 
-        if isinstance(shape, numbers.Integral):
-            shape = (int(shape),)
-
-        self.shape = tuple(shape)
+        super(COO, self).__init__(shape)
         if self.shape:
             dtype = np.min_scalar_type(max(self.shape))
         else:
-            dtype = np.int_
+            dtype = np.uint8
         self.coords = self.coords.astype(dtype)
         assert not self.shape or len(data) == self.coords.shape[1]
         self.has_duplicates = has_duplicates
         self.sorted = sorted
+
+    def _make_shallow_copy_of(self, other):
+        self.coords = other.coords
+        self.data = other.data
+        self.has_duplicates = other.has_duplicates
+        self.sorted = other.sorted
+        super(COO, self).__init__(other.shape)
 
     def enable_caching(self):
         """ Enable caching of reshape, transpose, and tocsr/csc operations
@@ -423,32 +409,6 @@ class COO(NDArrayOperatorsMixin):
         return self.data.dtype
 
     @property
-    def ndim(self):
-        """
-        The number of dimensions of this array.
-
-        Returns
-        -------
-        int
-            The number of dimensions of this array.
-
-        See Also
-        --------
-        DOK.ndim : Equivalent property for :obj:`DOK` arrays.
-        numpy.ndarray.ndim : Numpy equivalent property.
-
-        Examples
-        --------
-        >>> x = np.random.rand(1, 2, 3, 1, 2)
-        >>> s = COO.from_numpy(x)
-        >>> s.ndim
-        5
-        >>> s.ndim == x.ndim
-        True
-        """
-        return len(self.shape)
-
-    @property
     def nnz(self):
         """
         The number of nonzero elements in this array. Note that any duplicates in
@@ -525,54 +485,6 @@ class COO(NDArrayOperatorsMixin):
         10
         """
         return self.shape[0]
-
-    @property
-    def size(self):
-        """
-        The number of all elements (including zeros) in this array.
-
-        Returns
-        -------
-        int
-            The number of elements.
-
-        See Also
-        --------
-        numpy.ndarray.size : Numpy equivalent property.
-
-        Examples
-        --------
-        >>> x = np.zeros((10, 10))
-        >>> s = COO.from_numpy(x)
-        >>> s.size
-        100
-        """
-        return np.prod(self.shape)
-
-    @property
-    def density(self):
-        """
-        The ratio of nonzero to all elements in this array.
-
-        Returns
-        -------
-        float
-            The ratio of nonzero to all elements.
-
-        See Also
-        --------
-        COO.size : Number of elements.
-        COO.nnz : Number of nonzero elements.
-
-        Examples
-        --------
-        >>> x = np.zeros((8, 8))
-        >>> x[0, :] = 1
-        >>> s = COO.from_numpy(x)
-        >>> s.density
-        0.125
-        """
-        return self.nnz / self.size
 
     def __sizeof__(self):
         return self.nbytes
@@ -1546,7 +1458,6 @@ class COO(NDArrayOperatorsMixin):
             return _elemwise_unary(func, self, *args[1:], **kwargs)
         else:
             other = args[1]
-
             if isinstance(other, scipy.sparse.spmatrix):
                 other = COO.from_scipy_sparse(other)
 
