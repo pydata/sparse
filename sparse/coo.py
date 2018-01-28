@@ -12,7 +12,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from .slicing import normalize_index
 from .utils import _zero_of_dtype
 from .sparse_array import SparseArray
-from .py23 import int, zip_longest, range, zip
+from .compatibility import int, zip_longest, range, zip
 
 
 class COO(SparseArray, NDArrayOperatorsMixin):

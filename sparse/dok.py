@@ -5,7 +5,7 @@ import numpy as np
 from .slicing import normalize_index
 from .utils import _zero_of_dtype
 from .sparse_array import SparseArray
-from .py23 import int, range, zip
+from .compatibility import int, range, zip
 
 
 class DOK(SparseArray):
