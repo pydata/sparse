@@ -14,6 +14,8 @@ API
 
     DOK
 
+    SparseArray
+
 
 
 

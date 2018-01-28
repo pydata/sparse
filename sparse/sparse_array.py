@@ -7,6 +7,15 @@ import operator
 
 
 class SparseArray(object):
+    """
+    An abstract base class for all the sparse array classes.
+
+    Attributes
+    ----------
+    dtype : numpy.dtype
+        The data type of this array.
+    """
+
     __metaclass__ = ABCMeta
 
     def __init__(self, shape):
@@ -19,9 +28,39 @@ class SparseArray(object):
 
         self.shape = tuple(int(l) for l in shape)
 
+    dtype = None
+
     @property
     @abstractmethod
     def nnz(self):
+        """
+        The number of nonzero elements in this array. Note that any duplicates in
+        :code:`coords` are counted multiple times. To avoid this, call :obj:`COO.sum_duplicates`.
+
+        Returns
+        -------
+        int
+            The number of nonzero elements in this array.
+
+        See Also
+        --------
+        DOK.nnz : Equivalent :obj:`DOK` array property.
+        numpy.count_nonzero : A similar Numpy function.
+        scipy.sparse.coo_matrix.nnz : The Scipy equivalent property.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from sparse import COO
+        >>> x = np.array([0, 0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 0])
+        >>> np.count_nonzero(x)
+        6
+        >>> s = COO.from_numpy(x)
+        >>> s.nnz
+        6
+        >>> np.count_nonzero(x) == s.nnz
+        True
+        """
         pass
 
     @property
@@ -105,8 +144,3 @@ class SparseArray(object):
         0.125
         """
         return self.nnz / self.size
-
-    @property
-    @abstractmethod
-    def dtype(self):
-        pass
