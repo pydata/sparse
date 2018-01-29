@@ -288,6 +288,6 @@ All of the following will raise an :obj:`IndexError`, like in Numpy 1.13 and lat
 Other Operations
 ----------------
 :obj:`COO` arrays support a number of other common operations. Among them are
-:obj:`dot`, :obj:`tensordot`, :obj:`concatenate` and :obj:`stack`,
-:obj:`COO.transpose` and :obj:`COO.reshape`. You can view the full list on the
-API reference page for :obj:`sparse`
+:obj:`dot <COO.dot>`, :obj:`tensordot <COO.tensordot>`, :obj:`concatenate <COO.concatenate>`
+and :obj:`stack <COO.stack>`, :obj:`COO.transpose <COO.transpose>` and :obj:`reshape <COO.reshape>`.
+You can view the full list on the API reference page for :obj:`sparse`.
