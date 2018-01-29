@@ -158,10 +158,16 @@ def test_tensordot(a_shape, b_shape, axes):
     # assert isinstance(sparse.tensordot(a, sb, axes), COO)
 
 
-def test_dot():
-    import operator
-    sa = sparse.random((3, 4, 5), density=0.5)
-    sb = sparse.random((5, 6), density=0.5)
+@pytest.mark.parametrize('a_shape, b_shape', [
+    ((3, 4, 5), (5, 6)),
+    ((4, 5), (5, 6)),
+    ((5,), (5, 6)),
+    ((4, 5), (5,)),
+    ((5,), (5,)),
+])
+def test_dot(a_shape, b_shape):
+    sa = sparse.random(a_shape, density=0.5)
+    sb = sparse.random(b_shape, density=0.5)
 
     a = sa.todense()
     b = sb.todense()

@@ -1738,7 +1738,17 @@ def dot(a, b):
         raise NotImplementedError(
             "Cannot perform dot product on types %s, %s" %
             (type(a), type(b)))
-    return tensordot(a, b, axes=((a.ndim - 1,), (b.ndim - 2,)))
+
+    if a.ndim == 1 and b.ndim == 1:
+        return (a * b).sum()
+
+    a_axis = -1
+    b_axis = -2
+
+    if b.ndim == 1:
+        b_axis = -1
+
+    return tensordot(a, b, axes=(a_axis, b_axis))
 
 
 def _dot(a, b):
