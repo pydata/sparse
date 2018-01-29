@@ -166,7 +166,6 @@ def test_tensordot(a_shape, b_shape, axes):
     ((5,), (5,)),
 ])
 def test_dot(a_shape, b_shape):
-    import operator
     sa = sparse.random(a_shape, density=0.5)
     sb = sparse.random(b_shape, density=0.5)
 
