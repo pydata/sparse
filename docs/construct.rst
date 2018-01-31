@@ -9,7 +9,7 @@ You can construct :obj:`COO` arrays from coordinates and value data.
 
 The :code:`coords` parameter contains the indices where the data is nonzero,
 and the :code:`data` parameter contains the data corresponding to those indices.
-For example, the following code will generate a :math:`5 \times 5` identity
+For example, the following code will generate a :math:`5 \times 5` diagonal
 matrix:
 
 .. code-block:: python
@@ -53,9 +53,9 @@ explicitly. For example, if we did the following without the
    data = [1, 4, 2, 1]
    s = COO(coords, data, shape=(5, 5))
 
-From :obj:`scipy.sparse.spmatrix` objects
------------------------------------------
-To construct :obj:`COO` array from :obj:`scipy.sparse.spmatrix`
+From :doc:`Scipy sparse matrices <generated/scipy.sparse.spmatrix>`
+-------------------------------------------------------------------
+To construct :obj:`COO` array from :obj:`spmatrix <scipy.sparse.spmatrix>`
 objects, you can use the :obj:`COO.from_scipy_sparse` method. As an
 example, if :code:`x` is a :obj:`scipy.sparse.spmatrix`, you can
 do the following to get an equivalent :obj:`COO` array:
@@ -64,8 +64,8 @@ do the following to get an equivalent :obj:`COO` array:
 
    s = COO.from_scipy_sparse(x)
 
-From :obj:`numpy.ndarray` objects
----------------------------------
+From :doc:`Numpy arrays <reference/generated/numpy.ndarray>`
+------------------------------------------------------------
 To construct :obj:`COO` arrays from :obj:`numpy.ndarray`
 objects, you can use the :obj:`COO.from_numpy` method. As an
 example, if :code:`x` is a :obj:`numpy.ndarray`, you can
@@ -100,7 +100,7 @@ dictionary or is set to :code:`dtype('float64')` if that is not present.
 .. code-block:: python
 
    s = DOK((6, 5, 2))
-   s2 = DOK((2, 3, 4), dtype=np.float64)
+   s2 = DOK((2, 3, 4), dtype=np.uint8)
 
 After this, you can build the array by assigning arrays or scalars to elements
 or slices of the original array. Broadcasting rules are followed.
@@ -114,7 +114,7 @@ perform arithmetic or other operations on it.
 
 .. code-block:: python
 
-   s2 = COO(s)
+   s3 = COO(s)
 
 In addition, it is possible to access single elements of the :obj:`DOK` array
 using normal Numpy indexing.
@@ -128,8 +128,8 @@ using normal Numpy indexing.
 
 Converting :obj:`COO` objects to other Formats
 ----------------------------------------------
-:obj:`COO` arrays can be converted to :obj:`numpy.ndarray` objects,
-or to some :obj:`scipy.sparse.spmatrix` subclasses via the following
+:obj:`COO` arrays can be converted to :doc:`Numpy arrays <reference/generated/numpy.ndarray>`,
+or to some :obj:`spmatrix <scipy.sparse.spmatrix>` subclasses via the following
 methods:
 
 * :obj:`COO.todense`: Converts to a :obj:`numpy.ndarray` unconditionally.

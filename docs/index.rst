@@ -6,7 +6,7 @@ It generalizes the :obj:`scipy.sparse.coo_matrix` and :obj:`scipy.sparse.dok_mat
 but extends beyond just rows and columns to an arbitrary number of dimensions.
 
 Additionally, this project maintains compatibility with the :obj:`numpy.ndarray` interface
-rather than the obj:`numpy.matrix` interface used in :obj:`scipy.sparse`
+rather than the :obj:`numpy.matrix` interface used in :obj:`scipy.sparse`
 
 These differences make this project useful in certain situations
 where scipy.sparse matrices are not well suited,
@@ -29,7 +29,9 @@ costs when working with these arrays.
 Design
 ------
 
-The main data structure in this library follows the `Coordinate List (COO) <https://en.wikipedia.org/wiki/Sparse_matrix#Coordinate_list_(COO)>`_ layout for sparse matrices, but extends it to multiple dimensions.
+The main data structure in this library follows the
+`Coordinate List (COO) <https://en.wikipedia.org/wiki/Sparse_matrix#Coordinate_list_(COO)>`_
+layout for sparse matrices, but extends it to multiple dimensions.
 
 The COO layout, which stores the row index, column index, and value of every element:
 
@@ -81,7 +83,7 @@ This library is licensed under BSD-3
    construct
    operations
    generated/sparse
-   contribute
+   contributing
    changelog
 
 .. _scipy.sparse: https://docs.scipy.org/doc/scipy/reference/sparse.html

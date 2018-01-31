@@ -9,7 +9,7 @@ Operators
 ---------
 
 :obj:`COO` objects support a number of operations. They interact with scalars,
-:obj:`numpy.ndarray` objects, other :obj:`COO` objects, and
+:doc:`Numpy arrays <reference/generated/numpy.ndarray>`, other :obj:`COO` objects, and
 :obj:`scipy.sparse.spmatrix` objects, all following standard Python and Numpy
 conventions.
 
@@ -37,8 +37,8 @@ This page describes those valid operations, and their limitations.
 ~~~~~~~~~~~~~~~~~~~
 This function allows you to apply any arbitrary unary or binary function where
 the first object is :obj:`COO`, and the second is a scalar, :obj:`COO`, or
-a :obj:`numpy.ndarray`. For example, the following will add two
-:obj:`COO` objects:
+a :doc:`Numpy arrays <reference/generated/numpy.ndarray>`. For example, the
+following will add two :obj:`COO` objects:
 
 .. code-block:: python
 
@@ -49,7 +49,7 @@ a :obj:`numpy.ndarray`. For example, the following will add two
 Auto-Densification
 ~~~~~~~~~~~~~~~~~~
 Operations that would result in dense matrices, such as binary
-operations with :obj:`numpy.ndarray` objects or certain operations with
+operations with :doc:`Numpy arrays <reference/generated/numpy.ndarray>` objects or certain operations with
 scalars are not allowed and will raise a :obj:`ValueError`. For example,
 all of the following will raise a :obj:`ValueError`. Here, :code:`x` and
 :code:`y` are :obj:`COO` objects.
@@ -79,8 +79,8 @@ If densification is needed, it must be explicit. In other words, you must call
 both must be densified.
 
 
-Operations with :obj:`numpy.ndarray`
-------------------------------------
+Operations with :doc:`Numpy arrays <reference/generated/numpy.ndarray>`
+-----------------------------------------------------------------------
 Certain operations with :obj:`numpy.ndarray` are also supported. For example,
 the following are all allowed if :code:`x` is a :obj:`numpy.ndarray` and
 :code:`(x == 0).all()` evaluates to :code:`True`:
@@ -123,7 +123,7 @@ on :obj:`COO`, as long as it is to the right of the operator.
 
 Broadcasting
 ------------
-All binary operators support :obj:`broadcasting <numpy.doc.broadcasting>`.
+All binary operators support :doc:`broadcasting <user/basics.broadcasting>`.
 This means that (under certain conditions) you can perform binary operations
 on arrays with unequal shape. Namely, when the shape is missing a dimension,
 or when a dimension is :code:`1`. For example, performing a binary operation
@@ -199,7 +199,7 @@ However, the following are all unsupported and will raise a :obj:`ValueError`:
    np.cos(x)
    np.log(x)
 
-Notice that you can apply any unary or binary :obj:`numpy.ufunc` to :obj:`COO`
+Notice that you can apply any unary or binary :doc:`numpy.ufunc <reference/ufuncs>` to :obj:`COO`
 arrays, and :obj:`numpy.ndarray` objects and scalars and it will work so
 long as the result is not dense. When applying to :obj:`numpy.ndarray` objects,
 we check that operating on the array with zero would always produce a zero.
@@ -225,7 +225,7 @@ currently work:
 
 :obj:`COO.reduce`
 ~~~~~~~~~~~~~~~~~
-This method can take an arbitrary :obj:`numpy.ufunc` and performs a
+This method can take an arbitrary :doc:`numpy.ufunc <reference/ufuncs>` and performs a
 reduction using that method. For example, the following will perform
 a sum:
 
@@ -234,7 +234,7 @@ a sum:
    x.reduce(np.add, axis=1)
 
 .. note::
-   :obj:`sparse` currently performs reductions by grouping together all
+   This library currently performs reductions by grouping together all
    coordinates along the supplied axes and reducing those. Then, if the
    number in a group is deficient, it reduces an extra time with zero.
    As a result, if reductions can change by adding multiple zeros to
@@ -242,7 +242,7 @@ a sum:
 
 Partial List of Supported Reductions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Although any binary :obj:`numpy.ufunc` should work for reductions, when calling
+Although any binary :doc:`numpy.ufunc <reference/ufuncs>` should work for reductions, when calling
 in the form :code:`x.reduction()`, the following reductions are supported:
 
 * :obj:`COO.sum`
@@ -288,6 +288,6 @@ All of the following will raise an :obj:`IndexError`, like in Numpy 1.13 and lat
 Other Operations
 ----------------
 :obj:`COO` arrays support a number of other common operations. Among them are
-:obj:`dot <COO.dot>`, :obj:`tensordot <COO.tensordot>`, :obj:`concatenate <COO.concatenate>`
-and :obj:`stack <COO.stack>`, :obj:`COO.transpose <COO.transpose>` and :obj:`reshape <COO.reshape>`.
-You can view the full list on the API reference page for :obj:`sparse`.
+:obj:`dot`, :obj:`tensordot`, :obj:`concatenate`
+and :obj:`stack`, :obj:`transpose <COO.transpose>` and :obj:`reshape <COO.reshape>`.
+You can view the full list on the :doc:`API reference page <generated/sparse>`.

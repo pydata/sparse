@@ -46,7 +46,7 @@ Compute
 -------
 
 Many of the normal Numpy operations work on :obj:`COO` objects just like on :obj:`numpy.ndarray` objects.
-This includes arithmetic, :obj:`numpy.ufunc` operations, or functions like tensordot and transpose.
+This includes arithmetic, :doc:`numpy.ufunc <reference/ufuncs>` operations, or functions like tensordot and transpose.
 
 .. code-block:: python
 
@@ -69,4 +69,4 @@ you can use the ``todense`` method (which will result in a :obj:`numpy.ndarray`)
    y = x.todense() + 5
 
 For more operations see the :doc:`Operations documentation <operations>`
-or the :doc:`API reference <api>`.
+or the :doc:`API reference <generated/sparse>`.
