@@ -17,6 +17,18 @@ If you're not already familiar with it, we follow the `fork and pull model
 <https://help.github.com/articles/about-collaborative-development-models/>`_
 on GitHub.
 
+Filing Issues
+-------------
+If you find a bug or would like a new feature, you might want to `consider
+filing a new issue on GitHub <https://github.com/pydata/sparse/issues>`_. Before
+you open a new issue, please make sure of the following:
+
+* This should go without saying, but make sure what you are requesting is within
+  the scope of this project.
+* The bug/feature is still present/missing on the ``master`` branch on GitHub.
+* A similar issue or pull request isn't already open. If one already is, it's better
+  to contribute to the discussion there.
+
 Running/Adding Unit Tests
 -------------------------
 It is best if all new functionality and/or bug fixes have unit tests added
@@ -25,9 +37,9 @@ with each use-case.
 Since we support both Python 2.7 and Python 3.5 and newer, it is recommended
 to test with at least these two versions before committing your code or opening
 a pull request. We use `pytest <https://docs.pytest.org/en/latest/>`_ as our unit
-testing framework, with the pytest-cov extension to check code coverage and
-pytest-flake8 to check code style. You don't need to configure these extensions
-yourself. Once you've configured your environment, you can just :code:`cd` to
+testing framework, with the ``pytest-cov`` extension to check code coverage and
+``pytest-flake8`` to check code style. You don't need to configure these extensions
+yourself. Once you've configured your environment, you can just ``cd`` to
 the root of your repository and run
 
 .. code-block:: bash

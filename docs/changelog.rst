@@ -15,7 +15,7 @@ Changelog
 -  Fix nnz for scalars (:pr:`48`) `Hameer Abbasi`_
 -  Update README (:pr:`50`) (:pr:`53`) `Hameer Abbasi`_
 -  Fix large concatenations and stacks (:pr:`50`) `Hameer Abbasi`_
--  Add __array_ufunc__ for __call__ and reduce (:pr:`r9`) `Hameer Abbasi`_
+-  Add __array_ufunc__ for __call__ and reduce (:pr:`49`) `Hameer Abbasi`_
 -  Update documentation (:pr:`54`) `Hameer Abbasi`_
 -  Flake8 and coverage in pytest (:pr:`59`) `Nils Werner`_
 -  Copy constructor (:pr:`55`) `Nils Werner`_

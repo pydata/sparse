@@ -1,28 +1,78 @@
 Sparse
 ======
 
-Introduction
-------------
-In many scientific applications, arrays come up that are mostly empty or filled
-with zeros. These arrays are aptly named *sparse arrays*. However, it is a matter
-of choice as to how these are stored. One may store the full array, i.e., with all
-the zeros included. This incurs a significant cost in terms of memory and
-performance when working with these arrays.
+This implements sparse arrays of arbitrary dimension on top of :obj:`numpy` and :obj:`scipy.sparse`.
+It generalizes the :obj:`scipy.sparse.coo_matrix` and :obj:`scipy.sparse.dok_matrix` layouts,
+but extends beyond just rows and columns to an arbitrary number of dimensions.
 
-An alternative way is to store them in a standalone data structure that keeps track
-of only the nonzero entries. Often, this improves performance and memory consumption
-but most operations on sparse arrays have to be re-written. :obj:`sparse` tries to
-provide one such data structure. It isn't the only library that does this. Notably,
-:obj:`scipy.sparse` achieves this, along with `pysparse <http://pysparse.sourceforge.net/>`_.
+Additionally, this project maintains compatibility with the :obj:`numpy.ndarray` interface
+rather than the :obj:`numpy.matrix` interface used in :obj:`scipy.sparse`
+
+These differences make this project useful in certain situations
+where scipy.sparse matrices are not well suited,
+but it should not be considered a full replacement.
+It lacks layouts that are not easily generalized like CSR/CSC
+and depends on scipy.sparse for some computations.
+
 
 Motivation
 ----------
-So why use :obj:`sparse`? Well, the other libraries mentioned are mostly limited to
-two-dimensional arrays. In addition, inter-compatibility with :obj:`numpy` is
-hit-or-miss. :obj:`sparse` strives to achieve inter-compatibility with
-:obj:`numpy.ndarray`, and provide mostly the same API. It defers to :obj:`scipy.sparse`
-when it is convenient to do so, and writes custom implementations of operations where
-this isn't possible. It also supports general N-dimensional arrays.
+
+Sparse arrays, or arrays that are mostly empty or filled with zeros,
+are common in many scientific applications.
+To save space we often avoid storing these arrays in traditional dense formats,
+and instead choose different data structures.
+Our choice of data structure can significantly affect our storage and computational
+costs when working with these arrays.
+
+
+Design
+------
+
+The main data structure in this library follows the
+`Coordinate List (COO) <https://en.wikipedia.org/wiki/Sparse_matrix#Coordinate_list_(COO)>`_
+layout for sparse matrices, but extends it to multiple dimensions.
+
+The COO layout, which stores the row index, column index, and value of every element:
+
+=== === ====
+row col data
+=== === ====
+  0   0   10
+  0   2   13
+  1   3    9
+  3   8   21
+=== === ====
+
+It is straightforward to extend the COO layout to an arbitrary number of
+dimensions:
+
+==== ==== ==== === ====
+dim1 dim2 dim3 ... data
+==== ==== ==== === ====
+  0    0     0   .   10
+  0    0     3   .   13
+  0    2     2   .    9
+  3    1     4   .   21
+==== ==== ==== === ====
+
+This makes it easy to *store* a multidimensional sparse array, but we still
+need to reimplement all of the array operations like transpose, reshape,
+slicing, tensordot, reductions, etc., which can be challenging in general.
+
+Fortunately in many cases we can leverage the existing :obj:`scipy.sparse`
+algorithms if we can intelligently transpose and reshape our multi-dimensional
+array into an appropriate 2-d sparse matrix, perform a modified sparse matrix
+operation, and then reshape and transpose back.  These reshape and transpose
+operations can all be done at numpy speeds by modifying the arrays of
+coordinates.  After scipy.sparse runs its operations (often written in C) then
+we can convert back to using the same path of reshapings and transpositions in
+reverse.
+
+LICENSE
+-------
+
+This library is licensed under BSD-3
 
 .. toctree::
    :maxdepth: 3
@@ -33,5 +83,7 @@ this isn't possible. It also supports general N-dimensional arrays.
    construct
    operations
    generated/sparse
-   contribute
+   contributing
    changelog
+
+.. _scipy.sparse: https://docs.scipy.org/doc/scipy/reference/sparse.html
