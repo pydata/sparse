@@ -1,7 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 from collections import Iterable, defaultdict, deque
-from functools import reduce, partial
+from functools import reduce
+from itertools import product
 import numbers
 import operator
 
@@ -10,7 +11,7 @@ import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .slicing import normalize_index
-from .utils import _zero_of_dtype
+from .utils import _zero_of_dtype, isscalar
 from .sparse_array import SparseArray
 from .compatibility import int, zip_longest, range, zip
 
@@ -1139,7 +1140,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             return NotImplemented
 
         if method == '__call__':
-            return COO._elemwise(ufunc, *inputs, **kwargs)
+            return elemwise(ufunc, *inputs, **kwargs)
         elif method == 'reduce':
             return COO._reduce(ufunc, *inputs, **kwargs)
         else:
@@ -1439,70 +1440,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         self.coords = coords
         self.has_duplicates = False
 
-    @staticmethod
-    def _elemwise(func, *args, **kwargs):
-        if len(args) == 0:
-            return func()
-
-        self = args[0]
-        if np.isscalar(self) or (isinstance(self, np.ndarray)
-                                 and self.ndim == 0):
-            func = partial(func, self)
-            other = args[1]
-            return _elemwise_unary(func, other, *args[2:], **kwargs)
-
-        if isinstance(self, scipy.sparse.spmatrix):
-            self = COO.from_scipy_sparse(self)
-
-        if len(args) == 1:
-            return _elemwise_unary(func, self, *args[1:], **kwargs)
-        else:
-            other = args[1]
-            if isinstance(other, scipy.sparse.spmatrix):
-                other = COO.from_scipy_sparse(other)
-
-            if isinstance(other, COO) or isinstance(other, np.ndarray):
-                return _elemwise_binary(func, self, other, *args[2:], **kwargs)
-            else:
-                return _elemwise_unary(func, self, *args[1:], **kwargs)
-
-    def elemwise(self, func, *args, **kwargs):
-        """
-        Apply a function to one or two arguments.
-
-        Parameters
-        ----------
-        func : Callable
-            The function to apply to one or two arguments.
-        args : tuple, optional
-            The extra arguments to pass to the function. If :code:`args[0]` is a COO object,
-            or a scalar; the function will be treated as a binary
-            function. Otherwise, it will be treated as a unary function.
-        kwargs : dict, optional
-            The kwargs to pass to the function.
-
-        Returns
-        -------
-        COO
-            The result of applying the function.
-
-        Raises
-        ------
-        ValueError
-            If the operation would result in a dense matrix.
-
-        See Also
-        --------
-        :obj:`numpy.ufunc` : A similar Numpy construct. Note that any :code:`ufunc` can be used
-            as the :code:`func` input to this function.
-
-        Notes
-        -----
-        In the future, this function may support functions of more than two arguments. Therefore,
-        it is best to pass in any additional arguments as keyword arguments.
-        """
-        return COO._elemwise(func, self, *args, **kwargs)
-
     def broadcast_to(self, shape):
         """
         Performs the equivalent of :obj:`numpy.broadcast_to` for :obj:`COO`. Note that
@@ -1550,7 +1487,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         actually supported.
         """
         assert out is None
-        return self.elemwise(np.round, decimals)
+        return elemwise(np.round, self, decimals=decimals)
 
     def astype(self, dtype, out=None):
         """
@@ -1569,7 +1506,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         actually supported.
         """
         assert out is None
-        return self.elemwise(np.ndarray.astype, dtype=dtype)
+        return elemwise(np.ndarray.astype, self, dtype=dtype)
 
     def maybe_densify(self, max_size=1000, min_density=0.25):
         """
@@ -1954,6 +1891,20 @@ def tril(x, k=0):
     return COO(coords, data, x.shape, x.has_duplicates, x.sorted)
 
 
+def _nary_match(*arrays):
+    matched = arrays[0]
+    matched_idx = [np.arange(arrays[0].shape[0],
+                             dtype=np.min_scalar_type(arrays[0].shape[0] - 1))]
+
+    for arr in arrays[1:]:
+        old_idx, new_idx = _match_arrays(matched, arr)
+        matched = matched[old_idx]
+        matched_idx = [idx[old_idx] for idx in matched_idx]
+        matched_idx.append(new_idx)
+
+    return matched, matched_idx
+
+
 # (c) Paul Panzer
 # Taken from https://stackoverflow.com/a/47833496/774273
 # License: https://creativecommons.org/licenses/by-sa/3.0/
@@ -2034,113 +1985,173 @@ def _grouped_reduce(x, groups, method, **kwargs):
     return result, inv_idx, counts
 
 
-def _elemwise_binary(func, self, other, *args, **kwargs):
-    check = kwargs.pop('check', True)
-    self_zero = _zero_of_dtype(self.dtype)
-    other_zero = _zero_of_dtype(other.dtype)
+def elemwise(func, *args, **kwargs):
+    """
+    Apply a function to any number of arguments.
 
-    func_value = func(self_zero, other_zero, *args, **kwargs)
+    Parameters
+    ----------
+    func : Callable
+        The function to apply. Must support broadcasting.
+    args : tuple, optional
+        The arguments to the function. Can be :obj:`scipy.sparse.spmatrix` objects,
+        :obj:`SparseArray` objects or :obj:`numpy.ndarray` objects.
+    kwargs : dict, optional
+        Any additional arguments to pass to the function.
+
+    Returns
+    -------
+    COO
+        The result of applying the function.
+
+    Raises
+    ------
+    ValueError
+        If the operation would result in a dense matrix, or if the operands
+        don't have broadcastable shapes.
+
+    See Also
+    --------
+    :obj:`numpy.ufunc` : A similar Numpy construct. Note that any :code:`ufunc` can be used
+        as the :code:`func` input to this function.
+    """
+    # Because we need to mutate args.
+    args = list(args)
+
+    scalars = 0
+    for i in range(len(args)):
+        if isinstance(args[i], scipy.sparse.spmatrix):
+            args[i] = COO.from_scipy_sparse(args[i])
+
+        if isscalar(args[i]) or (isinstance(args[i], np.ndarray)
+                                 and not args[i].shape):
+            # Faster and more reliable to pass ()-shaped ndarrays as scalars.
+            if isinstance(args[i], np.ndarray):
+                args[i] = args[i][()]
+
+            # The -scalars factor is there because we need to account for already
+            # added scalars in the function.
+            func = _posarg_partial(func, i - scalars, args[i])
+            scalars += 1
+        elif isinstance(args[i], SparseArray) and not isinstance(args[i], COO):
+            args[i] = COO(args[i])
+
+    # Filter out scalars as they are 'baked' into the function.
+    args = list(filter(lambda arg: not isscalar(arg), args))
+
+    if len(args) == 0:
+        return func(**kwargs)
+
+    if len(args) == 1:
+        return _elemwise_unary(func, args[0], **kwargs)
+
+    return _elemwise_n_ary(func, *args, **kwargs)
+
+
+def _elemwise_n_ary(func, *args, **kwargs):
+    """
+    Apply a function to any number of arguments with broadcasting.
+
+    Parameters
+    ----------
+    func : Callable
+        The function to apply to arguments. Must support broadcasting.
+    args : list
+        Input :obj:`COO` or :obj:`numpy.ndarray`s.
+    kwargs : dict
+        Additional arguments to pass to the function.
+
+    Returns
+    -------
+    COO
+        The output array.
+
+    Raises
+    ------
+    ValueError
+        If the input shapes aren't compatible or the result will be dense.
+    """
+    check = kwargs.pop('check', True)
+
+    args = list(args)
+
+    for arg in args:
+        if isinstance(arg, COO):
+            arg.sum_duplicates()
+
+    args_zeros = tuple(_zero_of_dtype(arg.dtype)[()] for arg in args)
+
+    func_value = func(*args_zeros, **kwargs)
     func_zero = _zero_of_dtype(np.dtype(func_value))
-    if check and func(self_zero, other_zero, *args, **kwargs) != func_zero:
+    if check and func_value != func_zero:
         raise ValueError("Performing this operation would produce "
                          "a dense result: %s" % str(func))
 
-    if not isinstance(self, COO):
-        if not check or np.array_equiv(func(self, other_zero, *args, **kwargs), func_zero):
-            return _elemwise_binary_self_dense(func, self, other, *args, **kwargs)
-        else:
-            raise ValueError("Performing this operation would produce "
-                             "a dense result: %s" % str(func))
+    # zero_partials = [_posarg_partial(func, i, args_zeros[i])
+    #                  for i in range(len(args))]
+    #
+    # partial_args = [args[:i] + args[i + 1:] for i in range(len(args))]
+    # results_with_zero = [zero_partials[i](*partial_args[i], **kwargs)
+    #                      for i in range(len(args))]
+    # results_with_zero = [x if isinstance(x, COO) else COO.from_numpy(x)
+    #                      for x in results_with_zero]
 
-    if not isinstance(other, COO):
-        if not check or np.array_equiv(func(self_zero, other, *args, **kwargs), func_zero):
-            temp_func = _reverse_self_other(func)
-            return _elemwise_binary_self_dense(temp_func, other, self, *args, **kwargs)
-        else:
-            raise ValueError("Performing this operation would produce "
-                             "a dense result: %s" % str(func))
+    for i in range(len(args)):
+        if not isinstance(args[i], COO):
+            zero_partial = _posarg_partial(func, i, args_zeros[i])
+            partial_args = args[:i] + args[i + 1:]
+            result_with_zero = zero_partial(*partial_args, **kwargs)
+            data_with_zero = result_with_zero.data if isinstance(result_with_zero, COO) \
+                else result_with_zero
+            if np.array_equiv(data_with_zero, func_zero):
+                args[i] = COO.from_numpy(args[i])
+            else:
+                raise ValueError("Performing this operation would produce "
+                                 "a dense result: %s" % str(func))
 
-    self_shape, other_shape = self.shape, other.shape
+            del zero_partial
+            del partial_args
+            del result_with_zero
+            del data_with_zero
 
-    result_shape = _get_broadcast_shape(self_shape, other_shape)
-    self_params = _get_broadcast_parameters(self.shape, result_shape)
-    other_params = _get_broadcast_parameters(other.shape, result_shape)
-    combined_params = [p1 and p2 for p1, p2 in zip(self_params, other_params)]
-    self_reduce_params = combined_params[-self.ndim:]
-    other_reduce_params = combined_params[-other.ndim:]
-
-    self.sum_duplicates()  # TODO: document side-effect or make copy
-    other.sum_duplicates()  # TODO: document side-effect or make copy
-
-    self_coords = self.coords
-    self_data = self.data
-
-    self_reduced_coords, self_reduced_shape = \
-        _get_reduced_coords(self_coords, self_shape,
-                            self_reduce_params)
-    self_reduced_linear = _linear_loc(self_reduced_coords, self_reduced_shape)
-    i = np.argsort(self_reduced_linear)
-    self_reduced_linear = self_reduced_linear[i]
-    self_coords = self_coords[:, i]
-    self_data = self_data[i]
-
-    # Store coords
-    other_coords = other.coords
-    other_data = other.data
-
-    other_reduced_coords, other_reduced_shape = \
-        _get_reduced_coords(other_coords, other_shape,
-                            other_reduce_params)
-    other_reduced_linear = _linear_loc(other_reduced_coords, other_reduced_shape)
-    i = np.argsort(other_reduced_linear)
-    other_reduced_linear = other_reduced_linear[i]
-    other_coords = other_coords[:, i]
-    other_data = other_data[i]
-
-    # Find matches between self.coords and other.coords
-    matched_self, matched_other = _match_arrays(self_reduced_linear,
-                                                other_reduced_linear)
-
-    # Start with an empty list. This may reduce computation in many cases.
+    # matched_coords, matched_data, result_shape = _match_coo(*args)[1:]
+    #
+    # # Start with an empty list. This may reduce computation in many cases.
     data_list = []
     coords_list = []
+    #
+    # data_list.append(func(*matched_data, **kwargs))
+    # coords_list.append(matched_coords)
 
-    # Add the matched part.
-    matched_coords = _get_matching_coords(self_coords[:, matched_self],
-                                          other_coords[:, matched_other],
-                                          self_shape, other_shape)
+    for mask in product([True, False], repeat=len(args)):
+        if not any(mask):
+            continue
 
-    data_list.append(func(self_data[matched_self],
-                          other_data[matched_other],
-                          *args, **kwargs))
-    coords_list.append(matched_coords)
+        di, ci = _unmatch_coo(func, args, mask, **kwargs)
 
-    self_func = func(self_data, other_zero, *args, **kwargs)
-    # Add unmatched parts as necessary.
-    if (self_func != func_zero).any():
-        self_unmatched_coords, self_unmatched_func = \
-            _get_unmatched_coords_data(self_coords, self_func, self_shape,
-                                       result_shape, matched_self,
-                                       matched_coords)
+        data_list.extend(di)
+        coords_list.extend(ci)
 
-        data_list.extend(self_unmatched_func)
-        coords_list.extend(self_unmatched_coords)
-
-    other_func = func(self_zero, other_data, *args, **kwargs)
-
-    if (other_func != func_zero).any():
-        other_unmatched_coords, other_unmatched_func = \
-            _get_unmatched_coords_data(other_coords, other_func, other_shape,
-                                       result_shape, matched_other,
-                                       matched_coords)
-
-        coords_list.extend(other_unmatched_coords)
-        data_list.extend(other_unmatched_func)
+    # for i in range(len(args)):
+    #     zero_func = results_with_zero[i]
+    #
+    #     if len(zero_func.data):
+    #         # Get just the matched indices for the excluded index.
+    #         zero_matches = _match_coo(zero_func, args[i])[0][0]
+    #
+    #         unmatched_coords, unmatched_func = \
+    #             _get_unmatched_coords_data(zero_func.coords,
+    #                                        zero_func.data,
+    #                                        zero_func.shape, result_shape,
+    #                                        zero_matches, matched_coords)
+    #
+    #         data_list.extend(unmatched_func)
+    #         coords_list.extend(unmatched_coords)
 
     # Concatenate matches and mismatches
-    data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=self.dtype)
+    data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=args[0].dtype)
     coords = np.concatenate(coords_list, axis=1) if len(coords_list) else \
-        np.empty((0, len(result_shape)), dtype=self.coords.dtype)
+        np.empty((0, len(result_shape)), dtype=np.min_scalar_type(max(result_shape) - 1))
 
     nonzero = data != func_zero
     data = data[nonzero]
@@ -2149,40 +2160,130 @@ def _elemwise_binary(func, self, other, *args, **kwargs):
     return COO(coords, data, shape=result_shape, has_duplicates=False)
 
 
-def _elemwise_binary_self_dense(func, self, other, *args, **kwargs):
-    assert isinstance(self, np.ndarray)
-    assert isinstance(other, COO)
+def _match_coo(*args):
+    """
+    Matches the coordinates for any number of input :obj:`COO` arrays.
 
-    result_shape = _get_broadcast_shape(self.shape, other.shape)
+    Parameters
+    ----------
+    args : tuple[COO]
+        The input :obj:`COO` arrays.
 
-    if result_shape != other.shape:
-        other = other.broadcast_to(result_shape)
+    Returns
+    -------
+    matched_idx : list[ndarray]
+        The indices of matched elements.
+    matched_coords : list[ndarray]
+        The matched coordinates.
+    matched_data : list[ndarray]
+        The matched data.
+    """
+    shapes = [arg.shape for arg in args]
+    matched_shape = _get_nary_broadcast_shape(*shapes)
+    broadcast_params = [_get_broadcast_parameters(shape, matched_shape)
+                        for shape in shapes]
 
-    self = np.broadcast_to(self, result_shape)
+    combined_params = [all(params) for params in zip(*broadcast_params)]
 
-    self_coords = tuple([other.coords[i, :] for i in range(other.ndim)])
+    reduced_coords = [_get_reduced_coords(arg.coords,
+                                          arg.shape,
+                                          combined_params[-arg.ndim:])
+                      for arg in args]
+    reduced_shape = _get_reduced_shape(args[0].coords,
+                                       args[0].shape,
+                                       combined_params[-args[0].ndim:])
 
-    self_data = self[self_coords]
+    reduced_linear = [_linear_loc(coord, reduced_shape)
+                      for coord in reduced_coords]
+    sorted_indices = [np.argsort(lin) for lin in reduced_linear]
 
-    func_data = func(self_data, other.data, *args, **kwargs)
-    mask = func_data != 0
-    func_data = func_data[mask]
-    func_coords = other.coords[:, mask]
+    reduced_linear = [lin[idx] for lin, idx in zip(reduced_linear, sorted_indices)]
 
-    return COO(func_coords, func_data, shape=result_shape,
-               has_duplicates=other.has_duplicates,
-               sorted=other.sorted)
+    coords = [arg.coords[:, idx] for arg, idx in zip(args, sorted_indices)]
+    data = [arg.data[idx] for arg, idx in zip(args, sorted_indices)]
+
+    # Find matches between self.coords and other.coords
+    matched, matched_indices = _nary_match(*reduced_linear)
+
+    matched_coords = [c[:, idx] for c, idx in zip(coords, matched_indices)]
+
+    # Add the matched part.
+    matched_coords = _get_nary_matching_coords(matched_coords, broadcast_params)
+    matched_data = [d[idx] for d, idx in zip(data, matched_indices)]
+
+    matched_indices = [sidx[midx] for sidx, midx in zip(sorted_indices, matched_indices)]
+
+    return matched_indices, matched_coords, matched_data, matched_shape
 
 
-def _reverse_self_other(func):
-    def wrapper(*args, **kwargs):
-        return func(args[1], args[0], *args[2:], **kwargs)
+def _unmatch_coo(func, args, mask, **kwargs):
+    """
+    Matches the coordinates for any number of input :obj:`COO` arrays.
 
-    return wrapper
+    Parameters
+    ----------
+    args : tuple[COO]
+        The input :obj:`COO` arrays.
+
+    Returns
+    -------
+    matched_idx : list[ndarray]
+        The indices of matched elements.
+    matched_coords : list[ndarray]
+        The matched coordinates.
+    matched_data : list[ndarray]
+        The matched data.
+    """
+    matched_args = [a for a, m in zip(args, mask) if m]
+    unmatched_args = [a for a, m in zip(args, mask) if not m]
+
+    matched_idx, matched_coords, matched_data, matched_shape = \
+        _match_coo(*matched_args)
+
+    pos, = np.where([not m for m in mask])
+    pos = tuple(pos)
+    posargs = [_zero_of_dtype(arg.dtype)[()] for arg, m in zip(args, mask) if not m]
+
+    partial = _posarg_partial(func, pos, posargs)
+    matched_func = partial(*matched_data, **kwargs)
+
+    if all(mask):
+        return matched_coords, matched_func
+
+    result_shape = _get_nary_broadcast_shape(*[arg.shape for arg in args])
+
+    matched_mask = [np.ones(midx.shape[0], dtype=np.bool) for midx in matched_idx]
+    unmatched_mask = [np.zeros(arg.nnz, dtype=np.bool) for arg in matched_args]
+
+    considered_args = list(matched_args)
+    considered_args.append(None)
+    for arg in unmatched_args:
+        considered_args.pop()
+        considered_args.append(arg)
+
+        considered_idx = _match_coo(*considered_args)[0]
+
+        for am, cidx in zip(unmatched_mask, considered_idx):
+            am[cidx] = True
+
+    coords_list, func_list = [], []
+    for i in range(len(matched_args)):
+        ci, fi = _get_unmatched_coords_data(matched_coords,
+                                            matched_func,
+                                            matched_shape,
+                                            result_shape,
+                                            matched_mask[i],
+                                            unmatched_mask[i],
+                                            matched_coords[i])
+
+        coords_list.extend(ci)
+        func_list.extend(fi)
+
+    return coords_list, func_list
 
 
-def _get_unmatched_coords_data(coords, data, shape, result_shape, matched_idx,
-                               matched_coords):
+def _get_unmatched_coords_data(coords, data, shape, result_shape, matched,
+                               unmatched, matched_coords):
     """
     Get the unmatched coordinates and data - both those that are unmatched with
     any point of the other data as well as those which are added because of
@@ -2211,14 +2312,17 @@ def _get_unmatched_coords_data(coords, data, shape, result_shape, matched_idx,
         The data corresponding to the coordinates.
     """
     params = _get_broadcast_parameters(shape, result_shape)
-    matched = np.zeros(len(data), dtype=np.bool)
-    matched[matched_idx] = True
-    unmatched = ~matched
-    data_zero = _zero_of_dtype(data.dtype)
-    nonzero = data != data_zero
+    # matched = np.zeros(len(data), dtype=np.bool)
+    # matched[matched_idx] = True
+    #
+    # unmatched = np.zeros(len(data), dtype=np.bool)
+    # unmatched[unmatched_idx] = True
+    #
+    unmatched[matched] = False
 
-    unmatched &= nonzero
-    matched &= nonzero
+    mask = data == _zero_of_dtype(data.dtype)[()]
+    unmatched[mask] = False
+    matched[mask] = False
 
     coords_list = []
     data_list = []
@@ -2244,6 +2348,38 @@ def _get_unmatched_coords_data(coords, data, shape, result_shape, matched_idx,
         data_list.append(broadcast_data)
 
     return coords_list, data_list
+
+
+def _get_nary_broadcast_shape(*shapes):
+    """
+    Broadcast any number of shapes to a result shape.
+
+    Parameters
+    ----------
+    shapes : tuple[tuple[int]]
+        The shapes to broadcast.
+
+    Returns
+    -------
+    tuple[int]
+        The output shape.
+
+    Raises
+    ------
+    ValueError
+        If the input shapes cannot be broadcast to a single shape.
+    """
+    result_shape = ()
+
+    for shape in shapes:
+        try:
+            result_shape = _get_broadcast_shape(shape, result_shape)
+        except ValueError:
+            shapes_str = ', '.join(str(shape) for shape in shapes)
+            raise ValueError('operands could not be broadcast together with shapes %s'
+                             % shapes_str)
+
+    return result_shape
 
 
 def _get_broadcast_shape(shape1, shape2, is_result=False):
@@ -2318,10 +2454,32 @@ def _get_reduced_coords(coords, shape, params):
     reduced_coords : np.ndarray
         The reduced coordinates.
     """
+
     reduced_params = [bool(param) for param in params]
     reduced_shape = tuple(l for l, p in zip(shape, params) if p)
 
-    return coords[reduced_params], reduced_shape
+    return coords[reduced_params]
+
+
+def _get_reduced_shape(coords, shape, params):
+    """
+    Gets only those dimensions of the coordinates that don't need to be broadcast.
+
+    Parameters
+    ----------
+    coords : np.ndarray
+        The coordinates to reduce.
+    params : list
+        The params from which to check which dimensions to get.
+
+    Returns
+    -------
+    reduced_coords : np.ndarray
+        The reduced coordinates.
+    """
+    reduced_shape = tuple(l for l, p in zip(shape, params) if p)
+
+    return reduced_shape
 
 
 def _get_expanded_coords_data(coords, data, params, broadcast_shape):
@@ -2412,8 +2570,9 @@ def _cartesian_product(*arrays):
 def _elemwise_unary(func, self, *args, **kwargs):
     check = kwargs.pop('check', True)
     data_zero = _zero_of_dtype(self.dtype)
-    func_zero = _zero_of_dtype(func(data_zero, *args, **kwargs).dtype)
-    if check and func(data_zero, *args, **kwargs) != func_zero:
+    zero_func = func(data_zero, *args, **kwargs)
+    func_zero = _zero_of_dtype(zero_func.dtype)
+    if check and zero_func != func_zero:
         raise ValueError("Performing this operation would produce "
                          "a dense result: %s" % str(func))
 
@@ -2426,42 +2585,35 @@ def _elemwise_unary(func, self, *args, **kwargs):
                sorted=self.sorted)
 
 
-def _get_matching_coords(coords1, coords2, shape1, shape2):
+def _get_nary_matching_coords(coords, params):
     """
-    Takes in the matching coordinates in both dimensions (only those dimensions that
-    don't need to be broadcast in both arrays and returns the coordinates that will
-    overlap in the output array, i.e., the coordinates for which both broadcast arrays
-    will be nonzero.
+    Get the matching coords across a number of broadcast operands.
 
     Parameters
     ----------
-    coords1, coords2 : np.ndarray
-    shape1, shape2 : tuple[int]
-
+    coords : list[numpy.ndarray]
+        The input coordinates.
+    params : list[Union[bool, none]]
+        The broadcast parameters.
     Returns
     -------
-    matching_coords : np.ndarray
-        The coordinates of the output array for which both inputs will be nonzero.
+    numpy.ndarray
+        The broacasted coordinates.
     """
-    result_shape = _get_broadcast_shape(shape1, shape2)
-    params1 = _get_broadcast_parameters(shape1, result_shape)
-    params2 = _get_broadcast_parameters(shape2, result_shape)
-
     matching_coords = []
-    dim1 = 0
-    dim2 = 0
+    dims = np.zeros(len(params), dtype=np.uint8)
 
-    for p1, p2 in zip(params1, params2):
-        if p1:
-            matching_coords.append(coords1[dim1])
+    for p_all in zip(*params):
+        for i, p in enumerate(p_all):
+            if p:
+                matching_coords.append(coords[i][dims[i]])
+                break
         else:
-            matching_coords.append(coords2[dim2])
+            matching_coords.append(coords[dims[0]])
 
-        if p1 is not None:
-            dim1 += 1
-
-        if p2 is not None:
-            dim2 += 1
+        for i, p in enumerate(p_all):
+            if p is not None:
+                dims[i] += 1
 
     return np.asarray(matching_coords)
 
@@ -2495,7 +2647,7 @@ def _get_broadcast_coords_data(coords, matched_coords, data, params, broadcast_s
     linear_full_coords = _linear_loc(full_coords, broadcast_shape)
     linear_matched_coords = _linear_loc(matched_coords, broadcast_shape)
 
-    overlapping_coords, _ = _match_arrays(linear_full_coords, linear_matched_coords)
+    overlapping_coords = _match_arrays(linear_full_coords, linear_matched_coords)[0]
     mask = np.ones(full_coords.shape[1], dtype=np.bool)
     mask[overlapping_coords] = False
 
@@ -2511,8 +2663,32 @@ def _linear_loc(coords, shape, signed=False):
     tmp = np.zeros(coords.shape[1], dtype=dtype)
     strides = 1
     for i, d in enumerate(shape[::-1]):
-        # out += self.coords[-(i + 1), :].astype(dtype) * strides
         np.multiply(coords[-(i + 1), :], strides, out=tmp, dtype=dtype)
         np.add(tmp, out, out=out)
         strides *= d
     return out
+
+
+def _posarg_partial(func, pos, posargs):
+    if not isinstance(pos, Iterable):
+        pos = (pos,)
+        posargs = (posargs,)
+
+    n_partial_args = len(pos)
+
+    def wrapper(*args, **kwargs):
+        j = 0
+        totargs = []
+
+        for i in range(len(args) + n_partial_args):
+            if j >= n_partial_args or i != pos[j]:
+                totargs.append(args[i - j])
+            else:
+                totargs.append(posargs[j])
+                j += 1
+
+        return func(*totargs, **kwargs)
+
+    wrapper.__name__ = func.__name__
+
+    return wrapper

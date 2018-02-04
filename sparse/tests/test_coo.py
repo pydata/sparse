@@ -235,6 +235,25 @@ def test_elemwise_binary(func, shape):
 
 
 @pytest.mark.parametrize('func', [
+    lambda x, y, z: x + y + z,
+    lambda x, y, z: x * y * z,
+    lambda x, y, z: x + y * z,
+    lambda x, y, z: (x + y) * z
+])
+@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+def test_elemwise_trinary(func, shape):
+    xs = sparse.random(shape, density=0.5)
+    ys = sparse.random(shape, density=0.5)
+    zs = sparse.random(shape, density=0.5)
+
+    x = xs.todense()
+    y = ys.todense()
+    z = zs.todense()
+
+    assert_eq(sparse.elemwise(func, xs, ys, zs), func(x, y, z))
+
+
+@pytest.mark.parametrize('func', [
     operator.pow, operator.truediv, operator.floordiv,
     operator.ge, operator.le, operator.eq, operator.mod
 ])
@@ -290,7 +309,7 @@ def test_elemwise_scalar(func, scalar, convert_to_np_number):
     (operator.le, 3),
     (operator.eq, 1),
 ])
-@pytest.mark.parametrize('convert_to_np_number', [True, False])
+@pytest.mark.parametrize('convert_to_np_number', [True])
 def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number):
     xs = sparse.random((2, 3, 4), density=0.5)
     if convert_to_np_number:

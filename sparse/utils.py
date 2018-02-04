@@ -146,3 +146,8 @@ def random(
         ar = DOK(ar)
 
     return ar
+
+
+def isscalar(x):
+    from .sparse_array import SparseArray
+    return not isinstance(x, SparseArray) and np.isscalar(x)
