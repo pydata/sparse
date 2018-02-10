@@ -309,7 +309,7 @@ def test_elemwise_scalar(func, scalar, convert_to_np_number):
     (operator.le, 3),
     (operator.eq, 1),
 ])
-@pytest.mark.parametrize('convert_to_np_number', [True])
+@pytest.mark.parametrize('convert_to_np_number', [True, False])
 def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number):
     xs = sparse.random((2, 3, 4), density=0.5)
     if convert_to_np_number:
