@@ -491,48 +491,6 @@ def test_bitwise_binary_bool(func, shape):
     assert_eq(func(xs, ys), func(x, y))
 
 
-@pytest.mark.parametrize('func', [operator.mul])
-@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-def test_numpy_mixed_binary(func, shape):
-    xs = sparse.random(shape, density=0.5)
-    y = np.random.rand(*shape)
-
-    x = xs.todense()
-
-    fs1 = func(xs, y)
-
-    assert isinstance(fs1, COO)
-    assert fs1.nnz <= xs.nnz
-    assert_eq(fs1, func(x, y))
-
-    fs2 = func(y, xs)
-
-    assert isinstance(fs2, COO)
-    assert fs2.nnz <= xs.nnz
-    assert_eq(fs2, func(y, x))
-
-
-@pytest.mark.parametrize('func', [operator.and_])
-@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-def test_numpy_mixed_binary_bitwise(func, shape):
-    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
-    y = np.random.randint(100, size=shape)
-
-    x = xs.todense()
-
-    fs1 = func(xs, y)
-
-    assert isinstance(fs1, COO)
-    assert fs1.nnz <= xs.nnz
-    assert_eq(fs1, func(x, y))
-
-    fs2 = func(y, xs)
-
-    assert isinstance(fs2, COO)
-    assert fs2.nnz <= xs.nnz
-    assert_eq(fs2, func(y, x))
-
-
 def test_elemwise_binary_empty():
     x = COO({}, shape=(10, 10))
     y = sparse.random((10, 10), density=0.5)
@@ -796,29 +754,6 @@ def test_broadcasting(func, shape1, shape2):
 
     expected = func(x, y)
     actual = func(xs, ys)
-
-    assert_eq(expected, actual)
-
-    assert np.count_nonzero(expected) == actual.nnz
-
-
-@pytest.mark.parametrize('func', [operator.mul])
-@pytest.mark.parametrize('shape1,shape2', [((2, 3, 4), (3, 4)),
-                                           ((3, 4), (2, 3, 4)),
-                                           ((3, 1, 4), (3, 2, 4)),
-                                           ((1, 3, 4), (3, 4)),
-                                           ((3, 4, 1), (3, 4, 2)),
-                                           ((1, 5), (5, 1))])
-def test_numpy_mixed_broadcasting(func, shape1, shape2):
-    xs = sparse.random(shape1, density=0.5)
-    x = xs.todense()
-
-    y = np.random.rand(*shape2)
-
-    expected = func(x, y)
-    actual = func(xs, y)
-
-    assert isinstance(actual, COO)
 
     assert_eq(expected, actual)
 
