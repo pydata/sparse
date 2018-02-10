@@ -2120,6 +2120,7 @@ def _elemwise_n_ary(func, *args, **kwargs):
 def _match_coo(*args):
     """
     Matches the coordinates for any number of input :obj:`COO` arrays.
+    Equivalent to "sparse" broadcasting for all arrays.
 
     Parameters
     ----------
@@ -2129,12 +2130,11 @@ def _match_coo(*args):
     Returns
     -------
     matched_idx : list[ndarray]
-        The indices of matched elements.
-    matched_coords : list[ndarray]
-        The matched coordinates.
-    matched_data : list[ndarray]
-        The matched data.
+        The indices of matched elements in the original arrays.
+    matched_arrays : list[COO]
+        The expanded, matched :obj:`COO` objects.
     """
+    # If there's only a single input, return as-is.
     if len(args) == 1:
         return [np.arange(args[0].nnz)], [args[0]]
 
@@ -2179,6 +2179,8 @@ def _match_coo(*args):
 def _unmatch_coo(func, args, mask, **kwargs):
     """
     Matches the coordinates for any number of input :obj:`COO` arrays.
+
+    First computes the matches, then filters out the non-matches.
 
     Parameters
     ----------

@@ -33,16 +33,20 @@ or numpy functions that are not yet implemented for sparse arrays
 
 This page describes those valid operations, and their limitations.
 
-:obj:`COO.elemwise`
+:obj:`elemwise`
 ~~~~~~~~~~~~~~~~~~~
 This function allows you to apply any arbitrary unary or binary function where
 the first object is :obj:`COO`, and the second is a scalar, :obj:`COO`, or
-a :doc:`Numpy arrays <reference/generated/numpy.ndarray>`. For example, the
+a :obj:`scipy.sparse.spmatrix`. For example, the
 following will add two :obj:`COO` objects:
 
 .. code-block:: python
 
-   x.elemwise(np.add, y)
+   sparse.elemwise(np.add, x, y)
+
+
+.. note:: Previously, :obj:`elemwise` was a method of the :obj:`COO` class. Now,
+   it has been moved to the :obj:`sparse` module.
 
 .. _operations-auto-densification:
 
@@ -78,26 +82,8 @@ If densification is needed, it must be explicit. In other words, you must call
 :obj:`COO.todense` on the :obj:`COO` object. If both operands are :obj:`COO`,
 both must be densified.
 
-
-Operations with :doc:`Numpy arrays <reference/generated/numpy.ndarray>`
------------------------------------------------------------------------
-Certain operations with :obj:`numpy.ndarray` are also supported. For example,
-the following are all allowed if :code:`x` is a :obj:`numpy.ndarray` and
-:code:`(x == 0).all()` evaluates to :code:`True`:
-
-.. code-block:: python
-
-   x + y
-   x - y
-
-The following is true so long as there are no infinities or NaNs in :code:`x`:
-
-.. code-block:: python
-
-   x * y
-
-In general, if operating on the :code:`numpy.ndarray` with a zero would produce
-all-zeros then the operation is supported.
+.. note:: Previously, operations with Numpy arrays were sometimes supported. Now,
+   it is necessary to convert Numpy arrays to :obj:`COO` objects.
 
 
 Operations with :obj:`scipy.sparse.spmatrix`
