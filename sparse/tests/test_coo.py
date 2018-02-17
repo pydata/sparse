@@ -25,7 +25,7 @@ def test_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     y = x.todense()
     xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
-    assert_eq(xx, yy, **eqkwargs)
+    assert_eq(xx, yy, check_nnz=False, **eqkwargs)
 
 
 @pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
@@ -42,7 +42,7 @@ def test_ufunc_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     y = x.todense()
     xx = reduction(x, axis=axis, keepdims=keepdims, **kwargs)
     yy = reduction(y, axis=axis, keepdims=keepdims, **kwargs)
-    assert_eq(xx, yy, **eqkwargs)
+    assert_eq(xx, yy, check_nnz=False, **eqkwargs)
 
 
 @pytest.mark.parametrize('axis', [
@@ -713,7 +713,7 @@ def test_canonical():
                        [1, 0, 3],
                        [0, 1, 0],
                        [1, 0, 3]]).T
-    data = np.arange(5)
+    data = np.arange(5) + 1
 
     old = COO(coords, data, shape=(2, 2, 5))
     x = COO(coords, data, shape=(2, 2, 5))
@@ -922,13 +922,13 @@ def test_scipy_sparse_interface():
     x = scipy.sparse.coo_matrix(inp)
     xx = sparse.COO(inp)
 
-    assert_eq(x, xx)
-    assert_eq(x.T, xx.T)
-    assert_eq(xx.to_scipy_sparse(), x)
-    assert_eq(COO.from_scipy_sparse(xx.to_scipy_sparse()), xx)
+    assert_eq(x, xx, check_nnz=False)
+    assert_eq(x.T, xx.T, check_nnz=False)
+    assert_eq(xx.to_scipy_sparse(), x, check_nnz=False)
+    assert_eq(COO.from_scipy_sparse(xx.to_scipy_sparse()), xx, check_nnz=False)
 
-    assert_eq(x, xx)
-    assert_eq(x.T.dot(x), xx.T.dot(xx))
+    assert_eq(x, xx, check_nnz=False)
+    assert_eq(x.T.dot(x), xx.T.dot(xx), check_nnz=False)
     assert isinstance(x + xx, COO)
     assert isinstance(xx + x, COO)
 

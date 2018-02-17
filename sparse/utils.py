@@ -7,6 +7,7 @@ def assert_eq(x, y, **kwargs):
     from .coo import COO
     assert x.shape == y.shape
     assert x.dtype == y.dtype
+    check_nnz = kwargs.pop('check_nnz', True)
 
     if isinstance(x, COO):
         if x.sorted:
@@ -17,10 +18,14 @@ def assert_eq(x, y, **kwargs):
 
     if hasattr(x, 'todense'):
         xx = x.todense()
+        if check_nnz:
+            assert (xx != 0).sum() == x.nnz
     else:
         xx = x
     if hasattr(y, 'todense'):
         yy = y.todense()
+        if check_nnz:
+            assert (yy != 0).sum() == y.nnz
     else:
         yy = y
     assert np.allclose(xx, yy, **kwargs)

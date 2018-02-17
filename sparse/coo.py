@@ -1912,6 +1912,7 @@ def _nary_match(*arrays):
     matched_idx : list[numpy.ndarray]
         The indices for the matched coordinates in each array.
     """
+    import pdb; pdb.set_trace()
 
     matched = arrays[0]
     matched_idx = [np.arange(arrays[0].shape[0],
