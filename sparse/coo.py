@@ -2213,10 +2213,10 @@ def _unmatch_coo(func, args, mask, cache, **kwargs):
     partial = PositinalArgumentPartial(func, pos, posargs)
     matched_func = partial(*[a.data for a in matched_arrays], **kwargs)
 
-    if (matched_func == _zero_of_dtype(matched_func.dtype)).all():
-        return [], []
-
     unmatched_mask = matched_func != _zero_of_dtype(matched_func.dtype)
+
+    if not unmatched_mask.any():
+        return [], []
 
     func_data = matched_func[unmatched_mask]
     func_coords = matched_arrays[0].coords[:, unmatched_mask]

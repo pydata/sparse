@@ -256,39 +256,93 @@ def test_elemwise_trinary(func, shape):
     assert_eq(fs, func(x, y, z))
 
 
-@pytest.mark.parametrize('shapes, func', [
-    ([
-         (2,),
-         (3, 2),
-         (4, 3, 2),
-     ], lambda x, y, z: (x + y) * z),
-    ([
-         (3,),
-         (2, 3),
-         (2, 2, 3),
-     ], lambda x, y, z: x * (y + z)),
-    ([
-         (2,),
-         (2, 2),
-         (2, 2, 2),
-     ], lambda x, y, z: x * y * z),
-    ([
-         (4,),
-         (4, 4),
-         (4, 4, 4),
-     ], lambda x, y, z: x + y + z),
-    ([
-         (4,),
-         (4, 4),
-         (4, 4, 4),
-     ], lambda x, y, z: x + y - z),
-    ([
-         (4,),
-         (4, 4),
-         (4, 4, 4),
-     ], lambda x, y, z: x - y + z),
+@pytest.mark.parametrize('func', [operator.add, operator.mul])
+@pytest.mark.parametrize('shape1,shape2', [((2, 3, 4), (3, 4)),
+                                           ((3, 4), (2, 3, 4)),
+                                           ((3, 1, 4), (3, 2, 4)),
+                                           ((1, 3, 4), (3, 4)),
+                                           ((3, 4, 1), (3, 4, 2)),
+                                           ((1, 5), (5, 1)),
+                                           ((3, 1), (3, 4)),
+                                           ((3, 1), (1, 4)),
+                                           ((1, 4), (3, 4))])
+def test_binary_broadcasting(func, shape1, shape2):
+    xs = sparse.random(shape1, density=0.5)
+    x = xs.todense()
+
+    ys = sparse.random(shape2, density=0.5)
+    y = ys.todense()
+
+    expected = func(x, y)
+    actual = func(xs, ys)
+
+    assert isinstance(actual, COO)
+    assert_eq(expected, actual)
+
+    assert np.count_nonzero(expected) == actual.nnz
+
+
+@pytest.mark.parametrize('shape1,shape2', [((3, 4), (2, 3, 4)),
+                                           ((3, 1, 4), (3, 2, 4)),
+                                           ((3, 4, 1), (3, 4, 2))])
+def test_broadcast_to(shape1, shape2):
+    a = sparse.random(shape1, density=0.5)
+    x = a.todense()
+
+    assert_eq(np.broadcast_to(x, shape2), a.broadcast_to(shape2))
+
+
+@pytest.mark.parametrize('shapes', [
+    [
+        (2,),
+        (3, 2),
+        (4, 3, 2),
+    ],
+    [
+        (3,),
+        (2, 3),
+        (2, 2, 3),
+    ],
+    [
+        (2,),
+        (2, 2),
+        (2, 2, 2),
+    ],
+    [
+        (4,),
+        (4, 4),
+        (4, 4, 4),
+    ],
+    [
+        (4,),
+        (4, 4),
+        (4, 4, 4),
+    ],
+    [
+        (4,),
+        (4, 4),
+        (4, 4, 4),
+    ],
+    [
+        (1, 1, 2),
+        (1, 3, 1),
+        (4, 1, 1)
+    ],
+    [
+        (2,),
+        (2, 1),
+        (2, 1, 1)
+    ],
 ])
-def test_nary_broadcasting(shapes, func):
+@pytest.mark.parametrize('func', [
+    lambda x, y, z: (x + y) * z,
+    lambda x, y, z: x * (y + z),
+    lambda x, y, z: x * y * z,
+    lambda x, y, z: x + y + z,
+    lambda x, y, z: x + y - z,
+    lambda x, y, z: x - y + z,
+])
+def test_trinary_broadcasting(shapes, func):
     args = [sparse.random(s, density=0.5) for s in shapes]
     dense_args = [arg.todense() for arg in args]
 
@@ -327,7 +381,7 @@ def test_nary_broadcasting(shapes, func):
 ])
 @pytest.mark.parametrize('path_fraction', [0.25, 0.5, 0.75, 1.0])
 @pytest.mark.filterwarnings('ignore:invalid value')
-def test_nary_broadcasting_pathological(shapes, func, value, path_fraction):
+def test_trinary_broadcasting_pathological(shapes, func, value, path_fraction):
     def value_array(n):
         i = int(n * path_fraction)
 
@@ -343,6 +397,46 @@ def test_nary_broadcasting_pathological(shapes, func, value, path_fraction):
     assert isinstance(fs, COO)
 
     assert_eq(fs, func(*dense_args), equal_nan=True)
+
+
+def test_sparse_broadcasting(monkeypatch):
+    orig_unmatch_coo = sparse.coo._unmatch_coo
+
+    state = {'num_matches': 0}
+
+    xs = sparse.random((3, 4), density=0.5)
+    ys = sparse.random((3, 4), density=0.5)
+
+    def mock_unmatch_coo(*args, **kwargs):
+        result = orig_unmatch_coo(*args, **kwargs)
+        state['num_matches'] += len(result[0])
+        return result
+
+    monkeypatch.setattr(sparse.coo, '_unmatch_coo', mock_unmatch_coo)
+
+    xs * ys
+
+    assert state['num_matches'] == 1
+
+
+def test_dense_broadcasting(monkeypatch):
+    orig_unmatch_coo = sparse.coo._unmatch_coo
+
+    state = {'num_matches': 0}
+
+    xs = sparse.random((3, 4), density=0.5)
+    ys = sparse.random((3, 4), density=0.5)
+
+    def mock_unmatch_coo(*args, **kwargs):
+        result = orig_unmatch_coo(*args, **kwargs)
+        state['num_matches'] += len(result[0])
+        return result
+
+    monkeypatch.setattr(sparse.coo, '_unmatch_coo', mock_unmatch_coo)
+
+    xs + ys
+
+    assert state['num_matches'] == 3
 
 
 @pytest.mark.parametrize('format', ['coo', 'dok'])
@@ -857,39 +951,6 @@ def test_addition_not_ok_when_large_and_sparse():
         x - 1
     with pytest.raises(ValueError):
         np.exp(x)
-
-
-@pytest.mark.parametrize('func', [operator.add, operator.mul])
-@pytest.mark.parametrize('shape1,shape2', [((2, 3, 4), (3, 4)),
-                                           ((3, 4), (2, 3, 4)),
-                                           ((3, 1, 4), (3, 2, 4)),
-                                           ((1, 3, 4), (3, 4)),
-                                           ((3, 4, 1), (3, 4, 2)),
-                                           ((1, 5), (5, 1))])
-def test_broadcasting(func, shape1, shape2):
-    xs = sparse.random(shape1, density=0.5)
-    x = xs.todense()
-
-    ys = sparse.random(shape2, density=0.5)
-    y = ys.todense()
-
-    expected = func(x, y)
-    actual = func(xs, ys)
-
-    assert isinstance(actual, COO)
-    assert_eq(expected, actual)
-
-    assert np.count_nonzero(expected) == actual.nnz
-
-
-@pytest.mark.parametrize('shape1,shape2', [((3, 4), (2, 3, 4)),
-                                           ((3, 1, 4), (3, 2, 4)),
-                                           ((3, 4, 1), (3, 4, 2))])
-def test_broadcast_to(shape1, shape2):
-    a = sparse.random(shape1, density=0.5)
-    x = a.todense()
-
-    assert_eq(np.broadcast_to(x, shape2), a.broadcast_to(shape2))
 
 
 @pytest.mark.parametrize('scalar', [2, 2.5, np.float32(2.0), np.int8(3)])
