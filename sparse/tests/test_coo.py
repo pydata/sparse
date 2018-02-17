@@ -325,6 +325,7 @@ def test_nary_broadcasting(shapes, func):
     np.inf,
     -np.inf
 ])
+@pytest.mark.filterwarnings('ignore:invalid value')
 def test_nary_broadcasting_pathological(shapes, func, value):
     def value_array(n):
         ar = np.empty((n,), dtype=np.float_)
