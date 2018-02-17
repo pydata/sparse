@@ -1894,39 +1894,6 @@ def tril(x, k=0):
     return COO(coords, data, x.shape, x.has_duplicates, x.sorted)
 
 
-def _nary_match(*arrays):
-    """
-    Matches coordinates from N different 1-D arrays. Equivalent to
-    an SQL outer join.
-
-    Parameters
-    ----------
-    arrays : tuple[numpy.ndarray]
-        Input arrays to match, must be sorted.
-
-    Returns
-    -------
-    matched : numpy.ndarray
-        The overall matched array.
-
-    matched_idx : list[numpy.ndarray]
-        The indices for the matched coordinates in each array.
-    """
-    import pdb; pdb.set_trace()
-
-    matched = arrays[0]
-    matched_idx = [np.arange(arrays[0].shape[0],
-                             dtype=np.min_scalar_type(arrays[0].shape[0] - 1))]
-
-    for arr in arrays[1:]:
-        old_idx, new_idx = _match_arrays(matched, arr)
-        matched = matched[old_idx]
-        matched_idx = [idx[old_idx] for idx in matched_idx]
-        matched_idx.append(new_idx)
-
-    return matched, matched_idx
-
-
 # (c) Paul Panzer
 # Taken from https://stackoverflow.com/a/47833496/774273
 # License: https://creativecommons.org/licenses/by-sa/3.0/
