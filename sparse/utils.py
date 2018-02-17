@@ -3,11 +3,10 @@ from numbers import Integral
 from collections import Iterable
 
 
-def assert_eq(x, y, **kwargs):
+def assert_eq(x, y, check_nnz=True, **kwargs):
     from .coo import COO
     assert x.shape == y.shape
     assert x.dtype == y.dtype
-    check_nnz = kwargs.pop('check_nnz', True)
 
     if isinstance(x, COO):
         if x.sorted:

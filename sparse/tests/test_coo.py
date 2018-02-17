@@ -325,11 +325,15 @@ def test_nary_broadcasting(shapes, func):
     np.inf,
     -np.inf
 ])
+@pytest.mark.parametrize('path_fraction', [0.25, 0.5, 0.75, 1.0])
 @pytest.mark.filterwarnings('ignore:invalid value')
-def test_nary_broadcasting_pathological(shapes, func, value):
+def test_nary_broadcasting_pathological(shapes, func, value, path_fraction):
     def value_array(n):
+        i = int(n * path_fraction)
+
         ar = np.empty((n,), dtype=np.float_)
-        ar[:] = value
+        ar[:i] = value
+        ar[i:] = np.random.rand(n - i)
         return ar
 
     args = [sparse.random(s, density=0.5, data_rvs=value_array) for s in shapes]
@@ -339,6 +343,35 @@ def test_nary_broadcasting_pathological(shapes, func, value):
     assert isinstance(fs, COO)
 
     assert_eq(fs, func(*dense_args), equal_nan=True)
+
+
+@pytest.mark.parametrize('format', ['coo', 'dok'])
+def test_sparsearray_elemwise(format):
+    xs = sparse.random((3, 4), density=0.5, format=format)
+    ys = sparse.random((3, 4), density=0.5, format=format)
+
+    x = xs.todense()
+    y = ys.todense()
+
+    fs = sparse.elemwise(operator.add, xs, ys)
+    assert isinstance(fs, COO)
+
+    assert_eq(fs, x + y)
+
+
+def test_ndarray_densification_fails():
+    xs = sparse.random((3, 4), density=0.5)
+    y = np.random.rand(3, 4)
+
+    with pytest.raises(ValueError):
+        xs + y
+
+
+def test_elemwise_noargs():
+    def func():
+        return np.float_(5.0)
+
+    assert sparse.elemwise(func) == func()
 
 
 @pytest.mark.parametrize('func', [
