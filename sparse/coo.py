@@ -2059,7 +2059,7 @@ def elemwise(func, *args, **kwargs):
 
     # Filter out scalars as they are 'baked' into the function.
     func = PositinalArgumentPartial(func, pos, posargs)
-    args = list(filter(lambda arg: not isscalar(arg), args))
+    args = [arg for arg in args if not isscalar(arg)]
 
     if len(args) == 0:
         return func(**kwargs)
@@ -2109,11 +2109,12 @@ def _elemwise_n_ary(func, *args, **kwargs):
     data_list = []
     coords_list = []
 
+    cache = {}
     for mask in product([True, False], repeat=len(args)):
         if not any(mask):
             continue
 
-        ci, di = _unmatch_coo(func, args, mask, **kwargs)
+        ci, di = _unmatch_coo(func, args, mask, cache, **kwargs)
 
         coords_list.extend(ci)
         data_list.extend(di)
@@ -2132,7 +2133,7 @@ def _elemwise_n_ary(func, *args, **kwargs):
     return COO(coords, data, shape=result_shape, has_duplicates=False)
 
 
-def _match_coo(*args):
+def _match_coo(*args, **kwargs):
     """
     Matches the coordinates for any number of input :obj:`COO` arrays.
     Equivalent to "sparse" broadcasting for all arrays.
@@ -2141,57 +2142,71 @@ def _match_coo(*args):
     ----------
     args : Tuple[COO]
         The input :obj:`COO` arrays.
+    return_midx : bool
+        Whether to return matched indices or matched arrays. Matching
+        only supported for two arrays. ``False`` by default.
+    cache : dict
+        Cache of things already matched. No cache by default.
 
     Returns
     -------
     matched_idx : List[ndarray]
-        The indices of matched elements in the original arrays.
+        The indices of matched elements in the original arrays. Only returned if
+        ``return_midx`` is ``True``.
     matched_arrays : List[COO]
-        The expanded, matched :obj:`COO` objects.
+        The expanded, matched :obj:`COO` objects. Only returned if
+        ``return_midx`` is ``False``.
     """
-    # If there's only a single input, return as-is.
-    if len(args) == 1:
-        return [np.arange(args[0].nnz)], [args[0]]
+    return_midx = kwargs.pop('return_midx', False)
+    cache = kwargs.pop('cache', None)
 
-    shapes = [arg.shape for arg in args]
-    matched_shape = _get_nary_broadcast_shape(*shapes)
-    broadcast_params = [_get_broadcast_parameters(shape, matched_shape)
-                        for shape in shapes]
+    if kwargs:
+        raise ValueError('Unknown kwargs %s' % kwargs.keys())
 
-    combined_params = [all(params) for params in zip(*broadcast_params)]
+    if return_midx and (len(args) != 2 or cache is not None):
+        raise NotImplementedError('Matching only supported for two args, and no cache.')
 
-    reduced_coords = [_get_reduced_coords(arg.coords,
-                                          combined_params[-arg.ndim:])
-                      for arg in args]
-    reduced_shape = _get_reduced_shape(args[0].shape,
-                                       combined_params[-args[0].ndim:])
+    matched_arrays = [args[0]]
+    cache_key = [id(args[0])]
+    for arg2 in args[1:]:
+        cache_key.append(id(arg2))
+        key = tuple(cache_key)
+        if cache is not None and key in cache:
+            matched_arrays = cache[key]
+            continue
 
-    reduced_linear = [_linear_loc(coord, reduced_shape)
-                      for coord in reduced_coords]
-    sorted_indices = [np.argsort(lin) for lin in reduced_linear]
+        cargs = [matched_arrays[0], arg2]
+        current_shape = _get_broadcast_shape(matched_arrays[0].shape, arg2.shape)
+        params = [_get_broadcast_parameters(arg.shape, current_shape) for arg in cargs]
+        reduced_params = [all(p) for p in zip(*params)]
+        reduced_shape = _get_reduced_shape(arg2.shape,
+                                           reduced_params[-arg2.ndim:])
 
-    reduced_linear = [lin[idx] for lin, idx in zip(reduced_linear, sorted_indices)]
+        reduced_coords = [_get_reduced_coords(arg.coords, reduced_params[-arg.ndim:])
+                          for arg in cargs]
 
-    coords = [arg.coords[:, idx] for arg, idx in zip(args, sorted_indices)]
-    data = [arg.data[idx] for arg, idx in zip(args, sorted_indices)]
+        linear = [_linear_loc(rc, reduced_shape) for rc in reduced_coords]
+        sorted_idx = [np.argsort(idx) for idx in linear]
+        linear = [idx[s] for idx, s in zip(linear, sorted_idx)]
+        coords = [arg.coords[:, s] for arg, s in zip(cargs, sorted_idx)]
+        matched_idx = _match_arrays(*linear)
+        mcoords = [c[:, idx] for c, idx in zip(coords, matched_idx)]
+        mcoords = _get_matching_coords(mcoords, params, current_shape)
+        mdata = [arg.data[sorted_idx[0]][matched_idx[0]] for arg in matched_arrays]
+        mdata.append(arg2.data[sorted_idx[1]][matched_idx[1]])
+        matched_arrays = [COO(mcoords, md, shape=current_shape) for md in mdata]
 
-    # Find matches between self.coords and other.coords
-    matched, matched_indices = _nary_match(*reduced_linear)
+        if cache is not None:
+            cache[key] = matched_arrays
 
-    matched_coords = [c[:, idx] for c, idx in zip(coords, matched_indices)]
+        if return_midx:
+            matched_idx = [sidx[midx] for sidx, midx in zip(sorted_idx, matched_idx)]
+            return matched_idx
 
-    # Add the matched part.
-    matched_coords = _get_matching_coords(matched_coords, broadcast_params, matched_shape)
-    matched_data = [d[idx] for d, idx in zip(data, matched_indices)]
-
-    matched_indices = [sidx[midx] for sidx, midx in zip(sorted_indices, matched_indices)]
-
-    matched_arrays = [COO(matched_coords, d, shape=matched_shape) for d in matched_data]
-
-    return matched_indices, matched_arrays
+    return matched_arrays
 
 
-def _unmatch_coo(func, args, mask, **kwargs):
+def _unmatch_coo(func, args, mask, cache, **kwargs):
     """
     Matches the coordinates for any number of input :obj:`COO` arrays.
 
@@ -2199,8 +2214,15 @@ def _unmatch_coo(func, args, mask, **kwargs):
 
     Parameters
     ----------
+    func : Callable
+        The function to compute matches
     args : tuple[COO]
         The input :obj:`COO` arrays.
+    mask : tuple[bool]
+        Specifies the inputs that are zero and the ones that are
+        nonzero.
+    kwargs: dict
+        Extra keyword arguments to pass to func.
 
     Returns
     -------
@@ -2214,15 +2236,17 @@ def _unmatch_coo(func, args, mask, **kwargs):
     matched_args = [a for a, m in zip(args, mask) if m]
     unmatched_args = [a for a, m in zip(args, mask) if not m]
 
-    matched_arrays = _match_coo(*matched_args)[1]
+    matched_arrays = _match_coo(*matched_args, cache=cache)
 
-    pos, = np.where([not m for m in mask])
-    pos = tuple(pos)
+    pos = tuple(i for i, m in enumerate(mask) if not m)
     posargs = [_zero_of_dtype(arg.dtype)[()] for arg, m in zip(args, mask) if not m]
     result_shape = _get_nary_broadcast_shape(*[arg.shape for arg in args])
 
     partial = PositinalArgumentPartial(func, pos, posargs)
     matched_func = partial(*[a.data for a in matched_arrays], **kwargs)
+
+    if (matched_func == _zero_of_dtype(matched_func.dtype)).all():
+        return [], []
 
     unmatched_mask = matched_func != _zero_of_dtype(matched_func.dtype)
 
@@ -2231,16 +2255,13 @@ def _unmatch_coo(func, args, mask, **kwargs):
 
     func_array = COO(func_coords, func_data, shape=matched_arrays[0].shape).broadcast_to(result_shape)
 
-    if func_array.nnz == 0:
-        return [], []
-
     if all(mask):
         return [func_array.coords], [func_array.data]
 
     unmatched_mask = np.ones(func_array.nnz, dtype=np.bool)
 
     for arg in unmatched_args:
-        matched_idx = _match_coo(func_array, arg)[0][0]
+        matched_idx = _match_coo(func_array, arg, return_midx=True)[0]
         unmatched_mask[matched_idx] = False
 
     coords = np.asarray(func_array.coords[:, unmatched_mask], order='C')
@@ -2499,7 +2520,7 @@ def _get_matching_coords(coords, params, shape):
         The broacasted coordinates
     """
     matching_coords = []
-    dims = np.zeros(len(params), dtype=np.uint8)
+    dims = np.zeros(len(coords), dtype=np.uint8)
 
     for p_all in zip(*params):
         for i, p in enumerate(p_all):

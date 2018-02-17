@@ -213,8 +213,8 @@ def test_elemwise(func):
     x = s.todense()
 
     fs = func(s)
-
     assert isinstance(fs, COO)
+    assert fs.nnz <= s.nnz
 
     assert_eq(func(x), fs)
 
@@ -250,7 +250,94 @@ def test_elemwise_trinary(func, shape):
     y = ys.todense()
     z = zs.todense()
 
-    assert_eq(sparse.elemwise(func, xs, ys, zs), func(x, y, z))
+    fs = sparse.elemwise(func, xs, ys, zs)
+    assert isinstance(fs, COO)
+
+    assert_eq(fs, func(x, y, z))
+
+
+@pytest.mark.parametrize('shapes, func', [
+    ([
+         (2,),
+         (3, 2),
+         (4, 3, 2),
+     ], lambda x, y, z: (x + y) * z),
+    ([
+         (3,),
+         (2, 3),
+         (2, 2, 3),
+     ], lambda x, y, z: x * (y + z)),
+    ([
+         (2,),
+         (2, 2),
+         (2, 2, 2),
+     ], lambda x, y, z: x * y * z),
+    ([
+         (4,),
+         (4, 4),
+         (4, 4, 4),
+     ], lambda x, y, z: x + y + z),
+    ([
+         (4,),
+         (4, 4),
+         (4, 4, 4),
+     ], lambda x, y, z: x + y - z),
+    ([
+         (4,),
+         (4, 4),
+         (4, 4, 4),
+     ], lambda x, y, z: x - y + z),
+])
+def test_nary_broadcasting(shapes, func):
+    args = [sparse.random(s, density=0.5) for s in shapes]
+    dense_args = [arg.todense() for arg in args]
+
+    fs = sparse.elemwise(func, *args)
+    assert isinstance(fs, COO)
+
+    assert_eq(fs, func(*dense_args))
+
+
+@pytest.mark.parametrize('shapes, func', [
+    ([
+         (2,),
+         (3, 2),
+         (4, 3, 2),
+     ], lambda x, y, z: (x + y) * z),
+    ([
+         (3,),
+         (2, 3),
+         (2, 2, 3),
+     ], lambda x, y, z: x * (y + z)),
+    ([
+         (2,),
+         (2, 2),
+         (2, 2, 2),
+     ], lambda x, y, z: x * y * z),
+    ([
+         (4,),
+         (4, 4),
+         (4, 4, 4),
+     ], lambda x, y, z: x + y + z),
+])
+@pytest.mark.parametrize('value', [
+    np.nan,
+    np.inf,
+    -np.inf
+])
+def test_nary_broadcasting_pathological(shapes, func, value):
+    def value_array(n):
+        ar = np.empty((n,), dtype=np.float_)
+        ar[:] = value
+        return ar
+
+    args = [sparse.random(s, density=0.5, data_rvs=value_array) for s in shapes]
+    dense_args = [arg.todense() for arg in args]
+
+    fs = sparse.elemwise(func, *args)
+    assert isinstance(fs, COO)
+
+    assert_eq(fs, func(*dense_args), equal_nan=True)
 
 
 @pytest.mark.parametrize('func', [
@@ -755,6 +842,7 @@ def test_broadcasting(func, shape1, shape2):
     expected = func(x, y)
     actual = func(xs, ys)
 
+    assert isinstance(actual, COO)
     assert_eq(expected, actual)
 
     assert np.count_nonzero(expected) == actual.nnz
