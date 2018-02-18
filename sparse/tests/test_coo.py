@@ -25,7 +25,7 @@ def test_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     y = x.todense()
     xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
-    assert_eq(xx, yy, **eqkwargs)
+    assert_eq(xx, yy, check_nnz=False, **eqkwargs)
 
 
 @pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
@@ -42,7 +42,7 @@ def test_ufunc_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     y = x.todense()
     xx = reduction(x, axis=axis, keepdims=keepdims, **kwargs)
     yy = reduction(y, axis=axis, keepdims=keepdims, **kwargs)
-    assert_eq(xx, yy, **eqkwargs)
+    assert_eq(xx, yy, check_nnz=False, **eqkwargs)
 
 
 @pytest.mark.parametrize('axis', [
@@ -213,8 +213,8 @@ def test_elemwise(func):
     x = s.todense()
 
     fs = func(s)
-
     assert isinstance(fs, COO)
+    assert fs.nnz <= s.nnz
 
     assert_eq(func(x), fs)
 
@@ -232,6 +232,242 @@ def test_elemwise_binary(func, shape):
     y = ys.todense()
 
     assert_eq(func(xs, ys), func(x, y))
+
+
+@pytest.mark.parametrize('func', [
+    lambda x, y, z: x + y + z,
+    lambda x, y, z: x * y * z,
+    lambda x, y, z: x + y * z,
+    lambda x, y, z: (x + y) * z
+])
+@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+def test_elemwise_trinary(func, shape):
+    xs = sparse.random(shape, density=0.5)
+    ys = sparse.random(shape, density=0.5)
+    zs = sparse.random(shape, density=0.5)
+
+    x = xs.todense()
+    y = ys.todense()
+    z = zs.todense()
+
+    fs = sparse.elemwise(func, xs, ys, zs)
+    assert isinstance(fs, COO)
+
+    assert_eq(fs, func(x, y, z))
+
+
+@pytest.mark.parametrize('func', [operator.add, operator.mul])
+@pytest.mark.parametrize('shape1,shape2', [((2, 3, 4), (3, 4)),
+                                           ((3, 4), (2, 3, 4)),
+                                           ((3, 1, 4), (3, 2, 4)),
+                                           ((1, 3, 4), (3, 4)),
+                                           ((3, 4, 1), (3, 4, 2)),
+                                           ((1, 5), (5, 1)),
+                                           ((3, 1), (3, 4)),
+                                           ((3, 1), (1, 4)),
+                                           ((1, 4), (3, 4))])
+def test_binary_broadcasting(func, shape1, shape2):
+    xs = sparse.random(shape1, density=0.5)
+    x = xs.todense()
+
+    ys = sparse.random(shape2, density=0.5)
+    y = ys.todense()
+
+    expected = func(x, y)
+    actual = func(xs, ys)
+
+    assert isinstance(actual, COO)
+    assert_eq(expected, actual)
+
+    assert np.count_nonzero(expected) == actual.nnz
+
+
+@pytest.mark.parametrize('shape1,shape2', [((3, 4), (2, 3, 4)),
+                                           ((3, 1, 4), (3, 2, 4)),
+                                           ((3, 4, 1), (3, 4, 2))])
+def test_broadcast_to(shape1, shape2):
+    a = sparse.random(shape1, density=0.5)
+    x = a.todense()
+
+    assert_eq(np.broadcast_to(x, shape2), a.broadcast_to(shape2))
+
+
+@pytest.mark.parametrize('shapes', [
+    [
+        (2,),
+        (3, 2),
+        (4, 3, 2),
+    ],
+    [
+        (3,),
+        (2, 3),
+        (2, 2, 3),
+    ],
+    [
+        (2,),
+        (2, 2),
+        (2, 2, 2),
+    ],
+    [
+        (4,),
+        (4, 4),
+        (4, 4, 4),
+    ],
+    [
+        (4,),
+        (4, 4),
+        (4, 4, 4),
+    ],
+    [
+        (4,),
+        (4, 4),
+        (4, 4, 4),
+    ],
+    [
+        (1, 1, 2),
+        (1, 3, 1),
+        (4, 1, 1)
+    ],
+    [
+        (2,),
+        (2, 1),
+        (2, 1, 1)
+    ],
+])
+@pytest.mark.parametrize('func', [
+    lambda x, y, z: (x + y) * z,
+    lambda x, y, z: x * (y + z),
+    lambda x, y, z: x * y * z,
+    lambda x, y, z: x + y + z,
+    lambda x, y, z: x + y - z,
+    lambda x, y, z: x - y + z,
+])
+def test_trinary_broadcasting(shapes, func):
+    args = [sparse.random(s, density=0.5) for s in shapes]
+    dense_args = [arg.todense() for arg in args]
+
+    fs = sparse.elemwise(func, *args)
+    assert isinstance(fs, COO)
+
+    assert_eq(fs, func(*dense_args))
+
+
+@pytest.mark.parametrize('shapes, func', [
+    ([
+         (2,),
+         (3, 2),
+         (4, 3, 2),
+     ], lambda x, y, z: (x + y) * z),
+    ([
+         (3,),
+         (2, 3),
+         (2, 2, 3),
+     ], lambda x, y, z: x * (y + z)),
+    ([
+         (2,),
+         (2, 2),
+         (2, 2, 2),
+     ], lambda x, y, z: x * y * z),
+    ([
+         (4,),
+         (4, 4),
+         (4, 4, 4),
+     ], lambda x, y, z: x + y + z),
+])
+@pytest.mark.parametrize('value', [
+    np.nan,
+    np.inf,
+    -np.inf
+])
+@pytest.mark.parametrize('path_fraction', [0.25, 0.5, 0.75, 1.0])
+@pytest.mark.filterwarnings('ignore:invalid value')
+def test_trinary_broadcasting_pathological(shapes, func, value, path_fraction):
+    def value_array(n):
+        i = int(n * path_fraction)
+
+        ar = np.empty((n,), dtype=np.float_)
+        ar[:i] = value
+        ar[i:] = np.random.rand(n - i)
+        return ar
+
+    args = [sparse.random(s, density=0.5, data_rvs=value_array) for s in shapes]
+    dense_args = [arg.todense() for arg in args]
+
+    fs = sparse.elemwise(func, *args)
+    assert isinstance(fs, COO)
+
+    assert_eq(fs, func(*dense_args), equal_nan=True)
+
+
+def test_sparse_broadcasting(monkeypatch):
+    orig_unmatch_coo = sparse.coo._unmatch_coo
+
+    state = {'num_matches': 0}
+
+    xs = sparse.random((3, 4), density=0.5)
+    ys = sparse.random((3, 4), density=0.5)
+
+    def mock_unmatch_coo(*args, **kwargs):
+        result = orig_unmatch_coo(*args, **kwargs)
+        state['num_matches'] += len(result[0])
+        return result
+
+    monkeypatch.setattr(sparse.coo, '_unmatch_coo', mock_unmatch_coo)
+
+    xs * ys
+
+    # Less than in case there's absolutely no overlap in some cases.
+    assert state['num_matches'] <= 1
+
+
+def test_dense_broadcasting(monkeypatch):
+    orig_unmatch_coo = sparse.coo._unmatch_coo
+
+    state = {'num_matches': 0}
+
+    xs = sparse.random((3, 4), density=0.5)
+    ys = sparse.random((3, 4), density=0.5)
+
+    def mock_unmatch_coo(*args, **kwargs):
+        result = orig_unmatch_coo(*args, **kwargs)
+        state['num_matches'] += len(result[0])
+        return result
+
+    monkeypatch.setattr(sparse.coo, '_unmatch_coo', mock_unmatch_coo)
+
+    xs + ys
+
+    # Less than in case there's absolutely no overlap in some cases.
+    assert state['num_matches'] <= 3
+
+
+@pytest.mark.parametrize('format', ['coo', 'dok'])
+def test_sparsearray_elemwise(format):
+    xs = sparse.random((3, 4), density=0.5, format=format)
+    ys = sparse.random((3, 4), density=0.5, format=format)
+
+    x = xs.todense()
+    y = ys.todense()
+
+    fs = sparse.elemwise(operator.add, xs, ys)
+    assert isinstance(fs, COO)
+
+    assert_eq(fs, x + y)
+
+
+def test_ndarray_densification_fails():
+    xs = sparse.random((3, 4), density=0.5)
+    y = np.random.rand(3, 4)
+
+    with pytest.raises(ValueError):
+        xs + y
+
+
+def test_elemwise_noargs():
+    def func():
+        return np.float_(5.0)
+
+    assert sparse.elemwise(func) == func()
 
 
 @pytest.mark.parametrize('func', [
@@ -472,48 +708,6 @@ def test_bitwise_binary_bool(func, shape):
     assert_eq(func(xs, ys), func(x, y))
 
 
-@pytest.mark.parametrize('func', [operator.mul])
-@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-def test_numpy_mixed_binary(func, shape):
-    xs = sparse.random(shape, density=0.5)
-    y = np.random.rand(*shape)
-
-    x = xs.todense()
-
-    fs1 = func(xs, y)
-
-    assert isinstance(fs1, COO)
-    assert fs1.nnz <= xs.nnz
-    assert_eq(fs1, func(x, y))
-
-    fs2 = func(y, xs)
-
-    assert isinstance(fs2, COO)
-    assert fs2.nnz <= xs.nnz
-    assert_eq(fs2, func(y, x))
-
-
-@pytest.mark.parametrize('func', [operator.and_])
-@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-def test_numpy_mixed_binary_bitwise(func, shape):
-    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
-    y = np.random.randint(100, size=shape)
-
-    x = xs.todense()
-
-    fs1 = func(xs, y)
-
-    assert isinstance(fs1, COO)
-    assert fs1.nnz <= xs.nnz
-    assert_eq(fs1, func(x, y))
-
-    fs2 = func(y, xs)
-
-    assert isinstance(fs2, COO)
-    assert fs2.nnz <= xs.nnz
-    assert_eq(fs2, func(y, x))
-
-
 def test_elemwise_binary_empty():
     x = COO({}, shape=(10, 10))
     y = sparse.random((10, 10), density=0.5)
@@ -648,7 +842,7 @@ def test_canonical():
                        [1, 0, 3],
                        [0, 1, 0],
                        [1, 0, 3]]).T
-    data = np.arange(5)
+    data = np.arange(5) + 1
 
     old = COO(coords, data, shape=(2, 2, 5))
     x = COO(coords, data, shape=(2, 2, 5))
@@ -761,61 +955,6 @@ def test_addition_not_ok_when_large_and_sparse():
         np.exp(x)
 
 
-@pytest.mark.parametrize('func', [operator.add, operator.mul])
-@pytest.mark.parametrize('shape1,shape2', [((2, 3, 4), (3, 4)),
-                                           ((3, 4), (2, 3, 4)),
-                                           ((3, 1, 4), (3, 2, 4)),
-                                           ((1, 3, 4), (3, 4)),
-                                           ((3, 4, 1), (3, 4, 2)),
-                                           ((1, 5), (5, 1))])
-def test_broadcasting(func, shape1, shape2):
-    xs = sparse.random(shape1, density=0.5)
-    x = xs.todense()
-
-    ys = sparse.random(shape2, density=0.5)
-    y = ys.todense()
-
-    expected = func(x, y)
-    actual = func(xs, ys)
-
-    assert_eq(expected, actual)
-
-    assert np.count_nonzero(expected) == actual.nnz
-
-
-@pytest.mark.parametrize('func', [operator.mul])
-@pytest.mark.parametrize('shape1,shape2', [((2, 3, 4), (3, 4)),
-                                           ((3, 4), (2, 3, 4)),
-                                           ((3, 1, 4), (3, 2, 4)),
-                                           ((1, 3, 4), (3, 4)),
-                                           ((3, 4, 1), (3, 4, 2)),
-                                           ((1, 5), (5, 1))])
-def test_numpy_mixed_broadcasting(func, shape1, shape2):
-    xs = sparse.random(shape1, density=0.5)
-    x = xs.todense()
-
-    y = np.random.rand(*shape2)
-
-    expected = func(x, y)
-    actual = func(xs, y)
-
-    assert isinstance(actual, COO)
-
-    assert_eq(expected, actual)
-
-    assert np.count_nonzero(expected) == actual.nnz
-
-
-@pytest.mark.parametrize('shape1,shape2', [((3, 4), (2, 3, 4)),
-                                           ((3, 1, 4), (3, 2, 4)),
-                                           ((3, 4, 1), (3, 4, 2))])
-def test_broadcast_to(shape1, shape2):
-    a = sparse.random(shape1, density=0.5)
-    x = a.todense()
-
-    assert_eq(np.broadcast_to(x, shape2), a.broadcast_to(shape2))
-
-
 @pytest.mark.parametrize('scalar', [2, 2.5, np.float32(2.0), np.int8(3)])
 def test_scalar_multiplication(scalar):
     a = sparse.random((2, 3, 4), density=0.5)
@@ -879,13 +1018,13 @@ def test_scipy_sparse_interface():
     x = scipy.sparse.coo_matrix(inp)
     xx = sparse.COO(inp)
 
-    assert_eq(x, xx)
-    assert_eq(x.T, xx.T)
-    assert_eq(xx.to_scipy_sparse(), x)
-    assert_eq(COO.from_scipy_sparse(xx.to_scipy_sparse()), xx)
+    assert_eq(x, xx, check_nnz=False)
+    assert_eq(x.T, xx.T, check_nnz=False)
+    assert_eq(xx.to_scipy_sparse(), x, check_nnz=False)
+    assert_eq(COO.from_scipy_sparse(xx.to_scipy_sparse()), xx, check_nnz=False)
 
-    assert_eq(x, xx)
-    assert_eq(x.T.dot(x), xx.T.dot(xx))
+    assert_eq(x, xx, check_nnz=False)
+    assert_eq(x.T.dot(x), xx.T.dot(xx), check_nnz=False)
     assert isinstance(x + xx, COO)
     assert isinstance(xx + x, COO)
 

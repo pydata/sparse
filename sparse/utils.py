@@ -1,8 +1,9 @@
 import numpy as np
 from numbers import Integral
+from collections import Iterable
 
 
-def assert_eq(x, y, **kwargs):
+def assert_eq(x, y, check_nnz=True, **kwargs):
     from .coo import COO
     assert x.shape == y.shape
     assert x.dtype == y.dtype
@@ -16,10 +17,14 @@ def assert_eq(x, y, **kwargs):
 
     if hasattr(x, 'todense'):
         xx = x.todense()
+        if check_nnz:
+            assert (xx != 0).sum() == x.nnz
     else:
         xx = x
     if hasattr(y, 'todense'):
         yy = y.todense()
+        if check_nnz:
+            assert (yy != 0).sum() == y.nnz
     else:
         yy = y
     assert np.allclose(xx, yy, **kwargs)
@@ -146,3 +151,44 @@ def random(
         ar = DOK(ar)
 
     return ar
+
+
+def isscalar(x):
+    from .sparse_array import SparseArray
+    return not isinstance(x, SparseArray) and np.isscalar(x)
+
+
+class PositinalArgumentPartial(object):
+    def __init__(self, func, pos, posargs):
+        if not isinstance(pos, Iterable):
+            pos = (pos,)
+            posargs = (posargs,)
+
+        n_partial_args = len(pos)
+
+        self.pos = pos
+        self.posargs = posargs
+        self.func = func
+
+        self.n = n_partial_args
+
+        self.__doc__ = func.__doc__
+
+    def __call__(self, *args, **kwargs):
+        j = 0
+        totargs = []
+
+        for i in range(len(args) + self.n):
+            if j >= self.n or i != self.pos[j]:
+                totargs.append(args[i - j])
+            else:
+                totargs.append(self.posargs[j])
+                j += 1
+
+        return self.func(*totargs, **kwargs)
+
+    def __str__(self):
+        return str(self.func)
+
+    def __repr__(self):
+        return repr(self.func)

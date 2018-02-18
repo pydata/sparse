@@ -27,6 +27,8 @@ API
 
     dot
 
+    elemwise
+
     random
 
     stack

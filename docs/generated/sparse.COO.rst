@@ -31,7 +31,6 @@ COO
    .. autosummary::
       :toctree:
 
-      COO.elemwise
       COO.astype
       COO.round
 

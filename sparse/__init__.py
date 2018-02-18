@@ -1,4 +1,4 @@
-from .coo import COO, tensordot, concatenate, stack, dot, triu, tril
+from .coo import COO, elemwise, tensordot, concatenate, stack, dot, triu, tril
 from .dok import DOK
 from .sparse_array import SparseArray
 from .utils import random
