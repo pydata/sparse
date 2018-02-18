@@ -2132,7 +2132,7 @@ def _match_coo(*args, **kwargs):
         raise ValueError('Unknown kwargs %s' % kwargs.keys())
 
     if return_midx and (len(args) != 2 or cache is not None):
-        raise NotImplementedError('Matching only supported for two args, and no cache.')
+        raise NotImplementedError('Matching indices only supported for two args, and no cache.')
 
     matched_arrays = [args[0]]
     cache_key = [id(args[0])]
@@ -2156,8 +2156,13 @@ def _match_coo(*args, **kwargs):
         linear = [_linear_loc(rc, reduced_shape) for rc in reduced_coords]
         sorted_idx = [np.argsort(idx) for idx in linear]
         linear = [idx[s] for idx, s in zip(linear, sorted_idx)]
-        coords = [arg.coords[:, s] for arg, s in zip(cargs, sorted_idx)]
         matched_idx = _match_arrays(*linear)
+
+        if return_midx:
+            matched_idx = [sidx[midx] for sidx, midx in zip(sorted_idx, matched_idx)]
+            return matched_idx
+
+        coords = [arg.coords[:, s] for arg, s in zip(cargs, sorted_idx)]
         mcoords = [c[:, idx] for c, idx in zip(coords, matched_idx)]
         mcoords = _get_matching_coords(mcoords, params, current_shape)
         mdata = [arg.data[sorted_idx[0]][matched_idx[0]] for arg in matched_arrays]
@@ -2166,10 +2171,6 @@ def _match_coo(*args, **kwargs):
 
         if cache is not None:
             cache[key] = matched_arrays
-
-        if return_midx:
-            matched_idx = [sidx[midx] for sidx, midx in zip(sorted_idx, matched_idx)]
-            return matched_idx
 
     return matched_arrays
 
