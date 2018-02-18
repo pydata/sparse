@@ -416,7 +416,8 @@ def test_sparse_broadcasting(monkeypatch):
 
     xs * ys
 
-    assert state['num_matches'] == 1
+    # Less than in case there's absolutely no overlap in some cases.
+    assert state['num_matches'] <= 1
 
 
 def test_dense_broadcasting(monkeypatch):
@@ -436,7 +437,8 @@ def test_dense_broadcasting(monkeypatch):
 
     xs + ys
 
-    assert state['num_matches'] == 3
+    # Less than in case there's absolutely no overlap in some cases.
+    assert state['num_matches'] <= 3
 
 
 @pytest.mark.parametrize('format', ['coo', 'dok'])
