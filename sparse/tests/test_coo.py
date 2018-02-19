@@ -195,8 +195,7 @@ def test_dot(a_shape, b_shape):
 
     if hasattr(operator, 'matmul'):
         # Basic equivalences
-        assert_eq(eval("a @ b"), eval("sa @ sb"))
-        assert_eq(eval("sa @ sb"), sparse.dot(sa, sb))
+        assert_eq(operator.matmul(a, b), operator.matmul(sa, sb))
 
         # Test that SOO's and np.array's combine correctly
         # Not possible due to https://github.com/numpy/numpy/issues/9028
