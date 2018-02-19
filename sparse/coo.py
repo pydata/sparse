@@ -2003,6 +2003,11 @@ def elemwise(func, *args, **kwargs):
     --------
     :obj:`numpy.ufunc` : A similar Numpy construct. Note that any :code:`ufunc` can be used
         as the :code:`func` input to this function.
+
+    Notes
+    -----
+    Previously, operations with Numpy arrays were sometimes supported. Now,
+    it is necessary to convert Numpy arrays to :obj:`COO` objects.
     """
     # Because we need to mutate args.
     args = list(args)
