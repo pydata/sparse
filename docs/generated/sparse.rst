@@ -29,6 +29,14 @@ API
 
     elemwise
 
+    nanmax
+
+    nanmin
+
+    nanprod
+
+    nansum
+
     random
 
     stack

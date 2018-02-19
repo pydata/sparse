@@ -55,12 +55,12 @@ def test_ufunc_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
 @pytest.mark.parametrize('keepdims', [False])
 @pytest.mark.parametrize('fraction', [0.25, 0.5, 0.75, 1.0])
 def test_nan_reductions(reduction, axis, keepdims, fraction):
-    x = sparse.random((2, 3, 4), data_rvs=random_value_array(np.nan, fraction),
+    s = sparse.random((2, 3, 4), data_rvs=random_value_array(np.nan, fraction),
                       density=.25)
-    y = x.todense()
-    xx = getattr(x, reduction)(axis=axis, keepdims=keepdims)
-    yy = getattr(np, reduction)(y, axis=axis, keepdims=keepdims)
-    assert_eq(xx, yy, check_nnz=False)
+    x = s.todense()
+    expected = getattr(np, reduction)(x, axis=axis, keepdims=keepdims)
+    actual = getattr(sparse, reduction)(s, axis=axis, keepdims=keepdims)
+    assert_eq(expected, actual, check_nnz=False)
 
 
 @pytest.mark.parametrize('axis', [
