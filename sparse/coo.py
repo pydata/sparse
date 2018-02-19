@@ -1983,8 +1983,8 @@ def elemwise(func, *args, **kwargs):
     func : Callable
         The function to apply. Must support broadcasting.
     args : tuple, optional
-        The arguments to the function. Can be :obj:`scipy.sparse.spmatrix` objects,
-        :obj:`SparseArray` objects or :obj:`numpy.ndarray` objects.
+        The arguments to the function. Can be :obj:`SparseArray` objects
+        or :obj:`scipy.sparse.spmatrix` objects.
     kwargs : dict, optional
         Any additional arguments to pass to the function.
 
@@ -2003,6 +2003,11 @@ def elemwise(func, *args, **kwargs):
     --------
     :obj:`numpy.ufunc` : A similar Numpy construct. Note that any :code:`ufunc` can be used
         as the :code:`func` input to this function.
+
+    Notes
+    -----
+    Previously, operations with Numpy arrays were sometimes supported. Now,
+    it is necessary to convert Numpy arrays to :obj:`COO` objects.
     """
     # Because we need to mutate args.
     args = list(args)
@@ -2195,8 +2200,6 @@ def _unmatch_coo(func, args, mask, cache, **kwargs):
 
     Returns
     -------
-    matched_idx : list[ndarray]
-        The indices of matched elements.
     matched_coords : list[ndarray]
         The matched coordinates.
     matched_data : list[ndarray]
