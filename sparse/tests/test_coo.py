@@ -8,7 +8,7 @@ import scipy.stats
 from sparse import COO
 
 import sparse
-from sparse.utils import assert_eq, is_lexsorted
+from sparse.utils import assert_eq, is_lexsorted, random_value_array
 
 
 @pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
@@ -43,6 +43,24 @@ def test_ufunc_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     xx = reduction(x, axis=axis, keepdims=keepdims, **kwargs)
     yy = reduction(y, axis=axis, keepdims=keepdims, **kwargs)
     assert_eq(xx, yy, check_nnz=False, **eqkwargs)
+
+
+@pytest.mark.parametrize('reduction', [
+    pytest.mark.xfail('nanmax', reason='We return -inf on an all-nan axis, Numpy does nan.'),
+    'nansum',
+    'nanprod',
+    pytest.mark.xfail('nanmin', reason='We return inf on an all-nan axis, Numpy does nan.'),
+])
+@pytest.mark.parametrize('axis', [None, 0, 1])
+@pytest.mark.parametrize('keepdims', [False])
+@pytest.mark.parametrize('fraction', [0.25, 0.5, 0.75, 1.0])
+def test_nan_reductions(reduction, axis, keepdims, fraction):
+    x = sparse.random((2, 3, 4), data_rvs=random_value_array(np.nan, fraction),
+                      density=.25)
+    y = x.todense()
+    xx = getattr(x, reduction)(axis=axis, keepdims=keepdims)
+    yy = getattr(np, reduction)(y, axis=axis, keepdims=keepdims)
+    assert_eq(xx, yy, check_nnz=False)
 
 
 @pytest.mark.parametrize('axis', [
@@ -379,18 +397,11 @@ def test_trinary_broadcasting(shapes, func):
     np.inf,
     -np.inf
 ])
-@pytest.mark.parametrize('path_fraction', [0.25, 0.5, 0.75, 1.0])
+@pytest.mark.parametrize('fraction', [0.25, 0.5, 0.75, 1.0])
 @pytest.mark.filterwarnings('ignore:invalid value')
-def test_trinary_broadcasting_pathological(shapes, func, value, path_fraction):
-    def value_array(n):
-        i = int(n * path_fraction)
-
-        ar = np.empty((n,), dtype=np.float_)
-        ar[:i] = value
-        ar[i:] = np.random.rand(n - i)
-        return ar
-
-    args = [sparse.random(s, density=0.5, data_rvs=value_array) for s in shapes]
+def test_trinary_broadcasting_pathological(shapes, func, value, fraction):
+    args = [sparse.random(s, density=0.5, data_rvs=random_value_array(value, fraction))
+            for s in shapes]
     dense_args = [arg.todense() for arg in args]
 
     fs = sparse.elemwise(func, *args)
@@ -1267,3 +1278,89 @@ def test_np_array():
     x = np.array(s)
     assert isinstance(x, np.ndarray)
     assert_eq(x, s)
+
+
+@pytest.mark.parametrize('shapes', [
+    [
+        (2,),
+        (3, 2),
+        (4, 3, 2),
+    ],
+    [
+        (3,),
+        (2, 3),
+        (2, 2, 3),
+    ],
+    [
+        (2,),
+        (2, 2),
+        (2, 2, 2),
+    ],
+    [
+        (4,),
+        (4, 4),
+        (4, 4, 4),
+    ],
+    [
+        (4,),
+        (4, 4),
+        (4, 4, 4),
+    ],
+    [
+        (4,),
+        (4, 4),
+        (4, 4, 4),
+    ],
+    [
+        (1, 1, 2),
+        (1, 3, 1),
+        (4, 1, 1)
+    ],
+    [
+        (2,),
+        (2, 1),
+        (2, 1, 1)
+    ],
+])
+def test_three_arg_where(shapes):
+    cs = sparse.random(shapes[0], density=0.5).astype(np.bool)
+    xs = sparse.random(shapes[1], density=0.5)
+    ys = sparse.random(shapes[2], density=0.5)
+
+    c = cs.todense()
+    x = xs.todense()
+    y = ys.todense()
+
+    expected = np.where(c, x, y)
+    actual = sparse.where(cs, xs, ys)
+
+    assert isinstance(actual, COO)
+    assert_eq(expected, actual)
+
+
+def test_one_arg_where():
+    s = sparse.random((2, 3, 4), density=0.5)
+    x = s.todense()
+
+    expected = np.where(x)
+    actual = sparse.where(s)
+
+    assert len(expected) == len(actual)
+
+    for e, a in zip(expected, actual):
+        assert_eq(e, a, compare_dtype=False)
+
+
+def test_one_arg_where_dense():
+    x = np.random.rand(2, 3, 4)
+
+    with pytest.raises(ValueError):
+        sparse.where(x)
+
+
+def test_two_arg_where():
+    cs = sparse.random((2, 3, 4), density=0.5).astype(np.bool)
+    xs = sparse.random((2, 3, 4), density=0.5)
+
+    with pytest.raises(ValueError):
+        sparse.where(cs, xs)

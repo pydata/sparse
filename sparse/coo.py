@@ -822,6 +822,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         See Also
         --------
         :obj:`COO.sum` : Function without ``NaN`` skipping.
+        numpy.nansum : Equivalent Numpy function.
         """
         assert out is None
         return self.nanreduce(np.add, axis=axis, keepdims=keepdims, dtype=dtype)
@@ -909,6 +910,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         See Also
         --------
         :obj:`COO.max` : Function without ``NaN`` skipping.
+        numpy.nanmax : Equivalent Numpy function.
         """
         assert out is None
         return self.nanreduce(np.maximum, identity=-np.inf, axis=axis, keepdims=keepdims,
@@ -997,6 +999,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         See Also
         --------
         :obj:`COO.min` : Function without ``NaN`` skipping.
+        numpy.nanmin : Equivalent Numpy function.
         """
         assert out is None
         return self.nanreduce(np.minimum, identity=np.inf, axis=axis, keepdims=keepdims,
@@ -1091,6 +1094,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         See Also
         --------
         :obj:`COO.prod` : Function without ``NaN`` skipping.
+        numpy.nanprod : Equivalent Numpy function.
         """
         assert out is None
         return self.nanreduce(np.multiply, axis=axis, keepdims=keepdims, dtype=dtype)
@@ -2696,14 +2700,17 @@ def _linear_loc(coords, shape, signed=False):
 
 def where(condition, x=None, y=None):
     """
+    Select values from either ``x`` or ``y`` depending on ``condition``.
+    If ``x`` and ``y`` are not given, returns indices where ``condition``
+    is nonzero.
+
     Performs the equivalent of :obj:`numpy.where`.
 
     Parameters
     ----------
     condition : SparseArray
         The condition based on which to select values from
-        either ``x`` or ``y``. If ``x`` and ``y`` are not given,
-        it returns where the array is nonzero.
+        either ``x`` or ``y``.
     x : SparseArray, optional
         The array to select values from if ``condition`` is nonzero.
     y : SparseArray, optional
@@ -2714,14 +2721,30 @@ def where(condition, x=None, y=None):
     COO
         The output array with selected values if ``x`` and ``y`` are given;
         else where the array is nonzero.
+
+    Raises
+    ------
+    ValueError
+        If the operation would produce a dense result; or exactly one of
+        ``x`` and ``y`` are given.
+
+    See Also
+    --------
+    numpy.where : Equivalent Numpy function.
     """
-    if x is None and y is None:
-        if not isinstance(condition, SparseArray):
+    x_given = x is not None
+    y_given = y is not None
+
+    if not (x_given or y_given):
+        if not isinstance(condition, (SparseArray, scipy.sparse.spmatrix)):
             raise ValueError('Performing this operation would produce a dense result: where')
 
         if not isinstance(condition, COO):
             condition = COO(condition)
 
         return tuple(condition.coords)
+
+    if x_given != y_given:
+        raise ValueError('either both or neither of x and y should be given')
 
     return elemwise(np.where, condition, x, y)

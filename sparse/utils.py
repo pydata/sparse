@@ -3,10 +3,12 @@ from numbers import Integral
 from collections import Iterable
 
 
-def assert_eq(x, y, check_nnz=True, **kwargs):
+def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
     from .coo import COO
     assert x.shape == y.shape
-    assert x.dtype == y.dtype
+
+    if compare_dtype:
+        assert x.dtype == y.dtype
 
     if isinstance(x, COO):
         if x.sorted:
@@ -192,3 +194,15 @@ class PositinalArgumentPartial(object):
 
     def __repr__(self):
         return repr(self.func)
+
+
+def random_value_array(value, fraction):
+    def replace_values(n):
+        i = int(n * fraction)
+
+        ar = np.empty((n,), dtype=np.float_)
+        ar[:i] = value
+        ar[i:] = np.random.rand(n - i)
+        return ar
+
+    return replace_values
