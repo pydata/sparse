@@ -35,17 +35,16 @@ This page describes those valid operations, and their limitations.
 
 :obj:`elemwise`
 ~~~~~~~~~~~~~~~~~~~
-This function allows you to apply any arbitrary unary or binary function where
-the first object is :obj:`COO`, and the second is a scalar, :obj:`COO`, or
-a :obj:`scipy.sparse.spmatrix`. For example, the
-following will add two :obj:`COO` objects:
+This function allows you to apply any arbitrary broadcasting function to any number of arguments
+where the arguments can be :obj:`SparseArray` objects or :obj:`scipy.sparse.spmatrix` objects.
+For example, the following will add two arrays:
 
 .. code-block:: python
 
    sparse.elemwise(np.add, x, y)
 
 
-.. note:: Previously, :obj:`elemwise` was a method of the :obj:`COO` class. Now,
+.. warning:: Previously, :obj:`elemwise` was a method of the :obj:`COO` class. Now,
    it has been moved to the :obj:`sparse` module.
 
 .. _operations-auto-densification:
@@ -82,7 +81,7 @@ If densification is needed, it must be explicit. In other words, you must call
 :obj:`COO.todense` on the :obj:`COO` object. If both operands are :obj:`COO`,
 both must be densified.
 
-.. note:: Previously, operations with Numpy arrays were sometimes supported. Now,
+.. warning:: Previously, operations with Numpy arrays were sometimes supported. Now,
    it is necessary to convert Numpy arrays to :obj:`COO` objects.
 
 
