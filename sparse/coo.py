@@ -2070,7 +2070,7 @@ def _elemwise_n_ary(func, *args, **kwargs):
     args_zeros = tuple(_zero_of_dtype(arg.dtype)[()] for arg in args)
 
     func_value = func(*args_zeros, **kwargs)
-    func_zero = _zero_of_dtype(np.dtype(func_value))
+    func_zero = _zero_of_dtype(func_value.dtype)
     if func_value != func_zero:
         raise ValueError("Performing this operation would produce "
                          "a dense result: %s" % str(func))
@@ -2521,3 +2521,36 @@ def _linear_loc(coords, shape, signed=False):
         np.add(tmp, out, out=out)
         strides *= d
     return out
+
+
+def where(condition, x=None, y=None):
+    """
+    Performs the equivalent of :obj:`numpy.where`.
+
+    Parameters
+    ----------
+    condition : SparseArray
+        The condition based on which to select values from
+        either ``x`` or ``y``. If ``x`` and ``y`` are not given,
+        it returns where the array is nonzero.
+    x : SparseArray, optional
+        The array to select values from if ``condition`` is nonzero.
+    y : SparseArray, optional
+        The array to select values from if ``condition`` is zero.
+
+    Returns
+    -------
+    COO
+        The output array with selected values if ``x`` and ``y`` are given;
+        else where the array is nonzero.
+    """
+    if x is None and y is None:
+        if not isinstance(condition, SparseArray):
+            raise ValueError('Performing this operation would produce a dense result: where')
+
+        if not isinstance(condition, COO):
+            condition = COO(condition)
+
+        return tuple(condition.coords)
+
+    return elemwise(np.where, condition, x, y)
