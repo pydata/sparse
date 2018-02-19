@@ -44,6 +44,12 @@ COO
       COO.min
       COO.prod
 
+      COO.nanreduce
+      COO.nansum
+      COO.nanmax
+      COO.nanmin
+      COO.nanprod
+
    .. rubric:: :ref:`Converting to other formats <converting>`
    .. autosummary::
       :toctree:

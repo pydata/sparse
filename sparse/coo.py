@@ -606,7 +606,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             The method to use for performing the reduction.
         identity : numpy.number
             The identity value for this reduction. Inferred from ``method`` if not given.
-            Note that some ``ufunc``s don't have this, so it may be necessary to give it.
+            Note that some ``ufunc`` objects don't have this, so it may be necessary to give it.
         axis : Union[int, Iterable[int]], optional
             The axes along which to perform the reduction. Uses all axes by default.
         keepdims : bool, optional

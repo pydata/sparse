@@ -39,3 +39,5 @@ API
 
     triu
 
+    where
+
