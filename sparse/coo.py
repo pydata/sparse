@@ -595,6 +595,42 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         return self.reduce(method, **kwargs)
 
+    def nanreduce(self, method, identity=None, axis=None, keepdims=False, **kwargs):
+        """
+        Performs an ``NaN`` skipping reduction on this array. See the documentation
+        on :obj:`COO.reduce` for examples.
+
+        Parameters
+        ----------
+        method : numpy.ufunc
+            The method to use for performing the reduction.
+        identity : numpy.number
+            The identity value for this reduction. Inferred from ``method`` if not given.
+            Note that some ``ufunc``s don't have this, so it may be necessary to give it.
+        axis : Union[int, Iterable[int]], optional
+            The axes along which to perform the reduction. Uses all axes by default.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+        kwargs : dict
+            Any extra arguments to pass to the reduction operation.
+
+        Returns
+        -------
+        COO
+            The result of the reduction operation.
+
+        Raises
+        ------
+        ValueError
+            If reducing an all-zero axis would produce a nonzero result.
+
+        See Also
+        --------
+        COO.reduce : Similar method without ``NaN`` skipping functionality.
+        """
+        arr = _replace_nan(self, method.identity if identity is None else identity)
+        return arr.reduce(method, axis, keepdims, **kwargs)
+
     def reduce(self, method, axis=None, keepdims=False, **kwargs):
         """
         Performs a reduction operation on this array.
@@ -628,6 +664,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         See Also
         --------
         numpy.ufunc.reduce : A similar Numpy method.
+        COO.nanreduce : Similar method with ``NaN`` skipping functionality.
 
         Examples
         --------
@@ -724,6 +761,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         --------
         :obj:`numpy.sum` : Equivalent numpy function.
         scipy.sparse.coo_matrix.sum : Equivalent Scipy function.
+        :obj:`COO.nansum` : Function with ``NaN`` skipping.
 
         Notes
         -----
@@ -763,6 +801,31 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         assert out is None
         return self.reduce(np.add, axis=axis, keepdims=keepdims, dtype=dtype)
 
+    def nansum(self, axis=None, keepdims=False, dtype=None, out=None):
+        """
+        Performs a ``NaN`` skipping sum operation along the given axes. Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : Union[int, Iterable[int]], optional
+            The axes along which to sum. Uses all axes by default.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+        dtype: numpy.dtype
+            The data type of the output array.
+
+        Returns
+        -------
+        COO
+            The reduced output sparse array.
+
+        See Also
+        --------
+        :obj:`COO.sum` : Function without ``NaN`` skipping.
+        """
+        assert out is None
+        return self.nanreduce(np.add, axis=axis, keepdims=keepdims, dtype=dtype)
+
     def max(self, axis=None, keepdims=False, out=None):
         """
         Maximize along the given axes. Uses all axes by default.
@@ -785,6 +848,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         --------
         :obj:`numpy.max` : Equivalent numpy function.
         scipy.sparse.coo_matrix.max : Equivalent Scipy function.
+        :obj:`COO.nanmax` : Function with ``NaN`` skipping.
 
         Notes
         -----
@@ -824,6 +888,32 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         assert out is None
         return self.reduce(np.maximum, axis=axis, keepdims=keepdims)
 
+    def nanmax(self, axis=None, keepdims=False, dtype=None, out=None):
+        """
+        Maximize along the given axes, skipping ``NaN`` values. Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : Union[int, Iterable[int]], optional
+            The axes along which to maximize. Uses all axes by default.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+        dtype: numpy.dtype
+            The data type of the output array.
+
+        Returns
+        -------
+        COO
+            The reduced output sparse array.
+
+        See Also
+        --------
+        :obj:`COO.max` : Function without ``NaN`` skipping.
+        """
+        assert out is None
+        return self.nanreduce(np.maximum, identity=-np.inf, axis=axis, keepdims=keepdims,
+                              dtype=dtype)
+
     def min(self, axis=None, keepdims=False, out=None):
         """
         Minimize along the given axes. Uses all axes by default.
@@ -846,6 +936,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         --------
         :obj:`numpy.min` : Equivalent numpy function.
         scipy.sparse.coo_matrix.min : Equivalent Scipy function.
+        :obj:`COO.nanmin` : Function with ``NaN`` skipping.
 
         Notes
         -----
@@ -885,6 +976,32 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         assert out is None
         return self.reduce(np.minimum, axis=axis, keepdims=keepdims)
 
+    def nanmin(self, axis=None, keepdims=False, dtype=None, out=None):
+        """
+        Minimize along the given axes, skipping ``NaN`` values. Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : Union[int, Iterable[int]], optional
+            The axes along which to minimize. Uses all axes by default.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+        dtype: numpy.dtype
+            The data type of the output array.
+
+        Returns
+        -------
+        COO
+            The reduced output sparse array.
+
+        See Also
+        --------
+        :obj:`COO.min` : Function without ``NaN`` skipping.
+        """
+        assert out is None
+        return self.nanreduce(np.minimum, identity=np.inf, axis=axis, keepdims=keepdims,
+                              dtype=dtype)
+
     def prod(self, axis=None, keepdims=False, dtype=None, out=None):
         """
         Performs a product operation along the given axes. Uses all axes by default.
@@ -906,6 +1023,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         See Also
         --------
         :obj:`numpy.prod` : Equivalent numpy function.
+        :obj:`COO.nanprod` : Function with ``NaN`` skipping.
 
         Notes
         -----
@@ -950,6 +1068,32 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         """
         assert out is None
         return self.reduce(np.multiply, axis=axis, keepdims=keepdims, dtype=dtype)
+
+    def nanprod(self, axis=None, keepdims=False, dtype=None, out=None):
+        """
+        Performs a product operation along the given axes, skipping ``NaN`` values.
+        Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : Union[int, Iterable[int]], optional
+            The axes along which to multiply. Uses all axes by default.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+        dtype: numpy.dtype
+            The data type of the output array.
+
+        Returns
+        -------
+        COO
+            The reduced output sparse array.
+
+        See Also
+        --------
+        :obj:`COO.prod` : Function without ``NaN`` skipping.
+        """
+        assert out is None
+        return self.nanreduce(np.multiply, axis=axis, keepdims=keepdims, dtype=dtype)
 
     def transpose(self, axes=None):
         """
@@ -1732,6 +1876,33 @@ def _mask(coords, idx, shape):
         for item in idx:
             mask |= _mask(coords, item, shape)
         return mask
+
+
+def _replace_nan(array, value):
+    """
+    Replaces ``NaN``s in ``array`` with ``value``.
+
+    Parameters
+    ----------
+    array : COO
+        The input array.
+    value : numpy.number
+        The values to replace ``NaN`` with.
+
+    Returns
+    -------
+    COO
+        A copy of ``array`` with the ``NaN``s replaced.
+    """
+    if not np.issubdtype(array.dtype, np.floating):
+        return array
+
+    data = np.copy(array.data)
+    data[np.isnan(data)] = value
+
+    return COO(array.coords, data, shape=array.shape,
+               has_duplicates=array.has_duplicates,
+               sorted=array.sorted)
 
 
 def concatenate(arrays, axis=0):
