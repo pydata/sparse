@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import warnings
 from collections import Iterable, defaultdict, deque
 from functools import reduce
 from itertools import product
@@ -2727,8 +2728,18 @@ def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
     """
     assert out is None
     x = asCOO(x, name='nanmax')
-    return x.nanreduce(np.maximum, identity=-np.inf, axis=axis, keepdims=keepdims,
-                       dtype=dtype)
+
+    if x.data.dtype != np.object_:
+        ar = x.reduce(np.fmax, axis=axis, keepdims=keepdims,
+                      dtype=dtype)
+
+        if np.isnan(ar.data).any():
+            warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=2)
+    else:
+        ar = x.nanreduce(np.amax, identity=np.NINF, axis=axis, keepdims=keepdims,
+                         dtype=dtype)
+
+    return ar
 
 
 def nanmin(x, axis=None, keepdims=False, dtype=None, out=None):
@@ -2757,9 +2768,19 @@ def nanmin(x, axis=None, keepdims=False, dtype=None, out=None):
     numpy.nanmin : Equivalent Numpy function.
     """
     assert out is None
-    x = asCOO(x)
-    return x.nanreduce(np.minimum, identity=np.inf, axis=axis, keepdims=keepdims,
-                       dtype=dtype)
+    x = asCOO(x, name='nanmin')
+
+    if x.data.dtype != np.object_:
+        ar = x.reduce(np.fmin, axis=axis, keepdims=keepdims,
+                      dtype=dtype)
+
+        if np.isnan(ar.data).any():
+            warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=2)
+    else:
+        ar = x.nanreduce(np.amin, identity=np.inf, axis=axis, keepdims=keepdims,
+                         dtype=dtype)
+
+    return ar
 
 
 def nanprod(x, axis=None, keepdims=False, dtype=None, out=None):

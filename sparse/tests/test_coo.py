@@ -46,21 +46,22 @@ def test_ufunc_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
 
 
 @pytest.mark.parametrize('reduction', [
-    pytest.mark.xfail('nanmax', reason='We return -inf on an all-nan axis, Numpy does nan.'),
+    'nanmax',
     'nansum',
     'nanprod',
-    pytest.mark.xfail('nanmin', reason='We return inf on an all-nan axis, Numpy does nan.'),
+    'nanmin',
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1])
 @pytest.mark.parametrize('keepdims', [False])
 @pytest.mark.parametrize('fraction', [0.25, 0.5, 0.75, 1.0])
+@pytest.mark.filterwarnings('ignore:All-NaN')
 def test_nan_reductions(reduction, axis, keepdims, fraction):
     s = sparse.random((2, 3, 4), data_rvs=random_value_array(np.nan, fraction),
                       density=.25)
     x = s.todense()
     expected = getattr(np, reduction)(x, axis=axis, keepdims=keepdims)
     actual = getattr(sparse, reduction)(s, axis=axis, keepdims=keepdims)
-    assert_eq(expected, actual, check_nnz=False)
+    assert_eq(expected, actual, equal_nan=True, check_nnz=False)
 
 
 @pytest.mark.parametrize('axis', [
