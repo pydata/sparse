@@ -2732,7 +2732,7 @@ def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
     ar = x.reduce(np.fmax, axis=axis, keepdims=keepdims,
                   dtype=dtype)
 
-    if np.isnan(ar.data).any():
+    if (isscalar(ar) and np.isnan(ar)) or np.isnan(ar.data).any():
         warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=2)
 
     return ar
@@ -2769,7 +2769,7 @@ def nanmin(x, axis=None, keepdims=False, dtype=None, out=None):
     ar = x.reduce(np.fmin, axis=axis, keepdims=keepdims,
                   dtype=dtype)
 
-    if np.isnan(ar.data).any():
+    if (isscalar(ar) and np.isnan(ar)) or np.isnan(ar.data).any():
         warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=2)
 
     return ar

@@ -64,6 +64,19 @@ def test_nan_reductions(reduction, axis, keepdims, fraction):
     assert_eq(expected, actual, equal_nan=True, check_nnz=False)
 
 
+@pytest.mark.parametrize('reduction', [
+    'nanmax',
+    'nanmin',
+])
+@pytest.mark.parametrize('axis', [None, 0, 1])
+def test_all_nan_reduction_warning(reduction, axis):
+    x = random_value_array(np.nan, 1.0)(2 * 3 * 4).reshape(2, 3, 4)
+    s = COO.from_numpy(x)
+
+    with pytest.warns(RuntimeWarning):
+        getattr(sparse, reduction)(s, axis=axis)
+
+
 @pytest.mark.parametrize('axis', [
     None,
     (1, 2, 0),
