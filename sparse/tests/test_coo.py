@@ -46,9 +46,9 @@ def test_ufunc_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
 
 
 @pytest.mark.parametrize('reduction', [
-    'nanmax',
     'nansum',
     'nanprod',
+    'nanmax',
     'nanmin',
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1])

@@ -2729,15 +2729,11 @@ def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
     assert out is None
     x = asCOO(x, name='nanmax')
 
-    if x.data.dtype != np.object_:
-        ar = x.reduce(np.fmax, axis=axis, keepdims=keepdims,
-                      dtype=dtype)
+    ar = x.reduce(np.fmax, axis=axis, keepdims=keepdims,
+                  dtype=dtype)
 
-        if np.isnan(ar.data).any():
-            warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=2)
-    else:
-        ar = x.nanreduce(np.amax, identity=np.NINF, axis=axis, keepdims=keepdims,
-                         dtype=dtype)
+    if np.isnan(ar.data).any():
+        warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=2)
 
     return ar
 
@@ -2770,15 +2766,11 @@ def nanmin(x, axis=None, keepdims=False, dtype=None, out=None):
     assert out is None
     x = asCOO(x, name='nanmin')
 
-    if x.data.dtype != np.object_:
-        ar = x.reduce(np.fmin, axis=axis, keepdims=keepdims,
-                      dtype=dtype)
+    ar = x.reduce(np.fmin, axis=axis, keepdims=keepdims,
+                  dtype=dtype)
 
-        if np.isnan(ar.data).any():
-            warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=2)
-    else:
-        ar = x.nanreduce(np.amin, identity=np.inf, axis=axis, keepdims=keepdims,
-                         dtype=dtype)
+    if np.isnan(ar.data).any():
+        warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=2)
 
     return ar
 
