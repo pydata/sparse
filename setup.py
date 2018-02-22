@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from setuptools import setup
-from sparse.version import __version__
+from sparse._version import __version__
 
 with open('requirements.txt') as f:
     reqs = list(f.read().strip().split('\n'))
