@@ -632,7 +632,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         arr = _replace_nan(self, method.identity if identity is None else identity)
         return arr.reduce(method, axis, keepdims, **kwargs)
 
-    def reduce(self, method, axis=None, keepdims=False, **kwargs):
+    def reduce(self, method, axis=(0,), keepdims=False, **kwargs):
         """
         Performs a reduction operation on this array.
 
@@ -692,10 +692,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s4.dtype
         dtype('float16')
 
-        By default, this reduces the array down to one number, reducing along all axes.
+        By default, this reduces the array by only the first axis.
 
         >>> s.reduce(np.add)
-        25
+        <COO: shape=(5,), dtype=int64, nnz=5, sorted=True, duplicates=False>
         """
         zero_reduce_result = method.reduce([_zero_of_dtype(self.dtype)], **kwargs)
 
@@ -730,10 +730,16 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             result[missing_counts] = method(result[missing_counts],
                                             _zero_of_dtype(self.dtype), **kwargs)
             coords = a.coords[0:1, inv_idx]
+
+            # Filter out zeros
+            mask = result != _zero_of_dtype(result.dtype)
+            coords = coords[:, mask]
+            result = result[mask]
+
             a = COO(coords, result, shape=(a.shape[0],),
                     has_duplicates=False, sorted=True)
 
-            a = a.reshape([self.shape[d] for d in neg_axis])
+            a = a.reshape(tuple(self.shape[d] for d in neg_axis))
             result = a
 
         if keepdims:
