@@ -25,7 +25,7 @@ def test_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     y = x.todense()
     xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
-    assert_eq(xx, yy, check_nnz=False, **eqkwargs)
+    assert_eq(xx, yy, **eqkwargs)
 
 
 @pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
@@ -42,7 +42,23 @@ def test_ufunc_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     y = x.todense()
     xx = reduction(x, axis=axis, keepdims=keepdims, **kwargs)
     yy = reduction(y, axis=axis, keepdims=keepdims, **kwargs)
-    assert_eq(xx, yy, check_nnz=False, **eqkwargs)
+    assert_eq(xx, yy, **eqkwargs)
+
+
+@pytest.mark.parametrize('reduction,kwargs', [
+    (np.max, {}),
+    (np.sum, {'axis': 0}),
+    (np.prod, {'keepdims': True}),
+    (np.add.reduce, {}),
+    (np.add.reduce, {'keepdims': True}),
+    (np.minimum.reduce, {'axis': 0}),
+])
+def test_ufunc_reductions_kwargs(reduction, kwargs):
+    x = sparse.random((2, 3, 4), density=.5)
+    y = x.todense()
+    xx = reduction(x, **kwargs)
+    yy = reduction(y, **kwargs)
+    assert_eq(xx, yy)
 
 
 @pytest.mark.parametrize('reduction', [
