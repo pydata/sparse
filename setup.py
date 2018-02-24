@@ -9,6 +9,35 @@ with open('requirements.txt') as f:
 with open('README.rst') as f:
     long_desc = f.read()
 
+extras_require = {
+    'tests': [
+        'pytest',
+        'packaging',
+    ],
+    'docs': [
+        'sphinx',
+        'sphinxcontrib-napoleon',
+        'sphinx_rtd_theme',
+    ],
+    'tox': [
+        'tox',
+    ],
+    'tests-linting': [
+        'flake8'
+    ]
+}
+
+all_requires = []
+tests_requires = []
+for k, v in extras_require:
+    all_requires.extend(v)
+
+    if k.startswith('tests'):
+        tests_requires.extend(v)
+
+extras_require['all'] = all_requires
+extras_require['tests-all'] = tests_requires
+
 setup(
     name='sparse',
     version=__version__,
@@ -21,19 +50,6 @@ setup(
     packages=['sparse'],
     long_description=long_desc,
     install_requires=reqs,
-    extras_require={
-        'tests': [
-            'tox',
-            'pytest',
-            'pytest-cov',
-            'pytest-flake8',
-            'packaging',
-        ],
-        'docs': [
-            'sphinx',
-            'sphinxcontrib-napoleon',
-            'sphinx_rtd_theme',
-        ],
-    },
+    extras_require=extras_require,
     zip_safe=False
 )

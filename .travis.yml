@@ -19,7 +19,10 @@ install:
   - conda create -n test-sparse python=$TRAVIS_PYTHON_VERSION pytest numpy scipy flake8 nomkl
   - source activate test-sparse
 
-  - pip install -e .[tests]
+  - pip install -e .[tests-all]
+
+before_script:
+  - flake8
 
 script:
   - py.test
