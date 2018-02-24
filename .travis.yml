@@ -16,16 +16,23 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test-sparse python=$TRAVIS_PYTHON_VERSION pytest numpy scipy flake8 nomkl
+  - conda create -n test-sparse python=$TRAVIS_PYTHON_VERSION pytest numpy scipy flake8 pytest-cov nomkl
   - source activate test-sparse
 
+  # For CodeCov
+  - pip install --user codecov
+
+  # Install sparse
   - pip install -e .[tests-all]
 
 before_script:
   - flake8
 
 script:
-  - py.test
+  - py.test --cov=./
+
+after_success:
+  - codecov
 
 notifications:
   email: false

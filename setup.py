@@ -24,6 +24,9 @@ extras_require = {
     ],
     'tests-linting': [
         'flake8'
+    ],
+    'tests-cov': [
+        'pytest-cov'
     ]
 }
 
