@@ -1,7 +1,7 @@
 Sparse Multidimensional Arrays
 ==============================
 
-|Build Status| |Docs Status|
+|Build Status| |Docs Status| |Coverage|
 
 This library provides multi-dimensional sparse arrays.
 
@@ -16,3 +16,7 @@ This library provides multi-dimensional sparse arrays.
 .. |Build Status| image:: https://travis-ci.org/pydata/sparse.svg?branch=master
    :target: https://travis-ci.org/pydata/sparse
    :alt: Build status
+
+.. |Coverage| image:: https://codecov.io/gh/pydata/sparse/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/pydata/sparse
+  :alt: Coverage Report
