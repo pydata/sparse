@@ -29,7 +29,7 @@ extras_require = {
 
 all_requires = []
 tests_requires = []
-for k, v in extras_require:
+for k, v in extras_require.items():
     all_requires.extend(v)
 
     if k.startswith('tests'):
