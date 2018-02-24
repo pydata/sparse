@@ -32,7 +32,7 @@ script:
   - py.test --cov=./
 
 after_success:
-  - codecov
+  - codecov -F python-$TRAVIS_PYTHON_VERSION
 
 notifications:
   email: false
