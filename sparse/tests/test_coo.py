@@ -1,10 +1,11 @@
 import pytest
 
-from packaging import version
 import operator
+
 import numpy as np
 import scipy.sparse
 import scipy.stats
+
 from sparse import COO
 
 import sparse
@@ -856,7 +857,6 @@ def test_custom_dtype_slicing():
 ])
 def test_slicing_errors(index):
     s = sparse.random((2, 3, 4), density=0.5)
-    x = s.todense()
 
     with pytest.raises(IndexError):
         s[index]

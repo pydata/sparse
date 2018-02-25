@@ -12,7 +12,6 @@ with open('README.rst') as f:
 extras_require = {
     'tests': [
         'pytest',
-        'packaging',
     ],
     'docs': [
         'sphinx',
