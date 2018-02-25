@@ -29,7 +29,7 @@ before_script:
   - flake8
 
 script:
-  - py.test --cov-config .coveragerc
+  - py.test --cov-config .coveragerc --cov=./
 
 after_success:
   - codecov -F python${TRAVIS_PYTHON_VERSION//./}
