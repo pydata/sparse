@@ -1,2 +1,6 @@
 [run]
-source=sparse
+source=
+    sparse/
+
+omit=
+    sparse/tests/
