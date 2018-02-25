@@ -1,10 +1,11 @@
 import pytest
 
-from packaging import version
 import operator
+
 import numpy as np
 import scipy.sparse
 import scipy.stats
+
 from sparse import COO
 
 import sparse
@@ -849,31 +850,16 @@ def test_custom_dtype_slicing():
     5,
     -5,
     'foo',
-    pytest.param(
-        [True, False, False],
-        marks=pytest.mark.skipif(
-            version.parse(np.version.version) < version.parse("1.13.0"),
-            reason="NumPy < 1.13.0 does not raise these Exceptions"
-        )
-    ),
+    [True, False, False],
+    0.5,
+    [0.5],
+    {'potato': 'kartoffel'},
 ])
 def test_slicing_errors(index):
     s = sparse.random((2, 3, 4), density=0.5)
-    x = s.todense()
 
-    try:
-        x[index]
-    except Exception as e:
-        e1 = e
-    else:
-        raise Exception("exception not raised")
-
-    try:
+    with pytest.raises(IndexError):
         s[index]
-    except Exception as e:
-        assert type(e) == type(e1)
-    else:
-        raise Exception("exception not raised")
 
 
 def test_canonical():

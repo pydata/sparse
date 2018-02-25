@@ -105,9 +105,7 @@ def check_index(ind, dimension):
     >>> check_index(slice(0, 3), 5)
     """
     # unknown dimension, assumed to be in bounds
-    if np.isnan(dimension):
-        return
-    elif isinstance(ind, (list, np.ndarray)):
+    if isinstance(ind, (list, np.ndarray)):
         x = np.asanyarray(ind)
         if np.issubdtype(x.dtype, np.integer) and \
                 ((x >= dimension).any() or (x < -dimension).any()):
@@ -117,8 +115,9 @@ def check_index(ind, dimension):
                              "but corresponding boolean dimension is %s", (dimension, len(x)))
     elif isinstance(ind, slice):
         return
-    elif ind is None:
-        return
+    elif not isinstance(ind, Integral):
+        raise IndexError("only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and "
+                         "integer or boolean arrays are valid indices")
 
     elif ind >= dimension:
         raise IndexError("Index is not smaller than dimension %d >= %d" %
@@ -141,12 +140,11 @@ def sanitize_index(ind):
     array([1, 2])
     >>> type(sanitize_index(np.int32(0))) # doctest: +SKIP
     <type 'int'>
-    >>> sanitize_index(1.0)
-    1
-    >>> sanitize_index(0.5)
+    >>> sanitize_index(0.5) # doctest: +SKIP
     Traceback (most recent call last):
-    ...
-    IndexError: Bad index.  Must be integer-like: 0.5
+        ...
+    IndexError: only integers, slices (`:`), ellipsis (`...`),
+    numpy.newaxis (`None`) and integer or boolean arrays are valid indices
     """
     if ind is None:
         return None
@@ -165,32 +163,17 @@ def sanitize_index(ind):
         return np.asanyarray(nonzero)
     elif np.issubdtype(index_array.dtype, np.integer):
         return index_array
-    elif np.issubdtype(index_array.dtype, float):
-        int_index = index_array.astype(np.intp)
-        if np.allclose(index_array, int_index):
-            return int_index
-        else:
-            check_int = np.isclose(index_array, int_index)
-            first_err = index_array.ravel(
-            )[np.flatnonzero(~check_int)[0]]
-            raise IndexError("Bad index.  Must be integer-like: %s" %
-                             first_err)
     else:
-        raise TypeError("Invalid index type", type(ind), ind)
+        raise IndexError("only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and "
+                         "integer or boolean arrays are valid indices")
 
 
 def _sanitize_index_element(ind):
     """Sanitize a one-element index."""
-    if isinstance(ind, Number):
-        ind2 = int(ind)
-        if ind2 != ind:
-            raise IndexError("Bad index.  Must be integer-like: %s" % ind)
-        else:
-            return ind2
-    elif ind is None:
+    if ind is None:
         return None
-    else:
-        raise TypeError("Invalid index type", type(ind), ind)
+
+    return int(ind)
 
 
 def normalize_slice(idx, dim):
