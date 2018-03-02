@@ -6,7 +6,7 @@ import numpy as np
 import scipy.sparse
 
 from ..sparse_array import SparseArray
-from ..compatibility import range
+from ..compatibility import *
 from ..utils import isscalar
 
 

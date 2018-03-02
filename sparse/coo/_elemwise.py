@@ -4,7 +4,7 @@ import numpy as np
 import scipy.sparse
 
 from ..utils import isscalar, PositinalArgumentPartial, _zero_of_dtype
-from ..compatibility import zip_longest
+from ..compatibility import *
 
 
 def elemwise(func, *args, **kwargs):
