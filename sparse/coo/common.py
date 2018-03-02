@@ -544,7 +544,7 @@ def where(condition, x=None, y=None):
     --------
     numpy.where : Equivalent Numpy function.
     """
-    from .elemwise import elemwise
+    from .ufunc import elemwise
 
     x_given = x is not None
     y_given = y is not None
