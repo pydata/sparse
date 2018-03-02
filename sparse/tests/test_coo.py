@@ -441,7 +441,7 @@ def test_trinary_broadcasting_pathological(shapes, func, value, fraction):
 
 
 def test_sparse_broadcasting(monkeypatch):
-    orig_unmatch_coo = sparse.coo.ufunc._unmatch_coo
+    orig_unmatch_coo = sparse.coo.umath._unmatch_coo
 
     state = {'num_matches': 0}
 
@@ -453,7 +453,7 @@ def test_sparse_broadcasting(monkeypatch):
         state['num_matches'] += len(result[0])
         return result
 
-    monkeypatch.setattr(sparse.coo.ufunc, '_unmatch_coo', mock_unmatch_coo)
+    monkeypatch.setattr(sparse.coo.umath, '_unmatch_coo', mock_unmatch_coo)
 
     xs * ys
 
@@ -462,7 +462,7 @@ def test_sparse_broadcasting(monkeypatch):
 
 
 def test_dense_broadcasting(monkeypatch):
-    orig_unmatch_coo = sparse.coo.ufunc._unmatch_coo
+    orig_unmatch_coo = sparse.coo.umath._unmatch_coo
 
     state = {'num_matches': 0}
 
@@ -474,7 +474,7 @@ def test_dense_broadcasting(monkeypatch):
         state['num_matches'] += len(result[0])
         return result
 
-    monkeypatch.setattr(sparse.coo.ufunc, '_unmatch_coo', mock_unmatch_coo)
+    monkeypatch.setattr(sparse.coo.umath, '_unmatch_coo', mock_unmatch_coo)
 
     xs + ys
 

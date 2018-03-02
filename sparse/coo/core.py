@@ -6,7 +6,7 @@ import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .common import dot
-from .ufunc import elemwise, broadcast_to
+from .umath import elemwise, broadcast_to
 from ..compatibility import int, range
 from ..slicing import normalize_index
 from ..sparse_array import SparseArray
