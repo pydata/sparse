@@ -6,7 +6,7 @@ import numpy as np
 import scipy.sparse
 
 from ..sparse_array import SparseArray
-from ..compatibility import *
+from ..compatibility import range
 from ..utils import isscalar
 
 
@@ -588,13 +588,15 @@ def _replace_nan(array, value):
                sorted=array.sorted)
 
 
-def nanreduce(self, method, identity=None, axis=None, keepdims=False, **kwargs):
+def nanreduce(x, method, identity=None, axis=None, keepdims=False, **kwargs):
     """
     Performs an ``NaN`` skipping reduction on this array. See the documentation
     on :obj:`COO.reduce` for examples.
 
     Parameters
     ----------
+    x : COO
+        The array to reduce.
     method : numpy.ufunc
         The method to use for performing the reduction.
     identity : numpy.number
@@ -621,5 +623,5 @@ def nanreduce(self, method, identity=None, axis=None, keepdims=False, **kwargs):
     --------
     COO.reduce : Similar method without ``NaN`` skipping functionality.
     """
-    arr = _replace_nan(self, method.identity if identity is None else identity)
+    arr = _replace_nan(x, method.identity if identity is None else identity)
     return arr.reduce(method, axis, keepdims, **kwargs)

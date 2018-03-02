@@ -27,8 +27,6 @@ install:
 
 script:
   - py.test --cov-config .coveragerc --cov=./
-
-after_script:
   - flake8
 
 after_success:

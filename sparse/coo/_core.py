@@ -7,7 +7,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from ._common import dot
 from ._elemwise import elemwise, broadcast_to
-from ..compatibility import *
+from ..compatibility import int, range
 from ..slicing import normalize_index
 from ..sparse_array import SparseArray
 from ..utils import _zero_of_dtype
