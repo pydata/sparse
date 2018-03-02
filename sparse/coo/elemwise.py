@@ -43,7 +43,7 @@ def elemwise(func, *args, **kwargs):
     it is necessary to convert Numpy arrays to :obj:`COO` objects.
     """
     # Because we need to mutate args.
-    from ._core import COO
+    from .core import COO
     from ..sparse_array import SparseArray
 
     args = list(args)
@@ -147,7 +147,7 @@ def _elemwise_n_ary(func, *args, **kwargs):
     ValueError
         If the input shapes aren't compatible or the result will be dense.
     """
-    from ._core import COO
+    from .core import COO
 
     args = list(args)
 
@@ -213,8 +213,8 @@ def _match_coo(*args, **kwargs):
         The expanded, matched :obj:`COO` objects. Only returned if
         ``return_midx`` is ``False``.
     """
-    from ._core import COO
-    from ._common import linear_loc
+    from .core import COO
+    from .common import linear_loc
 
     return_midx = kwargs.pop('return_midx', False)
     cache = kwargs.pop('cache', None)
@@ -291,7 +291,7 @@ def _unmatch_coo(func, args, mask, cache, **kwargs):
     matched_data : list[ndarray]
         The matched data.
     """
-    from ._core import COO
+    from .core import COO
 
     matched_args = [a for a, m in zip(args, mask) if m]
     unmatched_args = [a for a, m in zip(args, mask) if not m]
@@ -547,7 +547,7 @@ def _cartesian_product(*arrays):
 
 
 def _elemwise_unary(func, self, *args, **kwargs):
-    from ._core import COO
+    from .core import COO
 
     check = kwargs.pop('check', True)
     data_zero = _zero_of_dtype(self.dtype)
@@ -625,7 +625,7 @@ def broadcast_to(x, shape):
     --------
     :obj:`numpy.broadcast_to` : NumPy equivalent function
     """
-    from ._core import COO
+    from .core import COO
 
     if shape == x.shape:
         return x

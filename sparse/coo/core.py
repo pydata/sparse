@@ -5,8 +5,8 @@ import numpy as np
 import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
-from ._common import dot
-from ._elemwise import elemwise, broadcast_to
+from .common import dot
+from .elemwise import elemwise, broadcast_to
 from ..compatibility import int, range
 from ..slicing import normalize_index
 from ..sparse_array import SparseArray
@@ -1191,7 +1191,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> np.array_equal(np.flatnonzero(x), s.linear_loc())
         True
         """
-        from ._common import linear_loc
+        from .common import linear_loc
 
         return linear_loc(self.coords, self.shape, signed)
 

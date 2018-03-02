@@ -33,7 +33,7 @@ def asCOO(x, name='asCOO', check=True):
     ValueError
         If ``check`` is true and a dense input is supplied.
     """
-    from ._core import COO
+    from .core import COO
 
     if check and not isinstance(x, (SparseArray, scipy.sparse.spmatrix)):
         raise ValueError('Performing this operation would produce a dense result: %s' % name)
@@ -81,7 +81,7 @@ def tensordot(a, b, axes=2):
     """
     # Much of this is stolen from numpy/core/numeric.py::tensordot
     # Please see license at https://github.com/numpy/numpy/blob/master/LICENSE.txt
-    from ._core import COO
+    from .core import COO
 
     try:
         iter(axes)
@@ -192,7 +192,7 @@ def dot(a, b):
 
 
 def _dot(a, b):
-    from ._core import COO
+    from .core import COO
 
     if isinstance(a, COO):
         a.sum_duplicates()
@@ -227,7 +227,7 @@ def concatenate(arrays, axis=0):
     --------
     numpy.concatenate : NumPy equivalent function
     """
-    from ._core import COO
+    from .core import COO
 
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
     if axis < 0:
@@ -277,7 +277,7 @@ def stack(arrays, axis=0):
     --------
     numpy.stack : NumPy equivalent function
     """
-    from ._core import COO
+    from .core import COO
 
     assert len(set(x.shape for x in arrays)) == 1
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
@@ -328,7 +328,7 @@ def triu(x, k=0):
     --------
     numpy.triu : NumPy equivalent function
     """
-    from ._core import COO
+    from .core import COO
 
     if not x.ndim >= 2:
         raise NotImplementedError('sparse.triu is not implemented for scalars or 1-D arrays.')
@@ -362,7 +362,7 @@ def tril(x, k=0):
     --------
     numpy.tril : NumPy equivalent function
     """
-    from ._core import COO
+    from .core import COO
 
     if not x.ndim >= 2:
         raise NotImplementedError('sparse.tril is not implemented for scalars or 1-D arrays.')
@@ -544,7 +544,7 @@ def where(condition, x=None, y=None):
     --------
     numpy.where : Equivalent Numpy function.
     """
-    from ._elemwise import elemwise
+    from .elemwise import elemwise
 
     x_given = x is not None
     y_given = y is not None
@@ -575,7 +575,7 @@ def _replace_nan(array, value):
     COO
         A copy of ``array`` with the ``NaN``s replaced.
     """
-    from ._core import COO
+    from .core import COO
 
     if not np.issubdtype(array.dtype, np.floating):
         return array
