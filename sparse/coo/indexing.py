@@ -472,6 +472,14 @@ def _normalize_axis(axis, ndim):
     if axis is None:
         return None
     if isinstance(axis, Iterable):
-        return tuple(ndim + a if a < 0 else a for a in axis)
+        axis = tuple(ndim + a if a < 0 else a for a in axis)
+        for a in axis:
+            if a >= ndim or a < 0:
+                raise ValueError(
+                    "Invalid axis index %d for ndim=%d" % (a, ndim)
+                )
+        return axis
+    elif isinstance(axis, int):
+        return _normalize_axis([axis], ndim)[0]
     else:
-        return ndim + axis if axis < 0 else axis
+        raise ValueError("axis %s not understood" % axis)

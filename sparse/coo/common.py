@@ -8,6 +8,7 @@ import scipy.sparse
 from ..sparse_array import SparseArray
 from ..compatibility import range
 from ..utils import isscalar
+from .indexing import _normalize_axis
 
 
 def asCOO(x, name='asCOO', check=True):
@@ -230,8 +231,7 @@ def concatenate(arrays, axis=0):
     from .core import COO
 
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
-    if axis < 0:
-        axis = axis + arrays[0].ndim
+    axis = _normalize_axis(axis, arrays[0].ndim)
     assert all(x.shape[ax] == arrays[0].shape[ax]
                for x in arrays
                for ax in set(range(arrays[0].ndim)) - {axis})
@@ -281,8 +281,7 @@ def stack(arrays, axis=0):
 
     assert len(set(x.shape for x in arrays)) == 1
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
-    if axis < 0:
-        axis = axis + arrays[0].ndim + 1
+    axis = _normalize_axis(axis, arrays[0].ndim + 1)
     data = np.concatenate([x.data for x in arrays])
     coords = np.concatenate([x.coords for x in arrays], axis=1)
     shape = list(arrays[0].shape)

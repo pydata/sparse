@@ -927,10 +927,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             axes = list(reversed(range(self.ndim)))
 
         # Normalize all axe indices to posivite values
-        axes = np.array(axes)
-        axes[axes < 0] += self.ndim
+        axes = _normalize_axis(axes, self.ndim)
 
-        if np.any(axes >= self.ndim) or np.any(axes < 0):
+        if any(a >= self.ndim for a in axes) or any(a < 0 for a in axes):
             raise ValueError("invalid axis for this array")
 
         if len(np.unique(axes)) < len(axes):
@@ -940,10 +939,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             raise ValueError("axes don't match array")
 
         # Normalize all axe indices to posivite values
-        try:
-            axes = np.arange(self.ndim)[list(axes)]
-        except IndexError:
-            raise ValueError("invalid axis for this array")
+        axes = _normalize_axis(axes, self.ndim)
 
         if len(np.unique(axes)) < len(axes):
             raise ValueError("repeated axis in transpose")
@@ -1484,7 +1480,6 @@ def _keepdims(original, new, axis):
     for ax in axis:
         shape[ax] = 1
     return new.reshape(shape)
-
 
 def _grouped_reduce(x, groups, method, **kwargs):
     """
