@@ -1,17 +1,16 @@
-from collections import Iterable, defaultdict, deque
 import numbers
+from collections import Iterable, defaultdict, deque
 
 import numpy as np
-from numpy.lib.mixins import NDArrayOperatorsMixin
 import scipy.sparse
+from numpy.lib.mixins import NDArrayOperatorsMixin
 
-from ..slicing import normalize_index
-from ..utils import _zero_of_dtype
-from ..sparse_array import SparseArray
-from ..compatibility import int, range
-
-from ._elemwise import elemwise, broadcast_to
 from ._common import dot
+from ._elemwise import elemwise, broadcast_to
+from ..compatibility import int, range
+from ..slicing import normalize_index
+from ..sparse_array import SparseArray
+from ..utils import _zero_of_dtype
 
 
 class COO(SparseArray, NDArrayOperatorsMixin):
@@ -1628,5 +1627,3 @@ def _grouped_reduce(x, groups, method, **kwargs):
     result = method.reduceat(x, inv_idx, **kwargs)
     counts = np.diff(np.concatenate((inv_idx, [len(x)])))
     return result, inv_idx, counts
-
-
