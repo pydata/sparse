@@ -35,6 +35,8 @@ API
 
     nanprod
 
+    nanreduce
+
     nansum
 
     random
