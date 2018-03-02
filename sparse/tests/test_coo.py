@@ -19,7 +19,7 @@ from sparse.utils import assert_eq, is_lexsorted, random_value_array
     ('prod', {}, {}),
     ('min', {}, {}),
 ])
-@pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2)])
+@pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2), -3, (1, -1)])
 @pytest.mark.parametrize('keepdims', [True, False])
 def test_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     x = sparse.random((2, 3, 4), density=.25)

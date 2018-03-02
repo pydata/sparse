@@ -712,13 +712,15 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         if not isinstance(axis, tuple):
             axis = (axis,)
 
+        axis = tuple(a if a >= 0 else a + self.ndim for a in axis)
+
         if set(axis) == set(range(self.ndim)):
             result = method.reduce(self.data, **kwargs)
             if self.nnz != self.size:
                 result = method(result, _zero_of_dtype(self.dtype)[()], **kwargs)
         else:
             axis = tuple(axis)
-            neg_axis = tuple(ax for ax in range(self.ndim) if ax not in axis)
+            neg_axis = tuple(ax for ax in range(self.ndim) if ax not in set(axis))
 
             a = self.transpose(neg_axis + axis)
             a = a.reshape((np.prod([self.shape[d] for d in neg_axis]),
