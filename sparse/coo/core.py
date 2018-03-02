@@ -5,7 +5,7 @@ import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .common import dot
-from .indexing import getitem
+from .indexing import getitem, _normalize_axis
 from .umath import elemwise, broadcast_to
 from ..compatibility import int, range
 from ..sparse_array import SparseArray
@@ -570,6 +570,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s.reduce(np.add)
         <COO: shape=(5,), dtype=int64, nnz=5, sorted=True, duplicates=False>
         """
+        axis = _normalize_axis(axis, self.ndim)
         zero_reduce_result = method.reduce([_zero_of_dtype(self.dtype)], **kwargs)
 
         if zero_reduce_result != _zero_of_dtype(np.dtype(zero_reduce_result)):

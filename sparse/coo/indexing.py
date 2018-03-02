@@ -450,3 +450,28 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
     stops.append(stops_old[-1])
 
     return starts, stops
+
+
+def _normalize_axis(axis, ndim):
+    """
+    Normalize negative axis indices to their positive counterpart for a given
+    number of dimensions.
+
+    Parameters
+    ----------
+    axis : Union[int, Iterable[int], None]
+        The axis indices.
+    ndim : int
+        Number of dimensions to normalize axis indices against.
+
+    Returns
+    -------
+    axis
+        The normalized axis indices.
+    """
+    if axis is None:
+        return None
+    if isinstance(axis, Iterable):
+        return tuple(ndim + a if a < 0 else a for a in axis)
+    else:
+        return ndim + axis if axis < 0 else axis
