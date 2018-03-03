@@ -1,0 +1,4 @@
+flags:
+  project:
+    paths:
+      - sparse/
