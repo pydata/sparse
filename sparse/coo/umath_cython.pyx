@@ -9,6 +9,9 @@ cdef extern from "<cstring>" namespace "std":
 
 
 def cywhere(np.ndarray a not None, np.ndarray b not None):
+    if len(a) == 0 or len(b) == 0:
+        return (np.empty(0, dtype=np.uint8),) * 2
+
     a = a.astype(dtype=np.uint64)
     b = b.astype(dtype=np.uint64)
 
