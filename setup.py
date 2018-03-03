@@ -1,7 +1,13 @@
 #!/usr/bin/env python
+import numpy as np
+from Cython.Build import cythonize
+from setuptools import setup, Extension
 
-from setuptools import setup
-from sparse._version import __version__
+from version import __version__
+
+cython_extensions = [
+    Extension('*', ['sparse/**/*.pyx'], language='c++', extra_compile_args=['-std=c++11', '-march=native', '-O3'])
+]
 
 with open('requirements.txt') as f:
     reqs = list(f.read().strip().split('\n'))
@@ -53,5 +59,7 @@ setup(
     long_description=long_desc,
     install_requires=reqs,
     extras_require=extras_require,
+    ext_modules=cythonize(cython_extensions, annotate=True),
+    include_dirs=[np.get_include()],
     zip_safe=False
 )

@@ -16,7 +16,7 @@ install:
   - conda update conda
 
   # Install dependencies
-  - conda create -n test-sparse python=$TRAVIS_PYTHON_VERSION pytest numpy scipy flake8 pytest-cov nomkl
+  - conda create -n test-sparse python=$TRAVIS_PYTHON_VERSION pytest numpy scipy flake8 pytest-cov nomkl cython
   - source activate test-sparse
 
   # For CodeCov

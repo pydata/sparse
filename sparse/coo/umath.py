@@ -3,8 +3,9 @@ from itertools import product
 import numpy as np
 import scipy.sparse
 
-from ..utils import isscalar, PositinalArgumentPartial, _zero_of_dtype
+from .umath_cython import cywhere
 from ..compatibility import range, zip, zip_longest
+from ..utils import isscalar, PositinalArgumentPartial, _zero_of_dtype
 
 
 def elemwise(func, *args, **kwargs):
@@ -79,49 +80,7 @@ def elemwise(func, *args, **kwargs):
     return _elemwise_n_ary(func, *args, **kwargs)
 
 
-# (c) Paul Panzer
-# Taken from https://stackoverflow.com/a/47833496/774273
-# License: https://creativecommons.org/licenses/by-sa/3.0/
-def _match_arrays(a, b):
-    """
-    Finds all indexes into a and b such that a[i] = b[j]. The outputs are sorted
-    in lexographical order.
-
-    Parameters
-    ----------
-    a, b : np.ndarray
-        The input 1-D arrays to match. If matching of multiple fields is
-        needed, use np.recarrays. These two arrays must be sorted.
-
-    Returns
-    -------
-    a_idx, b_idx : np.ndarray
-        The output indices of every possible pair of matching elements.
-    """
-    if len(a) == 0 or len(b) == 0:
-        return np.array([], dtype=np.uint8), np.array([], dtype=np.uint8)
-    asw = np.r_[0, 1 + np.flatnonzero(a[:-1] != a[1:]), len(a)]
-    bsw = np.r_[0, 1 + np.flatnonzero(b[:-1] != b[1:]), len(b)]
-    al, bl = np.diff(asw), np.diff(bsw)
-    na = len(al)
-    asw, bsw = asw, bsw
-    abunq = np.r_[a[asw[:-1]], b[bsw[:-1]]]
-    m = np.argsort(abunq, kind='mergesort')
-    mv = abunq[m]
-    midx = np.flatnonzero(mv[:-1] == mv[1:])
-    ai, bi = m[midx], m[midx + 1] - na
-    aic = np.r_[0, np.cumsum(al[ai])]
-    a_idx = np.ones((aic[-1],), dtype=np.int_)
-    a_idx[aic[:-1]] = asw[ai]
-    a_idx[aic[1:-1]] -= asw[ai[:-1]] + al[ai[:-1]] - 1
-    a_idx = np.repeat(np.cumsum(a_idx), np.repeat(bl[bi], al[ai]))
-    bi = np.repeat(bi, al[ai])
-    bic = np.r_[0, np.cumsum(bl[bi])]
-    b_idx = np.ones((bic[-1],), dtype=np.int_)
-    b_idx[bic[:-1]] = bsw[bi]
-    b_idx[bic[1:-1]] -= bsw[bi[:-1]] + bl[bi[:-1]] - 1
-    b_idx = np.cumsum(b_idx)
-    return a_idx, b_idx
+_match_arrays = cywhere
 
 
 def _elemwise_n_ary(func, *args, **kwargs):
