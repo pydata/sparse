@@ -3,6 +3,7 @@ recursive-include sparse *.html
 recursive-include docs *.rst
 
 include setup.py
+include version.py
 include README.rst
 include LICENSE.txt
 include MANIFEST.in
