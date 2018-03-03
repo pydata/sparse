@@ -2,7 +2,7 @@ import numpy as np
 cimport numpy as np
 cimport cython
 from libcpp.vector cimport vector
-from numpy cimport int64_t, uint64_t
+from numpy cimport uint64_t
 
 cdef extern from "<cstring>" namespace "std":
     void* memcpy (void* destination, const void* source, size_t num)
@@ -53,6 +53,6 @@ cdef vector_to_np(vector[size_t]& vec):
     cdef void* arr_p = <void*> arr.data
     cdef void* vec_p = <void*> &vec[0]
 
-    memcpy(arr_p, vec_p, sizeof(int64_t) * vec.size())
+    memcpy(arr_p, vec_p, sizeof(uint64_t) * vec.size())
 
     return arr
