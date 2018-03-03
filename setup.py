@@ -6,7 +6,7 @@ from setuptools import setup, Extension
 from version import __version__
 
 cython_extensions = [
-    Extension('*', ['sparse/**/*.pyx'], language='c++', extra_compile_args=['-std=c++11', '-march=native'])
+    Extension('*', ['sparse/**/*.pyx'], language='c++', extra_compile_args=['-std=c++11', '-march=native', '-O3'])
 ]
 
 with open('requirements.txt') as f:
