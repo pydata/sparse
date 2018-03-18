@@ -1,0 +1,17 @@
+coverage:
+  precision: 2
+  round: down
+  range: 70...98
+
+  ignore:
+    - sparse/tests/
+    - !sparse/
+
+flags:
+  project:
+    enabled: yes
+    target: -3
+
+  patch:
+    default:
+      enabled: no
