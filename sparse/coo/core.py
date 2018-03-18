@@ -1597,43 +1597,45 @@ def _mask(coords, indices, shape):
     indices = tuple((idx.start, idx.stop, idx.step) if isinstance(idx, slice)
                     else (idx, idx + 1, 1) for idx in indices)
 
-    pairs = _get_mask_pairs(coords, indices)
+    starts, stops = _get_mask_pairs(coords, indices)
 
-    if len(pairs) == 1:
-        return slice(pairs[0, 0], pairs[0, 1], 1)
+    if len(starts) == 1:
+        return slice(starts[0], stops[0], 1)
     else:
-        return _cat_pairs(pairs)
+        return _cat_pairs(starts, stops)
 
 
 @numba.jit(nopython=True)
 def _get_mask_pairs(coords, indices):
-    mask_pairs = [(np.intp(0), np.intp(coords.shape[1]))]
+    starts = [0]
+    stops = [coords.shape[1]]
 
     for i in range(len(indices)):
         c, idx = coords[i], indices[i]
 
-        mask_pairs_old = mask_pairs
-        mask_pairs = []
+        starts_old = starts
+        stops_old = stops
 
-        for pair in mask_pairs_old:
+        starts = []
+        stops = []
+
+        for j in range(len(starts_old)):
             for p_match in range(idx[0], idx[1], idx[2]):
-                start = np.intp(np.searchsorted(c[pair[0]:pair[1]], p_match) + pair[0])
-                stop = np.intp(np.searchsorted(c[pair[0]:pair[1]], p_match + 1) + pair[0])
+                start = np.searchsorted(c[starts_old[j]:stops_old[j]], p_match) + starts_old[j]
+                stop = np.searchsorted(c[starts_old[j]:stops_old[j]], p_match + 1) + starts_old[j]
 
                 if start != stop:
-                    mask_pairs.append((start, stop))
+                    starts.append(start)
+                    stops.append(stop)
 
-    if len(mask_pairs) == 0:
-        return np.empty((0, 2), dtype=np.intp)
-
-    return np.array(mask_pairs)
+    return np.array(starts), np.array(stops)
 
 
 @numba.jit(nopython=True)
-def _cat_pairs(pairs):
+def _cat_pairs(starts, stops):
     mask = []
-    for i in range(len(pairs)):
-        for match in range(pairs[i, 0], pairs[i, 1]):
+    for i in range(len(starts)):
+        for match in range(starts[i], stops[i]):
             mask.append(match)
 
     return np.array(mask)
