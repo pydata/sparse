@@ -26,7 +26,10 @@ extras_require = {
     ],
     'tests-cov': [
         'pytest-cov'
-    ]
+    ],
+    'bench': [
+        'asv'
+    ],
 }
 
 all_requires = []
