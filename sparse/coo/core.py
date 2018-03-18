@@ -1,6 +1,7 @@
 import numbers
 from collections import Iterable, defaultdict, deque
 
+import numba
 import numpy as np
 import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
@@ -488,6 +489,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         return self.nbytes
 
     def __getitem__(self, index):
+        self.sum_duplicates()
+
         if not isinstance(index, tuple):
             if isinstance(index, str):
                 data = self.data[index]
@@ -506,13 +509,13 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         index = normalize_index(index, self.shape)
         if len(index) != 0 and all(not isinstance(ind, Iterable) and ind == slice(None) for ind in index):
             return self
-        mask = np.ones(self.nnz, dtype=np.bool)
-        for i, ind in enumerate([i for i in index if i is not None]):
-            if not isinstance(ind, Iterable) and ind == slice(None):
-                continue
-            mask &= _mask(self.coords[i], ind, self.shape[i])
+        mask = _mask(self.coords, index, self.shape)
 
-        n = mask.sum()
+        if isinstance(mask, slice):
+            n = self.coords[:, mask].shape[1]
+        else:
+            n = len(mask)
+
         coords = []
         shape = []
         i = 0
@@ -1572,26 +1575,68 @@ def _keepdims(original, new, axis):
     return new.reshape(shape)
 
 
-def _mask(coords, idx, shape):
-    if isinstance(idx, numbers.Integral):
-        return coords == idx
-    elif isinstance(idx, slice):
-        step = idx.step if idx.step is not None else 1
-        if step > 0:
-            start = idx.start if idx.start is not None else 0
-            stop = idx.stop if idx.stop is not None else shape
-            return (coords >= start) & (coords < stop) & \
-                   (coords % step == start % step)
-        else:
-            start = idx.start if idx.start is not None else (shape - 1)
-            stop = idx.stop if idx.stop is not None else -1
-            return (coords <= start) & (coords > stop) & \
-                   (coords % step == start % step)
-    elif isinstance(idx, Iterable):
-        mask = np.zeros(len(coords), dtype=np.bool)
-        for item in idx:
-            mask |= _mask(coords, item, shape)
-        return mask
+def _mask(coords, indices, shape):
+    i = 0
+    for idx, l in zip(indices[::-1], shape[::-1]):
+        if not isinstance(idx, slice):
+            break
+
+        if idx.start == 0 and idx.stop == l and idx.step == 1:
+            i += 1
+            continue
+
+        if idx.start == l - 1 and idx.stop == -1 and idx.step == -1:
+            i += 1
+            continue
+
+        break
+
+    if i != 0:
+        indices = indices[:-i]
+
+    indices = tuple((idx.start, idx.stop, idx.step) if isinstance(idx, slice)
+                    else (idx, idx + 1, 1) for idx in indices)
+
+    pairs = _get_mask_pairs(coords, indices)
+
+    if len(pairs) == 1:
+        return slice(pairs[0, 0], pairs[0, 1], 1)
+    else:
+        return _cat_pairs(pairs)
+
+
+@numba.jit(nopython=True)
+def _get_mask_pairs(coords, indices):
+    mask_pairs = [(np.intp(0), np.intp(coords.shape[1]))]
+
+    for i in range(len(indices)):
+        c, idx = coords[i], indices[i]
+
+        mask_pairs_old = mask_pairs
+        mask_pairs = []
+
+        for pair in mask_pairs_old:
+            for p_match in range(idx[0], idx[1], idx[2]):
+                start = np.intp(np.searchsorted(c[pair[0]:pair[1]], p_match) + pair[0])
+                stop = np.intp(np.searchsorted(c[pair[0]:pair[1]], p_match + 1) + pair[0])
+
+                if start != stop:
+                    mask_pairs.append((start, stop))
+
+    if len(mask_pairs) == 0:
+        return np.empty((0, 2), dtype=np.intp)
+
+    return np.array(mask_pairs)
+
+
+@numba.jit(nopython=True)
+def _cat_pairs(pairs):
+    mask = []
+    for i in range(len(pairs)):
+        for match in range(pairs[i, 0], pairs[i, 1]):
+            mask.append(match)
+
+    return np.array(mask)
 
 
 def _grouped_reduce(x, groups, method, **kwargs):

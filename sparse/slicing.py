@@ -2,7 +2,9 @@
 # See license at https://github.com/dask/dask/blob/master/LICENSE.txt
 
 import math
+from collections import Iterable
 from numbers import Integral, Number
+
 import numpy as np
 
 
@@ -55,7 +57,7 @@ def normalize_index(idx, shape):
         if d is not None:
             check_index(i, d)
     idx = tuple(map(sanitize_index, idx))
-    idx = tuple(map(normalize_slice, idx, none_shape))
+    idx = tuple(map(replace_none, idx, none_shape))
     idx = posify_index(none_shape, idx)
     return idx
 
@@ -245,3 +247,28 @@ def posify_index(shape, ind):
         return np.where(ind < 0, ind + shape, ind)
 
     return ind
+
+
+def replace_none(idx, dim):
+    if not isinstance(idx, slice):
+        return idx
+
+    start, stop, step = idx.start, idx.stop, idx.step
+
+    if step is None:
+        step = 1
+
+    if step > 0:
+        if start is None:
+            start = 0
+
+        if stop is None:
+            stop = dim
+    else:
+        if start is None:
+            start = dim - 1
+
+        if stop is None:
+            stop = -1
+
+    return slice(start, stop, step)
