@@ -8,7 +8,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .common import dot
 from .umath import elemwise, broadcast_to
-from ..compatibility import int, range
+from ..compatibility import int, range, zip_longest
 from ..slicing import normalize_index
 from ..sparse_array import SparseArray
 from ..utils import _zero_of_dtype
@@ -507,7 +507,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         last_ellipsis = len(index) > 0 and index[-1] is Ellipsis
         index = normalize_index(index, self.shape)
-        if len(index) != 0 and all(not isinstance(ind, Iterable) and ind == slice(None) for ind in index):
+
+        if len(index) != 0 and all(not isinstance(ind, Iterable) and ind == slice(0, dim, 1)
+                                   for ind, dim in zip_longest(index, self.shape)):
             return self
         mask = _mask(self.coords, index, self.shape)
 
