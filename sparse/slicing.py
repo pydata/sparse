@@ -2,7 +2,6 @@
 # See license at https://github.com/dask/dask/blob/master/LICENSE.txt
 
 import math
-from collections import Iterable
 from numbers import Integral, Number
 
 import numpy as np
