@@ -18,6 +18,10 @@ class ElemwiseSuite(object):
     def time_mul(self):
         self.x * self.y
 
+    def time_index(self):
+        for i in range(100):
+            self.x[i]
+
 
 class ElemwiseBroadcastingSuite(object):
     def setup(self):
