@@ -514,7 +514,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         mask = _mask(self.coords, index, self.shape)
 
         if isinstance(mask, slice):
-            n = self.coords[:, mask].shape[1]
+            n = len(range(mask.start, mask.stop, mask.step))
         else:
             n = len(mask)
 
@@ -526,26 +526,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
                 i += 1
                 continue
             elif isinstance(ind, slice):
-                step = ind.step if ind.step is not None else 1
-                if step > 0:
-                    start = ind.start if ind.start is not None else 0
-                    start = max(start, 0)
-                    stop = ind.stop if ind.stop is not None else self.shape[i]
-                    stop = min(stop, self.shape[i])
-                    if start > stop:
-                        start = stop
-                    shape.append((stop - start + step - 1) // step)
-                else:
-                    start = ind.start or self.shape[i] - 1
-                    stop = ind.stop if ind.stop is not None else -1
-                    start = min(start, self.shape[i] - 1)
-                    stop = max(stop, -1)
-                    if start < stop:
-                        start = stop
-                    shape.append((start - stop - step - 1) // (-step))
-
+                shape.append(len(range(ind.start, ind.stop, ind.step)))
                 dt = np.min_scalar_type(min(-(dim - 1) if dim != 0 else -1 for dim in shape))
-                coords.append((self.coords[i, mask].astype(dt) - start) // step)
+                coords.append((self.coords[i, mask].astype(dt) - ind.start) // ind.step)
                 i += 1
             elif isinstance(ind, Iterable):
                 old = self.coords[i][mask]
@@ -1634,7 +1617,7 @@ def _prune_indices(indices, shape):
 
 
 @numba.jit(nopython=True)
-def _get_mask_pairs(coords, indices):   # pragma: no cover
+def _get_mask_pairs(coords, indices):  # pragma: no cover
     """
     Gets the start-end pairs for the mask.
 
@@ -1662,7 +1645,7 @@ def _get_mask_pairs(coords, indices):   # pragma: no cover
 
 
 @numba.jit(nopython=True)
-def _get_mask_pairs_inner(starts_old, stops_old, c, idx):   # pragma: no cover
+def _get_mask_pairs_inner(starts_old, stops_old, c, idx):  # pragma: no cover
     """
     Gets the starts/stops for a an index given the starts/stops
     from the previous index.
@@ -1697,7 +1680,7 @@ def _get_mask_pairs_inner(starts_old, stops_old, c, idx):   # pragma: no cover
 
 
 @numba.jit(nopython=True)
-def _join_adjacent_pairs(starts_old, stops_old):    # pragma: no cover
+def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
     """
     Joins adjacent pairs into one. For example, 2-5 and 5-7
     will reduce to 2-7 (a single pair). This may help in

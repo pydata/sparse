@@ -58,6 +58,7 @@ def normalize_index(idx, shape):
     idx = tuple(map(sanitize_index, idx))
     idx = tuple(map(replace_none, idx, none_shape))
     idx = posify_index(none_shape, idx)
+    idx = tuple(map(clip_slice, idx, none_shape))
     return idx
 
 
@@ -212,6 +213,45 @@ def posify_index(shape, ind):
         return slice(start, stop, ind.step)
 
     return ind
+
+
+def clip_slice(idx, dim):
+    """
+    Clip slice to its effective size given the shape.
+
+    Parameters
+    ----------
+    idx : The index.
+    dim : The size along the corresponding dimension.
+
+    Returns
+    -------
+    idx : slice
+
+    Examples
+    --------
+    >>> clip_slice(slice(0, 20, 1), 10)
+    slice(0, 10, 1)
+    """
+    if not isinstance(idx, slice):
+        return idx
+
+    start, stop, step = idx.start, idx.stop, idx.step
+
+    if step > 0:
+        start = max(start, 0)
+        stop = min(stop, dim)
+
+        if start > stop:
+            start = stop
+    else:
+        start = min(start, dim - 1)
+        stop = max(stop, -1)
+
+        if start < stop:
+            start = stop
+
+    return slice(start, stop, step)
 
 
 def replace_none(idx, dim):
