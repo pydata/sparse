@@ -565,9 +565,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             coords = np.stack(coords, axis=0)
         else:
             if last_ellipsis:
-                coords = np.empty((0, np.sum(mask)), dtype=np.uint8)
+                coords = np.empty((0, n), dtype=np.uint8)
             else:
-                if np.sum(mask) != 0:
+                if n != 0:
                     return self.data[mask][0]
                 else:
                     return _zero_of_dtype(self.dtype)[()]
@@ -1576,6 +1576,42 @@ def _keepdims(original, new, axis):
 
 
 def _mask(coords, indices, shape):
+    indices = _prune_indices(indices, shape)
+
+    ind_ar = np.empty((len(indices), 3), dtype=np.intp)
+
+    for i, idx in enumerate(indices):
+        if isinstance(idx, slice):
+            ind_ar[i] = [idx.start, idx.stop, idx.step]
+        else:
+            ind_ar[i] = [idx, idx + 1, 1]
+
+    starts, stops = _get_mask_pairs(coords, ind_ar)
+
+    if len(starts) == 1:
+        return slice(starts[0], stops[0], 1)
+    else:
+        return _cat_pairs(starts, stops)
+
+
+def _prune_indices(indices, shape):
+    """
+    Gets rid of the indices that do not contribute to the
+    overall mask, e.g. None and full slices.
+
+    Parameters
+    ----------
+    indices : tuple
+        The indices to the array.
+    shape : tuple[int]
+        The shape of the array.
+
+    Returns
+    -------
+    indices : tuple
+        The filtered indices.
+    """
+    indices = [idx for idx in indices if idx is not None]
     i = 0
     for idx, l in zip(indices[::-1], shape[::-1]):
         if not isinstance(idx, slice):
@@ -1590,49 +1626,122 @@ def _mask(coords, indices, shape):
             continue
 
         break
-
     if i != 0:
         indices = indices[:-i]
-
-    indices = tuple((idx.start, idx.stop, idx.step) if isinstance(idx, slice)
-                    else (idx, idx + 1, 1) for idx in indices)
-
-    starts, stops = _get_mask_pairs(coords, indices)
-
-    if len(starts) == 1:
-        return slice(starts[0], stops[0], 1)
-    else:
-        return _cat_pairs(starts, stops)
+    return indices
 
 
 @numba.jit(nopython=True)
 def _get_mask_pairs(coords, indices):
+    """
+    Gets the start-end pairs for the mask.
+
+    Parameters
+    ----------
+    coords : np.ndarray
+        The coordinates of the array.
+    indices : np.ndarray
+        The indices in the form of slices.
+
+    Returns
+    -------
+    starts, stops : np.ndarray
+        The starts and stops in the mask.
+    """
     starts = [0]
     stops = [coords.shape[1]]
 
     for i in range(len(indices)):
-        c, idx = coords[i], indices[i]
+        starts, stops = _get_mask_pairs_inner(starts, stops, coords[i], indices[i])
 
-        starts_old = starts
-        stops_old = stops
-
-        starts = []
-        stops = []
-
-        for j in range(len(starts_old)):
-            for p_match in range(idx[0], idx[1], idx[2]):
-                start = np.searchsorted(c[starts_old[j]:stops_old[j]], p_match) + starts_old[j]
-                stop = np.searchsorted(c[starts_old[j]:stops_old[j]], p_match + 1) + starts_old[j]
-
-                if start != stop:
-                    starts.append(start)
-                    stops.append(stop)
+    starts, stops = _join_adjacent_pairs(starts, stops)
 
     return np.array(starts), np.array(stops)
 
 
 @numba.jit(nopython=True)
+def _get_mask_pairs_inner(starts_old, stops_old, c, idx):
+    """
+    Gets the starts/stops for a an index given the starts/stops
+    from the previous index.
+
+    Parameters
+    ----------
+    starts_old, stops_old : list[int]
+        The starts and stops from the previous index.
+    c : np.ndarray
+        The coords for this index's dimension.
+    idx : np.ndarray
+        The index in the form of a slice.
+        idx[0], idx[1], idx[2] = start, stop, step
+
+    Returns
+    -------
+    starts, stops: np.ndarray
+        The starts and stops after applying the current index.
+    """
+    starts = []
+    stops = []
+
+    for j in range(len(starts_old)):
+        for p_match in range(idx[0], idx[1], idx[2]):
+            start = np.searchsorted(c[starts_old[j]:stops_old[j]], p_match) + starts_old[j]
+            stop = np.searchsorted(c[starts_old[j]:stops_old[j]], p_match + 1) + starts_old[j]
+
+            if start != stop:
+                starts.append(start)
+                stops.append(stop)
+    return starts, stops
+
+
+@numba.jit(nopython=True)
+def _join_adjacent_pairs(starts_old, stops_old):
+    """
+    Joins adjacent pairs into one. For example, 2-5 and 5-7
+    will reduce to 2-7 (a single pair). This may help in
+    returning a slice in the end which could be faster.
+
+    Parameters
+    ----------
+    starts_old, stops_old : list[int]
+        The input starts and stops
+
+    Returns
+    -------
+    starts, stops : list[int]
+        The reduced starts and stops.
+    """
+    if len(starts_old) <= 1:
+        return starts_old, stops_old
+
+    starts = [starts_old[0]]
+    stops = []
+
+    for i in range(1, len(starts_old)):
+        if starts_old[i] != stops_old[i - 1]:
+            starts.append(starts_old[i])
+            stops.append(stops_old[i - 1])
+
+    stops.append(stops_old[-1])
+
+    return starts, stops
+
+
+@numba.jit(nopython=True)
 def _cat_pairs(starts, stops):
+    """
+    Converts all the pairs into a single integer mask.
+
+    Parameters
+    ----------
+    starts, stops : np.ndarray
+        The starts and stops to convert into an array.
+
+    Returns
+    -------
+    mask : np.ndarray
+        The output integer mask.
+    """
     mask = []
     for i in range(len(starts)):
         for match in range(starts[i], stops[i]):

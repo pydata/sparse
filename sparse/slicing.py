@@ -14,7 +14,7 @@ def normalize_index(idx, shape):
     2.  Adds full slices to end of index
     3.  Checks bounding conditions
     4.  Replaces numpy arrays with lists
-    5.  Posify's integers and lists
+    5.  Posify's slices integers and lists
     6.  Normalizes slices to canonical form
     Examples
     --------
@@ -25,9 +25,9 @@ def normalize_index(idx, shape):
     >>> normalize_index([-1], (10,))
     (array([9]),)
     >>> normalize_index(slice(-3, 10, 1), (10,))
-    (slice(7, None, None),)
+    (slice(7, 10, 1),)
     >>> normalize_index((Ellipsis, None), (10,))
-    (slice(None, None, None), None)
+    (slice(0, 10, 1), None)
     """
     if not isinstance(idx, tuple):
         idx = (idx,)
@@ -178,50 +178,6 @@ def _sanitize_index_element(ind):
     return int(ind)
 
 
-def normalize_slice(idx, dim):
-    """ Normalize slices to canonical form
-    Parameters
-    ----------
-    idx: slice or other index
-    dim: dimension length
-    Examples
-    --------
-    >>> normalize_slice(slice(0, 10, 1), 10)
-    slice(None, None, None)
-    """
-
-    if isinstance(idx, slice):
-        start, stop, step = idx.start, idx.stop, idx.step
-        if start is not None:
-            if start < 0 and not math.isnan(dim):
-                start = max(0, start + dim)
-            elif start > dim:
-                start = dim
-        if stop is not None:
-            if stop < 0 and not math.isnan(dim):
-                stop = max(0, stop + dim)
-            elif stop > dim:
-                stop = dim
-
-        step = 1 if step is None else step
-
-        if step > 0:
-            if start == 0:
-                start = None
-            if stop == dim:
-                stop = None
-        else:
-            if start == dim - 1:
-                start = None
-            if stop == -1:
-                stop = None
-
-        if step == 1:
-            step = None
-        return slice(start, stop, step)
-    return idx
-
-
 def posify_index(shape, ind):
     """ Flip negative indices around to positive ones
     >>> posify_index(10, 3)
@@ -245,11 +201,35 @@ def posify_index(shape, ind):
     if isinstance(ind, (np.ndarray, list)) and not math.isnan(shape):
         ind = np.asanyarray(ind)
         return np.where(ind < 0, ind + shape, ind)
+    if isinstance(ind, slice):
+        start, stop, step = ind.start, ind.stop, ind.step
+
+        if start < 0:
+            start += shape
+
+        if not (0 > stop >= step) and stop < 0:
+            stop += shape
+
+        return slice(start, stop, ind.step)
 
     return ind
 
 
 def replace_none(idx, dim):
+    """
+    Normalize slices to canonical form, i.e.
+    replace ``None`` with the appropriate integers.
+
+    Parameters
+    ----------
+    idx: slice or other index
+    dim: dimension length
+
+    Examples
+    --------
+    >>> replace_none(slice(None, None, None), 10)
+    slice(0, 10, 1)
+    """
     if not isinstance(idx, slice):
         return idx
 
