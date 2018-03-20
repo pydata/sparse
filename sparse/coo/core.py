@@ -1634,7 +1634,7 @@ def _prune_indices(indices, shape):
 
 
 @numba.jit(nopython=True)
-def _get_mask_pairs(coords, indices):
+def _get_mask_pairs(coords, indices):   # pragma: no cover
     """
     Gets the start-end pairs for the mask.
 
@@ -1662,7 +1662,7 @@ def _get_mask_pairs(coords, indices):
 
 
 @numba.jit(nopython=True)
-def _get_mask_pairs_inner(starts_old, stops_old, c, idx):
+def _get_mask_pairs_inner(starts_old, stops_old, c, idx):   # pragma: no cover
     """
     Gets the starts/stops for a an index given the starts/stops
     from the previous index.
@@ -1697,7 +1697,7 @@ def _get_mask_pairs_inner(starts_old, stops_old, c, idx):
 
 
 @numba.jit(nopython=True)
-def _join_adjacent_pairs(starts_old, stops_old):
+def _join_adjacent_pairs(starts_old, stops_old):    # pragma: no cover
     """
     Joins adjacent pairs into one. For example, 2-5 and 5-7
     will reduce to 2-7 (a single pair). This may help in
@@ -1730,7 +1730,7 @@ def _join_adjacent_pairs(starts_old, stops_old):
 
 
 @numba.jit(nopython=True)
-def _cat_pairs(starts, stops):
+def _cat_pairs(starts, stops):  # pragma: no cover
     """
     Converts all the pairs into a single integer mask.
 
