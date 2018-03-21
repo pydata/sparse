@@ -1595,6 +1595,13 @@ def _prune_indices(indices, shape):
     -------
     indices : tuple
         The filtered indices.
+
+    Examples
+    --------
+    >>> _prune_indices((None, 5), (10,)) # None won't affect the mask
+    [5]
+    >>> _prune_indices((slice(0, 10, 1),), (10,)) # Full slices don't affect the mask
+    []
     """
     indices = [idx for idx in indices if idx is not None]
     i = 0
@@ -1619,7 +1626,7 @@ def _prune_indices(indices, shape):
 @numba.jit(nopython=True)
 def _get_mask(coords, indices):  # pragma: no cover
     """
-    Gets the start-end pairs for the mask.
+    Gets the mask for the coords given the indices in slice format.
 
     Parameters
     ----------
@@ -1630,8 +1637,10 @@ def _get_mask(coords, indices):  # pragma: no cover
 
     Returns
     -------
-    starts, stops : np.ndarray
+    mask : np.ndarray
         The starts and stops in the mask.
+    is_slice : bool
+        Whether or not the array represents a continuous slice.
     """
     starts = [0]
     stops = [coords.shape[1]]
@@ -1675,6 +1684,12 @@ def _get_slice_len(idx):  # pragma: no cover
     -------
     n : int
         The length of the slice.
+
+    Examples
+    --------
+    >>> idx = np.array([5, 15, 5])
+    >>> _get_slice_len(idx)
+    2
     """
     start, stop, step = idx[0], idx[1], idx[2]
 
@@ -1702,8 +1717,19 @@ def _get_mask_pairs_inner(starts_old, stops_old, c, idx):  # pragma: no cover
 
     Returns
     -------
-    starts, stops: np.ndarray
+    starts, stops: list
         The starts and stops after applying the current index.
+    n_matches : int
+        The sum of elements in all ranges.
+
+    Examples
+    --------
+    >>> c = np.array([1, 2, 1, 2, 1, 1, 2, 2])
+    >>> starts_old = [4]
+    >>> stops_old = [8]
+    >>> idx = np.array([1, 2, 1])
+    >>> _get_mask_pairs_inner(starts_old, stops_old, c, idx)
+    ([4], [6], 2)
     """
     starts = []
     stops = []
@@ -1738,6 +1764,13 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
     -------
     starts, stops : list[int]
         The reduced starts and stops.
+
+    Examples
+    --------
+    >>> starts = [2, 5]
+    >>> stops = [5, 7]
+    >>> _join_adjacent_pairs(starts, stops)
+    ([2], [7])
     """
     if len(starts_old) <= 1:
         return starts_old, stops_old
@@ -1762,13 +1795,20 @@ def _cat_pairs(starts, stops):  # pragma: no cover
 
     Parameters
     ----------
-    starts, stops : np.ndarray
+    starts, stops : list[int]
         The starts and stops to convert into an array.
 
     Returns
     -------
     mask : list
         The output integer mask.
+
+    Examples
+    --------
+    >>> starts = [2]
+    >>> stops = [7]
+    >>> _cat_pairs(starts, stops)
+    [2, 3, 4, 5, 6]
     """
     mask = []
     for i in range(len(starts)):
@@ -1796,6 +1836,14 @@ def _filter_mask(c, mask_old, idx):  # pragma: no cover
     -------
     mask : list
         The filtered mask.
+
+    Examples
+    --------
+    >>> c = np.array([0, 0, 1, 2, 2])
+    >>> mask_old = [2, 3]
+    >>> idx = np.array([1, 2, 1])
+    >>> _filter_mask(c, mask_old, idx)
+    [2]
     """
     mask = []
 
