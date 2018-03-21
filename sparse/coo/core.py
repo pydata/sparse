@@ -1649,7 +1649,7 @@ def _get_mask(coords, indices):  # pragma: no cover
     i = 0
     while i < len(indices):
         n_current_slices = _get_slice_len(indices[i]) * len(starts) + 2
-        if 10.0 * n_current_slices * np.log(n_current_slices / len(starts)) > n_matches:
+        if n_current_slices * np.log(n_current_slices / max(len(starts), 1)) > n_matches:
             break
 
         starts, stops, n_matches = _get_mask_pairs_inner(starts, stops, coords[i], indices[i])
