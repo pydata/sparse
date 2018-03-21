@@ -1571,12 +1571,12 @@ def _mask(coords, indices, shape):
         else:
             ind_ar[i] = [idx, idx + 1, 1]
 
-    starts, stops = _get_mask_pairs(coords, ind_ar)
+    mask, is_slice = _get_mask(coords, ind_ar)
 
-    if len(starts) == 1:
-        return slice(starts[0], stops[0], 1)
+    if is_slice:
+        return slice(mask[0], mask[1], 1)
     else:
-        return _cat_pairs(starts, stops)
+        return mask
 
 
 def _prune_indices(indices, shape):
@@ -1617,7 +1617,7 @@ def _prune_indices(indices, shape):
 
 
 @numba.jit(nopython=True)
-def _get_mask_pairs(coords, indices):  # pragma: no cover
+def _get_mask(coords, indices):  # pragma: no cover
     """
     Gets the start-end pairs for the mask.
 
@@ -1635,13 +1635,53 @@ def _get_mask_pairs(coords, indices):  # pragma: no cover
     """
     starts = [0]
     stops = [coords.shape[1]]
+    n_matches = coords.shape[1]
 
-    for i in range(len(indices)):
-        starts, stops = _get_mask_pairs_inner(starts, stops, coords[i], indices[i])
+    i = 0
+    while i < len(indices):
+        n_current_slices = _get_slice_len(indices[i]) * len(starts) + 2
+        if 10.0 * n_current_slices * np.log(n_current_slices / len(starts)) > n_matches:
+            break
+
+        starts, stops, n_matches = _get_mask_pairs_inner(starts, stops, coords[i], indices[i])
+
+        i += 1
 
     starts, stops = _join_adjacent_pairs(starts, stops)
 
-    return np.array(starts), np.array(stops)
+    if i == len(indices) and len(starts) == 1:
+        return np.array([starts[0], stops[0]]), True
+
+    mask = _cat_pairs(starts, stops)
+
+    while i < len(indices):
+        mask = _filter_mask(coords[i], mask, indices[i])
+        i += 1
+
+    return np.array(mask, dtype=np.intp), False
+
+
+@numba.jit(nopython=True)
+def _get_slice_len(idx):
+    """
+    Get the number of elements in a slice.
+
+    Parameters
+    ----------
+    idx : np.ndarray
+        A (3,) shaped array containing start, stop, step
+
+    Returns
+    -------
+    n : int
+        The length of the slice.
+    """
+    start, stop, step = idx[0], idx[1], idx[2]
+
+    if step > 0:
+        return (stop - start + step - 1) // step
+    else:
+        return (start - stop - step - 1) // (-step)
 
 
 @numba.jit(nopython=True)
@@ -1667,6 +1707,7 @@ def _get_mask_pairs_inner(starts_old, stops_old, c, idx):  # pragma: no cover
     """
     starts = []
     stops = []
+    n_matches = 0
 
     for j in range(len(starts_old)):
         for p_match in range(idx[0], idx[1], idx[2]):
@@ -1676,7 +1717,9 @@ def _get_mask_pairs_inner(starts_old, stops_old, c, idx):  # pragma: no cover
             if start != stop:
                 starts.append(start)
                 stops.append(stop)
-    return starts, stops
+                n_matches += stop - start
+
+    return starts, stops, n_matches
 
 
 @numba.jit(nopython=True)
@@ -1724,7 +1767,7 @@ def _cat_pairs(starts, stops):  # pragma: no cover
 
     Returns
     -------
-    mask : np.ndarray
+    mask : list
         The output integer mask.
     """
     mask = []
@@ -1732,7 +1775,38 @@ def _cat_pairs(starts, stops):  # pragma: no cover
         for match in range(starts[i], stops[i]):
             mask.append(match)
 
-    return np.array(mask)
+    return mask
+
+
+@numba.jit(nopython=True)
+def _filter_mask(c, mask_old, idx):
+    """
+    Filters the mask given coordinates and a slice.
+
+    Parameters
+    ----------
+    c : np.ndarray
+        The coordinates for the current axis.
+    mask_old : list
+        The old mask.
+    idx : np.ndarray
+        The slice to filter by.
+
+    Returns
+    -------
+    mask : list
+        The filtered mask.
+    """
+    mask = []
+
+    for i in mask_old:
+        elem = c[i]
+        if (elem - idx[0]) % idx[2] == 0 and \
+                ((idx[2] > 0 and idx[0] <= elem < idx[1])
+                 or (idx[2] < 0 and idx[0] >= elem > idx[1])):
+            mask.append(i)
+
+    return mask
 
 
 def _grouped_reduce(x, groups, method, **kwargs):
