@@ -1642,27 +1642,37 @@ def _get_mask(coords, indices):  # pragma: no cover
     is_slice : bool
         Whether or not the array represents a continuous slice.
     """
+    # Set the initial mask to be the entire range of coordinates.
     starts = [0]
     stops = [coords.shape[1]]
     n_matches = coords.shape[1]
 
     i = 0
     while i < len(indices):
+        # Guesstimate whether working with pairs is more efficient or
+        # working with the mask directly
         n_current_slices = _get_slice_len(indices[i]) * len(starts) + 2
         if n_current_slices * np.log(n_current_slices / max(len(starts), 1)) > n_matches:
             break
 
+        # For each of the pairs, search inside the coordinates for other
+        # matching sub-pairs
         starts, stops, n_matches = _get_mask_pairs_inner(starts, stops, coords[i], indices[i])
 
         i += 1
 
+    # Join adjacent pairs into single pairs.
     starts, stops = _join_adjacent_pairs(starts, stops)
 
+    # If just one pair is left over, treat it as a slice.
     if i == len(indices) and len(starts) == 1:
         return np.array([starts[0], stops[0]]), True
 
+    # Convert start-stop pairs into mask
     mask = _cat_pairs(starts, stops)
 
+    # Filter mask as was done before, except with
+    # ints instead of bools.
     while i < len(indices):
         mask = _filter_mask(coords[i], mask, indices[i])
         i += 1
