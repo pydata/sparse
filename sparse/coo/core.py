@@ -1662,7 +1662,7 @@ def _get_mask(coords, indices):  # pragma: no cover
 
 
 @numba.jit(nopython=True)
-def _get_slice_len(idx):
+def _get_slice_len(idx):  # pragma: no cover
     """
     Get the number of elements in a slice.
 
@@ -1779,7 +1779,7 @@ def _cat_pairs(starts, stops):  # pragma: no cover
 
 
 @numba.jit(nopython=True)
-def _filter_mask(c, mask_old, idx):
+def _filter_mask(c, mask_old, idx):  # pragma: no cover
     """
     Filters the mask given coordinates and a slice.
 
