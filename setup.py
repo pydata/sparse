@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from setuptools import setup
-from sparse._version import __version__
+import versioneer
 
 with open('requirements.txt') as f:
     reqs = list(f.read().strip().split('\n'))
@@ -45,7 +45,8 @@ extras_require['tests-all'] = tests_requires
 
 setup(
     name='sparse',
-    version=__version__,
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description='Sparse n-dimensional arrays',
     url='http://github.com/pydata/sparse/',
     maintainer='Hameer Abbasi',
