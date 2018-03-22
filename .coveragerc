@@ -3,4 +3,5 @@ source=
     sparse/
 
 omit=
-    sparse/tests/
+    sparse/_version.py
+    sparse/tests/*

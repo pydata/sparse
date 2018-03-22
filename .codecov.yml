@@ -5,7 +5,8 @@ coverage:
 
   ignore:
     - sparse/tests/
-    - !sparse/
+    - sparse/_version.py
+    - ^(?!sparse\/)
 
 flags:
   project:
