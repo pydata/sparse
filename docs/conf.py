@@ -21,8 +21,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath('..'))
-
-from sparse._version import __version__
+from sparse import __version__
 
 # -- General configuration ------------------------------------------------
 
