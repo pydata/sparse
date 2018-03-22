@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+from setuptools import setup, find_packages
 import versioneer
 
 with open('requirements.txt') as f:
@@ -53,7 +53,9 @@ setup(
     maintainer_email='hameerabbasi@yahoo.com',
     license='BSD',
     keywords='sparse,numpy,scipy,dask',
-    packages=['sparse'],
+    packages=find_packages(
+        include=['sparse', 'sparse.*'],
+    ),
     long_description=long_desc,
     install_requires=reqs,
     extras_require=extras_require,
