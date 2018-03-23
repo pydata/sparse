@@ -515,6 +515,17 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         if isinstance(mask, slice):
             n = len(range(mask.start, mask.stop, mask.step))
+
+            index_pruned = _prune_indices(index, self.shape, prune_none=False)
+
+            if all(isinstance(idx, numbers.Integral) for idx in index_pruned):
+                out_ndim = self.ndim - len(index_pruned)
+
+                if out_ndim != 0:
+                    coords = self.coords[-out_ndim:, mask]
+                    data = self.data[mask]
+                    shape = self.shape[-out_ndim:]
+                    return COO(coords, data, shape, has_duplicates=False, sorted=True)
         else:
             n = len(mask)
 
@@ -1579,7 +1590,7 @@ def _mask(coords, indices, shape):
         return mask
 
 
-def _prune_indices(indices, shape):
+def _prune_indices(indices, shape, prune_none=True):
     """
     Gets rid of the indices that do not contribute to the
     overall mask, e.g. None and full slices.
@@ -1603,7 +1614,9 @@ def _prune_indices(indices, shape):
     >>> _prune_indices((slice(0, 10, 1),), (10,)) # Full slices don't affect the mask
     []
     """
-    indices = [idx for idx in indices if idx is not None]
+    if prune_none:
+        indices = [idx for idx in indices if idx is not None]
+
     i = 0
     for idx, l in zip(indices[::-1], shape[::-1]):
         if not isinstance(idx, slice):
