@@ -491,19 +491,19 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     def __getitem__(self, index):
         self.sum_duplicates()
 
-        if not isinstance(index, tuple):
-            if isinstance(index, str):
-                data = self.data[index]
-                idx = np.where(data)
-                coords = list(self.coords[:, idx[0]])
-                coords.extend(idx[1:])
+        if isinstance(index, str):
+            data = self.data[index]
+            idx = np.where(data)
+            coords = list(self.coords[:, idx[0]])
+            coords.extend(idx[1:])
 
-                return COO(coords, data[idx].flatten(),
-                           shape=self.shape + self.data.dtype[index].shape,
-                           has_duplicates=self.has_duplicates,
-                           sorted=self.sorted)
-            else:
-                index = (index,)
+            return COO(coords, data[idx].flatten(),
+                       shape=self.shape + self.data.dtype[index].shape,
+                       has_duplicates=self.has_duplicates,
+                       sorted=self.sorted)
+
+        if not isinstance(index, tuple):
+            index = (index,)
 
         last_ellipsis = len(index) > 0 and index[-1] is Ellipsis
         index = normalize_index(index, self.shape)
