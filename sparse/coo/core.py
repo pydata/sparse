@@ -515,17 +515,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         if isinstance(mask, slice):
             n = len(range(mask.start, mask.stop, mask.step))
-
-            index_pruned = _prune_indices(index, self.shape, prune_none=False)
-
-            if all(isinstance(idx, numbers.Integral) for idx in index_pruned):
-                out_ndim = self.ndim - len(index_pruned)
-
-                if out_ndim != 0:
-                    coords = self.coords[-out_ndim:, mask]
-                    data = self.data[mask]
-                    shape = self.shape[-out_ndim:]
-                    return COO(coords, data, shape, has_duplicates=False, sorted=True)
         else:
             n = len(mask)
 
