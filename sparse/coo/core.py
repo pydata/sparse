@@ -1658,7 +1658,9 @@ def _get_mask(coords, indices):  # pragma: no cover
             break
 
         # For each of the pairs, search inside the coordinates for other
-        # matching sub-pairs
+        # matching sub-pairs.
+        # This gets the start-end coordinates in coords for each 'sub-array'
+        # Which would come out of indexing a single integer.
         starts, stops, n_matches = _get_mask_pairs_inner(starts, stops, coords[i], indices[i])
 
         i += 1
@@ -1670,14 +1672,9 @@ def _get_mask(coords, indices):  # pragma: no cover
     if i == len(indices) and len(starts) == 1:
         return np.array([starts[0], stops[0]]), True
 
-    # Convert start-stop pairs into mask
-    mask = _cat_pairs(starts, stops)
-
-    # Filter mask as was done before, except with
-    # ints instead of bools.
-    while i < len(indices):
-        mask = _filter_mask(coords[i], mask, indices[i])
-        i += 1
+    # Convert start-stop pairs into mask, filtering by remaining
+    # coordinates.
+    mask = _filter_pairs(starts, stops, coords[i:], indices[i:])
 
     return np.array(mask, dtype=np.intp), False
 
@@ -1748,6 +1745,8 @@ def _get_mask_pairs_inner(starts_old, stops_old, c, idx):  # pragma: no cover
     n_matches = 0
 
     for j in range(len(starts_old)):
+        # For each matching "integer" in the slice, search within the "sub-coords"
+        # Using binary search.
         for p_match in range(idx[0], idx[1], idx[2]):
             start = np.searchsorted(c[starts_old[j]:stops_old[j]], p_match) + starts_old[j]
             stop = np.searchsorted(c[starts_old[j]:stops_old[j]], p_match + 1) + starts_old[j]
@@ -1801,14 +1800,19 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
 
 
 @numba.jit(nopython=True)
-def _cat_pairs(starts, stops):  # pragma: no cover
+def _filter_pairs(starts, stops, coords, indices):  # pragma: no cover
     """
-    Converts all the pairs into a single integer mask.
+    Converts all the pairs into a single integer mask, additionally filtering
+    by the indices.
 
     Parameters
     ----------
     starts, stops : list[int]
         The starts and stops to convert into an array.
+    coords : np.ndarray
+        The coordinates to filter by.
+    indices : np.ndarray
+        The relevant indices to filter by.
 
     Returns
     -------
@@ -1817,54 +1821,29 @@ def _cat_pairs(starts, stops):  # pragma: no cover
 
     Examples
     --------
+    >>> import numpy as np
     >>> starts = [2]
     >>> stops = [7]
-    >>> _cat_pairs(starts, stops)
-    [2, 3, 4, 5, 6]
+    >>> coords = np.array([[0, 1, 2, 3, 4, 5, 6, 7]])
+    >>> indices = np.array([[2, 8, 2]]) # Start, stop, step pairs
+    >>> _filter_pairs(starts, stops, coords, indices)
+    [2, 4, 6]
     """
     mask = []
     for i in range(len(starts)):
         for match in range(starts[i], stops[i]):
-            mask.append(match)
+            matches = True
 
-    return mask
+            for j in range(len(indices)):
+                idx = indices[j]
+                elem = coords[j, match]
 
+                matches &= ((elem - idx[0]) % idx[2] == 0 and
+                            ((idx[2] > 0 and idx[0] <= elem < idx[1])
+                             or (idx[2] < 0 and idx[0] >= elem > idx[1])))
 
-@numba.jit(nopython=True)
-def _filter_mask(c, mask_old, idx):  # pragma: no cover
-    """
-    Filters the mask given coordinates and a slice.
-
-    Parameters
-    ----------
-    c : np.ndarray
-        The coordinates for the current axis.
-    mask_old : list
-        The old mask.
-    idx : np.ndarray
-        The slice to filter by.
-
-    Returns
-    -------
-    mask : list
-        The filtered mask.
-
-    Examples
-    --------
-    >>> c = np.array([0, 0, 1, 2, 2])
-    >>> mask_old = [2, 3]
-    >>> idx = np.array([1, 2, 1])
-    >>> _filter_mask(c, mask_old, idx)
-    [2]
-    """
-    mask = []
-
-    for i in mask_old:
-        elem = c[i]
-        if (elem - idx[0]) % idx[2] == 0 and \
-                ((idx[2] > 0 and idx[0] <= elem < idx[1])
-                 or (idx[2] < 0 and idx[0] >= elem > idx[1])):
-            mask.append(i)
+            if matches:
+                mask.append(match)
 
     return mask
 
