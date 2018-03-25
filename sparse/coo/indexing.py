@@ -185,9 +185,11 @@ def _compute_mask(coords, indices):  # pragma: no cover
     on which is faster.
 
     Exploits the structure in sorted coords, which is that for a constant
-    value of coords[i - 1], coords[i] is sorted. It uses this sortedness
-    to find sub-pairs for each dimension given the previous, and so on.
-    This is efficent for small slices, but not for large ones.
+    value of coords[i - 1], coords[i - 2] and so on, coords[i] is sorted.
+    Concretely, ``coords[i, coords[i - 1] == v1 & coords[i - 2] = v2, ...]``
+    is always sorted. It uses this sortedness to find sub-pairs for each
+    dimension given the previous, and so on. This is efficient for small
+    slices or ints, but not for large ones.
 
     After it detects that working with pairs is rather inefficient (or after
     going through each possible index), it constructs a filtered mask from the
@@ -230,7 +232,6 @@ def _compute_mask(coords, indices):  # pragma: no cover
     This is equivalent to mask being ``slice(0, 4, 1)``.
     """
     # Set the initial mask to be the entire range of coordinates.
-
     starts = [0]
     stops = [coords.shape[1]]
     n_matches = coords.shape[1]
@@ -238,9 +239,14 @@ def _compute_mask(coords, indices):  # pragma: no cover
     i = 0
     while i < len(indices):
         # Guesstimate whether working with pairs is more efficient or
-        # working with the mask directly
-        n_current_slices = _get_slice_len(indices[i]) * len(starts) + 2
-        if n_current_slices * np.log(n_current_slices / max(len(starts), 1)) > n_matches:
+        # working with the mask directly.
+        # One side is the estimate of time taken for binary searches
+        # (n_searches * log(avg_length))
+        # The other is an estimated time of a linear filter for the mask.
+        n_pairs = len(starts)
+        n_current_slices = _get_slice_len(indices[i]) * n_pairs + 2
+        if n_current_slices * np.log(n_current_slices / max(n_pairs, 1)) > \
+                n_matches + n_pairs:
             break
 
         # For each of the pairs, search inside the coordinates for other

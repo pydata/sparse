@@ -12,6 +12,8 @@ class ElemwiseSuite(object):
         self.x.sum_duplicates()
         self.y.sum_duplicates()
 
+        self.x + self.y  # Numba compilation
+
     def time_add(self):
         self.x + self.y
 
@@ -19,8 +21,7 @@ class ElemwiseSuite(object):
         self.x * self.y
 
     def time_index(self):
-        for i in range(100):
-            self.x[i]
+        self.x[5]
 
 
 class ElemwiseBroadcastingSuite(object):
@@ -37,3 +38,24 @@ class ElemwiseBroadcastingSuite(object):
 
     def time_mul(self):
         self.x * self.y
+
+
+class IndexingSuite(object):
+    def setup(self):
+        np.random.seed(0)
+        self.x = sparse.random((100, 100, 100), density=0.01)
+        self.x.sum_duplicates()
+
+        self.x[5]  # Numba compilation
+
+    def time_index_scalar(self):
+        self.x[5]
+
+    def time_index_slice(self):
+        self.x[:50]
+
+    def time_index_slice2(self):
+        self.x[:50, :50]
+
+    def time_index_slice3(self):
+        self.x[:50, :50, :50]
