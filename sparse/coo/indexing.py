@@ -423,10 +423,12 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
     ----------
     starts_old, stops_old : list[int]
         The input starts and stops
+
     Returns
     -------
     starts, stops : list[int]
         The reduced starts and stops.
+
     Examples
     --------
     >>> starts = [2, 5]
