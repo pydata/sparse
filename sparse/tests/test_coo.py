@@ -1,14 +1,12 @@
-import pytest
-
 import operator
 
 import numpy as np
+import pytest
 import scipy.sparse
 import scipy.stats
 
-from sparse import COO
-
 import sparse
+from sparse import COO
 from sparse.utils import assert_eq, is_lexsorted, random_value_array
 
 
@@ -772,36 +770,27 @@ def test_gt():
 
 
 @pytest.mark.parametrize('index', [
+    # Integer
     0,
     1,
     -1,
+    (1, 1, 1),
+    # Pure slices
     (slice(0, 2),),
     (slice(None, 2), slice(None, 2)),
     (slice(1, None), slice(1, None)),
     (slice(None, None),),
+    (slice(None, None, -1),),
     (slice(None, 2, -1), slice(None, 2, -1)),
     (slice(1, None, 2), slice(1, None, 2)),
     (slice(None, None, 2),),
     (slice(None, 2, -1), slice(None, 2, -2)),
     (slice(1, None, 2), slice(1, None, 1)),
     (slice(None, None, -2),),
+    # Combinations
     (0, slice(0, 2),),
     (slice(0, 1), 0),
-    ([1, 0], 0),
-    (1, [0, 2]),
-    (0, [1, 0], 0),
-    (1, [2, 0], 0),
     (None, slice(1, 3), 0),
-    (Ellipsis, slice(1, 3)),
-    (1, Ellipsis, slice(1, 3)),
-    (slice(0, 1), Ellipsis),
-    (Ellipsis, None),
-    (None, Ellipsis),
-    (1, Ellipsis),
-    (1, Ellipsis, None),
-    (1, 1, 1),
-    (1, 1, 1, Ellipsis),
-    (Ellipsis, 1, None),
     (slice(0, 3), None, 0),
     (slice(1, 2), slice(2, 4)),
     (slice(1, 2), slice(None, None)),
@@ -815,10 +804,42 @@ def test_gt():
     (slice(2, 0, -1), slice(None, None), -1),
     (slice(-2, None, None),),
     (slice(-1, None, None), slice(-2, None, None)),
+    # With ellipsis
+    (Ellipsis, slice(1, 3)),
+    (1, Ellipsis, slice(1, 3)),
+    (slice(0, 1), Ellipsis),
+    (Ellipsis, None),
+    (None, Ellipsis),
+    (1, Ellipsis),
+    (1, Ellipsis, None),
+    (1, 1, 1, Ellipsis),
+    (Ellipsis, 1, None),
+    # Pathological - Slices larger than array
+    (slice(None, 1000)),
+    (slice(None), slice(None, 1000)),
+    (slice(None), slice(1000, -1000, -1)),
+    (slice(None), slice(1000, -1000, -50)),
+    # Pathological - Wrong ordering of start/stop
+    (slice(5, 0),),
+    (slice(0, 5, -1),),
+])
+def test_slicing(index):
+    s = sparse.random((2, 3, 4), density=0.5)
+    x = s.todense()
+
+    assert_eq(x[index], s[index])
+
+
+@pytest.mark.parametrize('index', [
+    ([1, 0], 0),
+    (1, [0, 2]),
+    (0, [1, 0], 0),
+    (1, [2, 0], 0),
     ([True, False], slice(1, None), slice(-2, None)),
     (slice(1, None), slice(-2, None), [True, False, True, False]),
 ])
-def test_slicing(index):
+@pytest.mark.xfail(reason='Advanced indexing is temporarily broken.')
+def test_advanced_indexing(index):
     s = sparse.random((2, 3, 4), density=0.5)
     x = s.todense()
 

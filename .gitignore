@@ -45,6 +45,10 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *,cover
+.pytest_cache/
+
+# Airspeed velocity
+.asv/
 
 # Translations
 *.mo

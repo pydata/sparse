@@ -1,4 +1,3 @@
-import numbers
 from collections import Iterable, defaultdict, deque
 
 import numpy as np
@@ -6,9 +5,9 @@ import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .common import dot
+from .indexing import getitem
 from .umath import elemwise, broadcast_to
 from ..compatibility import int, range
-from ..slicing import normalize_index
 from ..sparse_array import SparseArray
 from ..utils import _zero_of_dtype
 
@@ -487,93 +486,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     def __sizeof__(self):
         return self.nbytes
 
-    def __getitem__(self, index):
-        if not isinstance(index, tuple):
-            if isinstance(index, str):
-                data = self.data[index]
-                idx = np.where(data)
-                coords = list(self.coords[:, idx[0]])
-                coords.extend(idx[1:])
-
-                return COO(coords, data[idx].flatten(),
-                           shape=self.shape + self.data.dtype[index].shape,
-                           has_duplicates=self.has_duplicates,
-                           sorted=self.sorted)
-            else:
-                index = (index,)
-
-        last_ellipsis = len(index) > 0 and index[-1] is Ellipsis
-        index = normalize_index(index, self.shape)
-        if len(index) != 0 and all(not isinstance(ind, Iterable) and ind == slice(None) for ind in index):
-            return self
-        mask = np.ones(self.nnz, dtype=np.bool)
-        for i, ind in enumerate([i for i in index if i is not None]):
-            if not isinstance(ind, Iterable) and ind == slice(None):
-                continue
-            mask &= _mask(self.coords[i], ind, self.shape[i])
-
-        n = mask.sum()
-        coords = []
-        shape = []
-        i = 0
-        for ind in index:
-            if isinstance(ind, numbers.Integral):
-                i += 1
-                continue
-            elif isinstance(ind, slice):
-                step = ind.step if ind.step is not None else 1
-                if step > 0:
-                    start = ind.start if ind.start is not None else 0
-                    start = max(start, 0)
-                    stop = ind.stop if ind.stop is not None else self.shape[i]
-                    stop = min(stop, self.shape[i])
-                    if start > stop:
-                        start = stop
-                    shape.append((stop - start + step - 1) // step)
-                else:
-                    start = ind.start or self.shape[i] - 1
-                    stop = ind.stop if ind.stop is not None else -1
-                    start = min(start, self.shape[i] - 1)
-                    stop = max(stop, -1)
-                    if start < stop:
-                        start = stop
-                    shape.append((start - stop - step - 1) // (-step))
-
-                dt = np.min_scalar_type(min(-(dim - 1) if dim != 0 else -1 for dim in shape))
-                coords.append((self.coords[i, mask].astype(dt) - start) // step)
-                i += 1
-            elif isinstance(ind, Iterable):
-                old = self.coords[i][mask]
-                new = np.empty(shape=old.shape, dtype=old.dtype)
-                for j, item in enumerate(ind):
-                    new[old == item] = j
-                coords.append(new)
-                shape.append(len(ind))
-                i += 1
-            elif ind is None:
-                coords.append(np.zeros(n))
-                shape.append(1)
-
-        for j in range(i, self.ndim):
-            coords.append(self.coords[j][mask])
-            shape.append(self.shape[j])
-
-        if coords:
-            coords = np.stack(coords, axis=0)
-        else:
-            if last_ellipsis:
-                coords = np.empty((0, np.sum(mask)), dtype=np.uint8)
-            else:
-                if np.sum(mask) != 0:
-                    return self.data[mask][0]
-                else:
-                    return _zero_of_dtype(self.dtype)[()]
-        shape = tuple(shape)
-        data = self.data[mask]
-
-        return COO(coords, data, shape=shape,
-                   has_duplicates=self.has_duplicates,
-                   sorted=self.sorted)
+    __getitem__ = getitem
 
     def __str__(self):
         return "<COO: shape=%s, dtype=%s, nnz=%d, sorted=%s, duplicates=%s>" % (
@@ -1570,28 +1483,6 @@ def _keepdims(original, new, axis):
     for ax in axis:
         shape[ax] = 1
     return new.reshape(shape)
-
-
-def _mask(coords, idx, shape):
-    if isinstance(idx, numbers.Integral):
-        return coords == idx
-    elif isinstance(idx, slice):
-        step = idx.step if idx.step is not None else 1
-        if step > 0:
-            start = idx.start if idx.start is not None else 0
-            stop = idx.stop if idx.stop is not None else shape
-            return (coords >= start) & (coords < stop) & \
-                   (coords % step == start % step)
-        else:
-            start = idx.start if idx.start is not None else (shape - 1)
-            stop = idx.stop if idx.stop is not None else -1
-            return (coords <= start) & (coords > stop) & \
-                   (coords % step == start % step)
-    elif isinstance(idx, Iterable):
-        mask = np.zeros(len(coords), dtype=np.bool)
-        for item in idx:
-            mask |= _mask(coords, item, shape)
-        return mask
 
 
 def _grouped_reduce(x, groups, method, **kwargs):
