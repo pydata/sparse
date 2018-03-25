@@ -819,6 +819,9 @@ def test_gt():
     (slice(None), slice(None, 1000)),
     (slice(None), slice(1000, -1000, -1)),
     (slice(None), slice(1000, -1000, -50)),
+    # Pathological - Wrong ordering of start/stop
+    (slice(5, 0),),
+    (slice(0, 5, -1),),
 ])
 def test_slicing(index):
     s = sparse.random((2, 3, 4), density=0.5)
