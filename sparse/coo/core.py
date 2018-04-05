@@ -1481,6 +1481,7 @@ def _keepdims(original, new, axis):
         shape[ax] = 1
     return new.reshape(shape)
 
+
 def _grouped_reduce(x, groups, method, **kwargs):
     """
     Performs a :code:`ufunc` grouped reduce.
