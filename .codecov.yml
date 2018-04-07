@@ -11,8 +11,8 @@ coverage:
 flags:
   project:
     enabled: yes
-    target: -3
 
   patch:
     default:
       enabled: no
+      target: -1
