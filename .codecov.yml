@@ -11,8 +11,8 @@ coverage:
 flags:
   project:
     enabled: yes
-    target: auto
-    threshold: 1
+    target: 95%
+    threshold: 1%
     if_no_uploads: error
     if_not_found: success
     if_ci_failed: error
@@ -21,7 +21,7 @@ flags:
     default:
       enabled: yes
       target: 95%
-      threshold: 1
+      threshold: 1%
       if_no_uploads: error
       if_not_found: success
       if_ci_failed: error
