@@ -208,7 +208,7 @@ def random_value_array(value, fraction):
     return replace_values
 
 
-def _normalize_axis(axis, ndim):
+def normalize_axis(axis, ndim):
     """
     Normalize negative axis indices to their positive counterpart for a given
     number of dimensions.
@@ -242,6 +242,6 @@ def _normalize_axis(axis, ndim):
         if not all(isinstance(a, Integral) for a in axis):
             raise ValueError("axis %s not understood" % axis)
 
-        return tuple(_normalize_axis(a, ndim) for a in axis)
+        return tuple(normalize_axis(a, ndim) for a in axis)
 
     raise ValueError("axis %s not understood" % axis)

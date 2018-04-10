@@ -6,11 +6,10 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .common import dot
 from .indexing import getitem
-from sparse.utils import _normalize_axis
 from .umath import elemwise, broadcast_to
 from ..compatibility import int, range
 from ..sparse_array import SparseArray
-from ..utils import _zero_of_dtype
+from ..utils import _zero_of_dtype, normalize_axis
 
 
 class COO(SparseArray, NDArrayOperatorsMixin):
@@ -571,7 +570,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s.reduce(np.add)
         <COO: shape=(5,), dtype=int64, nnz=5, sorted=True, duplicates=False>
         """
-        axis = _normalize_axis(axis, self.ndim)
+        axis = normalize_axis(axis, self.ndim)
         zero_reduce_result = method.reduce([_zero_of_dtype(self.dtype)], **kwargs)
 
         if zero_reduce_result != _zero_of_dtype(np.dtype(zero_reduce_result)):
@@ -928,7 +927,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             axes = list(reversed(range(self.ndim)))
 
         # Normalize all axes indices to positive values
-        axes = _normalize_axis(axes, self.ndim)
+        axes = normalize_axis(axes, self.ndim)
 
         if len(np.unique(axes)) < len(axes):
             raise ValueError("repeated axis in transpose")
