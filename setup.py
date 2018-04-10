@@ -12,6 +12,8 @@ with open('README.rst') as f:
 extras_require = {
     'tests': [
         'pytest',
+        'pytest-flake8',
+        'pytest-cov'
     ],
     'docs': [
         'sphinx',
@@ -21,12 +23,6 @@ extras_require = {
     'tox': [
         'tox',
     ],
-    'tests-linting': [
-        'flake8'
-    ],
-    'tests-cov': [
-        'pytest-cov'
-    ],
     'bench': [
         'asv'
     ],
@@ -34,14 +30,11 @@ extras_require = {
 
 all_requires = []
 tests_requires = []
+
 for k, v in extras_require.items():
     all_requires.extend(v)
 
-    if k.startswith('tests'):
-        tests_requires.extend(v)
-
 extras_require['all'] = all_requires
-extras_require['tests-all'] = tests_requires
 
 setup(
     name='sparse',
