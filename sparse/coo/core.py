@@ -5,7 +5,8 @@ import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .common import dot
-from .indexing import getitem, _normalize_axis
+from .indexing import getitem
+from sparse.utils import _normalize_axis
 from .umath import elemwise, broadcast_to
 from ..compatibility import int, range
 from ..sparse_array import SparseArray
