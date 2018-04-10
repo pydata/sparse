@@ -11,8 +11,16 @@ coverage:
 flags:
   project:
     enabled: yes
+    target: auto
+    threshold: 1
+    if_no_uploads: error
+    if_not_found: success
+    if_ci_failed: error
 
   patch:
     default:
-      enabled: no
-      target: -1
+      enabled: yes
+      target: 95%
+      if_no_uploads: error
+      if_not_found: success
+      if_ci_failed: error
