@@ -927,19 +927,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         if axes is None:
             axes = list(reversed(range(self.ndim)))
 
-        # Normalize all axe indices to posivite values
-        axes = _normalize_axis(axes, self.ndim)
-
-        if any(a >= self.ndim for a in axes) or any(a < 0 for a in axes):
-            raise ValueError("invalid axis for this array")
-
-        if len(np.unique(axes)) < len(axes):
-            raise ValueError("repeated axis in transpose")
-
-        if not len(axes) == self.ndim:
-            raise ValueError("axes don't match array")
-
-        # Normalize all axe indices to posivite values
+        # Normalize all axes indices to positive values
         axes = _normalize_axis(axes, self.ndim)
 
         if len(np.unique(axes)) < len(axes):

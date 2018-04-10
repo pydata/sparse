@@ -116,15 +116,14 @@ def test_transpose(axis):
     (0, -1, -4),  # axis -4 illegal
     (0, 0, 1),  # duplicate axis 0
     (0, -1, 2),  # duplicate axis -1 == 2
+    0.3,  # Invalid type in axis
+    ((0, 1, 2),),  # Iterable inside iterable
 ])
 def test_transpose_error(axis):
     x = sparse.random((2, 3, 4), density=.25)
-    y = x.todense()
 
     with pytest.raises(ValueError):
         x.transpose(axis)
-    with pytest.raises(ValueError):
-        y.transpose(axis)
 
 
 @pytest.mark.parametrize('a,b', [
