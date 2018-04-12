@@ -5,7 +5,7 @@ from setuptools import setup
 
 
 setup(name='sparse',
-      version='0.2.0',
+      version='0.3.1',
       description='Sparse n-dimensional arrays',
       url='http://github.com/pydata/sparse/',
       maintainer='Matthew Rocklin',
