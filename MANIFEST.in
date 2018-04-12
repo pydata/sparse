@@ -1,10 +1,8 @@
 recursive-include sparse *.py
-recursive-include sparse *.html
-recursive-include docs *.rst
 
 include setup.py
 include README.rst
-include LICENSE.txt
+include LICENSE.rst
 include MANIFEST.in
 include requirements.txt
 
