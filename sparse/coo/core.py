@@ -9,7 +9,7 @@ from .indexing import getitem
 from .umath import elemwise, broadcast_to
 from ..compatibility import int, range
 from ..sparse_array import SparseArray
-from ..utils import _zero_of_dtype
+from ..utils import _zero_of_dtype, normalize_axis
 
 
 class COO(SparseArray, NDArrayOperatorsMixin):
@@ -570,6 +570,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s.reduce(np.add)
         <COO: shape=(5,), dtype=int64, nnz=5, sorted=True, duplicates=False>
         """
+        axis = normalize_axis(axis, self.ndim)
         zero_reduce_result = method.reduce([_zero_of_dtype(self.dtype)], **kwargs)
 
         if zero_reduce_result != _zero_of_dtype(np.dtype(zero_reduce_result)):
@@ -925,24 +926,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         if axes is None:
             axes = list(reversed(range(self.ndim)))
 
-        # Normalize all axe indices to posivite values
-        axes = np.array(axes)
-        axes[axes < 0] += self.ndim
-
-        if np.any(axes >= self.ndim) or np.any(axes < 0):
-            raise ValueError("invalid axis for this array")
-
-        if len(np.unique(axes)) < len(axes):
-            raise ValueError("repeated axis in transpose")
-
-        if not len(axes) == self.ndim:
-            raise ValueError("axes don't match array")
-
-        # Normalize all axe indices to posivite values
-        try:
-            axes = np.arange(self.ndim)[list(axes)]
-        except IndexError:
-            raise ValueError("invalid axis for this array")
+        # Normalize all axes indices to positive values
+        axes = normalize_axis(axes, self.ndim)
 
         if len(np.unique(axes)) < len(axes):
             raise ValueError("repeated axis in transpose")

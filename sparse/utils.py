@@ -206,3 +206,42 @@ def random_value_array(value, fraction):
         return ar
 
     return replace_values
+
+
+def normalize_axis(axis, ndim):
+    """
+    Normalize negative axis indices to their positive counterpart for a given
+    number of dimensions.
+
+    Parameters
+    ----------
+    axis : Union[int, Iterable[int], None]
+        The axis indices.
+    ndim : int
+        Number of dimensions to normalize axis indices against.
+
+    Returns
+    -------
+    axis
+        The normalized axis indices.
+    """
+    if axis is None:
+        return None
+
+    if isinstance(axis, Integral):
+        axis = int(axis)
+        if axis < 0:
+            axis += ndim
+
+        if axis >= ndim or axis < 0:
+            raise ValueError('Invalid axis index %d for ndim=%d' % (axis, ndim))
+
+        return axis
+
+    if isinstance(axis, Iterable):
+        if not all(isinstance(a, Integral) for a in axis):
+            raise ValueError("axis %s not understood" % axis)
+
+        return tuple(normalize_axis(a, ndim) for a in axis)
+
+    raise ValueError("axis %s not understood" % axis)

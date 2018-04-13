@@ -34,7 +34,7 @@ def test_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     (np.prod, {}, {}),
     (np.min, {}, {}),
 ])
-@pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2)])
+@pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2), -1, (0, -1)])
 @pytest.mark.parametrize('keepdims', [True, False])
 def test_ufunc_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     x = sparse.random((2, 3, 4), density=.5)
@@ -116,15 +116,14 @@ def test_transpose(axis):
     (0, -1, -4),  # axis -4 illegal
     (0, 0, 1),  # duplicate axis 0
     (0, -1, 2),  # duplicate axis -1 == 2
+    0.3,  # Invalid type in axis
+    ((0, 1, 2),),  # Iterable inside iterable
 ])
 def test_transpose_error(axis):
     x = sparse.random((2, 3, 4), density=.25)
-    y = x.todense()
 
     with pytest.raises(ValueError):
         x.transpose(axis)
-    with pytest.raises(ValueError):
-        y.transpose(axis)
 
 
 @pytest.mark.parametrize('a,b', [
