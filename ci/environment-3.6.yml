@@ -1,0 +1,13 @@
+name: py36-sparse-test
+channels:
+  - conda-forge
+dependencies:
+  - python=3.6
+  - pytest
+  - numpy
+  - scipy
+  - pytest-cov
+  - nomkl
+  - numba
+  - pytest-flake8
+  - codecov

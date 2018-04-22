@@ -12,9 +12,8 @@ This library provides multi-dimensional sparse arrays.
 .. |Docs Status| image:: https://readthedocs.org/projects/sparse-nd/badge/?version=latest
   :target: http://sparse.pydata.org/en/latest/?badge=latest
   :alt: Documentation Status
-
-.. |Build Status| image:: https://travis-ci.org/pydata/sparse.svg?branch=master
-   :target: https://travis-ci.org/pydata/sparse
+.. |Build Status| image:: https://circleci.com/gh/pydata/sparse.svg?style=svg
+   :target: https://circleci.com/gh/pydata/sparse
    :alt: Build status
 
 .. |Coverage| image:: https://codecov.io/gh/pydata/sparse/branch/master/graph/badge.svg
