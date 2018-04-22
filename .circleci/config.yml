@@ -37,14 +37,17 @@ jobs:
           paths:
             - "/home/circleci/miniconda"
       - run:
+          name: install package
           command: |
             export PATH="$HOME/miniconda/bin:$PATH"
             source activate ${ENV_NAME}
             pip install -e .[tests]
       - run:
+          name: run tests
           command: |
             /home/circleci/miniconda/envs/py36-sparse-test/bin/pytest
       - run:
+          name: upload coverage
           command: |
             export PATH="$HOME/miniconda/bin:$PATH"
             source activate ${ENV_NAME}
@@ -86,14 +89,17 @@ jobs:
           paths:
             - "/home/circleci/miniconda"
       - run:
+          name: install package
           command: |
             export PATH="$HOME/miniconda/bin:$PATH"
             source activate ${ENV_NAME}
             pip install -e .[tests]
       - run:
+          name: run tests
           command: |
             /home/circleci/miniconda/envs/py27-sparse-test/bin/pytest
       - run:
+          name: upload coverage
           command: |
             export PATH="$HOME/miniconda/bin:$PATH"
             source activate ${ENV_NAME}
