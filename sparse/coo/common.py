@@ -194,10 +194,6 @@ def dot(a, b):
 def _dot(a, b):
     from .core import COO
 
-    if isinstance(a, COO):
-        a.sum_duplicates()
-    if isinstance(b, COO):
-        b.sum_duplicates()
     if isinstance(b, COO) and not isinstance(a, COO):
         return _dot(b.T, a.T).T
     aa = a.tocsr()
@@ -250,10 +246,8 @@ def concatenate(arrays, axis=0):
         dim += x.shape[axis]
         nnz += x.nnz
 
-    has_duplicates = any(x.has_duplicates for x in arrays)
-
-    return COO(coords, data, shape=shape, has_duplicates=has_duplicates,
-               sorted=(axis == 0) and all(a.sorted for a in arrays))
+    return COO(coords, data, shape=shape, has_duplicates=False,
+               sorted=(axis == 0))
 
 
 def stack(arrays, axis=0):
@@ -296,13 +290,12 @@ def stack(arrays, axis=0):
         dim += 1
         nnz += x.nnz
 
-    has_duplicates = any(x.has_duplicates for x in arrays)
     coords = [coords[i].astype(coords_dtype) for i in range(coords.shape[0])]
     coords.insert(axis, new)
     coords = np.stack(coords, axis=0)
 
-    return COO(coords, data, shape=shape, has_duplicates=has_duplicates,
-               sorted=(axis == 0) and all(a.sorted for a in arrays))
+    return COO(coords, data, shape=shape, has_duplicates=False,
+               sorted=(axis == 0))
 
 
 def triu(x, k=0):
@@ -336,7 +329,7 @@ def triu(x, k=0):
     coords = x.coords[:, mask]
     data = x.data[mask]
 
-    return COO(coords, data, x.shape, x.has_duplicates, x.sorted)
+    return COO(coords, data, shape=x.shape, has_duplicates=False, sorted=True)
 
 
 def tril(x, k=0):
@@ -370,7 +363,7 @@ def tril(x, k=0):
     coords = x.coords[:, mask]
     data = x.data[mask]
 
-    return COO(coords, data, x.shape, x.has_duplicates, x.sorted)
+    return COO(coords, data, shape=x.shape, has_duplicates=False, sorted=True)
 
 
 def nansum(x, axis=None, keepdims=False, dtype=None, out=None):
@@ -582,8 +575,8 @@ def _replace_nan(array, value):
     data[np.isnan(data)] = value
 
     return COO(array.coords, data, shape=array.shape,
-               has_duplicates=array.has_duplicates,
-               sorted=array.sorted)
+               has_duplicates=False,
+               sorted=True)
 
 
 def nanreduce(x, method, identity=None, axis=None, keepdims=False, **kwargs):

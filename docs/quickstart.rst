@@ -37,7 +37,7 @@ but the sparse version takes up less space in memory
    >>> s.nbytes
    1102706
    >>> s
-   <COO: shape=(100, 100, 100), dtype=float64, nnz=100246, sorted=True, duplicates=False>
+   <COO: shape=(100, 100, 100), dtype=float64, nnz=100246>
 
 For more efficient ways to construct sparse arrays,
 see documentation on :doc:`Constructing Arrays <construct>`.
@@ -51,7 +51,7 @@ This includes arithmetic, :doc:`numpy.ufunc <reference/ufuncs>` operations, or f
 .. code-block:: python
 
    >>> np.sin(s) + s.T * 1
-   <COO: shape=(100, 100, 100), dtype=float64, nnz=189601, sorted=False, duplicates=False>
+   <COO: shape=(100, 100, 100), dtype=float64, nnz=189601>
 
 However, operations which convert the sparse array into a dense one will raise exceptions
 For example, the following raises a :obj:`ValueError`.
