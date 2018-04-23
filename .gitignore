@@ -46,6 +46,7 @@ nosetests.xml
 coverage.xml
 *,cover
 .pytest_cache/
+test_results/
 
 # Airspeed velocity
 .asv/
