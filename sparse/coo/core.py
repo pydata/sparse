@@ -246,10 +246,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         assert not self.shape or len(data) == self.coords.shape[1]
 
         if not sorted:
-            self.sort_indices()
+            self._sort_indices()
 
         if has_duplicates:
-            self.sum_duplicates()
+            self._sum_duplicates()
 
     def _make_shallow_copy_of(self, other):
         self.coords = other.coords
@@ -1264,7 +1264,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         return csc
 
-    def sort_indices(self):
+    def _sort_indices(self):
         """
         Sorts the :obj:`COO.coords` attribute. Also sorts the data in
         :obj:`COO.data` to match.
@@ -1274,7 +1274,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> coords = np.array([[1, 2, 0]], dtype=np.uint8)
         >>> data = np.array([4, 1, 3], dtype=np.uint8)
         >>> s = COO(coords, data)
-        >>> s.sort_indices()
+        >>> s._sort_indices()
         >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
         array([[0, 1, 2]], dtype=uint8)
         >>> s.data  # doctest: +NORMALIZE_WHITESPACE
@@ -1289,7 +1289,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         self.coords = self.coords[:, order]
         self.data = self.data[order]
 
-    def sum_duplicates(self):
+    def _sum_duplicates(self):
         """
         Sums data corresponding to duplicates in :obj:`COO.coords`.
 
@@ -1302,7 +1302,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> coords = np.array([[0, 1, 1, 2]], dtype=np.uint8)
         >>> data = np.array([6, 5, 2, 2], dtype=np.uint8)
         >>> s = COO(coords, data)
-        >>> s.sum_duplicates()
+        >>> s._sum_duplicates()
         >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
         array([[0, 1, 2]], dtype=uint8)
         >>> s.data  # doctest: +NORMALIZE_WHITESPACE
