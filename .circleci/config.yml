@@ -12,7 +12,7 @@ jobs:
           keys:
             - miniconda-v1-{{ checksum "ci/environment-3.6.yml" }}
       - run:
-          name: install miniconda
+          name: Installing Miniconda
           command: |
               if [ ! -d "/home/circleci/miniconda" ]; then
                 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
@@ -22,7 +22,7 @@ jobs:
               fi
               sudo chown -R $USER.$USER $HOME
       - run:
-          name: configure conda
+          name: Configuring conda
           command: |
               export PATH="$HOME/miniconda/bin:$PATH"
               if [ ! -d "/home/circleci/miniconda/envs/py36-sparse-test" ]; then
@@ -37,17 +37,19 @@ jobs:
           paths:
             - "/home/circleci/miniconda"
       - run:
-          name: install package
+          name: Installing package
           command: |
             export PATH="$HOME/miniconda/bin:$PATH"
             source activate ${ENV_NAME}
             pip install -e .[tests]
       - run:
-          name: run tests
+          name: Running unit tests
           command: |
             /home/circleci/miniconda/envs/py36-sparse-test/bin/pytest
+      - store_test_results:
+          path: test_results
       - run:
-          name: upload coverage
+          name: Uploading coverage
           command: |
             export PATH="$HOME/miniconda/bin:$PATH"
             source activate ${ENV_NAME}
@@ -64,7 +66,7 @@ jobs:
           keys:
             - miniconda-v1-{{ checksum "ci/environment-2.7.yml" }}
       - run:
-          name: install miniconda
+          name: Installing Miniconda
           command: |
               if [ ! -d "/home/circleci/miniconda" ]; then
                 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
@@ -74,7 +76,7 @@ jobs:
               fi
               sudo chown -R $USER.$USER $HOME
       - run:
-          name: configure conda
+          name: Configuring conda
           command: |
               export PATH="$HOME/miniconda/bin:$PATH"
               if [ ! -d "/home/circleci/miniconda/envs/py27-sparse-test" ]; then
@@ -89,17 +91,19 @@ jobs:
           paths:
             - "/home/circleci/miniconda"
       - run:
-          name: install package
+          name: Installing package
           command: |
             export PATH="$HOME/miniconda/bin:$PATH"
             source activate ${ENV_NAME}
             pip install -e .[tests]
       - run:
-          name: run tests
+          name: Running unit tests
           command: |
             /home/circleci/miniconda/envs/py27-sparse-test/bin/pytest
+      - store_test_results:
+          path: test_results
       - run:
-          name: upload coverage
+          name: Uploading coverage
           command: |
             export PATH="$HOME/miniconda/bin:$PATH"
             source activate ${ENV_NAME}
