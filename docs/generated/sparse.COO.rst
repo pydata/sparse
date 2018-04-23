@@ -69,5 +69,3 @@ COO
       COO.broadcast_to
       COO.enable_caching
       COO.linear_loc
-      COO.sort_indices
-      COO.sum_duplicates
