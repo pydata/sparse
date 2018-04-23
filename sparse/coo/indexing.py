@@ -29,8 +29,6 @@ def getitem(x, index):
     """
     from .core import COO
 
-    x.sum_duplicates()
-
     # If string, this is an index into an np.void
     # Custom dtype.
     if isinstance(index, str):
