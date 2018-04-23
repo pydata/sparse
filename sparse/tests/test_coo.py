@@ -76,7 +76,7 @@ def test_nan_reductions(reduction, axis, keepdims, fraction):
     x = s.todense()
     expected = getattr(np, reduction)(x, axis=axis, keepdims=keepdims)
     actual = getattr(sparse, reduction)(s, axis=axis, keepdims=keepdims)
-    assert_eq(expected, actual, equal_nan=True, check_nnz=False)
+    assert_eq(expected, actual, equal_nan=True)
 
 
 @pytest.mark.parametrize('reduction', [

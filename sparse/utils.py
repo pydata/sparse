@@ -15,6 +15,9 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
     if isinstance(y, COO):
         assert is_canonical(y)
 
+    if isinstance(x, COO) and isinstance(y, COO) and not check_nnz:
+        assert np.array_equal(x.coords, y.coords) and np.allclose(x.data, y.data, **kwargs)
+
     if hasattr(x, 'todense'):
         xx = x.todense()
         if check_nnz:
@@ -31,7 +34,7 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
 
 
 def is_canonical(x):
-    return not x.shape or (np.diff(x.linear_loc()) > 0).all()
+    return not x.shape or ((np.diff(x.linear_loc()) > 0).all() and (x.data != _zero_of_dtype(x.dtype)).all())
 
 
 def _zero_of_dtype(dtype):
