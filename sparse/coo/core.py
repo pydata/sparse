@@ -61,7 +61,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     >>> x[2, 3] = 5
     >>> s = COO.from_numpy(x)
     >>> s
-    <COO: shape=(4, 4), dtype=uint8, nnz=5, sorted=True, duplicates=False>
+    <COO: shape=(4, 4), dtype=uint8, nnz=5>
     >>> s.data  # doctest: +NORMALIZE_WHITESPACE
     array([1, 1, 1, 5, 1], dtype=uint8)
     >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
@@ -126,7 +126,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     >>> data = [1, 2, 3, 4, 5]
     >>> s4 = COO(coords, data, shape=(3, 4, 5))
     >>> s4
-    <COO: shape=(3, 4, 5), dtype=int64, nnz=5, sorted=False, duplicates=True>
+    <COO: shape=(3, 4, 5), dtype=int64, nnz=5>
 
     Following scipy.sparse conventions you can also pass these as a tuple with
     rows and columns
@@ -147,7 +147,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
     >>> d = {(0, 0, 0): 1, (1, 2, 3): 2, (1, 1, 0): 3}
     >>> COO(d)
-    <COO: shape=(2, 3, 4), dtype=int64, nnz=3, sorted=False, duplicates=False>
+    <COO: shape=(2, 3, 4), dtype=int64, nnz=3>
     >>> L = [((0, 0), 1),
     ...      ((1, 1), 2),
     ...      ((0, 0), 3)]
@@ -164,7 +164,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     <DOK: shape=(5, 5), dtype=int64, nnz=4>
     >>> s6 = COO(s5)
     >>> s6
-    <COO: shape=(5, 5), dtype=int64, nnz=4, sorted=False, duplicates=False>
+    <COO: shape=(5, 5), dtype=int64, nnz=4>
     >>> s6.todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[0, 0, 0, 0, 0],
            [0, 4, 5, 0, 0],
@@ -244,14 +244,16 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             dtype = np.uint8
         self.coords = self.coords.astype(dtype)
         assert not self.shape or len(data) == self.coords.shape[1]
-        self.has_duplicates = has_duplicates
-        self.sorted = sorted
+
+        if not sorted:
+            self._sort_indices()
+
+        if has_duplicates:
+            self._sum_duplicates()
 
     def _make_shallow_copy_of(self, other):
         self.coords = other.coords
         self.data = other.data
-        self.has_duplicates = other.has_duplicates
-        self.sorted = other.sorted
         super(COO, self).__init__(other.shape)
 
     def enable_caching(self):
@@ -298,7 +300,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> x = np.eye(5)
         >>> s = COO.from_numpy(x)
         >>> s
-        <COO: shape=(5, 5), dtype=float64, nnz=5, sorted=True, duplicates=False>
+        <COO: shape=(5, 5), dtype=float64, nnz=5>
         """
         x = np.asanyarray(x)
         if x.shape:
@@ -335,7 +337,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> np.array_equal(x, x2)
         True
         """
-        self.sum_duplicates()
         x = np.zeros(shape=self.shape, dtype=self.dtype)
 
         coords = tuple([self.coords[i, :] for i in range(self.ndim)])
@@ -489,9 +490,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     __getitem__ = getitem
 
     def __str__(self):
-        return "<COO: shape=%s, dtype=%s, nnz=%d, sorted=%s, duplicates=%s>" % (
-            self.shape, self.dtype, self.nnz, self.sorted,
-            self.has_duplicates)
+        return "<COO: shape=%s, dtype=%s, nnz=%d>" % (self.shape, self.dtype, self.nnz)
 
     __repr__ = __str__
 
@@ -568,7 +567,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         By default, this reduces the array by only the first axis.
 
         >>> s.reduce(np.add)
-        <COO: shape=(5,), dtype=int64, nnz=5, sorted=True, duplicates=False>
+        <COO: shape=(5,), dtype=int64, nnz=5>
         """
         axis = normalize_axis(axis, self.ndim)
         zero_reduce_result = method.reduce([_zero_of_dtype(self.dtype)], **kwargs)
@@ -576,9 +575,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         if zero_reduce_result != _zero_of_dtype(np.dtype(zero_reduce_result)):
             raise ValueError("Performing this reduction operation would produce "
                              "a dense result: %s" % str(method))
-
-        # Needed for more esoteric reductions like product.
-        self.sum_duplicates()
 
         if axis is None:
             axis = tuple(range(self.ndim))
@@ -599,7 +595,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             a = self.transpose(neg_axis + axis)
             a = a.reshape((np.prod([self.shape[d] for d in neg_axis]),
                            np.prod([self.shape[d] for d in axis])))
-            a.sort_indices()
 
             result, inv_idx, counts = _grouped_reduce(a.data, a.coords[0], method, **kwargs)
             missing_counts = counts != a.shape[1]
@@ -947,7 +942,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         shape = tuple(self.shape[ax] for ax in axes)
         result = COO(self.coords[axes, :], self.data, shape,
-                     has_duplicates=self.has_duplicates,
+                     has_duplicates=False,
                      cache=self._cache is not None)
 
         if self._cache is not None:
@@ -1148,8 +1143,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             strides *= d
 
         result = COO(coords, self.data, shape,
-                     has_duplicates=self.has_duplicates,
-                     sorted=self.sorted, cache=self._cache is not None)
+                     has_duplicates=False,
+                     sorted=True, cache=self._cache is not None)
 
         if self._cache is not None:
             self._cache['reshape'].append((shape, result))
@@ -1181,19 +1176,13 @@ class COO(SparseArray, NDArrayOperatorsMixin):
                                           (self.coords[0],
                                            self.coords[1])),
                                          shape=self.shape)
-        result.has_canonical_format = (not self.has_duplicates and self.sorted)
+        result.has_canonical_format = True
         return result
 
     def _tocsr(self):
         if self.ndim != 2:
             raise ValueError('This array must be two-dimensional for this conversion '
                              'to work.')
-
-        # Pass 1: sum duplicates
-        self.sum_duplicates()
-
-        # Pass 2: sort indices
-        self.sort_indices()
         row, col = self.coords
 
         # Pass 3: count nonzeros in each row
@@ -1275,7 +1264,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         return csc
 
-    def sort_indices(self):
+    def _sort_indices(self):
         """
         Sorts the :obj:`COO.coords` attribute. Also sorts the data in
         :obj:`COO.data` to match.
@@ -1285,27 +1274,22 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> coords = np.array([[1, 2, 0]], dtype=np.uint8)
         >>> data = np.array([4, 1, 3], dtype=np.uint8)
         >>> s = COO(coords, data)
-        >>> s.sort_indices()
+        >>> s._sort_indices()
         >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
         array([[0, 1, 2]], dtype=uint8)
         >>> s.data  # doctest: +NORMALIZE_WHITESPACE
         array([3, 4, 1], dtype=uint8)
         """
-        if self.sorted:
-            return
-
         linear = self.linear_loc(signed=True)
 
         if (np.diff(linear) > 0).all():  # already sorted
-            self.sorted = True
             return
 
         order = np.argsort(linear)
         self.coords = self.coords[:, order]
         self.data = self.data[order]
-        self.sorted = True
 
-    def sum_duplicates(self):
+    def _sum_duplicates(self):
         """
         Sums data corresponding to duplicates in :obj:`COO.coords`.
 
@@ -1318,7 +1302,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> coords = np.array([[0, 1, 1, 2]], dtype=np.uint8)
         >>> data = np.array([6, 5, 2, 2], dtype=np.uint8)
         >>> s = COO(coords, data)
-        >>> s.sum_duplicates()
+        >>> s._sum_duplicates()
         >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
         array([[0, 1, 2]], dtype=uint8)
         >>> s.data  # doctest: +NORMALIZE_WHITESPACE
@@ -1326,18 +1310,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         """
         # Inspired by scipy/sparse/coo.py::sum_duplicates
         # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
-        if not self.has_duplicates and self.sorted:
-            return
-        if not self.coords.size:
-            return
-
-        self.sort_indices()
-
         linear = self.linear_loc()
         unique_mask = np.diff(linear) != 0
 
         if unique_mask.sum() == len(unique_mask):  # already unique
-            self.has_duplicates = False
             return
 
         unique_mask = np.append(True, unique_mask)
@@ -1348,7 +1324,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         self.data = data
         self.coords = coords
-        self.has_duplicates = False
 
     def broadcast_to(self, shape):
         """

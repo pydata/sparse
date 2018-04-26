@@ -150,10 +150,6 @@ def _elemwise_n_ary(func, *args, **kwargs):
 
     args = list(args)
 
-    for arg in args:
-        if isinstance(arg, COO):
-            arg.sum_duplicates()
-
     args_zeros = tuple(_zero_of_dtype(arg.dtype)[()] for arg in args)
 
     func_value = func(*args_zeros, **kwargs)
@@ -561,8 +557,8 @@ def _elemwise_unary(func, self, *args, **kwargs):
 
     return COO(self.coords[:, nonzero], data_func[nonzero],
                shape=self.shape,
-               has_duplicates=self.has_duplicates,
-               sorted=self.sorted)
+               has_duplicates=False,
+               sorted=True)
 
 
 def _get_matching_coords(coords, params, shape):
@@ -633,5 +629,5 @@ def broadcast_to(x, shape):
     params = _get_broadcast_parameters(x.shape, result_shape)
     coords, data = _get_expanded_coords_data(x.coords, x.data, params, result_shape)
 
-    return COO(coords, data, shape=result_shape, has_duplicates=x.has_duplicates,
-               sorted=x.sorted)
+    return COO(coords, data, shape=result_shape, has_duplicates=False,
+               sorted=True)

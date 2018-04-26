@@ -29,8 +29,6 @@ def getitem(x, index):
     """
     from .core import COO
 
-    x.sum_duplicates()
-
     # If string, this is an index into an np.void
     # Custom dtype.
     if isinstance(index, str):
@@ -41,8 +39,8 @@ def getitem(x, index):
 
         return COO(coords, data[idx].flatten(),
                    shape=x.shape + x.data.dtype[index].shape,
-                   has_duplicates=x.has_duplicates,
-                   sorted=x.sorted)
+                   has_duplicates=False,
+                   sorted=True)
 
     # Otherwise, convert into a tuple.
     if not isinstance(index, tuple):
@@ -106,8 +104,8 @@ def getitem(x, index):
     data = x.data[mask]
 
     return COO(coords, data, shape=shape,
-               has_duplicates=x.has_duplicates,
-               sorted=x.sorted)
+               has_duplicates=False,
+               sorted=True)
 
 
 def _mask(coords, indices, shape):

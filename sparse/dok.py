@@ -60,7 +60,7 @@ class DOK(SparseArray):
     >>> from sparse import COO
     >>> s3 = COO(s2)
     >>> s3
-    <COO: shape=(5, 5), dtype=int64, nnz=4, sorted=False, duplicates=False>
+    <COO: shape=(5, 5), dtype=int64, nnz=4>
     >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[0, 0, 0, 0, 0],
            [0, 4, 5, 0, 0],
@@ -70,7 +70,7 @@ class DOK(SparseArray):
 
     >>> s4 = COO.from_numpy(np.eye(4, dtype=np.uint8))
     >>> s4
-    <COO: shape=(4, 4), dtype=uint8, nnz=4, sorted=True, duplicates=False>
+    <COO: shape=(4, 4), dtype=uint8, nnz=4>
     >>> s5 = DOK.from_coo(s4)
     >>> s5
     <DOK: shape=(4, 4), dtype=uint8, nnz=4>
@@ -171,7 +171,7 @@ class DOK(SparseArray):
         <DOK: shape=(5, 5), dtype=float64, nnz=4>
         >>> s2 = s.to_coo()
         >>> s2
-        <COO: shape=(5, 5), dtype=float64, nnz=4, sorted=False, duplicates=False>
+        <COO: shape=(5, 5), dtype=float64, nnz=4>
         """
         from .coo import COO
         return COO(self)

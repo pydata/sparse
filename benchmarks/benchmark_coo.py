@@ -9,9 +9,6 @@ class ElemwiseSuite(object):
         self.x = sparse.random((100, 100, 100), density=0.01)
         self.y = sparse.random((100, 100, 100), density=0.01)
 
-        self.x.sum_duplicates()
-        self.y.sum_duplicates()
-
         self.x + self.y  # Numba compilation
 
     def time_add(self):
@@ -30,9 +27,6 @@ class ElemwiseBroadcastingSuite(object):
         self.x = sparse.random((100, 1, 100), density=0.01)
         self.y = sparse.random((100, 100), density=0.01)
 
-        self.x.sum_duplicates()
-        self.y.sum_duplicates()
-
     def time_add(self):
         self.x + self.y
 
@@ -44,8 +38,6 @@ class IndexingSuite(object):
     def setup(self):
         np.random.seed(0)
         self.x = sparse.random((100, 100, 100), density=0.01)
-        self.x.sum_duplicates()
-
         self.x[5]  # Numba compilation
 
     def time_index_scalar(self):

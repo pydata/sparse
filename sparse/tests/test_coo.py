@@ -7,7 +7,7 @@ import scipy.stats
 
 import sparse
 from sparse import COO
-from sparse.utils import assert_eq, is_lexsorted, random_value_array
+from sparse.utils import assert_eq, random_value_array
 
 
 @pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
@@ -76,7 +76,7 @@ def test_nan_reductions(reduction, axis, keepdims, fraction):
     x = s.todense()
     expected = getattr(np, reduction)(x, axis=axis, keepdims=keepdims)
     actual = getattr(sparse, reduction)(s, axis=axis, keepdims=keepdims)
-    assert_eq(expected, actual, equal_nan=True, check_nnz=False)
+    assert_eq(expected, actual, equal_nan=True)
 
 
 @pytest.mark.parametrize('reduction', [
@@ -882,25 +882,6 @@ def test_slicing_errors(index):
         s[index]
 
 
-def test_canonical():
-    coords = np.array([[0, 0, 0],
-                       [0, 1, 0],
-                       [1, 0, 3],
-                       [0, 1, 0],
-                       [1, 0, 3]]).T
-    data = np.arange(5) + 1
-
-    old = COO(coords, data, shape=(2, 2, 5))
-    x = COO(coords, data, shape=(2, 2, 5))
-    x.sum_duplicates()
-
-    assert_eq(old, x)
-    # assert x.nnz == 5
-    # assert x.has_duplicates
-    assert x.nnz == 3
-    assert not x.has_duplicates
-
-
 def test_concatenate():
     xx = sparse.random((2, 3, 4), density=0.5)
     x = xx.todense()
@@ -1258,12 +1239,6 @@ def test_two_random_same_seed():
     s2 = sparse.random((2, 3, 4), 0.3, random_state=state)
 
     assert_eq(s1, s2)
-
-
-def test_random_sorted():
-    s = sparse.random((2, 3, 4), canonical_order=True)
-
-    assert is_lexsorted(s)
 
 
 @pytest.mark.parametrize('rvs, dtype', [
