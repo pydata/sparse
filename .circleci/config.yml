@@ -1,6 +1,6 @@
 version: 2
 
-test_steps: &default_test_steps
+test_steps: &TESTDEFAULT
   - checkout
   - restore_cache:
   - run:
@@ -53,7 +53,7 @@ jobs:
       PYTHON: "3.6"
       ENV_NAME: "py36-sparse-test"
     steps:
-      <<: *default_test_steps
+      <<: *TESTDEFAULT
       - restore_cache:
         keys:
           - miniconda-v1-{{ checksum "ci/environment-3.6.yml" }}
@@ -67,7 +67,7 @@ jobs:
       ENV_NAME: "py27-sparse-test"
       ENV_CHECKSUM: "{{ checksum "ci/environment-2.7.yml" }}"
     steps:
-      <<: *default_test_steps
+      <<: *TESTDEFAULT
       - restore_cache:
         keys:
           - miniconda-v1-{{ checksum "ci/environment-2.7.yml" }}
