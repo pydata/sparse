@@ -1437,6 +1437,27 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             raise ValueError("Operation would require converting "
                              "large sparse array to dense")
 
+    def nonzero(self):
+        """
+        Get the indices where this array is nonzero.
+
+        Returns
+        -------
+        idx : tuple[numpy.ndarray]
+            The indices where this array is nonzero.
+
+        See Also
+        --------
+        :obj:`numpy.ndarray.nonzero` : NumPy equivalent function
+
+        Examples
+        --------
+        >>> s = COO.from_numpy(np.eye(5))
+        >>> s.nonzero()
+        (array([0, 1, 2, 3, 4], dtype=uint8), array([0, 1, 2, 3, 4], dtype=uint8))
+        """
+        return tuple(self.coords)
+
 
 def _keepdims(original, new, axis):
     shape = list(original.shape)
