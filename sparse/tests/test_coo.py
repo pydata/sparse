@@ -1374,3 +1374,24 @@ def test_two_arg_where():
 
     with pytest.raises(ValueError):
         sparse.where(cs, xs)
+
+
+def test_nonzero():
+    s = sparse.random((2, 3, 4), density=0.5)
+    x = s.todense()
+
+    expected = x.nonzero()
+    actual = s.nonzero()
+
+    assert isinstance(actual, tuple)
+    assert len(expected) == len(actual)
+
+    for e, a in zip(expected, actual):
+        assert_eq(e, a, compare_dtype=False)
+
+
+def test_argwhere():
+    s = sparse.random((2, 3, 4), density=0.5)
+    x = s.todense()
+
+    assert_eq(np.argwhere(s), np.argwhere(x), compare_dtype=False)

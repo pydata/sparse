@@ -61,6 +61,7 @@ COO
       COO.dot
       COO.reshape
       COO.transpose
+      COO.nonzero
 
    .. rubric:: Utility functions
    .. autosummary::
