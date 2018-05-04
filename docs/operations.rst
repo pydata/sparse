@@ -20,13 +20,12 @@ results for both Numpy arrays, COO arrays, or a mix of the two:
 
    np.log(X.dot(beta.T) + 1)
 
-However some operations are not supported, like inplace operations,
-operations that implicitly cause dense structures,
-or numpy functions that are not yet implemented for sparse arrays
+However some operations are not supported, like operations that
+implicitly cause dense structures, or numpy functions that are not
+yet implemented for sparse arrays.
 
 .. code-block:: python
 
-   x += y     # inplace operations not supported
    x + 1      # operations that produce dense results not supported
    np.svd(x)  # sparse svd not implemented
 
@@ -34,7 +33,7 @@ or numpy functions that are not yet implemented for sparse arrays
 This page describes those valid operations, and their limitations.
 
 :obj:`elemwise`
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 This function allows you to apply any arbitrary broadcasting function to any number of arguments
 where the arguments can be :obj:`SparseArray` objects or :obj:`scipy.sparse.spmatrix` objects.
 For example, the following will add two arrays:
@@ -155,7 +154,9 @@ be a :obj:`scipy.sparse.spmatrix` The following operators are supported:
    * :obj:`operator.lshift` (:code:`x << y`)
    * :obj:`operator.rshift` (:code:`x >> y`)
 
-.. note:: In-place operators are not supported at this time.
+.. warning::
+   While in-place operations are supported for compatibility with Numpy,
+   they are not truly in-place, and will effectively calculate the result separately.
 
 .. _operations-elemwise:
 

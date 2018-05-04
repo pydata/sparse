@@ -264,6 +264,22 @@ def test_elemwise(func):
     assert_eq(func(x), fs)
 
 
+@pytest.mark.parametrize('func', [np.expm1, np.log1p, np.sin, np.tan,
+                                  np.sinh, np.tanh, np.floor, np.ceil,
+                                  np.sqrt, np.conj,
+                                  np.round, np.rint, np.conjugate,
+                                  np.conj, lambda x, out: x.round(decimals=2, out=out)])
+def test_elemwise_inplace(func):
+    s = sparse.random((2, 3, 4), density=0.5)
+    x = s.todense()
+
+    func(s, out=s)
+    func(x, out=x)
+    assert isinstance(s, COO)
+
+    assert_eq(x, s)
+
+
 @pytest.mark.parametrize('func', [
     operator.mul, operator.add, operator.sub, operator.gt,
     operator.lt, operator.ne
@@ -277,6 +293,23 @@ def test_elemwise_binary(func, shape):
     y = ys.todense()
 
     assert_eq(func(xs, ys), func(x, y))
+
+
+@pytest.mark.parametrize('func', [
+    operator.imul, operator.iadd, operator.isub
+])
+@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+def test_elemwise_binary_inplace(func, shape):
+    xs = sparse.random(shape, density=0.5)
+    ys = sparse.random(shape, density=0.5)
+
+    x = xs.todense()
+    y = ys.todense()
+
+    xs = func(xs, ys)
+    x = func(x, y)
+
+    assert_eq(xs, x)
 
 
 @pytest.mark.parametrize('func', [
@@ -497,7 +530,7 @@ def test_ndarray_densification_fails():
     xs = sparse.random((3, 4), density=0.5)
     y = np.random.rand(3, 4)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         xs + y
 
 
@@ -625,6 +658,30 @@ def test_bitwise_binary(func, shape):
 
 
 @pytest.mark.parametrize('func', [
+    operator.iand, operator.ior, operator.ixor
+])
+@pytest.mark.parametrize('shape', [
+    (2,),
+    (2, 3),
+    (2, 3, 4),
+    (2, 3, 4, 5)
+])
+def test_bitwise_binary_inplace(func, shape):
+    # Small arrays need high density to have nnz entries
+    # Casting floats to int will result in all zeros, hence the * 100
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+    ys = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+
+    x = xs.todense()
+    y = ys.todense()
+
+    xs = func(xs, ys)
+    x = func(x, y)
+
+    assert_eq(xs, x)
+
+
+@pytest.mark.parametrize('func', [
     operator.lshift, operator.rshift
 ])
 @pytest.mark.parametrize('shape', [
@@ -649,6 +706,33 @@ def test_bitshift_binary(func, shape):
 
 
 @pytest.mark.parametrize('func', [
+    operator.ilshift, operator.irshift
+])
+@pytest.mark.parametrize('shape', [
+    (2,),
+    (2, 3),
+    (2, 3, 4),
+    (2, 3, 4, 5)
+])
+def test_bitshift_binary_inplace(func, shape):
+    # Small arrays need high density to have nnz entries
+    # Casting floats to int will result in all zeros, hence the * 100
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+
+    # Can't merge into test_bitwise_binary because left/right shifting
+    # with something >= 64 isn't defined.
+    ys = (sparse.random(shape, density=0.5) * 64).astype(np.int_)
+
+    x = xs.todense()
+    y = ys.todense()
+
+    xs = func(xs, ys)
+    x = func(x, y)
+
+    assert_eq(xs, x)
+
+
+@pytest.mark.parametrize('func', [
     operator.and_
 ])
 @pytest.mark.parametrize('shape', [
@@ -661,9 +745,6 @@ def test_bitwise_scalar(func, shape):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
     xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
-
-    # Can't merge into test_bitwise_binary because left/right shifting
-    # with something >= 64 isn't defined.
     y = np.random.randint(100)
 
     x = xs.todense()
@@ -1374,6 +1455,17 @@ def test_two_arg_where():
 
     with pytest.raises(ValueError):
         sparse.where(cs, xs)
+
+
+@pytest.mark.parametrize('func', [
+    operator.imul, operator.iadd, operator.isub
+])
+def test_inplace_invalid_shape(func):
+    xs = sparse.random((3, 4), density=0.5)
+    ys = sparse.random((2, 3, 4), density=0.5)
+
+    with pytest.raises(ValueError):
+        func(xs, ys)
 
 
 def test_nonzero():

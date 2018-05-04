@@ -677,8 +677,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s.sum()
         25
         """
-        assert out is None
-        return self.reduce(np.add, axis=axis, keepdims=keepdims, dtype=dtype)
+        return np.add.reduce(self, out=out, axis=axis, keepdims=keepdims, dtype=dtype)
 
     def max(self, axis=None, keepdims=False, out=None):
         """
@@ -739,8 +738,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s.max()
         8
         """
-        assert out is None
-        return self.reduce(np.maximum, axis=axis, keepdims=keepdims)
+        return np.maximum.reduce(self, out=out, axis=axis, keepdims=keepdims)
 
     def min(self, axis=None, keepdims=False, out=None):
         """
@@ -801,8 +799,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s.min()
         0
         """
-        assert out is None
-        return self.reduce(np.minimum, axis=axis, keepdims=keepdims)
+        return np.minimum.reduce(self, out=out, axis=axis, keepdims=keepdims)
 
     def prod(self, axis=None, keepdims=False, dtype=None, out=None):
         """
@@ -868,8 +865,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s.prod()
         0
         """
-        assert out is None
-        return self.reduce(np.multiply, axis=axis, keepdims=keepdims, dtype=dtype)
+        return np.multiply.reduce(self, out=out, axis=axis, keepdims=keepdims, dtype=dtype)
 
     def transpose(self, axes=None):
         """
@@ -1040,15 +1036,26 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         out = kwargs.pop('out', None)
-        if out is not None:
+        if out is not None and not all(isinstance(x, COO) for x in out):
             return NotImplemented
 
         if method == '__call__':
-            return elemwise(ufunc, *inputs, **kwargs)
+            result = elemwise(ufunc, *inputs, **kwargs)
         elif method == 'reduce':
-            return COO._reduce(ufunc, *inputs, **kwargs)
+            result = COO._reduce(ufunc, *inputs, **kwargs)
         else:
             return NotImplemented
+
+        if out is not None:
+            (out,) = out
+            if out.shape != result.shape:
+                raise ValueError('non-broadcastable output operand with shape %s'
+                                 'doesn\'t match the broadcast shape %s' % (out.shape, result.shape))
+
+            out._make_shallow_copy_of(result)
+            return out
+
+        return result
 
     def __array__(self, dtype=None, **kwargs):
         x = self.todense()
@@ -1367,10 +1374,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         The :code:`out` parameter is provided just for compatibility with Numpy and isn't
         actually supported.
         """
-        assert out is None
-        return elemwise(np.round, self, decimals=decimals)
+        if out is not None and not isinstance(out, tuple):
+            out = (out,)
+        return self.__array_ufunc__(np.round, '__call__', self, decimals=decimals, out=out)
 
-    def astype(self, dtype, out=None):
+    def astype(self, dtype):
         """
         Copy of the array, cast to a specified type.
 
@@ -1386,8 +1394,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         The :code:`out` parameter is provided just for compatibility with Numpy and isn't
         actually supported.
         """
-        assert out is None
-        return elemwise(np.ndarray.astype, self, dtype=dtype)
+        return self.__array_ufunc__(np.ndarray.astype, '__call__', self, dtype=dtype)
 
     def maybe_densify(self, max_size=1000, min_density=0.25):
         """
