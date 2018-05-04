@@ -57,8 +57,7 @@ def elemwise(func, *args, **kwargs):
         elif isscalar(arg) or (isinstance(arg, np.ndarray)
                                and not arg.shape):
             # Faster and more reliable to pass ()-shaped ndarrays as scalars.
-            if isinstance(arg, np.ndarray):
-                args[i] = arg[()]
+            args[i] = np.asarray(arg)[()]
 
             pos.append(i)
             posargs.append(args[i])
@@ -74,9 +73,6 @@ def elemwise(func, *args, **kwargs):
 
     if len(args) == 0:
         return func(**kwargs)
-
-    if len(args) == 1:
-        return _elemwise_unary(func, args[0], **kwargs)
 
     return _elemwise_n_ary(func, *args, **kwargs)
 
@@ -150,7 +146,7 @@ def _elemwise_n_ary(func, *args, **kwargs):
 
     args = list(args)
 
-    args_zeros = tuple(_zero_of_dtype(arg.dtype)[()] for arg in args)
+    args_zeros = tuple(_zero_of_dtype(np.dtype(arg)) for arg in args)
 
     func_value = func(*args_zeros, **kwargs)
     func_zero = _zero_of_dtype(func_value.dtype)
@@ -173,7 +169,7 @@ def _elemwise_n_ary(func, *args, **kwargs):
     result_shape = _get_nary_broadcast_shape(*[arg.shape for arg in args])
 
     # Concatenate matches and mismatches
-    data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=args[0].dtype)
+    data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=func_value.dtype)
     coords = np.concatenate(coords_list, axis=1) if len(coords_list) else \
         np.empty((0, len(result_shape)), dtype=np.min_scalar_type(max(result_shape) - 1))
 
@@ -294,7 +290,7 @@ def _unmatch_coo(func, args, mask, cache, **kwargs):
     matched_arrays = _match_coo(*matched_args, cache=cache)
 
     pos = tuple(i for i, m in enumerate(mask) if not m)
-    posargs = [_zero_of_dtype(arg.dtype)[()] for arg, m in zip(args, mask) if not m]
+    posargs = [_zero_of_dtype(arg.dtype) for arg, m in zip(args, mask) if not m]
     result_shape = _get_nary_broadcast_shape(*[arg.shape for arg in args])
 
     partial = PositinalArgumentPartial(func, pos, posargs)
@@ -539,26 +535,6 @@ def _cartesian_product(*arrays):
         out[start:end] = a.reshape(-1)
         start, end = end, end + rows
     return out.reshape(cols, rows)
-
-
-def _elemwise_unary(func, self, *args, **kwargs):
-    from .core import COO
-
-    check = kwargs.pop('check', True)
-    data_zero = _zero_of_dtype(self.dtype)
-    zero_func = func(data_zero, *args, **kwargs)
-    func_zero = _zero_of_dtype(zero_func.dtype)
-    if check and zero_func != func_zero:
-        raise ValueError("Performing this operation would produce "
-                         "a dense result: %s" % str(func))
-
-    data_func = func(self.data, *args, **kwargs)
-    nonzero = data_func != func_zero
-
-    return COO(self.coords[:, nonzero], data_func[nonzero],
-               shape=self.shape,
-               has_duplicates=False,
-               sorted=True)
 
 
 def _get_matching_coords(coords, params, shape):
