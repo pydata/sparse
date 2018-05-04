@@ -64,8 +64,7 @@ def elemwise(func, *args, **kwargs):
         elif isinstance(arg, SparseArray) and not isinstance(arg, COO):
             args[i] = COO(arg)
         elif not isinstance(arg, COO):
-            raise ValueError("Performing this operation would produce "
-                             "a dense result: %s" % str(func))
+            return NotImplemented
 
     # Filter out scalars as they are 'baked' into the function.
     func = PositinalArgumentPartial(func, pos, posargs)
