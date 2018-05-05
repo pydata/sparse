@@ -1402,8 +1402,15 @@ def test_full():
 
     a = sparse.full(coords, 1)
     e = np.diag(np.ones(5, dtype=int))
-    assert_eq(e, a, compare_dtype=True)
+    assert_eq(e, a)
+    assert_eq(e, COO(coords, 1))
 
     a = sparse.full(coords, 1.0)
-    e = np.diag(np.ones(5))
-    assert_eq(e, a, compare_dtype=True)
+    e = np.eye(5)
+    assert_eq(e, a)
+    assert_eq(e, COO(coords, 1.0))
+
+    a = sparse.full(coords.tolist(), -1.0)
+    e = -np.eye(5)
+    assert_eq(e, a)
+    assert_eq(e, COO(coords, -1.0))

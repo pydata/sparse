@@ -223,8 +223,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
                 data = coords[0]
                 coords = np.stack(coords[1], axis=0)
 
-        self.data = np.asarray(data)
         self.coords = np.asarray(coords)
+        self.data = np.broadcast_to(data, self.coords.shape[-1])
+
         if self.coords.ndim == 1:
             self.coords = self.coords[None, :]
 
@@ -243,7 +244,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         else:
             dtype = np.uint8
         self.coords = self.coords.astype(dtype)
-        assert not self.shape or len(data) == self.coords.shape[1]
+        assert not self.shape or len(self.data) == self.coords.shape[1]
 
         if not sorted:
             self._sort_indices()

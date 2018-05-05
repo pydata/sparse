@@ -631,6 +631,8 @@ def full(coords, fill_value, dtype=None, **kwargs):
     dtype : data-type (optional)
         The data-type for the array. If None, defaults to
         `np.array(fill_value).dtype`.
+    kwargs : dict (optional)
+        Additional arguments to pass to ``COO`` constructor.
 
     Returns
     -------
@@ -643,5 +645,5 @@ def full(coords, fill_value, dtype=None, **kwargs):
     """
     from .core import COO
 
-    d = np.full(coords.shape[1], fill_value, dtype=dtype)
+    d = np.full(np.asarray(coords).shape[1], fill_value, dtype=dtype)
     return COO(coords, data=d, **kwargs)
