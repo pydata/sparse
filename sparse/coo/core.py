@@ -205,7 +205,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         else:
             dtype = np.uint8
         self.coords = self.coords.astype(dtype)
-        assert not self.shape or len(data) == self.coords.shape[1]
+        assert not self.shape or (len(data) == self.coords.shape[1] and
+                                  len(self.shape) == self.coords.shape[0])
 
         if not sorted:
             self._sort_indices()
@@ -397,7 +398,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             coords = np.empty((ndim, 0), dtype=np.uint8)
             data = np.empty((0,))
 
-            return COO(coords, data, shape=(), sorted=True, has_duplicates=False)
+            return COO(coords, data, shape=() if shape is None else shape,
+                       sorted=True, has_duplicates=False)
 
         if not isinstance(x[0][0], Iterable):
             coords = np.stack(x[1], axis=0)

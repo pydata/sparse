@@ -1524,3 +1524,13 @@ def test_invalid_shape_error():
 
     with pytest.raises(ValueError):
         COO(s, shape=(2, 3))
+
+
+def test_invalid_iterable_error():
+    with pytest.raises(ValueError):
+        x = [(3, 4, 5)]
+        COO.from_iter(x)
+
+    with pytest.raises(ValueError):
+        x = [((2.3, 4.5), 3.2)]
+        COO.from_iter(x)
