@@ -20,7 +20,7 @@ class SparseArray(object):
 
     def __init__(self, shape):
         if not isinstance(shape, Iterable):
-            shape = (int(shape),)
+            shape = (shape,)
 
         if not all(isinstance(l, Integral) and int(l) >= 0 for l in shape):
             raise ValueError('shape must be an non-negative integer or a tuple '
@@ -144,3 +144,24 @@ class SparseArray(object):
         0.125
         """
         return self.nnz / self.size
+
+    @abstractmethod
+    def asformat(self, format):
+        """
+        Convert this sparse array to a given format.
+
+        Parameters
+        ----------
+        format : str
+            A format string.
+
+        Returns
+        -------
+        out : SparseArray
+            The converted array.
+
+        Raises
+        ------
+        NotImplementedError
+            If the format isn't supported.
+        """

@@ -158,3 +158,14 @@ def test_set_zero():
 
     assert s[0] == 0
     assert s.nnz == 0
+
+
+@pytest.mark.parametrize('format', [
+    'coo',
+    'dok',
+])
+def test_asformat(format):
+    s = sparse.random((2, 3, 4), density=0.5, format='dok')
+    s2 = s.asformat(format)
+
+    assert_eq(s, s2)

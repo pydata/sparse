@@ -23,6 +23,8 @@ API
 .. autosummary::
     :toctree:
 
+    as_coo
+
     concatenate
 
     dot
