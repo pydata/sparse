@@ -25,7 +25,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         An array holding the index locations of every value
         Should have shape (number of dimensions, number of non-zeros).
     data : numpy.ndarray (COO.nnz,)
-        An array of Values. If not given, defers to :obj:`as_coo`.
+        An array of Values. A scalar can also be supplied if the data is the same across
+        all coordinates. If not given, defers to :obj:`as_coo`.
     shape : tuple[int] (COO.ndim,)
         The shape of the array.
     has_duplicates : bool, optional
