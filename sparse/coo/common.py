@@ -616,3 +616,34 @@ def nanreduce(x, method, identity=None, axis=None, keepdims=False, **kwargs):
     """
     arr = _replace_nan(x, method.identity if identity is None else identity)
     return arr.reduce(method, axis, keepdims, **kwargs)
+
+
+def full(coords, fill_value, dtype=None, **kwargs):
+    """
+    Return a new COO of with a given sparsity pattern, filled with fill_value.
+
+    Parameters
+    ----------
+    coords : numpy.ndarray (COO.ndim, COO.nnz)
+        Index locations of nonzero values.
+    fill_value: scalar
+        Value of array at nonzero indices.
+    dtype : data-type (optional)
+        The data-type for the array. If None, defaults to
+        `np.array(fill_value).dtype`.
+    kwargs : dict (optional)
+        Additional arguments to pass to ``COO`` constructor.
+
+    Returns
+    -------
+    COO
+        Newly constructed sparse array.
+
+    See Also
+    --------
+    numpy.full : Analogous Numpy function.
+    """
+    from .core import COO
+
+    d = np.full(np.asarray(coords).shape[1], fill_value, dtype=dtype)
+    return COO(coords, data=d, **kwargs)

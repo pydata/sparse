@@ -1487,3 +1487,22 @@ def test_argwhere():
     x = s.todense()
 
     assert_eq(np.argwhere(s), np.argwhere(x), compare_dtype=False)
+
+
+def test_full():
+    coords = np.tile(np.arange(5), (2, 1))
+
+    a = sparse.full(coords, 1)
+    e = np.diag(np.ones(5, dtype=int))
+    assert_eq(e, a)
+    assert_eq(e, COO(coords, 1))
+
+    a = sparse.full(coords, 1.0)
+    e = np.eye(5)
+    assert_eq(e, a)
+    assert_eq(e, COO(coords, 1.0))
+
+    a = sparse.full(coords.tolist(), -1.0)
+    e = -np.eye(5)
+    assert_eq(e, a)
+    assert_eq(e, COO(coords, -1.0))

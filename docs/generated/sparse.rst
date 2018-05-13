@@ -29,6 +29,8 @@ API
 
     elemwise
 
+    full
+
     nanmax
 
     nanmin
