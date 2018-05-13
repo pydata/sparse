@@ -14,12 +14,12 @@ matrix:
 
 .. code-block:: python
 
-   import sparse
+   >>> import sparse
 
-   coords = [[0, 1, 2, 3, 4],
-             [0, 1, 2, 3, 4]]
-   data = [10, 20, 30, 40, 50]
-   s = sparse.COO(coords, data)
+   >>> coords = [[0, 1, 2, 3, 4],
+   ...           [0, 1, 2, 3, 4]]
+   >>> data = [10, 20, 30, 40, 50]
+   >>> s = sparse.COO(coords, data, shape=(5, 5))
 
    >>> s.todense()
    array([[10,  0,  0,  0,  0],
@@ -28,13 +28,25 @@ matrix:
           [ 0,  0,  0, 40,  0],
           [ 0,  0,  0,  0, 50]])
 
-
 In general :code:`coords` should be a :code:`(ndim, nnz)` shaped
 array. Each row of :code:`coords` contains one dimension of the
 desired sparse array, and each column contains the index
 corresponding to that nonzero element. :code:`data` contains
 the nonzero elements of the array corresponding to the indices
-in :code:`coords`. Its shape should be :code:`(nnz,)`
+in :code:`coords`. Its shape should be :code:`(nnz,)`.
+
+If ``data`` is the same across all the coordinates, it can be passed
+in as a scalar. For example, the following produces the :math:`4 \times 4`
+identity matrix:
+
+.. code-block:: python
+
+   >>> import sparse
+
+   >>> coords = [[0, 1, 2, 3],
+   ...           [0, 1, 2, 3]]
+   >>> data = 1
+   >>> s = sparse.COO(coords, data, shape=(4, 4))
 
 You can, and should, pass in :obj:`numpy.ndarray` objects for
 :code:`coords` and :code:`data`.

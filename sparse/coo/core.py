@@ -129,6 +129,16 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     >>> s4
     <COO: shape=(3, 4, 5), dtype=int64, nnz=5>
 
+    If the data is same across all coordinates, you can also specify a scalar.
+
+    >>> coords = [[0, 0, 0, 1, 1],
+    ...           [0, 1, 2, 0, 3],
+    ...           [0, 3, 2, 0, 1]]
+    >>> data = 1
+    >>> s5 = COO(coords, data, shape=(3, 4, 5))
+    >>> s5
+    <COO: shape=(3, 4, 5), dtype=int64, nnz=5>
+
     Following scipy.sparse conventions you can also pass these as a tuple with
     rows and columns
 
@@ -159,14 +169,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     You can convert :obj:`DOK` arrays to :obj:`COO` arrays.
 
     >>> from sparse import DOK
-    >>> s5 = DOK((5, 5), dtype=np.int64)
-    >>> s5[1:3, 1:3] = [[4, 5], [6, 7]]
-    >>> s5
-    <DOK: shape=(5, 5), dtype=int64, nnz=4>
-    >>> s6 = COO(s5)
+    >>> s6 = DOK((5, 5), dtype=np.int64)
+    >>> s6[1:3, 1:3] = [[4, 5], [6, 7]]
     >>> s6
+    <DOK: shape=(5, 5), dtype=int64, nnz=4>
+    >>> s7 = s6.asformat('coo')
+    >>> s7
     <COO: shape=(5, 5), dtype=int64, nnz=4>
-    >>> s6.todense()  # doctest: +NORMALIZE_WHITESPACE
+    >>> s7.todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[0, 0, 0, 0, 0],
            [0, 4, 5, 0, 0],
            [0, 6, 7, 0, 0],
@@ -180,6 +190,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         self._cache = None
         if cache:
             self.enable_caching()
+
         if data is None:
             arr = as_coo(coords, shape=shape)
             self._make_shallow_copy_of(arr)
@@ -187,15 +198,19 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         self.data = np.asarray(data)
         self.coords = np.asarray(coords)
+
         if self.coords.ndim == 1:
             self.coords = self.coords[None, :]
+
+        if self.data.ndim == 0:
+            self.data = np.broadcast_to(self.data, self.coords.shape[1])
 
         if shape and not self.coords.size:
             self.coords = np.zeros((len(shape), 0), dtype=np.uint64)
 
         if shape is None:
             if self.coords.nbytes:
-                shape = tuple((self.coords.max(axis=1) + 1).tolist())
+                shape = tuple((self.coords.max(axis=1) + 1))
             else:
                 shape = ()
 
@@ -205,7 +220,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         else:
             dtype = np.uint8
         self.coords = self.coords.astype(dtype)
-        assert not self.shape or (len(data) == self.coords.shape[1] and
+        assert not self.shape or (len(self.data) == self.coords.shape[1] and
                                   len(self.shape) == self.coords.shape[0])
 
         if not sorted:
