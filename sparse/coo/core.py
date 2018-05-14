@@ -1,4 +1,4 @@
-from collections import Iterable, defaultdict, deque
+from collections import Iterable, Iterator, Sized, defaultdict, deque
 
 import numpy as np
 import scipy.sparse
@@ -366,7 +366,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         Parameters
         ----------
-        x : dict or list or tuple
+        x : Iterable or Iterator
             The iterable to convert to :obj:`COO`.
         shape : tuple[int], optional
             The shape of the array.
@@ -402,9 +402,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s.todense()
         array([[1, 0],
                [0, 1]])
+
+
         """
         if isinstance(x, dict):
             x = list(x.items())
+
+        if not isinstance(x, Sized):
+            x = list(x)
 
         if len(x) != 2 and not all(len(item) == 2 for item in x):
             raise ValueError('Invalid iterable to convert to COO.')
@@ -1580,7 +1585,7 @@ def as_coo(x, shape=None):
     if isinstance(x, scipy.sparse.spmatrix):
         return COO.from_scipy_sparse(x)
 
-    if isinstance(x, Iterable):
+    if isinstance(x, (Iterable, Iterator)):
         return COO.from_iter(x, shape=shape)
 
     raise NotImplementedError('Format not supported for conversion. Supplied type is '
