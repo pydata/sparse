@@ -1583,7 +1583,8 @@ def as_coo(x, shape=None):
     if isinstance(x, Iterable):
         return COO.from_iter(x, shape=shape)
 
-    raise NotImplementedError('Format not supported for conversion.')
+    raise NotImplementedError('Format not supported for conversion. Supplied type is '
+                              '%s, see help(sparse.as_coo) for supported formats.' % type(x))
 
 
 def _keepdims(original, new, axis):
