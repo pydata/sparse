@@ -403,7 +403,13 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         array([[1, 0],
                [0, 1]])
 
+        You can also pass in a :obj:`collections.Iterator` object.
 
+        >>> x = [((0, 0), 1), ((1, 1), 1)].__iter__()
+        >>> s = COO.from_iter(x)
+        >>> s.todense()
+        array([[1, 0],
+               [0, 1]])
         """
         if isinstance(x, dict):
             x = list(x.items())
