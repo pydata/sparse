@@ -24,6 +24,7 @@ COO
    .. autosummary::
       :toctree:
 
+      COO.from_iter
       COO.from_numpy
       COO.from_scipy_sparse
 
@@ -48,6 +49,7 @@ COO
    .. autosummary::
       :toctree:
 
+      COO.asformat
       COO.todense
       COO.maybe_densify
       COO.to_scipy_sparse

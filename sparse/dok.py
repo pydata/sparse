@@ -343,3 +343,31 @@ class DOK(SparseArray):
             result[c] = d
 
         return result
+
+    def asformat(self, format):
+        """
+        Convert this sparse array to a given format.
+
+        Parameters
+        ----------
+        format : str
+            A format string.
+
+        Returns
+        -------
+        out : SparseArray
+            The converted array.
+
+        Raises
+        ------
+        NotImplementedError
+            If the format isn't supported.
+        """
+        if format == 'dok' or format is DOK:
+            return self
+
+        from .coo import COO
+        if format == 'coo' or format is COO:
+            return COO.from_iter(self.data, shape=self.shape)
+
+        raise NotImplementedError('The given format is not supported.')

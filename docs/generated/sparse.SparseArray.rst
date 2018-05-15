@@ -14,3 +14,9 @@ SparseArray
       SparseArray.nnz
       SparseArray.size
 
+   .. rubric:: Methods
+   .. autosummary::
+      :toctree:
+
+      SparseArray.asformat
+

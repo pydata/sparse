@@ -78,12 +78,12 @@ def random(
         Data generation callback. Must accept one single parameter: number of
         :code:`nnz` elements, and return one single NumPy array of exactly
         that length.
-    format: {'coo', 'dok'}
+    format: str
         The format to return the output array in.
 
     Returns
     -------
-    {COO, DOK}
+    SparseArray
         The generated random matrix.
 
     See Also
@@ -113,7 +113,6 @@ def random(
     # Copied, in large part, from scipy.sparse.random
     # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
     from .coo import COO
-    from .dok import DOK
 
     elements = np.prod(shape)
 
@@ -143,10 +142,7 @@ def random(
 
     ar = COO(ind[None, :], data, shape=nnz).reshape(shape)
 
-    if format == 'dok':
-        ar = DOK(ar)
-
-    return ar
+    return ar.asformat(format)
 
 
 def isscalar(x):

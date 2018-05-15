@@ -31,6 +31,8 @@ DOK
    .. rubric:: Methods
    .. autosummary::
       :toctree:
+
+      DOK.asformat
    
       DOK.from_coo
    

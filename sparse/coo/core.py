@@ -1,4 +1,4 @@
-from collections import Iterable, defaultdict, deque
+from collections import Iterable, Iterator, Sized, defaultdict, deque
 
 import numpy as np
 import scipy.sparse
@@ -23,9 +23,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     ----------
     coords : numpy.ndarray (COO.ndim, COO.nnz)
         An array holding the index locations of every value
-        Should have shape (number of dimensions, number of non-zeros)
+        Should have shape (number of dimensions, number of non-zeros).
     data : numpy.ndarray (COO.nnz,)
-        An array of Values
+        An array of Values. A scalar can also be supplied if the data is the same across
+        all coordinates. If not given, defers to :obj:`as_coo`.
     shape : tuple[int] (COO.ndim,)
         The shape of the array.
     has_duplicates : bool, optional
@@ -52,6 +53,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     See Also
     --------
     DOK : A mostly write-only sparse array.
+    as_coo : Convert any given format to :obj:`COO`.
 
     Examples
     --------
@@ -128,6 +130,16 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     >>> s4
     <COO: shape=(3, 4, 5), dtype=int64, nnz=5>
 
+    If the data is same across all coordinates, you can also specify a scalar.
+
+    >>> coords = [[0, 0, 0, 1, 1],
+    ...           [0, 1, 2, 0, 3],
+    ...           [0, 3, 2, 0, 1]]
+    >>> data = 1
+    >>> s5 = COO(coords, data, shape=(3, 4, 5))
+    >>> s5
+    <COO: shape=(3, 4, 5), dtype=int64, nnz=5>
+
     Following scipy.sparse conventions you can also pass these as a tuple with
     rows and columns
 
@@ -158,14 +170,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     You can convert :obj:`DOK` arrays to :obj:`COO` arrays.
 
     >>> from sparse import DOK
-    >>> s5 = DOK((5, 5), dtype=np.int64)
-    >>> s5[1:3, 1:3] = [[4, 5], [6, 7]]
-    >>> s5
-    <DOK: shape=(5, 5), dtype=int64, nnz=4>
-    >>> s6 = COO(s5)
+    >>> s6 = DOK((5, 5), dtype=np.int64)
+    >>> s6[1:3, 1:3] = [[4, 5], [6, 7]]
     >>> s6
+    <DOK: shape=(5, 5), dtype=int64, nnz=4>
+    >>> s7 = s6.asformat('coo')
+    >>> s7
     <COO: shape=(5, 5), dtype=int64, nnz=4>
-    >>> s6.todense()  # doctest: +NORMALIZE_WHITESPACE
+    >>> s7.todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[0, 0, 0, 0, 0],
            [0, 4, 5, 0, 0],
            [0, 6, 7, 0, 0],
@@ -179,61 +191,27 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         self._cache = None
         if cache:
             self.enable_caching()
+
         if data is None:
-            from ..dok import DOK
-
-            if isinstance(coords, COO):
-                self._make_shallow_copy_of(coords)
-                return
-
-            if isinstance(coords, DOK):
-                shape = coords.shape
-                coords = coords.data
-
-            # {(i, j, k): x, (i, j, k): y, ...}
-            if isinstance(coords, dict):
-                coords = list(coords.items())
-                has_duplicates = False
-
-            if isinstance(coords, np.ndarray):
-                result = COO.from_numpy(coords)
-                self._make_shallow_copy_of(result)
-                return
-
-            if isinstance(coords, scipy.sparse.spmatrix):
-                result = COO.from_scipy_sparse(coords)
-                self._make_shallow_copy_of(result)
-                return
-
-            # []
-            if not coords:
-                data = []
-                coords = []
-
-            # [((i, j, k), value), (i, j, k), value), ...]
-            elif isinstance(coords[0][0], Iterable):
-                if coords:
-                    assert len(coords[0]) == 2
-                data = [x[1] for x in coords]
-                coords = [x[0] for x in coords]
-                coords = np.asarray(coords).T
-
-            # (data, (row, col, slab, ...))
-            else:
-                data = coords[0]
-                coords = np.stack(coords[1], axis=0)
+            arr = as_coo(coords, shape=shape)
+            self._make_shallow_copy_of(arr)
+            return
 
         self.data = np.asarray(data)
         self.coords = np.asarray(coords)
+
         if self.coords.ndim == 1:
             self.coords = self.coords[None, :]
+
+        if self.data.ndim == 0:
+            self.data = np.broadcast_to(self.data, self.coords.shape[1])
 
         if shape and not self.coords.size:
             self.coords = np.zeros((len(shape), 0), dtype=np.uint64)
 
         if shape is None:
             if self.coords.nbytes:
-                shape = tuple((self.coords.max(axis=1) + 1).tolist())
+                shape = tuple((self.coords.max(axis=1) + 1))
             else:
                 shape = ()
 
@@ -243,7 +221,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         else:
             dtype = np.uint8
         self.coords = self.coords.astype(dtype)
-        assert not self.shape or len(data) == self.coords.shape[1]
+        assert not self.shape or (len(self.data) == self.coords.shape[1] and
+                                  len(self.shape) == self.coords.shape[0])
 
         if not sorted:
             self._sort_indices()
@@ -278,7 +257,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         True
         """
         self._cache = defaultdict(lambda: deque(maxlen=3))
-        return self
 
     @classmethod
     def from_numpy(cls, x):
@@ -372,13 +350,96 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> np.array_equal(x.todense(), s.todense())
         True
         """
-        x = scipy.sparse.coo_matrix(x)
+        x = x.asformat('coo')
         coords = np.empty((2, x.nnz), dtype=x.row.dtype)
         coords[0, :] = x.row
         coords[1, :] = x.col
         return COO(coords, x.data, shape=x.shape,
                    has_duplicates=not x.has_canonical_format,
                    sorted=x.has_canonical_format)
+
+    @classmethod
+    def from_iter(cls, x, shape=None):
+        """
+        Converts an iterable in certain formats to a :obj:`COO` array. See examples
+        for details.
+
+        Parameters
+        ----------
+        x : Iterable or Iterator
+            The iterable to convert to :obj:`COO`.
+        shape : tuple[int], optional
+            The shape of the array.
+
+        Returns
+        -------
+        out : COO
+            The output :obj:`COO` array.
+
+        Examples
+        --------
+        You can convert items of the format ``[((i, j, k), value), ((i, j, k), value)]`` to :obj:`COO`.
+        Here, the first part represents the coordinate and the second part represents the value.
+
+        >>> x = [((0, 0), 1), ((1, 1), 1)]
+        >>> s = COO.from_iter(x)
+        >>> s.todense()
+        array([[1, 0],
+               [0, 1]])
+
+        You can also have a similar format with a dictionary.
+
+        >>> x = {(0, 0): 1, (1, 1): 1}
+        >>> s = COO.from_iter(x)
+        >>> s.todense()
+        array([[1, 0],
+               [0, 1]])
+
+        The third supported format is ``(data, (..., row, col))``.
+
+        >>> x = ([1, 1], ([0, 1], [0, 1]))
+        >>> s = COO.from_iter(x)
+        >>> s.todense()
+        array([[1, 0],
+               [0, 1]])
+
+        You can also pass in a :obj:`collections.Iterator` object.
+
+        >>> x = [((0, 0), 1), ((1, 1), 1)].__iter__()
+        >>> s = COO.from_iter(x)
+        >>> s.todense()
+        array([[1, 0],
+               [0, 1]])
+        """
+        if isinstance(x, dict):
+            x = list(x.items())
+
+        if not isinstance(x, Sized):
+            x = list(x)
+
+        if len(x) != 2 and not all(len(item) == 2 for item in x):
+            raise ValueError('Invalid iterable to convert to COO.')
+
+        if not x:
+            ndim = 0 if shape is None else len(shape)
+            coords = np.empty((ndim, 0), dtype=np.uint8)
+            data = np.empty((0,))
+
+            return COO(coords, data, shape=() if shape is None else shape,
+                       sorted=True, has_duplicates=False)
+
+        if not isinstance(x[0][0], Iterable):
+            coords = np.stack(x[1], axis=0)
+            data = np.asarray(x[0])
+        else:
+            coords = np.array([item[0] for item in x]).T
+            data = np.array([item[1] for item in x])
+
+        if not (coords.ndim == 2 and data.ndim == 1 and
+                np.issubdtype(coords.dtype, np.integer) and np.all(coords >= 0)):
+            raise ValueError('Invalid iterable to convert to COO.')
+
+        return COO(coords, data, shape=shape)
 
     @property
     def dtype(self):
@@ -1464,6 +1525,77 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         (array([0, 1, 2, 3, 4], dtype=uint8), array([0, 1, 2, 3, 4], dtype=uint8))
         """
         return tuple(self.coords)
+
+    def asformat(self, format):
+        """
+        Convert this sparse array to a given format.
+
+        Parameters
+        ----------
+        format : str
+            A format string.
+
+        Returns
+        -------
+        out : SparseArray
+            The converted array.
+
+        Raises
+        ------
+        NotImplementedError
+            If the format isn't supported.
+        """
+        if format == 'coo' or format is COO:
+            return self
+
+        from ..dok import DOK
+        if format == 'dok' or format is DOK:
+            return DOK.from_coo(self)
+
+        raise NotImplementedError('The given format is not supported.')
+
+
+def as_coo(x, shape=None):
+    """
+    Converts any given format to :obj:`COO`. See the "See Also" section for details.
+
+    Parameters
+    ----------
+    x : SparseArray or numpy.ndarray or scipy.sparse.spmatrix or Iterable.
+        The item to convert.
+    shape : tuple[int], optional
+        The shape of the output array. Can only be used in case of Iterable.
+
+    Returns
+    -------
+    out : COO
+        The converted :obj:`COO` array.
+
+    See Also
+    --------
+    SparseArray.asformat : A utility function to convert between formats in this library.
+    COO.from_numpy : Convert a Numpy array to :obj:`COO`.
+    COO.from_scipy_sparse : Convert a SciPy sparse matrix to :obj:`COO`.
+    COO.from_iter : Convert an iterable to :obj:`COO`.
+    """
+    if hasattr(x, 'shape') and shape is not None:
+        raise ValueError('Cannot provide a shape in combination with something '
+                         'that already has a shape.')
+
+    if isinstance(x, SparseArray):
+        return x.asformat('coo')
+
+    if isinstance(x, np.ndarray):
+        return COO.from_numpy(x)
+
+    if isinstance(x, scipy.sparse.spmatrix):
+        return COO.from_scipy_sparse(x)
+
+    if isinstance(x, (Iterable, Iterator)):
+        return COO.from_iter(x, shape=shape)
+
+    raise NotImplementedError('Format not supported for conversion. Supplied type is '
+                              '%s, see help(sparse.as_coo) for supported formats.' % type(x))
 
 
 def _keepdims(original, new, axis):

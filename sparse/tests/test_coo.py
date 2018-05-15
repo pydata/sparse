@@ -1487,3 +1487,50 @@ def test_argwhere():
     x = s.todense()
 
     assert_eq(np.argwhere(s), np.argwhere(x), compare_dtype=False)
+
+
+@pytest.mark.parametrize('format', [
+    'coo',
+    'dok',
+])
+def test_asformat(format):
+    s = sparse.random((2, 3, 4), density=0.5, format='coo')
+    s2 = s.asformat(format)
+
+    assert_eq(s, s2)
+
+
+@pytest.mark.parametrize('format', [
+    sparse.COO,
+    sparse.DOK,
+    scipy.sparse.csr_matrix,
+    np.asarray
+])
+def test_as_coo(format):
+    x = format(sparse.random((3, 4), density=0.5, format='coo').todense())
+
+    s1 = sparse.as_coo(x)
+    s2 = COO(x)
+
+    assert_eq(x, s1)
+    assert_eq(x, s2)
+
+
+def test_invalid_shape_error():
+    s = sparse.random((3, 4), density=0.5, format='coo')
+
+    with pytest.raises(ValueError):
+        sparse.as_coo(s, shape=(2, 3))
+
+    with pytest.raises(ValueError):
+        COO(s, shape=(2, 3))
+
+
+def test_invalid_iterable_error():
+    with pytest.raises(ValueError):
+        x = [(3, 4, 5)]
+        COO.from_iter(x)
+
+    with pytest.raises(ValueError):
+        x = [((2.3, 4.5), 3.2)]
+        COO.from_iter(x)
