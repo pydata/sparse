@@ -53,3 +53,6 @@ API
 
     where
 
+    save_npz
+
+    load_npz
