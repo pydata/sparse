@@ -38,10 +38,10 @@ This project has a number of requirements for all code contributed.
 
 * We use ``flake8`` to automatically lint the code and maintain code style.
 * We use Numpy-style docstrings.
-* All new functionality must have documentation added.
-* 100% code coverage is required for all new code in any submitted PR. Doctests
+* It's ideal if user-facing API changes or new features have documentation added.
+* 100% code coverage is recommended for all new code in any submitted PR. Doctests
   count toward coverage.
-* Performance optimizations must have benchmarks added in ``benchmarks``.
+* Performance optimizations should have benchmarks added in ``benchmarks``.
 
 Setting up Your Development Environment
 ---------------------------------------
@@ -74,6 +74,12 @@ the root of your repository and run
 
 This automatically checks code style and functionality, and prints code coverage,
 even though it doesn't fail on low coverage.
+
+Coverage
+--------
+
+The ``pytest`` script automatically reports coverage, both on the terminal for
+missing line numbers, and in annotated HTML form in ``htmlcov/index.html``.
 
 Adding/Building the Documentation
 ---------------------------------
