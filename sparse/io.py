@@ -1,6 +1,6 @@
 import numpy as np
 
-from .core import COO
+from sparse.coo.core import COO
 
 def save_npz(filename, matrix, compressed=True):
     nodes = {'data':   matrix.data,
