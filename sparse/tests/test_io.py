@@ -10,27 +10,29 @@ from sparse.io import save_npz, load_npz
 from sparse.utils import assert_eq
 
 
-def test_save_load_npz_file():
+@pytest.mark.parametrize('compression', [True, False])
+def test_save_load_npz_file(compression):
     x = sparse.random((2, 3, 4, 5), density=.25)
     y = x.todense()
 
     dir_name = tempfile.mkdtemp()
     filename = os.path.join(dir_name, 'mat.npz')
 
-    # with compression
-    save_npz(filename, x, compressed=True)
+    save_npz(filename, x, compressed=compression)
     z = load_npz(filename)
     assert_eq(x, z)
     assert_eq(y, z.todense())
 
-    # without compression
-    save_npz(filename, x, compressed=False)
-    z = load_npz(filename)
-    assert_eq(x, z)
-    assert_eq(y, z.todense())
+    shutil.rmtree(dir_name)
 
-    # test exception on wrong format
-    np.savez(filename, y)
+
+def test_load_wrong_format_exception():
+    x = np.array([1, 2, 3])
+
+    dir_name = tempfile.mkdtemp()
+    filename = os.path.join(dir_name, 'mat.npz')
+
+    np.savez(filename, x)
     with pytest.raises(RuntimeError):
         load_npz(filename)
 
