@@ -17,7 +17,6 @@ extras_require = {
     ],
     'docs': [
         'sphinx',
-        'sphinxcontrib-napoleon',
         'sphinx_rtd_theme',
     ],
     'tox': [
