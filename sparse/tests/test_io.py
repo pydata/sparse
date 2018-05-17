@@ -1,6 +1,8 @@
 import os
 import tempfile
 import shutil
+import pytest
+import numpy as np
 
 import sparse
 
@@ -15,9 +17,21 @@ def test_save_load_npz_file():
     dir_name = tempfile.mkdtemp()
     filename = os.path.join(dir_name, 'mat.npz')
 
-    save_npz(filename, x)
+    # with compression
+    save_npz(filename, x, compressed=True)
     z = load_npz(filename)
-
+    assert_eq(x, z)
     assert_eq(y, z.todense())
+
+    # without compression
+    save_npz(filename, x, compressed=False)
+    z = load_npz(filename)
+    assert_eq(x, z)
+    assert_eq(y, z.todense())
+
+    # test exception on wrong format
+    np.savez(filename, y)
+    with pytest.raises(RuntimeError):
+        load_npz(filename)
 
     shutil.rmtree(dir_name)
