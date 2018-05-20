@@ -6,7 +6,7 @@ import numpy as np
 
 import sparse
 
-from sparse.io import save_npz, load_npz
+from sparse import save_npz, load_npz
 from sparse.utils import assert_eq
 
 

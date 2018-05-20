@@ -31,6 +31,8 @@ API
 
     elemwise
 
+    load_npz
+
     nanmax
 
     nanmin
@@ -43,6 +45,8 @@ API
 
     random
 
+    save_npz
+
     stack
 
     tensordot
@@ -52,7 +56,3 @@ API
     triu
 
     where
-
-    save_npz
-
-    load_npz

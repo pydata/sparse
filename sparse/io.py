@@ -4,7 +4,9 @@ from .coo.core import COO
 
 
 def save_npz(filename, matrix, compressed=True):
-    """ Save a sparse matrix to disk in numpy's ``.npz`` format
+    """ Save a sparse matrix to disk in numpy's ``.npz`` format.
+    Note: This is not binary compatible with scipy's ``save_npz()``.
+    Will save a file that can only be opend with this package's ``load_npz()``.
 
     Parameters
     ----------
@@ -18,9 +20,6 @@ def save_npz(filename, matrix, compressed=True):
     compressed : bool
         Whether to save in compressed or uncompressed mode
 
-    Returns
-    -------
-
     Example
     --------
     Store sparse matrix to disk, and load it again:
@@ -32,8 +31,8 @@ def save_npz(filename, matrix, compressed=True):
     >>> mat = sparse.COO(dense_mat)
     >>> mat
     <COO: shape=(2, 2, 2), dtype=float64, nnz=2>
-    >>> sparse.io.save_npz('mat.npz', mat)
-    >>> loaded_mat = sparse.io.load_npz('mat.npz')
+    >>> sparse.save_npz('mat.npz', mat)
+    >>> loaded_mat = sparse.load_npz('mat.npz')
     >>> loaded_mat
     <COO: shape=(2, 2, 2), dtype=float64, nnz=2>
     >>> loaded_mat.todense()
@@ -43,6 +42,14 @@ def save_npz(filename, matrix, compressed=True):
            [[0.        , 0.        ],
             [0.        , 0.86522495]]])
     >>> os.remove('mat.npz')
+
+    See Also
+    --------
+    load_npz
+    scipy.sparse.save_npz
+    scipy.sparse.load_npz
+    numpy.savez
+    numpy.load
 
     """
 
@@ -57,7 +64,9 @@ def save_npz(filename, matrix, compressed=True):
 
 
 def load_npz(filename):
-    """ Load a sparse matrix in numpy's ``.npz`` format from disk
+    """ Load a sparse matrix in numpy's ``.npz`` format from disk.
+    Note: This is not binary compatible with scipy's ``save_npz()``
+    output. Will only load files saved by this package.
 
     Parameters
     ----------
@@ -72,26 +81,15 @@ def load_npz(filename):
 
     Example
     --------
-    Store sparse matrix to disk, and load it again:
+    See :obj:`save_npz` for usage examples.
 
-    >>> import os
-    >>> import sparse
-    >>> import numpy as np
-    >>> dense_mat = np.array([[[0., 0.], [0., 0.70677779]], [[0., 0.], [0., 0.86522495]]])
-    >>> mat = sparse.COO(dense_mat)
-    >>> mat
-    <COO: shape=(2, 2, 2), dtype=float64, nnz=2>
-    >>> sparse.io.save_npz('mat.npz', mat)
-    >>> loaded_mat = sparse.io.load_npz('mat.npz')
-    >>> loaded_mat
-    <COO: shape=(2, 2, 2), dtype=float64, nnz=2>
-    >>> loaded_mat.todense()
-    array([[[0.        , 0.        ],
-            [0.        , 0.70677779]],
-    <BLANKLINE>
-           [[0.        , 0.        ],
-            [0.        , 0.86522495]]])
-    >>> os.remove('mat.npz')
+    See Also
+    --------
+    save_npz
+    scipy.sparse.save_npz
+    scipy.sparse.load_npz
+    numpy.savez
+    numpy.load
 
     """
 
