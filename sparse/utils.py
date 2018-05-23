@@ -10,11 +10,9 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
     if compare_dtype:
         assert x.dtype == y.dtype
 
-    if np.issubdtype(x.dtype, np.integer) \
-            and np.issubdtype(y.dtype, np.integer):
-        checking_method = lambda x, y: np.array_equal(x, y, **kwargs)
-    else:
-        checking_method = lambda x, y: np.allclose(x, y, **kwargs)
+    checking_method = np.array_equal \
+        if np.issubdtype(x.dtype, np.integer) and np.issubdtype(y.dtype, np.integer) \
+        else np.allclose
 
     if isinstance(x, COO):
         assert is_canonical(x)
@@ -22,7 +20,7 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
         assert is_canonical(y)
 
     if isinstance(x, COO) and isinstance(y, COO) and check_nnz:
-        assert np.array_equal(x.coords, y.coords) and checking_method(x.data, y.data)
+        assert np.array_equal(x.coords, y.coords) and checking_method(x.data, y.data, **kwargs)
 
     if hasattr(x, 'todense'):
         xx = x.todense()
@@ -36,7 +34,7 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
             assert (yy != 0).sum() == y.nnz
     else:
         yy = y
-    assert checking_method(xx, yy)
+    assert checking_method(xx, yy, **kwargs)
 
 
 def is_canonical(x):
