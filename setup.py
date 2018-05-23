@@ -28,7 +28,6 @@ extras_require = {
 }
 
 all_requires = []
-tests_requires = []
 
 for k, v in extras_require.items():
     all_requires.extend(v)
@@ -40,7 +39,7 @@ setup(
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     description='Sparse n-dimensional arrays',
-    url='http://github.com/pydata/sparse/',
+    url='https://github.com/pydata/sparse/',
     maintainer='Hameer Abbasi',
     maintainer_email='hameerabbasi@yahoo.com',
     license='BSD',
