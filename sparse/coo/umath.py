@@ -172,10 +172,6 @@ def _elemwise_n_ary(func, *args, **kwargs):
     coords = np.concatenate(coords_list, axis=1) if len(coords_list) else \
         np.empty((0, len(result_shape)), dtype=np.min_scalar_type(max(result_shape) - 1))
 
-    nonzero = data != func_zero
-    data = data[nonzero]
-    coords = coords[:, nonzero]
-
     return COO(coords, data, shape=result_shape, has_duplicates=False)
 
 
@@ -248,7 +244,11 @@ def _match_coo(*args, **kwargs):
         mcoords = _get_matching_coords(mcoords, params, current_shape)
         mdata = [arg.data[sorted_idx[0]][matched_idx[0]] for arg in matched_arrays]
         mdata.append(arg2.data[sorted_idx[1]][matched_idx[1]])
-        matched_arrays = [COO(mcoords, md, shape=current_shape) for md in mdata]
+        # The coords aren't truly sorted, but we don't need them, so it's
+        # best to avoid the extra cost.
+        matched_arrays = [
+            COO(mcoords, md, shape=current_shape, sorted=True, has_duplicates=False)
+            for md in mdata]
 
         if cache is not None:
             cache[key] = matched_arrays
@@ -303,7 +303,10 @@ def _unmatch_coo(func, args, mask, cache, **kwargs):
     func_data = matched_func[unmatched_mask]
     func_coords = matched_arrays[0].coords[:, unmatched_mask]
 
-    func_array = COO(func_coords, func_data, shape=matched_arrays[0].shape).broadcast_to(result_shape)
+    # The coords aren't truly sorted, but we don't need them, so it's
+    # best to avoid the extra cost.
+    func_array = COO(func_coords, func_data, shape=matched_arrays[0].shape,
+                     sorted=True, has_duplicates=False).broadcast_to(result_shape)
 
     if all(mask):
         return [func_array.coords], [func_array.data]
