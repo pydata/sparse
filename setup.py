@@ -29,7 +29,7 @@ extras_require = {
 
 all_requires = []
 
-for k, v in extras_require.items():
+for v in extras_require.values():
     all_requires.extend(v)
 
 extras_require['all'] = all_requires
