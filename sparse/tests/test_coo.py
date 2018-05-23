@@ -240,12 +240,11 @@ def test_dot_nocoercion():
 
     la = a.tolist()
     lb = b.tolist()
-    la, lb  # silencing flake8
 
     if hasattr(operator, 'matmul'):
         # Operations with naive collection (list)
-        assert_eq(eval("la @ b"), eval("la @ sb"))
-        assert_eq(eval("a @ lb"), eval("sa @ lb"))
+        assert_eq(operator.matmul(la, b), operator.matmul(la, sb))
+        assert_eq(operator.matmul(a, lb), operator.matmul(sa, lb))
 
 
 @pytest.mark.parametrize('func', [np.expm1, np.log1p, np.sin, np.tan,
