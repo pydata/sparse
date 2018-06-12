@@ -359,9 +359,11 @@ def test_binary_broadcasting(func, shape1, shape2):
     assert np.count_nonzero(expected) == actual.nnz
 
 
-@pytest.mark.parametrize('shape1,shape2', [((3, 4), (2, 3, 4)),
-                                           ((3, 1, 4), (3, 2, 4)),
-                                           ((3, 4, 1), (3, 4, 2))])
+@pytest.mark.parametrize('shape1,shape2', [
+    ((3, 4), (2, 3, 4)),
+    ((3, 1, 4), (3, 2, 4)),
+    ((3, 4, 1), (3, 4, 2))
+])
 def test_broadcast_to(shape1, shape2):
     a = sparse.random(shape1, density=0.5)
     x = a.todense()
@@ -1027,14 +1029,6 @@ def test_large_concat_stack():
 
     assert_eq(np.concatenate((x, x)),
               sparse.concatenate((xs, xs)))
-
-
-def test_coord_dtype():
-    s = sparse.random((2, 3, 4), density=0.5)
-    assert s.coords.dtype == np.uint8
-
-    s = COO.from_numpy(np.zeros(1000))
-    assert s.coords.dtype == np.uint16
 
 
 def test_addition():

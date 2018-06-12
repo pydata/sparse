@@ -68,7 +68,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     array([1, 1, 1, 5, 1], dtype=uint8)
     >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
     array([[0, 1, 2, 2, 3],
-           [0, 1, 2, 3, 3]], dtype=uint8)
+           [0, 1, 2, 3, 3]])
 
     :obj:`COO` objects support basic arithmetic and binary operations.
 
@@ -216,11 +216,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
                 shape = ()
 
         super(COO, self).__init__(shape)
-        if self.shape:
-            dtype = np.min_scalar_type(max(max(self.shape) - 1, 0))
-        else:
-            dtype = np.uint8
-        self.coords = self.coords.astype(dtype)
+        self.coords = self.coords.astype(np.intp)
         assert not self.shape or (len(self.data) == self.coords.shape[1] and
                                   len(self.shape) == self.coords.shape[0])
 
@@ -518,7 +514,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> coords = np.random.randint(1000, size=(3, 6), dtype=np.uint16)
         >>> s = COO(coords, data, shape=(1000, 1000, 1000))
         >>> s.nbytes
-        42
+        150
         """
         return self.data.nbytes + self.coords.nbytes
 
@@ -1123,7 +1119,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             x = x.astype(dtype)
         return x
 
-    def linear_loc(self, signed=False):
+    def linear_loc(self):
         """
         The nonzero coordinates of a flattened version of this array. Note that
         the coordinates may be out of order.
@@ -1148,13 +1144,13 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> x = np.eye(5)
         >>> s = COO.from_numpy(x)
         >>> s.linear_loc()  # doctest: +NORMALIZE_WHITESPACE
-        array([ 0,  6, 12, 18, 24], dtype=uint8)
+        array([ 0,  6, 12, 18, 24])
         >>> np.array_equal(np.flatnonzero(x), s.linear_loc())
         True
         """
         from .common import linear_loc
 
-        return linear_loc(self.coords, self.shape, signed)
+        return linear_loc(self.coords, self.shape)
 
     def reshape(self, shape):
         """
@@ -1203,8 +1199,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         # TODO: this self.size enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
 
-        max_shape = max(shape) if len(shape) != 0 else 1
-        coords = np.empty((len(shape), self.nnz), dtype=np.min_scalar_type(max_shape - 1))
+        coords = np.empty((len(shape), self.nnz), dtype=np.intp)
         strides = 1
         for i, d in enumerate(shape[::-1]):
             coords[-(i + 1), :] = (linear_loc // strides) % d
@@ -1344,11 +1339,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s = COO(coords, data)
         >>> s._sort_indices()
         >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
-        array([[0, 1, 2]], dtype=uint8)
+        array([[0, 1, 2]])
         >>> s.data  # doctest: +NORMALIZE_WHITESPACE
         array([3, 4, 1], dtype=uint8)
         """
-        linear = self.linear_loc(signed=True)
+        linear = self.linear_loc()
 
         if (np.diff(linear) > 0).all():  # already sorted
             return
@@ -1372,7 +1367,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s = COO(coords, data)
         >>> s._sum_duplicates()
         >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
-        array([[0, 1, 2]], dtype=uint8)
+        array([[0, 1, 2]])
         >>> s.data  # doctest: +NORMALIZE_WHITESPACE
         array([6, 7, 2], dtype=uint8)
         """
@@ -1522,7 +1517,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         --------
         >>> s = COO.from_numpy(np.eye(5))
         >>> s.nonzero()
-        (array([0, 1, 2, 3, 4], dtype=uint8), array([0, 1, 2, 3, 4], dtype=uint8))
+        (array([0, 1, 2, 3, 4]), array([0, 1, 2, 3, 4]))
         """
         return tuple(self.coords)
 

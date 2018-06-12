@@ -170,7 +170,7 @@ def _elemwise_n_ary(func, *args, **kwargs):
     # Concatenate matches and mismatches
     data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=func_value.dtype)
     coords = np.concatenate(coords_list, axis=1) if len(coords_list) else \
-        np.empty((0, len(result_shape)), dtype=np.min_scalar_type(max(result_shape) - 1))
+        np.empty((0, len(result_shape)), dtype=np.intp)
 
     return COO(coords, data, shape=result_shape, has_duplicates=False)
 
@@ -487,13 +487,12 @@ def _get_expanded_coords_data(coords, data, params, broadcast_shape):
         if not p:
             expand_shapes.append(l)
 
-    all_idx = _cartesian_product(*(np.arange(d, dtype=np.min_scalar_type(d - 1)) for d in expand_shapes))
-    dt = np.result_type(*(np.min_scalar_type(l - 1) for l in broadcast_shape))
+    all_idx = _cartesian_product(*(np.arange(d, dtype=np.intp) for d in expand_shapes))
 
     false_dim = 0
     dim = 0
 
-    expanded_coords = np.empty((len(broadcast_shape), all_idx.shape[1]), dtype=dt)
+    expanded_coords = np.empty((len(broadcast_shape), all_idx.shape[1]), dtype=np.intp)
     expanded_data = data[all_idx[first_dim]]
 
     for d, p, l in zip(range(len(broadcast_shape)), params, broadcast_shape):
@@ -569,9 +568,7 @@ def _get_matching_coords(coords, params, shape):
             if p is not None:
                 dims[i] += 1
 
-    dtype = np.min_scalar_type(max(shape) - 1)
-
-    return np.asarray(matching_coords, dtype=dtype)
+    return np.asarray(matching_coords, dtype=np.intp)
 
 
 def broadcast_to(x, shape):
@@ -608,4 +605,4 @@ def broadcast_to(x, shape):
     coords, data = _get_expanded_coords_data(x.coords, x.data, params, result_shape)
 
     return COO(coords, data, shape=result_shape, has_duplicates=False,
-               sorted=True)
+               sorted=False)

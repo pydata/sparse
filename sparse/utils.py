@@ -21,6 +21,7 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
 
     if isinstance(x, COO) and isinstance(y, COO) and check_nnz:
         assert np.array_equal(x.coords, y.coords) and checking_method(x.data, y.data, **kwargs)
+        return
 
     if hasattr(x, 'todense'):
         xx = x.todense()
