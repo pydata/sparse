@@ -173,7 +173,7 @@ def _prune_indices(indices, shape, prune_none=True):
     return indices
 
 
-@numba.jit(nopython=True)
+@numba.jit(nopython=True, nogil=True)
 def _compute_mask(coords, indices):  # pragma: no cover
     """
     Gets the mask for the coords given the indices in slice format.
@@ -269,7 +269,7 @@ def _compute_mask(coords, indices):  # pragma: no cover
     return np.array(mask, dtype=np.intp), False
 
 
-@numba.jit(nopython=True)
+@numba.jit(nopython=True, nogil=True)
 def _get_mask_pairs(starts_old, stops_old, c, idx):  # pragma: no cover
     """
     Gets the pairs for a following dimension given the pairs for
@@ -326,7 +326,7 @@ def _get_mask_pairs(starts_old, stops_old, c, idx):  # pragma: no cover
     return starts, stops, n_matches
 
 
-@numba.jit(nopython=True)
+@numba.jit(nopython=True, nogil=True)
 def _get_slice_len(idx):  # pragma: no cover
     """
     Get the number of elements in a slice.
@@ -355,7 +355,7 @@ def _get_slice_len(idx):  # pragma: no cover
         return (start - stop - step - 1) // (-step)
 
 
-@numba.jit(nopython=True)
+@numba.jit(nopython=True, nogil=True)
 def _filter_pairs(starts, stops, coords, indices):  # pragma: no cover
     """
     Converts all the pairs into a single integer mask, additionally filtering
@@ -410,7 +410,7 @@ def _filter_pairs(starts, stops, coords, indices):  # pragma: no cover
     return mask
 
 
-@numba.jit(nopython=True)
+@numba.jit(nopython=True, nogil=True)
 def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
     """
     Joins adjacent pairs into one. For example, 2-5 and 5-7
