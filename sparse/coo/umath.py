@@ -76,7 +76,7 @@ def elemwise(func, *args, **kwargs):
     return _elemwise_n_ary(func, *args, **kwargs)
 
 
-@numba.jit(nopython=True)
+@numba.jit(nopython=True, nogil=True)
 def _match_arrays(a, b):    # pragma: no cover
     """
     Finds all indexes into a and b such that a[i] = b[j]. The outputs are sorted
