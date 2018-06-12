@@ -68,6 +68,9 @@ def getitem(x, index):
     coords = []
     shape = []
     i = 0
+
+    sorted = True
+
     for ind in index:
         # Nothing is added to shape or coords if the index is an integer.
         if isinstance(ind, Integral):
@@ -76,14 +79,16 @@ def getitem(x, index):
         # Add to the shape and transform the coords in the case of a slice.
         elif isinstance(ind, slice):
             shape.append(len(range(ind.start, ind.stop, ind.step)))
-            dt = np.min_scalar_type(min(-(dim - 1) if dim != 0 else -1 for dim in shape))
-            coords.append((x.coords[i, mask].astype(dt) - ind.start) // ind.step)
+            coords.append((x.coords[i, mask] - ind.start) // ind.step)
             i += 1
+
+            if ind.step < 0:
+                sorted = False
         elif isinstance(ind, Iterable):
             raise NotImplementedError('Advanced indexing is not yet supported.')
         # Add a dimension for None.
         elif ind is None:
-            coords.append(np.zeros(n))
+            coords.append(np.zeros(n, dtype=np.intp))
             shape.append(1)
 
     # Join all the transformed coords.
@@ -105,7 +110,7 @@ def getitem(x, index):
 
     return COO(coords, data, shape=shape,
                has_duplicates=False,
-               sorted=True)
+               sorted=sorted)
 
 
 def _mask(coords, indices, shape):

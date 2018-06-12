@@ -44,16 +44,12 @@ def asCOO(x, name='asCOO', check=True):
     return x
 
 
-def linear_loc(coords, shape, signed=False):
-    n = reduce(operator.mul, shape, 1)
-    if signed:
-        n = -n
-    dtype = np.min_scalar_type(n)
-    out = np.zeros(coords.shape[1], dtype=dtype)
-    tmp = np.zeros(coords.shape[1], dtype=dtype)
+def linear_loc(coords, shape):
+    out = np.zeros(coords.shape[1], dtype=np.intp)
+    tmp = np.zeros(coords.shape[1], dtype=np.intp)
     strides = 1
     for i, d in enumerate(shape[::-1]):
-        np.multiply(coords[-(i + 1), :], strides, out=tmp, dtype=dtype)
+        np.multiply(coords[-(i + 1), :], strides, out=tmp)
         np.add(tmp, out, out=out)
         strides *= d
     return out
@@ -235,9 +231,8 @@ def concatenate(arrays, axis=0):
     shape = list(arrays[0].shape)
     shape[axis] = dim
 
-    coords_dtype = np.min_scalar_type(max(shape) - 1) if len(shape) != 0 else np.uint8
     data = np.concatenate([x.data for x in arrays])
-    coords = np.concatenate([x.coords for x in arrays], axis=1).astype(coords_dtype)
+    coords = np.concatenate([x.coords for x in arrays], axis=1)
 
     dim = 0
     for x in arrays:
@@ -280,17 +275,15 @@ def stack(arrays, axis=0):
     shape = list(arrays[0].shape)
     shape.insert(axis, len(arrays))
 
-    coords_dtype = np.min_scalar_type(max(shape) - 1) if len(shape) != 0 else np.uint8
-
     nnz = 0
     dim = 0
-    new = np.empty(shape=(coords.shape[1],), dtype=coords_dtype)
+    new = np.empty(shape=(coords.shape[1],), dtype=np.intp)
     for x in arrays:
         new[nnz:x.nnz + nnz] = dim
         dim += 1
         nnz += x.nnz
 
-    coords = [coords[i].astype(coords_dtype) for i in range(coords.shape[0])]
+    coords = [coords[i] for i in range(coords.shape[0])]
     coords.insert(axis, new)
     coords = np.stack(coords, axis=0)
 
