@@ -45,6 +45,8 @@ API
 
     random
 
+    roll
+
     save_npz
 
     stack

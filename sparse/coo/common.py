@@ -1,6 +1,7 @@
 from functools import reduce
 import operator
 import warnings
+import collections
 
 import numpy as np
 import scipy.sparse
@@ -609,3 +610,69 @@ def nanreduce(x, method, identity=None, axis=None, keepdims=False, **kwargs):
     """
     arr = _replace_nan(x, method.identity if identity is None else identity)
     return arr.reduce(method, axis, keepdims, **kwargs)
+
+
+def roll(a, shift, axis=None):
+    """
+    Shifts elements of an array along specified axis. Elements that roll beyond
+    the last position are circulated and re-introduced at the first.
+
+    Parameters
+    ----------
+    x : COO
+        Input array
+    shift : int or tuple of ints
+        Number of index positions that elements are shifted. If a tuple is
+        provided, then axis must be a tuple of the same size, and each of the
+        given axes is shifted by the corresponding number. If an int while axis
+        is a tuple of ints, then broadcasting is used so the same shift is
+        applied to all axes.
+    axis : int or tuple of ints, optional
+        Axis or tuple specifying multiple axes. By default, the
+        array is flattened before shifting, after which the original shape is
+        restored.
+
+    Returns
+    -------
+    res : ndarray
+        Output array, with the same shape as a.
+    """
+    from .core import COO, as_coo
+    a = as_coo(a)
+
+    # roll flattened array
+    if axis is None:
+        return roll(a.reshape((-1,)), shift, 0).reshape(a.shape)
+
+    # roll across specified axis
+    else:
+        # parse axis input, wrap in tuple
+        axis = normalize_axis(axis, a.ndim)
+        if not isinstance(axis, tuple):
+            axis = (axis,)
+
+        # make shift iterable
+        if not isinstance(shift, collections.Iterable):
+            shift = (shift,)
+
+        elif np.ndim(shift) > 1:
+            raise ValueError(
+                "'shift' and 'axis' must be integers or 1D sequences.")
+
+        # handle broadcasting
+        if len(shift) == 1:
+            shift = np.full(len(axis), shift)
+
+        # check if dimensions are consistent
+        if len(axis) != len(shift):
+            raise ValueError(
+                "If 'shift' is a 1D sequence, "
+                "'axis' must have equal length.")
+
+        # shift elements
+        coords, data = np.copy(a.coords), np.copy(a.data)
+        for sh, ax in zip(shift, axis):
+            coords[ax] += sh
+            coords[ax] %= a.shape[ax]
+
+        return COO(coords, data=data, shape=a.shape, has_duplicates=False)

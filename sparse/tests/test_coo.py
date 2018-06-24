@@ -1527,3 +1527,69 @@ def test_invalid_iterable_error():
     with pytest.raises(ValueError):
         x = [((2.3, 4.5), 3.2)]
         COO.from_iter(x)
+
+
+class TestRoll(object):
+
+    # test on 1d array #
+    @pytest.mark.parametrize('shift', [0, 2, -2, 20, -20])
+    def test_1d(self, shift):
+        xs = sparse.random((100,), density=0.5)
+        x = xs.todense()
+        assert_eq(np.roll(x, shift), sparse.roll(xs, shift))
+        assert_eq(np.roll(x, shift), sparse.roll(x, shift))
+
+    # test on 2d array #
+    @pytest.mark.parametrize(
+        'shift', [0, 2, -2, 20, -20])
+    @pytest.mark.parametrize(
+        'ax', [None, 0, 1, (0, 1)])
+    def test_2d(self, shift, ax):
+        xs = sparse.random((10, 10), density=0.5)
+        x = xs.todense()
+        assert_eq(np.roll(x, shift, axis=ax), sparse.roll(xs, shift, axis=ax))
+        assert_eq(np.roll(x, shift, axis=ax), sparse.roll(x, shift, axis=ax))
+
+    # test on rolling multiple axes at once #
+    @pytest.mark.parametrize(
+        'shift', [(0, 0), (1, -1), (-1, 1), (10, -10)])
+    @pytest.mark.parametrize(
+        'ax', [(0, 1), (0, 2), (1, 2), (-1, 1)])
+    def test_multiaxis(self, shift, ax):
+        xs = sparse.random((9, 9, 9), density=0.5)
+        x = xs.todense()
+        assert_eq(np.roll(x, shift, axis=ax), sparse.roll(xs, shift, axis=ax))
+        assert_eq(np.roll(x, shift, axis=ax), sparse.roll(x, shift, axis=ax))
+
+    # test original is unchanged #
+    @pytest.mark.parametrize(
+        'shift', [0, 2, -2, 20, -20])
+    @pytest.mark.parametrize(
+        'ax', [None, 0, 1, (0, 1)])
+    def test_original_is_copied(self, shift, ax):
+        xs = sparse.random((10, 10), density=0.5)
+        xc = COO(np.copy(xs.coords), np.copy(xs.data), shape=xs.shape)
+        sparse.roll(xs, shift, axis=ax)
+        assert_eq(xs, xc)
+
+    # test on empty array #
+    def test_empty(self):
+        x = np.array([])
+        assert_eq(np.roll(x, 1), sparse.roll(sparse.as_coo(x), 1))
+
+    # test error handling #
+    @pytest.mark.parametrize(
+        'args', [
+            # iterable shift, but axis not iterable
+            ((1, 1), 0),
+            # ndim(axis) != 1
+            (1, [[0, 1]]),
+            # ndim(shift) != 1
+            ([[0, 1]], [0, 1]),
+            ([[0, 1], [0, 1]], [0, 1])
+        ]
+    )
+    def test_valerr(self, args):
+        x = sparse.random((2, 2, 2), density=1)
+        with pytest.raises(ValueError):
+            sparse.roll(x, *args)
