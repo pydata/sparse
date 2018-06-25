@@ -604,5 +604,8 @@ def broadcast_to(x, shape):
     params = _get_broadcast_parameters(x.shape, result_shape)
     coords, data = _get_expanded_coords_data(x.coords, x.data, params, result_shape)
 
+    # Check if all the non-broadcast axes are next to each other
+    sorted = np.all(np.diff(np.where([bool(p) for p in params])[0]) == 1)
+
     return COO(coords, data, shape=result_shape, has_duplicates=False,
-               sorted=False)
+               sorted=sorted)
