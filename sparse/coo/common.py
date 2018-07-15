@@ -8,7 +8,7 @@ import scipy.sparse
 
 from ..sparse_array import SparseArray
 from ..compatibility import range
-from ..utils import isscalar, normalize_axis
+from ..utils import isscalar, normalize_axis, check_fill_value, consistent_fill_value
 
 
 def asCOO(x, name='asCOO', check=True):
@@ -56,6 +56,7 @@ def linear_loc(coords, shape):
     return out
 
 
+@check_fill_value(2)
 def tensordot(a, b, axes=2):
     """
     Perform the equivalent of :obj:`numpy.tensordot`.
@@ -152,6 +153,7 @@ def tensordot(a, b, axes=2):
     return res.reshape(olda + oldb)
 
 
+@check_fill_value(2)
 def dot(a, b):
     """
     Perform the equivalent of :obj:`numpy.dot` on two arrays.
@@ -200,6 +202,7 @@ def _dot(a, b):
     return aa.dot(b)
 
 
+@consistent_fill_value
 def concatenate(arrays, axis=0):
     """
     Concatenate the input arrays along the given dimension.
@@ -243,9 +246,10 @@ def concatenate(arrays, axis=0):
         nnz += x.nnz
 
     return COO(coords, data, shape=shape, has_duplicates=False,
-               sorted=(axis == 0))
+               sorted=(axis == 0), fill_value=arrays[0].fill_value)
 
 
+@consistent_fill_value
 def stack(arrays, axis=0):
     """
     Stack the input arrays along the given dimension.
@@ -289,9 +293,10 @@ def stack(arrays, axis=0):
     coords = np.stack(coords, axis=0)
 
     return COO(coords, data, shape=shape, has_duplicates=False,
-               sorted=(axis == 0))
+               sorted=(axis == 0), fill_value=arrays[0].fill_value)
 
 
+@check_fill_value(1)
 def triu(x, k=0):
     """
     Returns an array with all elements below the k-th diagonal set to zero.
@@ -326,6 +331,7 @@ def triu(x, k=0):
     return COO(coords, data, shape=x.shape, has_duplicates=False, sorted=True)
 
 
+@check_fill_value(1)
 def tril(x, k=0):
     """
     Returns an array with all elements above the k-th diagonal set to zero.
@@ -560,17 +566,10 @@ def _replace_nan(array, value):
     COO
         A copy of ``array`` with the ``NaN``s replaced.
     """
-    from .core import COO
-
     if not np.issubdtype(array.dtype, np.floating):
         return array
 
-    data = np.copy(array.data)
-    data[np.isnan(data)] = value
-
-    return COO(array.coords, data, shape=array.shape,
-               has_duplicates=False,
-               sorted=True)
+    return where(np.isnan(array), value, array)
 
 
 def nanreduce(x, method, identity=None, axis=None, keepdims=False, **kwargs):
@@ -675,4 +674,4 @@ def roll(a, shift, axis=None):
             coords[ax] += sh
             coords[ax] %= a.shape[ax]
 
-        return COO(coords, data=data, shape=a.shape, has_duplicates=False)
+        return COO(coords, data=data, shape=a.shape, has_duplicates=False, fill_value=a.fill_value)

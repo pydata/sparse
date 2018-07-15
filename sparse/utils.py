@@ -1,6 +1,8 @@
-import numpy as np
 from numbers import Integral
 from collections import Iterable
+import functools
+
+import numpy as np
 
 
 def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
@@ -12,7 +14,7 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
 
     checking_method = np.array_equal \
         if np.issubdtype(x.dtype, np.integer) and np.issubdtype(y.dtype, np.integer) \
-        else np.allclose
+        else lambda *args, **kwargs: np.allclose(*args, equal_nan=True, **kwargs)
 
     if isinstance(x, COO):
         assert is_canonical(x)
@@ -26,20 +28,25 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
     if hasattr(x, 'todense'):
         xx = x.todense()
         if check_nnz:
-            assert (xx != 0).sum() == x.nnz
+            assert_nnz(x, xx)
     else:
         xx = x
     if hasattr(y, 'todense'):
         yy = y.todense()
         if check_nnz:
-            assert (yy != 0).sum() == y.nnz
+            assert_nnz(y, yy)
     else:
         yy = y
     assert checking_method(xx, yy, **kwargs)
 
 
+def assert_nnz(s, x):
+    fill_value = s.fill_value if hasattr(s, 'fill_value') else _zero_of_dtype(s.dtype)
+    assert np.sum(~equivalent(x, fill_value)) == s.nnz
+
+
 def is_canonical(x):
-    return not x.shape or ((np.diff(x.linear_loc()) > 0).all() and (x.data != _zero_of_dtype(x.dtype)).all())
+    return not x.shape or ((np.diff(x.linear_loc()) > 0).all() and (x.data != x.fill_value).all())
 
 
 def _zero_of_dtype(dtype):
@@ -64,7 +71,8 @@ def random(
         density=0.01,
         random_state=None,
         data_rvs=None,
-        format='coo'
+        format='coo',
+        fill_value=None
 ):
     """ Generate a random sparse multidimensional array
 
@@ -145,7 +153,7 @@ def random(
 
     data = data_rvs(nnz)
 
-    ar = COO(ind[None, :], data, shape=nnz).reshape(shape)
+    ar = COO(ind[None, :], data, shape=nnz, fill_value=fill_value).reshape(shape)
 
     return ar.asformat(format)
 
@@ -157,17 +165,11 @@ def isscalar(x):
 
 class PositinalArgumentPartial(object):
     def __init__(self, func, pos, posargs):
-        if not isinstance(pos, Iterable):
-            pos = (pos,)
-            posargs = (posargs,)
-
-        n_partial_args = len(pos)
-
-        self.pos = pos
-        self.posargs = posargs
+        self.pos = list(pos)
+        self.posargs = list(posargs)
         self.func = func
 
-        self.n = n_partial_args
+        self.n = len(pos)
 
         self.__doc__ = func.__doc__
 
@@ -240,3 +242,44 @@ def normalize_axis(axis, ndim):
         return tuple(normalize_axis(a, ndim) for a in axis)
 
     raise ValueError("axis %s not understood" % axis)
+
+
+def equivalent(x, y):
+    return (x == y) | ((x != x) & (y != y))
+
+
+def check_fill_value(nargs):
+    def generator(func):
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+            for arg in args[:nargs]:
+                if hasattr(arg, 'fill_value') and \
+                        not equivalent(arg.fill_value, _zero_of_dtype(arg.dtype)):
+                    raise ValueError('Operation {!r} is only supported with zero fill-values.'.format(func))
+
+            return func(*args, **kwargs)
+
+        return wrapped
+
+    return generator
+
+
+def consistent_fill_value(func):
+    from .sparse_array import SparseArray
+
+    @functools.wraps(func)
+    def wrapped(arrays, *args, **kwargs):
+        if not all(isinstance(s, SparseArray) for s in arrays):
+            raise ValueError('All arrays must be instances of SparseArray.')
+
+        if len(arrays) == 0:
+            raise ValueError('Operation {!s} needs at least one array.'.format(func))
+
+        fv = arrays[0].fill_value
+
+        if not all(equivalent(fv, s.fill_value) for s in arrays):
+            raise ValueError('Operation {!s} needs consistent fill-values.'.format(func))
+
+        return func(arrays, *args, **kwargs)
+
+    return wrapped

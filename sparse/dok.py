@@ -3,7 +3,7 @@ from numbers import Integral
 import numpy as np
 
 from .slicing import normalize_index
-from .utils import _zero_of_dtype
+from .utils import equivalent
 from .sparse_array import SparseArray
 from .compatibility import int, range, zip
 
@@ -45,14 +45,14 @@ class DOK(SparseArray):
     >>> x[2, 3] = 5
     >>> s = DOK.from_numpy(x)
     >>> s
-    <DOK: shape=(5, 5), dtype=uint8, nnz=6>
+    <DOK: shape=(5, 5), dtype=uint8, nnz=6, fill_value=0>
 
     You can also create them from just shapes, and use slicing assignment.
 
     >>> s2 = DOK((5, 5), dtype=np.int64)
     >>> s2[1:3, 1:3] = [[4, 5], [6, 7]]
     >>> s2
-    <DOK: shape=(5, 5), dtype=int64, nnz=4>
+    <DOK: shape=(5, 5), dtype=int64, nnz=4, fill_value=0>
 
     You can convert :obj:`DOK` arrays to :obj:`COO` arrays, or :obj:`numpy.ndarray`
     objects.
@@ -60,7 +60,7 @@ class DOK(SparseArray):
     >>> from sparse import COO
     >>> s3 = COO(s2)
     >>> s3
-    <COO: shape=(5, 5), dtype=int64, nnz=4>
+    <COO: shape=(5, 5), dtype=int64, nnz=4, fill_value=0>
     >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[0, 0, 0, 0, 0],
            [0, 4, 5, 0, 0],
@@ -70,10 +70,10 @@ class DOK(SparseArray):
 
     >>> s4 = COO.from_numpy(np.eye(4, dtype=np.uint8))
     >>> s4
-    <COO: shape=(4, 4), dtype=uint8, nnz=4>
+    <COO: shape=(4, 4), dtype=uint8, nnz=4, fill_value=0>
     >>> s5 = DOK.from_coo(s4)
     >>> s5
-    <DOK: shape=(4, 4), dtype=uint8, nnz=4>
+    <DOK: shape=(4, 4), dtype=uint8, nnz=4, fill_value=0>
 
     You can also create :obj:`DOK` arrays from a shape and a dict of
     values. Zeros are automatically ignored.
@@ -84,10 +84,10 @@ class DOK(SparseArray):
     ... }
     >>> s6 = DOK((5, 5, 5), values)
     >>> s6
-    <DOK: shape=(5, 5, 5), dtype=int64, nnz=1>
+    <DOK: shape=(5, 5, 5), dtype=int64, nnz=1, fill_value=0.0>
     """
 
-    def __init__(self, shape, data=None, dtype=None):
+    def __init__(self, shape, data=None, dtype=None, fill_value=None):
         from .coo import COO
         self.data = dict()
 
@@ -102,10 +102,11 @@ class DOK(SparseArray):
             return
 
         self.dtype = np.dtype(dtype)
-        super(DOK, self).__init__(shape)
 
         if not data:
             data = dict()
+
+        super(DOK, self).__init__(shape, fill_value=fill_value)
 
         if isinstance(data, dict):
             if not dtype:
@@ -120,9 +121,9 @@ class DOK(SparseArray):
             raise ValueError('data must be a dict.')
 
     def _make_shallow_copy_of(self, other):
-        super(DOK, self).__init__(other.shape)
         self.dtype = other.dtype
         self.data = other.data
+        super(DOK, self).__init__(other.shape)
 
     @classmethod
     def from_coo(cls, x):
@@ -145,9 +146,9 @@ class DOK(SparseArray):
         >>> s = COO.from_numpy(np.eye(4))
         >>> s2 = DOK.from_coo(s)
         >>> s2
-        <DOK: shape=(4, 4), dtype=float64, nnz=4>
+        <DOK: shape=(4, 4), dtype=float64, nnz=4, fill_value=0.0>
         """
-        ar = cls(x.shape, dtype=x.dtype)
+        ar = cls(x.shape, dtype=x.dtype, fill_value=x.fill_value)
 
         for c, d in zip(x.coords.T, x.data):
             ar.data[tuple(c)] = d
@@ -168,10 +169,10 @@ class DOK(SparseArray):
         >>> s = DOK((5, 5))
         >>> s[1:3, 1:3] = [[4, 5], [6, 7]]
         >>> s
-        <DOK: shape=(5, 5), dtype=float64, nnz=4>
+        <DOK: shape=(5, 5), dtype=float64, nnz=4, fill_value=0.0>
         >>> s2 = s.to_coo()
         >>> s2
-        <COO: shape=(5, 5), dtype=float64, nnz=4>
+        <COO: shape=(5, 5), dtype=float64, nnz=4, fill_value=0.0>
         """
         from .coo import COO
         return COO(self)
@@ -195,7 +196,7 @@ class DOK(SparseArray):
         --------
         >>> s = DOK.from_numpy(np.eye(4))
         >>> s
-        <DOK: shape=(4, 4), dtype=float64, nnz=4>
+        <DOK: shape=(4, 4), dtype=float64, nnz=4, fill_value=0.0>
         """
         ar = cls(x.shape, dtype=x.dtype)
 
@@ -253,7 +254,7 @@ class DOK(SparseArray):
         if key in self.data:
             return self.data[key]
         else:
-            return _zero_of_dtype(self.dtype)[()]
+            return self.fill_value
 
     def __setitem__(self, key, value):
         key = normalize_index(key, self.shape)
@@ -302,13 +303,15 @@ class DOK(SparseArray):
                                  ' when setting an item.')
 
         key = tuple(key_list)
-        if value != _zero_of_dtype(self.dtype):
+        if not equivalent(value, self.fill_value):
             self.data[key] = value[()]
         elif key in self.data:
             del self.data[key]
 
     def __str__(self):
-        return "<DOK: shape=%s, dtype=%s, nnz=%d>" % (self.shape, self.dtype, self.nnz)
+        return '<DOK: shape={!s}, dtype={!s}, nnz={:d}, fill_value={!s}>'.format(
+            self.shape, self.dtype, self.nnz, self.fill_value
+        )
 
     __repr__ = __str__
 
@@ -337,7 +340,7 @@ class DOK(SparseArray):
                [0., 0., 0., 0., 0.],
                [0., 0., 0., 0., 0.]])
         """
-        result = np.zeros(self.shape, dtype=self.dtype)
+        result = np.full(self.shape, self.fill_value, self.dtype)
 
         for c, d in self.data.items():
             result[c] = d
@@ -368,6 +371,6 @@ class DOK(SparseArray):
 
         from .coo import COO
         if format == 'coo' or format is COO:
-            return COO.from_iter(self.data, shape=self.shape)
+            return COO.from_iter(self.data, shape=self.shape, fill_value=self.fill_value)
 
         raise NotImplementedError('The given format is not supported.')
