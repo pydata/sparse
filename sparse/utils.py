@@ -46,7 +46,7 @@ def assert_nnz(s, x):
 
 
 def is_canonical(x):
-    return not x.shape or ((np.diff(x.linear_loc()) > 0).all() and (x.data != x.fill_value).all())
+    return not x.shape or ((np.diff(x.linear_loc()) > 0).all() and not equivalent(x.data, x.fill_value).any())
 
 
 def _zero_of_dtype(dtype):
@@ -63,7 +63,7 @@ def _zero_of_dtype(dtype):
     np.ndarray
         The zero array.
     """
-    return np.zeros((), dtype=dtype)
+    return np.zeros((), dtype=dtype)[()]
 
 
 def random(
