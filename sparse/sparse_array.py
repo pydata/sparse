@@ -16,6 +16,8 @@ class SparseArray(object):
     ----------
     dtype : numpy.dtype
         The data type of this array.
+    fill_value : scalar
+        The fill value of this array.
     """
 
     __metaclass__ = ABCMeta

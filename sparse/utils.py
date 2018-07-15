@@ -91,8 +91,10 @@ def random(
         Data generation callback. Must accept one single parameter: number of
         :code:`nnz` elements, and return one single NumPy array of exactly
         that length.
-    format: str
+    format : str
         The format to return the output array in.
+    fill_value : scalar
+        The fill value of the output array.
 
     Returns
     -------

@@ -65,6 +65,18 @@ explicitly. For example, if we did the following without the
    data = [1, 4, 2, 1]
    s = COO(coords, data, shape=(5, 5))
 
+:obj:`COO` arrays support arbitrary fill values. Fill values are the "default"
+value, or value to not store. This can be given a value other than zero. For
+example, the following builds a (bad) representation of a :math:`2 \times 2`
+identity matrix. Note that not all operations are supported for operations
+with nonzero fill values.
+
+.. code-block:: python
+
+   coords = [[0, 1], [1, 0]]
+   data = [0, 0]
+   s = COO(coords, data, fill_value=1)
+
 From :doc:`Scipy sparse matrices <generated/scipy.sparse.spmatrix>`
 -------------------------------------------------------------------
 To construct :obj:`COO` array from :obj:`spmatrix <scipy.sparse.spmatrix>`

@@ -21,6 +21,8 @@ class DOK(SparseArray):
     dtype : np.dtype, optional
         The data type of this array. If left empty, it is inferred from
         the first element.
+    fill_value : scalar, optional
+        The fill value of this array.
 
     Attributes
     ----------
