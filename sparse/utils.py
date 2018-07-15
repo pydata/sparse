@@ -247,41 +247,33 @@ def normalize_axis(axis, ndim):
 
 
 def equivalent(x, y):
+    # Can't contain NaNs
+    if any(np.issubdtype(x.dtype, t) for t in
+           [np.integer, np.bool_, np.character]):
+        return x == y
+
+    # Can contain NaNs
+    # FIXME: Complex floats and np.void with multiple values can't be compared properly.
     return (x == y) | ((x != x) & (y != y))
 
 
-def check_fill_value(nargs):
-    def generator(func):
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            for arg in args[:nargs]:
-                if hasattr(arg, 'fill_value') and \
-                        not equivalent(arg.fill_value, _zero_of_dtype(arg.dtype)):
-                    raise ValueError('Operation {!r} is only supported with zero fill-values.'.format(func))
-
-            return func(*args, **kwargs)
-
-        return wrapped
-
-    return generator
+def check_zero_fill_value(*args):
+    for arg in args:
+        if (hasattr(arg, 'fill_value') and
+                not equivalent(arg.fill_value, _zero_of_dtype(arg.dtype))):
+            raise ValueError('This operation requires zero fill values.')
 
 
-def consistent_fill_value(func):
+def consistent_fill_value(arrays):
+    arrays = list(arrays)
     from .sparse_array import SparseArray
 
-    @functools.wraps(func)
-    def wrapped(arrays, *args, **kwargs):
-        if not all(isinstance(s, SparseArray) for s in arrays):
-            raise ValueError('All arrays must be instances of SparseArray.')
+    if not all(isinstance(s, SparseArray) for s in arrays):
+        raise ValueError('All arrays must be instances of SparseArray.')
+    if len(arrays) == 0:
+        raise ValueError('At least one array required.')
 
-        if len(arrays) == 0:
-            raise ValueError('Operation {!s} needs at least one array.'.format(func))
+    fv = arrays[0].fill_value
 
-        fv = arrays[0].fill_value
-
-        if not all(equivalent(fv, s.fill_value) for s in arrays):
-            raise ValueError('Operation {!s} needs consistent fill-values.'.format(func))
-
-        return func(arrays, *args, **kwargs)
-
-    return wrapped
+    if not all(equivalent(fv, s.fill_value) for s in arrays):
+        raise ValueError('Consistent fill-values required.')

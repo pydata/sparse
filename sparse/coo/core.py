@@ -9,7 +9,7 @@ from .indexing import getitem
 from .umath import elemwise, broadcast_to
 from ..compatibility import int, range
 from ..sparse_array import SparseArray
-from ..utils import normalize_axis, equivalent, check_fill_value
+from ..utils import normalize_axis, equivalent, check_zero_fill_value
 
 
 class COO(SparseArray, NDArrayOperatorsMixin):
@@ -1052,7 +1052,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         """
         return self.transpose(tuple(range(self.ndim))[::-1])
 
-    @check_fill_value(2)
     def dot(self, other):
         """
         Performs the equivalent of :code:`x.dot(y)` for :obj:`COO`.
@@ -1216,7 +1215,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             self._cache['reshape'].append((shape, result))
         return result
 
-    @check_fill_value(1)
     def to_scipy_sparse(self):
         """
         Converts this :obj:`COO` object into a :obj:`scipy.sparse.coo_matrix`.
@@ -1236,6 +1234,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         COO.tocsr : Convert to a :obj:`scipy.sparse.csr_matrix`.
         COO.tocsc : Convert to a :obj:`scipy.sparse.csc_matrix`.
         """
+        check_zero_fill_value(self)
+
         if self.ndim != 2:
             raise ValueError("Can only convert a 2-dimensional array to a Scipy sparse matrix.")
 
@@ -1258,7 +1258,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         return scipy.sparse.csr_matrix((self.data, col, indptr), shape=self.shape)
 
-    @check_fill_value(1)
     def tocsr(self):
         """
         Converts this array to a :obj:`scipy.sparse.csr_matrix`.
@@ -1279,6 +1278,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         COO.to_scipy_sparse : Convert to a :obj:`scipy.sparse.coo_matrix`.
         scipy.sparse.coo_matrix.tocsr : Equivalent Scipy function.
         """
+        check_zero_fill_value(self)
+
         if self._cache is not None:
             try:
                 return self._csr
@@ -1295,7 +1296,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             csr = self._tocsr()
         return csr
 
-    @check_fill_value(1)
     def tocsc(self):
         """
         Converts this array to a :obj:`scipy.sparse.csc_matrix`.
@@ -1316,6 +1316,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         COO.to_scipy_sparse : Convert to a :obj:`scipy.sparse.coo_matrix`.
         scipy.sparse.coo_matrix.tocsc : Equivalent Scipy function.
         """
+        check_zero_fill_value(self)
+
         if self._cache is not None:
             try:
                 return self._csc
@@ -1506,7 +1508,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             raise ValueError("Operation would require converting "
                              "large sparse array to dense")
 
-    @check_fill_value(1)
     def nonzero(self):
         """
         Get the indices where this array is nonzero.
@@ -1526,6 +1527,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s.nonzero()
         (array([0, 1, 2, 3, 4]), array([0, 1, 2, 3, 4]))
         """
+        check_zero_fill_value(self)
         return tuple(self.coords)
 
     def asformat(self, format):

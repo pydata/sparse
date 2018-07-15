@@ -8,7 +8,7 @@ import scipy.sparse
 
 from ..sparse_array import SparseArray
 from ..compatibility import range
-from ..utils import isscalar, normalize_axis, check_fill_value, consistent_fill_value
+from ..utils import isscalar, normalize_axis, check_zero_fill_value, consistent_fill_value
 
 
 def asCOO(x, name='asCOO', check=True):
@@ -56,7 +56,6 @@ def linear_loc(coords, shape):
     return out
 
 
-@check_fill_value(2)
 def tensordot(a, b, axes=2):
     """
     Perform the equivalent of :obj:`numpy.tensordot`.
@@ -80,6 +79,7 @@ def tensordot(a, b, axes=2):
     # Much of this is stolen from numpy/core/numeric.py::tensordot
     # Please see license at https://github.com/numpy/numpy/blob/master/LICENSE.txt
     from .core import COO
+    check_zero_fill_value(a, b)
 
     try:
         iter(axes)
@@ -153,7 +153,6 @@ def tensordot(a, b, axes=2):
     return res.reshape(olda + oldb)
 
 
-@check_fill_value(2)
 def dot(a, b):
     """
     Perform the equivalent of :obj:`numpy.dot` on two arrays.
@@ -173,6 +172,7 @@ def dot(a, b):
     numpy.dot : NumPy equivalent function.
     COO.dot : Equivalent function for COO objects.
     """
+    check_zero_fill_value(a, b)
     if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
         raise NotImplementedError(
             "Cannot perform dot product on types %s, %s" %
@@ -202,7 +202,6 @@ def _dot(a, b):
     return aa.dot(b)
 
 
-@consistent_fill_value
 def concatenate(arrays, axis=0):
     """
     Concatenate the input arrays along the given dimension.
@@ -224,6 +223,7 @@ def concatenate(arrays, axis=0):
     numpy.concatenate : NumPy equivalent function
     """
     from .core import COO
+    consistent_fill_value(arrays)
 
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
     axis = normalize_axis(axis, arrays[0].ndim)
@@ -249,7 +249,6 @@ def concatenate(arrays, axis=0):
                sorted=(axis == 0), fill_value=arrays[0].fill_value)
 
 
-@consistent_fill_value
 def stack(arrays, axis=0):
     """
     Stack the input arrays along the given dimension.
@@ -271,6 +270,7 @@ def stack(arrays, axis=0):
     numpy.stack : NumPy equivalent function
     """
     from .core import COO
+    consistent_fill_value(arrays)
 
     assert len(set(x.shape for x in arrays)) == 1
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
@@ -296,7 +296,6 @@ def stack(arrays, axis=0):
                sorted=(axis == 0), fill_value=arrays[0].fill_value)
 
 
-@check_fill_value(1)
 def triu(x, k=0):
     """
     Returns an array with all elements below the k-th diagonal set to zero.
@@ -319,6 +318,7 @@ def triu(x, k=0):
     numpy.triu : NumPy equivalent function
     """
     from .core import COO
+    check_zero_fill_value(x)
 
     if not x.ndim >= 2:
         raise NotImplementedError('sparse.triu is not implemented for scalars or 1-D arrays.')
@@ -331,7 +331,6 @@ def triu(x, k=0):
     return COO(coords, data, shape=x.shape, has_duplicates=False, sorted=True)
 
 
-@check_fill_value(1)
 def tril(x, k=0):
     """
     Returns an array with all elements above the k-th diagonal set to zero.
@@ -354,6 +353,7 @@ def tril(x, k=0):
     numpy.tril : NumPy equivalent function
     """
     from .core import COO
+    check_zero_fill_value(x)
 
     if not x.ndim >= 2:
         raise NotImplementedError('sparse.tril is not implemented for scalars or 1-D arrays.')
