@@ -14,7 +14,7 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
 
     checking_method = np.array_equal \
         if np.issubdtype(x.dtype, np.integer) and np.issubdtype(y.dtype, np.integer) \
-        else lambda *args, **kwargs: np.allclose(*args, equal_nan=True, **kwargs)
+        else functools.partial(np.allclose, equal_nan=True)
 
     if isinstance(x, COO):
         assert is_canonical(x)
