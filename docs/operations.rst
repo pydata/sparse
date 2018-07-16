@@ -64,9 +64,12 @@ However, all of the following are valid operations.
    5 * x
    x / 7.3
    x != 0
+   x == 0
+   ~x
+   x + 5
 
 We also support operations with a nonzero fill value. These are operations
-that map zero values to nonzero values, such as :code:`x + 1` or :code:`operator.not_`.
+that map zero values to nonzero values, such as :code:`x + 1` or :code:`~x`.
 In these cases, they will produce an output with a fill value of :code:`1` or :code:`True`,
 assuming the original array has a fill value of :code:`0` or :code:`False` respectively.
 
