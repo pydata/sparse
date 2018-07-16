@@ -264,7 +264,7 @@ def check_zero_fill_value(*args):
             raise ValueError('This operation requires zero fill values.')
 
 
-def consistent_fill_value(arrays):
+def check_consistent_fill_value(arrays):
     arrays = list(arrays)
     from .sparse_array import SparseArray
 

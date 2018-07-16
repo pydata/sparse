@@ -8,7 +8,7 @@ import scipy.sparse
 
 from ..sparse_array import SparseArray
 from ..compatibility import range
-from ..utils import isscalar, normalize_axis, check_zero_fill_value, consistent_fill_value
+from ..utils import isscalar, normalize_axis, check_zero_fill_value, check_consistent_fill_value
 
 
 def asCOO(x, name='asCOO', check=True):
@@ -223,7 +223,7 @@ def concatenate(arrays, axis=0):
     numpy.concatenate : NumPy equivalent function
     """
     from .core import COO
-    consistent_fill_value(arrays)
+    check_consistent_fill_value(arrays)
 
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
     axis = normalize_axis(axis, arrays[0].ndim)
@@ -270,7 +270,7 @@ def stack(arrays, axis=0):
     numpy.stack : NumPy equivalent function
     """
     from .core import COO
-    consistent_fill_value(arrays)
+    check_consistent_fill_value(arrays)
 
     assert len(set(x.shape for x in arrays)) == 1
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
