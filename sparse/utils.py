@@ -1,6 +1,6 @@
-from numbers import Integral
-from collections import Iterable
 import functools
+from collections import Iterable
+from numbers import Integral
 
 import numpy as np
 
@@ -292,7 +292,7 @@ def check_zero_fill_value(*args):
 
     Parameters
     ----------
-    args : Iterable[COO]
+    args : Iterable[SparseArray]
 
     Examples
     --------
@@ -303,16 +303,17 @@ def check_zero_fill_value(*args):
     >>> check_zero_fill_value(s2)
     Traceback (most recent call last):
         ...
-    ValueError: This operation requires zero fill values.
+    ValueError: This operation requires zero fill values, but argument 0 had a fill value of 0.5.
     >>> check_zero_fill_value(s1, s2)
     Traceback (most recent call last):
         ...
-    ValueError: This operation requires zero fill values.
+    ValueError: This operation requires zero fill values, but argument 1 had a fill value of 0.5.
     """
-    for arg in args:
+    for i, arg in enumerate(args):
         if (hasattr(arg, 'fill_value') and
                 not equivalent(arg.fill_value, _zero_of_dtype(arg.dtype))):
-            raise ValueError('This operation requires zero fill values.')
+            raise ValueError('This operation requires zero fill values, '
+                             'but argument {:d} had a fill value of {!s}.'.format(i, arg.fill_value))
 
 
 def check_consistent_fill_value(arrays):
@@ -329,10 +330,11 @@ def check_consistent_fill_value(arrays):
     >>> s1 = sparse.random((10,), density=0.5, fill_value=0.1)
     >>> s2 = sparse.random((10,), density=0.5, fill_value=0.5)
     >>> check_consistent_fill_value([s1, s1])
-    >>> check_consistent_fill_value([s1, s2])
+    >>> check_consistent_fill_value([s1, s2])  # doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
         ...
-    ValueError: This operation requires consistent fill-values.
+    ValueError: This operation requires consistent fill-values, but argument 1 had a fill value of 0.5,\
+        which is different from a fill_value of 0.1 in the first argument.
     """
     arrays = list(arrays)
     from .sparse_array import SparseArray
@@ -344,5 +346,9 @@ def check_consistent_fill_value(arrays):
 
     fv = arrays[0].fill_value
 
-    if not all(equivalent(fv, s.fill_value) for s in arrays):
-        raise ValueError('This operation requires consistent fill-values.')
+    for i, arg in enumerate(arrays):
+        if not equivalent(fv, arg.fill_value):
+            raise ValueError('This operation requires consistent fill-values, '
+                             'but argument {:d} had a fill value of {!s}, which '
+                             'is different from a fill_value of {!s} in the first '
+                             'argument.'.format(i, arg.fill_value, fv))
