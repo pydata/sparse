@@ -75,6 +75,10 @@ def tensordot(a, b, axes=2):
     See Also
     --------
     numpy.tensordot : NumPy equivalent function
+
+    Notes
+    -----
+    This function requires zero fill-values.
     """
     # Much of this is stolen from numpy/core/numeric.py::tensordot
     # Please see license at https://github.com/numpy/numpy/blob/master/LICENSE.txt
@@ -171,6 +175,10 @@ def dot(a, b):
     --------
     numpy.dot : NumPy equivalent function.
     COO.dot : Equivalent function for COO objects.
+
+    Notes
+    -----
+    This function requires zero fill-values.
     """
     check_zero_fill_value(a, b)
     if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
@@ -221,6 +229,10 @@ def concatenate(arrays, axis=0):
     See Also
     --------
     numpy.concatenate : NumPy equivalent function
+
+    Notes
+    -----
+    This function requires consistent fill-values.
     """
     from .core import COO
     check_consistent_fill_value(arrays)
@@ -268,6 +280,10 @@ def stack(arrays, axis=0):
     See Also
     --------
     numpy.stack : NumPy equivalent function
+
+    Notes
+    -----
+    This function requires consistent fill-values.
     """
     from .core import COO
     check_consistent_fill_value(arrays)
@@ -316,6 +332,10 @@ def triu(x, k=0):
     See Also
     --------
     numpy.triu : NumPy equivalent function
+
+    Notes
+    -----
+    This function requires zero fill-values.
     """
     from .core import COO
     check_zero_fill_value(x)
@@ -351,6 +371,10 @@ def tril(x, k=0):
     See Also
     --------
     numpy.tril : NumPy equivalent function
+
+    Notes
+    -----
+    This function requires zero fill-values.
     """
     from .core import COO
     check_zero_fill_value(x)

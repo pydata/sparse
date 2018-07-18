@@ -53,8 +53,8 @@ This includes arithmetic, :doc:`numpy.ufunc <reference/ufuncs>` operations, or f
    >>> np.sin(s) + s.T * 1
    <COO: shape=(100, 100, 100), dtype=float64, nnz=189601, fill_value=0.0>
 
-However, operations which convert the sparse array into a dense one will usually change the fill
-value instead of raising an error.
+However, operations which map zero elements to nonzero will usually change the fill-value
+instead of raising an error.
 
 .. code-block:: python
 

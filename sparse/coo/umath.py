@@ -1,12 +1,11 @@
 from itertools import product
 
+import numba
 import numpy as np
 import scipy.sparse
 
-import numba
-
-from ..utils import isscalar, PositinalArgumentPartial, equivalent
 from ..compatibility import range, zip, zip_longest
+from ..utils import isscalar, PositinalArgumentPartial, equivalent
 
 
 def elemwise(func, *args, **kwargs):
@@ -77,7 +76,7 @@ def elemwise(func, *args, **kwargs):
 
 
 @numba.jit(nopython=True, nogil=True)
-def _match_arrays(a, b):    # pragma: no cover
+def _match_arrays(a, b):  # pragma: no cover
     """
     Finds all indexes into a and b such that a[i] = b[j]. The outputs are sorted
     in lexographical order.
@@ -601,7 +600,9 @@ def broadcast_to(x, shape):
     coords, data = _get_expanded_coords_data(x.coords, x.data, params, result_shape)
 
     # Check if all the non-broadcast axes are next to each other
-    sorted = np.all(np.diff(np.where([bool(p) for p in params])[0]) == 1)
+    nonbroadcast_idx = [idx for idx, p in enumerate(params) if p]
+    diff_nonbroadcast_idx = [a - b for a, b in zip(nonbroadcast_idx[1:], nonbroadcast_idx[:-1])]
+    sorted = all(d == 1 for d in diff_nonbroadcast_idx)
 
     return COO(coords, data, shape=result_shape, has_duplicates=False,
                sorted=sorted, fill_value=x.fill_value)

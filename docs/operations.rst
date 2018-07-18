@@ -227,3 +227,7 @@ Other Operations
 :obj:`dot`, :obj:`tensordot`, :obj:`concatenate`
 and :obj:`stack`, :obj:`transpose <COO.transpose>` and :obj:`reshape <COO.reshape>`.
 You can view the full list on the :doc:`API reference page <generated/sparse>`.
+
+.. note:: Some operations require zero fill-values (such as :obj:`nonzero <COO.nonzero>`)
+   and others (such as :obj:`concatenate`) require that all inputs have consistent fill-values.
+   For details, check the API reference.

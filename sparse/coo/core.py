@@ -1080,6 +1080,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s.dot(s) # doctest: +SKIP
         array([[ 2,  3],
                [ 6, 11]], dtype=int64)
+
+        Notes
+        -----
+        This function requires zero fill-values.
         """
         return dot(self, other)
 
@@ -1233,6 +1237,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         --------
         COO.tocsr : Convert to a :obj:`scipy.sparse.csr_matrix`.
         COO.tocsc : Convert to a :obj:`scipy.sparse.csc_matrix`.
+
+        Notes
+        -----
+        This function requires zero fill-values.
         """
         check_zero_fill_value(self)
 
@@ -1277,6 +1285,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         COO.tocsc : Convert to a :obj:`scipy.sparse.csc_matrix`.
         COO.to_scipy_sparse : Convert to a :obj:`scipy.sparse.coo_matrix`.
         scipy.sparse.coo_matrix.tocsr : Equivalent Scipy function.
+
+        Notes
+        -----
+        This function requires zero fill-values.
         """
         check_zero_fill_value(self)
 
@@ -1315,6 +1327,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         COO.tocsr : Convert to a :obj:`scipy.sparse.csr_matrix`.
         COO.to_scipy_sparse : Convert to a :obj:`scipy.sparse.coo_matrix`.
         scipy.sparse.coo_matrix.tocsc : Equivalent Scipy function.
+
+        Notes
+        -----
+        This function requires zero fill-values.
         """
         check_zero_fill_value(self)
 
@@ -1526,6 +1542,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s = COO.from_numpy(np.eye(5))
         >>> s.nonzero()
         (array([0, 1, 2, 3, 4]), array([0, 1, 2, 3, 4]))
+
+        Notes
+        -----
+        This function requires zero fill-values.
         """
         check_zero_fill_value(self)
         return tuple(self.coords)
