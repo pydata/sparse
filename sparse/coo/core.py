@@ -1067,6 +1067,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             The result of the dot product. If the result turns out to be dense,
             then a dense array is returned, otherwise, a sparse array.
 
+        Raises
+        ------
+        ValueError
+            If all arguments don't have zero fill-values.
+
         See Also
         --------
         dot : Equivalent function for two arguments.
@@ -1080,10 +1085,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s.dot(s) # doctest: +SKIP
         array([[ 2,  3],
                [ 6, 11]], dtype=int64)
-
-        Notes
-        -----
-        This function requires zero fill-values.
         """
         return dot(self, other)
 
@@ -1233,14 +1234,13 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         ValueError
             If the array is not two-dimensional.
 
+        ValueError
+            If all the array doesn't zero fill-values.
+
         See Also
         --------
         COO.tocsr : Convert to a :obj:`scipy.sparse.csr_matrix`.
         COO.tocsc : Convert to a :obj:`scipy.sparse.csc_matrix`.
-
-        Notes
-        -----
-        This function requires zero fill-values.
         """
         check_zero_fill_value(self)
 
@@ -1280,15 +1280,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         ValueError
             If the array is not two-dimensional.
 
+        ValueError
+            If all the array doesn't have zero fill-values.
+
         See Also
         --------
         COO.tocsc : Convert to a :obj:`scipy.sparse.csc_matrix`.
         COO.to_scipy_sparse : Convert to a :obj:`scipy.sparse.coo_matrix`.
         scipy.sparse.coo_matrix.tocsr : Equivalent Scipy function.
-
-        Notes
-        -----
-        This function requires zero fill-values.
         """
         check_zero_fill_value(self)
 
@@ -1322,15 +1321,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         ValueError
             If the array is not two-dimensional.
 
+        ValueError
+            If the array doesn't have zero fill-values.
+
         See Also
         --------
         COO.tocsr : Convert to a :obj:`scipy.sparse.csr_matrix`.
         COO.to_scipy_sparse : Convert to a :obj:`scipy.sparse.coo_matrix`.
         scipy.sparse.coo_matrix.tocsc : Equivalent Scipy function.
-
-        Notes
-        -----
-        This function requires zero fill-values.
         """
         check_zero_fill_value(self)
 
@@ -1537,15 +1535,16 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         --------
         :obj:`numpy.ndarray.nonzero` : NumPy equivalent function
 
+        Raises
+        ------
+        ValueError
+            If the array doesn't have zero fill-values.
+
         Examples
         --------
         >>> s = COO.from_numpy(np.eye(5))
         >>> s.nonzero()
         (array([0, 1, 2, 3, 4]), array([0, 1, 2, 3, 4]))
-
-        Notes
-        -----
-        This function requires zero fill-values.
         """
         check_zero_fill_value(self)
         return tuple(self.coords)

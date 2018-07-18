@@ -294,6 +294,11 @@ def check_zero_fill_value(*args):
     ----------
     args : Iterable[SparseArray]
 
+    Raises
+    ------
+    ValueError
+        If all arguments don't have zero fill-values.
+
     Examples
     --------
     >>> import sparse
@@ -322,7 +327,12 @@ def check_consistent_fill_value(arrays):
 
     Parameters
     ----------
-    args : Iterable[COO]
+    args : Iterable[SparseArray]
+
+    Raises
+    ------
+    ValueError
+        If all elements of :code:`arrays` don't have the same fill-value.
 
     Examples
     --------

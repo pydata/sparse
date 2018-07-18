@@ -72,13 +72,14 @@ def tensordot(a, b, axes=2):
     Union[COO, numpy.ndarray]
         The result of the operation.
 
+    Raises
+    ------
+    ValueError
+        If all arguments don't have zero fill-values.
+
     See Also
     --------
     numpy.tensordot : NumPy equivalent function
-
-    Notes
-    -----
-    This function requires zero fill-values.
     """
     # Much of this is stolen from numpy/core/numeric.py::tensordot
     # Please see license at https://github.com/numpy/numpy/blob/master/LICENSE.txt
@@ -171,14 +172,15 @@ def dot(a, b):
     Union[COO, numpy.ndarray]
         The result of the operation.
 
+    Raises
+    ------
+    ValueError
+        If all arguments don't have zero fill-values.
+
     See Also
     --------
     numpy.dot : NumPy equivalent function.
     COO.dot : Equivalent function for COO objects.
-
-    Notes
-    -----
-    This function requires zero fill-values.
     """
     check_zero_fill_value(a, b)
     if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
@@ -226,13 +228,14 @@ def concatenate(arrays, axis=0):
     COO
         The output concatenated array.
 
+    Raises
+    ------
+    ValueError
+        If all elements of :code:`arrays` don't have the same fill-value.
+
     See Also
     --------
     numpy.concatenate : NumPy equivalent function
-
-    Notes
-    -----
-    This function requires consistent fill-values.
     """
     from .core import COO
     check_consistent_fill_value(arrays)
@@ -277,13 +280,14 @@ def stack(arrays, axis=0):
     COO
         The output stacked array.
 
+    Raises
+    ------
+    ValueError
+        If all elements of :code:`arrays` don't have the same fill-value.
+
     See Also
     --------
     numpy.stack : NumPy equivalent function
-
-    Notes
-    -----
-    This function requires consistent fill-values.
     """
     from .core import COO
     check_consistent_fill_value(arrays)
@@ -329,13 +333,14 @@ def triu(x, k=0):
     COO
         The output upper-triangular matrix.
 
+    Raises
+    ------
+    ValueError
+        If :code:`x` doesn't have zero fill-values.
+
     See Also
     --------
     numpy.triu : NumPy equivalent function
-
-    Notes
-    -----
-    This function requires zero fill-values.
     """
     from .core import COO
     check_zero_fill_value(x)
@@ -368,13 +373,14 @@ def tril(x, k=0):
     COO
         The output lower-triangular matrix.
 
+    Raises
+    ------
+    ValueError
+        If :code:`x` doesn't have zero fill-values.
+
     See Also
     --------
     numpy.tril : NumPy equivalent function
-
-    Notes
-    -----
-    This function requires zero fill-values.
     """
     from .core import COO
     check_zero_fill_value(x)
