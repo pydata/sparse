@@ -216,7 +216,7 @@ def concatenate(arrays, axis=0):
 
     Parameters
     ----------
-    arrays : Iterable[Union[COO, numpy.ndarray, scipy.sparse.spmatrix]]
+    arrays : Iterable[SparseArray]
         The input arrays to concatenate.
     axis : int, optional
         The axis along which to concatenate the input arrays. The default is zero.
@@ -267,7 +267,7 @@ def stack(arrays, axis=0):
 
     Parameters
     ----------
-    arrays : Iterable[Union[COO, numpy.ndarray, scipy.sparse.spmatrix]]
+    arrays : Iterable[SparseArray]
         The input arrays to stack.
     axis : int, optional
         The axis along which to stack the input arrays.
