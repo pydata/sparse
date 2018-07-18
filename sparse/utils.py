@@ -247,6 +247,35 @@ def normalize_axis(axis, ndim):
 
 
 def equivalent(x, y):
+    """
+    Checks the equivalence of two scalars or arrays with broadcasting. Assumes
+    a consistent dtype.
+
+    Parameters
+    ----------
+    x : scalar or numpy.ndarray
+    y : scalar or numpy.ndarray
+
+    Returns
+    -------
+    equivalent : scalar or numpy.ndarray
+        The element-wise comparison of where two arrays are equivalent.
+
+    Examples
+    --------
+    >>> equivalent(1, 1)
+    True
+    >>> equivalent(np.nan, np.nan + 1)
+    True
+    >>> equivalent(1, 2)
+    False
+    >>> equivalent(np.inf, np.inf)
+    True
+    >>> equivalent(np.PZERO, np.NZERO)
+    True
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
     # Can't contain NaNs
     if any(np.issubdtype(x.dtype, t) for t in
            [np.integer, np.bool_, np.character]):
@@ -258,6 +287,28 @@ def equivalent(x, y):
 
 
 def check_zero_fill_value(*args):
+    """
+    Checks if all the arguments have zero fill-values.
+
+    Parameters
+    ----------
+    args : Iterable[COO]
+
+    Examples
+    --------
+    >>> import sparse
+    >>> s1 = sparse.random((10,), density=0.5)
+    >>> s2 = sparse.random((10,), density=0.5, fill_value=0.5)
+    >>> check_zero_fill_value(s1)
+    >>> check_zero_fill_value(s2)
+    Traceback (most recent call last):
+        ...
+    ValueError: This operation requires zero fill values.
+    >>> check_zero_fill_value(s1, s2)
+    Traceback (most recent call last):
+        ...
+    ValueError: This operation requires zero fill values.
+    """
     for arg in args:
         if (hasattr(arg, 'fill_value') and
                 not equivalent(arg.fill_value, _zero_of_dtype(arg.dtype))):
@@ -265,6 +316,24 @@ def check_zero_fill_value(*args):
 
 
 def check_consistent_fill_value(arrays):
+    """
+    Checks if all the arguments have consistent fill-values.
+
+    Parameters
+    ----------
+    args : Iterable[COO]
+
+    Examples
+    --------
+    >>> import sparse
+    >>> s1 = sparse.random((10,), density=0.5, fill_value=0.1)
+    >>> s2 = sparse.random((10,), density=0.5, fill_value=0.5)
+    >>> check_consistent_fill_value([s1, s1])
+    >>> check_consistent_fill_value([s1, s2])
+    Traceback (most recent call last):
+        ...
+    ValueError: This operation requires consistent fill-values.
+    """
     arrays = list(arrays)
     from .sparse_array import SparseArray
 
@@ -276,4 +345,4 @@ def check_consistent_fill_value(arrays):
     fv = arrays[0].fill_value
 
     if not all(equivalent(fv, s.fill_value) for s in arrays):
-        raise ValueError('Consistent fill-values required.')
+        raise ValueError('This operation requires consistent fill-values.')
