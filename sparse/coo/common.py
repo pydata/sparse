@@ -8,7 +8,7 @@ import scipy.sparse
 
 from ..sparse_array import SparseArray
 from ..compatibility import range
-from ..utils import isscalar, normalize_axis
+from ..utils import isscalar, normalize_axis, check_zero_fill_value, check_consistent_fill_value
 
 
 def asCOO(x, name='asCOO', check=True):
@@ -72,6 +72,11 @@ def tensordot(a, b, axes=2):
     Union[COO, numpy.ndarray]
         The result of the operation.
 
+    Raises
+    ------
+    ValueError
+        If all arguments don't have zero fill-values.
+
     See Also
     --------
     numpy.tensordot : NumPy equivalent function
@@ -79,6 +84,7 @@ def tensordot(a, b, axes=2):
     # Much of this is stolen from numpy/core/numeric.py::tensordot
     # Please see license at https://github.com/numpy/numpy/blob/master/LICENSE.txt
     from .core import COO
+    check_zero_fill_value(a, b)
 
     try:
         iter(axes)
@@ -166,11 +172,17 @@ def dot(a, b):
     Union[COO, numpy.ndarray]
         The result of the operation.
 
+    Raises
+    ------
+    ValueError
+        If all arguments don't have zero fill-values.
+
     See Also
     --------
     numpy.dot : NumPy equivalent function.
     COO.dot : Equivalent function for COO objects.
     """
+    check_zero_fill_value(a, b)
     if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
         raise NotImplementedError(
             "Cannot perform dot product on types %s, %s" %
@@ -206,7 +218,7 @@ def concatenate(arrays, axis=0):
 
     Parameters
     ----------
-    arrays : Iterable[Union[COO, numpy.ndarray, scipy.sparse.spmatrix]]
+    arrays : Iterable[SparseArray]
         The input arrays to concatenate.
     axis : int, optional
         The axis along which to concatenate the input arrays. The default is zero.
@@ -216,11 +228,17 @@ def concatenate(arrays, axis=0):
     COO
         The output concatenated array.
 
+    Raises
+    ------
+    ValueError
+        If all elements of :code:`arrays` don't have the same fill-value.
+
     See Also
     --------
     numpy.concatenate : NumPy equivalent function
     """
     from .core import COO
+    check_consistent_fill_value(arrays)
 
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
     axis = normalize_axis(axis, arrays[0].ndim)
@@ -243,7 +261,7 @@ def concatenate(arrays, axis=0):
         nnz += x.nnz
 
     return COO(coords, data, shape=shape, has_duplicates=False,
-               sorted=(axis == 0))
+               sorted=(axis == 0), fill_value=arrays[0].fill_value)
 
 
 def stack(arrays, axis=0):
@@ -252,7 +270,7 @@ def stack(arrays, axis=0):
 
     Parameters
     ----------
-    arrays : Iterable[Union[COO, numpy.ndarray, scipy.sparse.spmatrix]]
+    arrays : Iterable[SparseArray]
         The input arrays to stack.
     axis : int, optional
         The axis along which to stack the input arrays.
@@ -262,11 +280,17 @@ def stack(arrays, axis=0):
     COO
         The output stacked array.
 
+    Raises
+    ------
+    ValueError
+        If all elements of :code:`arrays` don't have the same fill-value.
+
     See Also
     --------
     numpy.stack : NumPy equivalent function
     """
     from .core import COO
+    check_consistent_fill_value(arrays)
 
     assert len(set(x.shape for x in arrays)) == 1
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
@@ -289,7 +313,7 @@ def stack(arrays, axis=0):
     coords = np.stack(coords, axis=0)
 
     return COO(coords, data, shape=shape, has_duplicates=False,
-               sorted=(axis == 0))
+               sorted=(axis == 0), fill_value=arrays[0].fill_value)
 
 
 def triu(x, k=0):
@@ -309,11 +333,17 @@ def triu(x, k=0):
     COO
         The output upper-triangular matrix.
 
+    Raises
+    ------
+    ValueError
+        If :code:`x` doesn't have zero fill-values.
+
     See Also
     --------
     numpy.triu : NumPy equivalent function
     """
     from .core import COO
+    check_zero_fill_value(x)
 
     if not x.ndim >= 2:
         raise NotImplementedError('sparse.triu is not implemented for scalars or 1-D arrays.')
@@ -343,11 +373,17 @@ def tril(x, k=0):
     COO
         The output lower-triangular matrix.
 
+    Raises
+    ------
+    ValueError
+        If :code:`x` doesn't have zero fill-values.
+
     See Also
     --------
     numpy.tril : NumPy equivalent function
     """
     from .core import COO
+    check_zero_fill_value(x)
 
     if not x.ndim >= 2:
         raise NotImplementedError('sparse.tril is not implemented for scalars or 1-D arrays.')
@@ -560,17 +596,10 @@ def _replace_nan(array, value):
     COO
         A copy of ``array`` with the ``NaN``s replaced.
     """
-    from .core import COO
-
     if not np.issubdtype(array.dtype, np.floating):
         return array
 
-    data = np.copy(array.data)
-    data[np.isnan(data)] = value
-
-    return COO(array.coords, data, shape=array.shape,
-               has_duplicates=False,
-               sorted=True)
+    return where(np.isnan(array), value, array)
 
 
 def nanreduce(x, method, identity=None, axis=None, keepdims=False, **kwargs):
@@ -675,4 +704,4 @@ def roll(a, shift, axis=None):
             coords[ax] += sh
             coords[ax] %= a.shape[ax]
 
-        return COO(coords, data=data, shape=a.shape, has_duplicates=False)
+        return COO(coords, data=data, shape=a.shape, has_duplicates=False, fill_value=a.fill_value)

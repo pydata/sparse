@@ -76,7 +76,7 @@ def test_nan_reductions(reduction, axis, keepdims, fraction):
     x = s.todense()
     expected = getattr(np, reduction)(x, axis=axis, keepdims=keepdims)
     actual = getattr(sparse, reduction)(s, axis=axis, keepdims=keepdims)
-    assert_eq(expected, actual, equal_nan=True)
+    assert_eq(expected, actual)
 
 
 @pytest.mark.parametrize('reduction', [
@@ -468,7 +468,7 @@ def test_trinary_broadcasting_pathological(shapes, func, value, fraction):
     fs = sparse.elemwise(func, *args)
     assert isinstance(fs, COO)
 
-    assert_eq(fs, func(*dense_args), equal_nan=True)
+    assert_eq(fs, func(*dense_args))
 
 
 def test_sparse_broadcasting(monkeypatch):
@@ -548,12 +548,18 @@ def test_elemwise_noargs():
 ])
 @pytest.mark.filterwarnings('ignore:divide by zero')
 @pytest.mark.filterwarnings('ignore:invalid value')
-def test_auto_densification_fails(func):
+def test_nonzero_outout_fv_ufunc(func):
     xs = sparse.random((2, 3, 4), density=0.5)
     ys = sparse.random((2, 3, 4), density=0.5)
 
-    with pytest.raises(ValueError):
-        func(xs, ys)
+    x = xs.todense()
+    y = ys.todense()
+
+    f = func(x, y)
+    fs = func(xs, ys)
+    assert isinstance(fs, COO)
+
+    assert_eq(f, fs)
 
 
 @pytest.mark.parametrize('func, scalar', [
@@ -629,12 +635,19 @@ def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number):
 ])
 @pytest.mark.filterwarnings('ignore:divide by zero')
 @pytest.mark.filterwarnings('ignore:invalid value')
-def test_scalar_densification_fails(func, scalar):
+def test_scalar_output_nonzero_fv(func, scalar):
     xs = sparse.random((2, 3, 4), density=0.5)
     y = scalar
 
-    with pytest.raises(ValueError):
-        func(xs, y)
+    x = xs.todense()
+
+    f = func(x, y)
+    fs = func(xs, y)
+
+    assert isinstance(fs, COO)
+    assert fs.nnz <= xs.nnz
+
+    assert_eq(f, fs)
 
 
 @pytest.mark.parametrize('func', [
@@ -779,28 +792,53 @@ def test_bitshift_scalar(func, shape):
 
 @pytest.mark.parametrize('func', [operator.invert])
 @pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-def test_unary_bitwise_densification_fails(func, shape):
+def test_unary_bitwise_nonzero_output_fv(func, shape):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
     xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+    x = xs.todense()
 
-    with pytest.raises(ValueError):
-        func(xs)
+    f = func(x)
+    fs = func(xs)
+
+    assert isinstance(fs, COO)
+    assert fs.nnz <= xs.nnz
+
+    assert_eq(f, fs)
 
 
 @pytest.mark.parametrize('func', [operator.or_, operator.xor])
 @pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-def test_binary_bitwise_densification_fails(func, shape):
+def test_binary_bitwise_nonzero_output_fv(func, shape):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
     xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
     y = np.random.randint(1, 100)
 
-    with pytest.raises(ValueError):
-        func(xs, y)
+    x = xs.todense()
 
-    with pytest.raises(ValueError):
-        func(y, xs)
+    f = func(x, y)
+    fs = func(xs, y)
+
+    assert isinstance(fs, COO)
+    assert fs.nnz <= xs.nnz
+
+    assert_eq(f, fs)
+
+
+@pytest.mark.parametrize('func', [
+    operator.mul, operator.add, operator.sub, operator.gt,
+    operator.lt, operator.ne
+])
+@pytest.mark.parametrize('shape', [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+def test_elemwise_nonzero_input_fv(func, shape):
+    xs = sparse.random(shape, density=0.5, fill_value=np.random.rand())
+    ys = sparse.random(shape, density=0.5, fill_value=np.random.rand())
+
+    x = xs.todense()
+    y = ys.todense()
+
+    assert_eq(func(xs, ys), func(x, y))
 
 
 @pytest.mark.parametrize('func', [operator.lshift, operator.rshift])
@@ -811,8 +849,15 @@ def test_binary_bitshift_densification_fails(func, shape):
     x = np.random.randint(1, 100)
     ys = (sparse.random(shape, density=0.5) * 64).astype(np.int_)
 
-    with pytest.raises(ValueError):
-        func(x, ys)
+    y = ys.todense()
+
+    f = func(x, y)
+    fs = func(x, ys)
+
+    assert isinstance(fs, COO)
+    assert fs.nnz <= ys.nnz
+
+    assert_eq(f, fs)
 
 
 @pytest.mark.parametrize('func', [operator.and_, operator.or_, operator.xor])
@@ -990,17 +1035,18 @@ def test_concatenate():
 
 
 @pytest.mark.parametrize('axis', [0, 1])
-@pytest.mark.parametrize('func', ['stack', 'concatenate'])
+@pytest.mark.parametrize('func', [sparse.stack, sparse.concatenate])
 def test_concatenate_mixed(func, axis):
     s = sparse.random((10, 10), density=0.5)
     d = s.todense()
 
-    result = getattr(sparse, func)([d, s, s], axis=axis)
-    expected = getattr(np, func)([d, d, d], axis=axis)
+    with pytest.raises(ValueError):
+        func([d, s, s], axis=axis)
 
-    assert isinstance(result, COO)
 
-    assert_eq(result, expected)
+def test_concatenate_noarrays():
+    with pytest.raises(ValueError):
+        sparse.concatenate([])
 
 
 @pytest.mark.parametrize('shape', [(5,), (2, 3, 4), (5, 2)])
@@ -1042,20 +1088,6 @@ def test_addition():
     assert_eq(x - y, a - b)
 
 
-def test_addition_not_ok_when_large_and_sparse():
-    x = COO({(0, 0): 1}, shape=(1000000, 1000000))
-    with pytest.raises(ValueError):
-        x + 1
-    with pytest.raises(ValueError):
-        1 + x
-    with pytest.raises(ValueError):
-        1 - x
-    with pytest.raises(ValueError):
-        x - 1
-    with pytest.raises(ValueError):
-        np.exp(x)
-
-
 @pytest.mark.parametrize('scalar', [2, 2.5, np.float32(2.0), np.int8(3)])
 def test_scalar_multiplication(scalar):
     a = sparse.random((2, 3, 4), density=0.5)
@@ -1079,8 +1111,7 @@ def test_scalar_exponentiation():
     assert_eq(x ** 2, a ** 2)
     assert_eq(x ** 0.5, a ** 0.5)
 
-    with pytest.raises((ValueError, ZeroDivisionError)):
-        assert_eq(x ** -1, a ** -1)
+    assert_eq(x ** -1, a ** -1)
 
 
 def test_create_with_lists_of_tuples():
@@ -1192,17 +1223,6 @@ def test_single_dimension():
     x = COO([1, 3], [1.0, 3.0])
     assert x.shape == (4,)
     assert_eq(x, np.array([0, 1.0, 0, 3.0]))
-
-
-def test_raise_dense():
-    x = COO({(10000, 10000): 1.0})
-    with pytest.raises((ValueError, NotImplementedError)) as exc_info:
-        np.exp(x)
-
-    assert 'dense' in str(exc_info.value).lower()
-
-    with pytest.raises((ValueError, NotImplementedError)):
-        x + 1
 
 
 def test_large_sum():
@@ -1331,6 +1351,16 @@ def test_random_rvs(rvs, dtype, shape, density):
     x = sparse.random(shape, density, data_rvs=rvs)
     assert x.shape == shape
     assert x.dtype == dtype
+
+
+@pytest.mark.parametrize('format', [
+    'coo', 'dok'
+])
+def test_random_fv(format):
+    fv = np.random.rand()
+    s = sparse.random((2, 3, 4), density=0.5, format=format, fill_value=fv)
+
+    assert s.fill_value == fv
 
 
 def test_scalar_shape_construction():
@@ -1593,3 +1623,20 @@ class TestRoll(object):
         x = sparse.random((2, 2, 2), density=1)
         with pytest.raises(ValueError):
             sparse.roll(x, *args)
+
+
+class TestFailFillValue(object):
+    # Check failed fill_value op
+    def test_nonzero_fv(self):
+        xs = sparse.random((2, 3), density=0.5, fill_value=1)
+        ys = sparse.random((3, 4), density=0.5)
+
+        with pytest.raises(ValueError):
+            sparse.dot(xs, ys)
+
+    def test_inconsistent_fv(self):
+        xs = sparse.random((3, 4), density=0.5, fill_value=1)
+        ys = sparse.random((3, 4), density=0.5, fill_value=2)
+
+        with pytest.raises(ValueError):
+            sparse.concatenate([xs, ys])

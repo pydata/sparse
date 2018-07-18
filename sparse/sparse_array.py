@@ -5,6 +5,8 @@ from numbers import Integral
 from functools import reduce
 import operator
 
+from .utils import _zero_of_dtype
+
 
 class SparseArray(object):
     """
@@ -14,11 +16,13 @@ class SparseArray(object):
     ----------
     dtype : numpy.dtype
         The data type of this array.
+    fill_value : scalar
+        The fill value of this array.
     """
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, shape):
+    def __init__(self, shape, fill_value=None):
         if not isinstance(shape, Iterable):
             shape = (shape,)
 
@@ -27,6 +31,11 @@ class SparseArray(object):
                              'of non-negative integers.')
 
         self.shape = tuple(int(l) for l in shape)
+
+        if fill_value is not None:
+            self.fill_value = self.dtype.type(fill_value)
+        else:
+            self.fill_value = _zero_of_dtype(self.dtype)
 
     dtype = None
 

@@ -30,11 +30,11 @@ def save_npz(filename, matrix, compressed=True):
     >>> dense_mat = np.array([[[0., 0.], [0., 0.70677779]], [[0., 0.], [0., 0.86522495]]])
     >>> mat = sparse.COO(dense_mat)
     >>> mat
-    <COO: shape=(2, 2, 2), dtype=float64, nnz=2>
+    <COO: shape=(2, 2, 2), dtype=float64, nnz=2, fill_value=0.0>
     >>> sparse.save_npz('mat.npz', mat)
     >>> loaded_mat = sparse.load_npz('mat.npz')
     >>> loaded_mat
-    <COO: shape=(2, 2, 2), dtype=float64, nnz=2>
+    <COO: shape=(2, 2, 2), dtype=float64, nnz=2, fill_value=0.0>
     >>> loaded_mat.todense()
     array([[[0.        , 0.        ],
             [0.        , 0.70677779]],

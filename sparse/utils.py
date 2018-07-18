@@ -1,6 +1,8 @@
-import numpy as np
-from numbers import Integral
+import functools
 from collections import Iterable
+from numbers import Integral
+
+import numpy as np
 
 
 def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
@@ -12,7 +14,7 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
 
     checking_method = np.array_equal \
         if np.issubdtype(x.dtype, np.integer) and np.issubdtype(y.dtype, np.integer) \
-        else np.allclose
+        else functools.partial(np.allclose, equal_nan=True)
 
     if isinstance(x, COO):
         assert is_canonical(x)
@@ -26,20 +28,25 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
     if hasattr(x, 'todense'):
         xx = x.todense()
         if check_nnz:
-            assert (xx != 0).sum() == x.nnz
+            assert_nnz(x, xx)
     else:
         xx = x
     if hasattr(y, 'todense'):
         yy = y.todense()
         if check_nnz:
-            assert (yy != 0).sum() == y.nnz
+            assert_nnz(y, yy)
     else:
         yy = y
     assert checking_method(xx, yy, **kwargs)
 
 
+def assert_nnz(s, x):
+    fill_value = s.fill_value if hasattr(s, 'fill_value') else _zero_of_dtype(s.dtype)
+    assert np.sum(~equivalent(x, fill_value)) == s.nnz
+
+
 def is_canonical(x):
-    return not x.shape or ((np.diff(x.linear_loc()) > 0).all() and (x.data != _zero_of_dtype(x.dtype)).all())
+    return not x.shape or ((np.diff(x.linear_loc()) > 0).all() and not equivalent(x.data, x.fill_value).any())
 
 
 def _zero_of_dtype(dtype):
@@ -56,7 +63,7 @@ def _zero_of_dtype(dtype):
     np.ndarray
         The zero array.
     """
-    return np.zeros((), dtype=dtype)
+    return np.zeros((), dtype=dtype)[()]
 
 
 def random(
@@ -64,7 +71,8 @@ def random(
         density=0.01,
         random_state=None,
         data_rvs=None,
-        format='coo'
+        format='coo',
+        fill_value=None
 ):
     """ Generate a random sparse multidimensional array
 
@@ -83,8 +91,10 @@ def random(
         Data generation callback. Must accept one single parameter: number of
         :code:`nnz` elements, and return one single NumPy array of exactly
         that length.
-    format: str
+    format : str
         The format to return the output array in.
+    fill_value : scalar
+        The fill value of the output array.
 
     Returns
     -------
@@ -145,7 +155,7 @@ def random(
 
     data = data_rvs(nnz)
 
-    ar = COO(ind[None, :], data, shape=nnz).reshape(shape)
+    ar = COO(ind[None, :], data, shape=nnz, fill_value=fill_value).reshape(shape)
 
     return ar.asformat(format)
 
@@ -157,17 +167,11 @@ def isscalar(x):
 
 class PositinalArgumentPartial(object):
     def __init__(self, func, pos, posargs):
-        if not isinstance(pos, Iterable):
-            pos = (pos,)
-            posargs = (posargs,)
-
-        n_partial_args = len(pos)
-
-        self.pos = pos
-        self.posargs = posargs
+        self.pos = list(pos)
+        self.posargs = list(posargs)
         self.func = func
 
-        self.n = n_partial_args
+        self.n = len(pos)
 
         self.__doc__ = func.__doc__
 
@@ -240,3 +244,121 @@ def normalize_axis(axis, ndim):
         return tuple(normalize_axis(a, ndim) for a in axis)
 
     raise ValueError("axis %s not understood" % axis)
+
+
+def equivalent(x, y):
+    """
+    Checks the equivalence of two scalars or arrays with broadcasting. Assumes
+    a consistent dtype.
+
+    Parameters
+    ----------
+    x : scalar or numpy.ndarray
+    y : scalar or numpy.ndarray
+
+    Returns
+    -------
+    equivalent : scalar or numpy.ndarray
+        The element-wise comparison of where two arrays are equivalent.
+
+    Examples
+    --------
+    >>> equivalent(1, 1)
+    True
+    >>> equivalent(np.nan, np.nan + 1)
+    True
+    >>> equivalent(1, 2)
+    False
+    >>> equivalent(np.inf, np.inf)
+    True
+    >>> equivalent(np.PZERO, np.NZERO)
+    True
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+    # Can't contain NaNs
+    if any(np.issubdtype(x.dtype, t) for t in
+           [np.integer, np.bool_, np.character]):
+        return x == y
+
+    # Can contain NaNs
+    # FIXME: Complex floats and np.void with multiple values can't be compared properly.
+    return (x == y) | ((x != x) & (y != y))
+
+
+def check_zero_fill_value(*args):
+    """
+    Checks if all the arguments have zero fill-values.
+
+    Parameters
+    ----------
+    args : Iterable[SparseArray]
+
+    Raises
+    ------
+    ValueError
+        If all arguments don't have zero fill-values.
+
+    Examples
+    --------
+    >>> import sparse
+    >>> s1 = sparse.random((10,), density=0.5)
+    >>> s2 = sparse.random((10,), density=0.5, fill_value=0.5)
+    >>> check_zero_fill_value(s1)
+    >>> check_zero_fill_value(s2)
+    Traceback (most recent call last):
+        ...
+    ValueError: This operation requires zero fill values, but argument 0 had a fill value of 0.5.
+    >>> check_zero_fill_value(s1, s2)
+    Traceback (most recent call last):
+        ...
+    ValueError: This operation requires zero fill values, but argument 1 had a fill value of 0.5.
+    """
+    for i, arg in enumerate(args):
+        if (hasattr(arg, 'fill_value') and
+                not equivalent(arg.fill_value, _zero_of_dtype(arg.dtype))):
+            raise ValueError('This operation requires zero fill values, '
+                             'but argument {:d} had a fill value of {!s}.'.format(i, arg.fill_value))
+
+
+def check_consistent_fill_value(arrays):
+    """
+    Checks if all the arguments have consistent fill-values.
+
+    Parameters
+    ----------
+    args : Iterable[SparseArray]
+
+    Raises
+    ------
+    ValueError
+        If all elements of :code:`arrays` don't have the same fill-value.
+
+    Examples
+    --------
+    >>> import sparse
+    >>> s1 = sparse.random((10,), density=0.5, fill_value=0.1)
+    >>> s2 = sparse.random((10,), density=0.5, fill_value=0.5)
+    >>> check_consistent_fill_value([s1, s1])
+    >>> check_consistent_fill_value([s1, s2])  # doctest: +NORMALIZE_WHITESPACE
+    Traceback (most recent call last):
+        ...
+    ValueError: This operation requires consistent fill-values, but argument 1 had a fill value of 0.5,\
+        which is different from a fill_value of 0.1 in the first argument.
+    """
+    arrays = list(arrays)
+    from .sparse_array import SparseArray
+
+    if not all(isinstance(s, SparseArray) for s in arrays):
+        raise ValueError('All arrays must be instances of SparseArray.')
+    if len(arrays) == 0:
+        raise ValueError('At least one array required.')
+
+    fv = arrays[0].fill_value
+
+    for i, arg in enumerate(arrays):
+        if not equivalent(fv, arg.fill_value):
+            raise ValueError('This operation requires consistent fill-values, '
+                             'but argument {:d} had a fill value of {!s}, which '
+                             'is different from a fill_value of {!s} in the first '
+                             'argument.'.format(i, arg.fill_value, fv))

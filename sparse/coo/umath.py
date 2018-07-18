@@ -1,12 +1,11 @@
 from itertools import product
 
+import numba
 import numpy as np
 import scipy.sparse
 
-import numba
-
-from ..utils import isscalar, PositinalArgumentPartial, _zero_of_dtype
 from ..compatibility import range, zip, zip_longest
+from ..utils import isscalar, PositinalArgumentPartial, equivalent
 
 
 def elemwise(func, *args, **kwargs):
@@ -77,7 +76,7 @@ def elemwise(func, *args, **kwargs):
 
 
 @numba.jit(nopython=True, nogil=True)
-def _match_arrays(a, b):    # pragma: no cover
+def _match_arrays(a, b):  # pragma: no cover
     """
     Finds all indexes into a and b such that a[i] = b[j]. The outputs are sorted
     in lexographical order.
@@ -145,13 +144,9 @@ def _elemwise_n_ary(func, *args, **kwargs):
 
     args = list(args)
 
-    args_zeros = tuple(_zero_of_dtype(np.dtype(arg)) for arg in args)
+    args_fill_values = tuple(arg.fill_value[...] for arg in args)
+    func_fill_value = func(*args_fill_values, **kwargs)
 
-    func_value = func(*args_zeros, **kwargs)
-    func_zero = _zero_of_dtype(func_value.dtype)
-    if func_value != func_zero:
-        raise ValueError("Performing this operation would produce "
-                         "a dense result: %s" % str(func))
     data_list = []
     coords_list = []
 
@@ -160,7 +155,7 @@ def _elemwise_n_ary(func, *args, **kwargs):
         if not any(mask):
             continue
 
-        ci, di = _unmatch_coo(func, args, mask, cache, **kwargs)
+        ci, di = _unmatch_coo(func, args, mask, cache, func_fill_value, **kwargs)
 
         coords_list.extend(ci)
         data_list.extend(di)
@@ -168,11 +163,11 @@ def _elemwise_n_ary(func, *args, **kwargs):
     result_shape = _get_nary_broadcast_shape(*[arg.shape for arg in args])
 
     # Concatenate matches and mismatches
-    data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=func_value.dtype)
+    data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=func_fill_value.dtype)
     coords = np.concatenate(coords_list, axis=1) if len(coords_list) else \
         np.empty((0, len(result_shape)), dtype=np.intp)
 
-    return COO(coords, data, shape=result_shape, has_duplicates=False)
+    return COO(coords, data, shape=result_shape, has_duplicates=False, fill_value=func_fill_value)
 
 
 def _match_coo(*args, **kwargs):
@@ -256,7 +251,7 @@ def _match_coo(*args, **kwargs):
     return matched_arrays
 
 
-def _unmatch_coo(func, args, mask, cache, **kwargs):
+def _unmatch_coo(func, args, mask, cache, func_fill_value, **kwargs):
     """
     Matches the coordinates for any number of input :obj:`COO` arrays.
 
@@ -289,13 +284,13 @@ def _unmatch_coo(func, args, mask, cache, **kwargs):
     matched_arrays = _match_coo(*matched_args, cache=cache)
 
     pos = tuple(i for i, m in enumerate(mask) if not m)
-    posargs = [_zero_of_dtype(arg.dtype) for arg, m in zip(args, mask) if not m]
+    posargs = [arg.fill_value[...] for arg, m in zip(args, mask) if not m]
     result_shape = _get_nary_broadcast_shape(*[arg.shape for arg in args])
 
     partial = PositinalArgumentPartial(func, pos, posargs)
     matched_func = partial(*[a.data for a in matched_arrays], **kwargs)
 
-    unmatched_mask = matched_func != _zero_of_dtype(matched_func.dtype)
+    unmatched_mask = ~equivalent(matched_func, func_fill_value)
 
     if not unmatched_mask.any():
         return [], []
@@ -605,7 +600,9 @@ def broadcast_to(x, shape):
     coords, data = _get_expanded_coords_data(x.coords, x.data, params, result_shape)
 
     # Check if all the non-broadcast axes are next to each other
-    sorted = np.all(np.diff(np.where([bool(p) for p in params])[0]) == 1)
+    nonbroadcast_idx = [idx for idx, p in enumerate(params) if p]
+    diff_nonbroadcast_idx = [a - b for a, b in zip(nonbroadcast_idx[1:], nonbroadcast_idx[:-1])]
+    sorted = all(d == 1 for d in diff_nonbroadcast_idx)
 
     return COO(coords, data, shape=result_shape, has_duplicates=False,
-               sorted=sorted)
+               sorted=sorted, fill_value=x.fill_value)

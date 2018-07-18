@@ -26,7 +26,6 @@ yet implemented for sparse arrays.
 
 .. code-block:: python
 
-   x + 1      # operations that produce dense results not supported
    np.svd(x)  # sparse svd not implemented
 
 
@@ -50,19 +49,9 @@ For example, the following will add two arrays:
 
 Auto-Densification
 ~~~~~~~~~~~~~~~~~~
-Operations that would result in dense matrices, such as binary
-operations with :doc:`Numpy arrays <reference/generated/numpy.ndarray>` objects or certain operations with
-scalars are not allowed and will raise a :obj:`ValueError`. For example,
-all of the following will raise a :obj:`ValueError`. Here, :code:`x` and
-:code:`y` are :obj:`COO` objects.
-
-.. code-block:: python
-
-   x == y
-   x + 5
-   x == 0
-   x != 5
-   x / y
+Operations that would result in dense matrices, such as
+operations with :doc:`Numpy arrays <reference/generated/numpy.ndarray>`
+objects a :obj:`ValueError`.
 
 However, all of the following are valid operations.
 
@@ -75,6 +64,14 @@ However, all of the following are valid operations.
    5 * x
    x / 7.3
    x != 0
+   x == 0
+   ~x
+   x + 5
+
+We also support operations with a nonzero fill value. These are operations
+that map zero values to nonzero values, such as :code:`x + 1` or :code:`~x`.
+In these cases, they will produce an output with a fill value of :code:`1` or :code:`True`,
+assuming the original array has a fill value of :code:`0` or :code:`False` respectively.
 
 If densification is needed, it must be explicit. In other words, you must call
 :obj:`COO.todense` on the :obj:`COO` object. If both operands are :obj:`COO`,
@@ -116,48 +113,6 @@ an object of shape :code:`(5, 4)`. The same happens with arrays of shape
 :code:`(1, 4)` and :code:`(5, 1)`. However, :code:`(4, 1)` and :code:`(5, 1)`
 will raise a :obj:`ValueError`.
 
-
-Full List of Operators
-----------------------
-Here, :code:`x` and :code:`y` can be :obj:`COO` arrays,
-:obj:`numpy.ndarray` objects or scalars, keeping in mind :ref:`auto
-densification rules <operations-auto-densification>`. In addition, :code:`y` can also
-be a :obj:`scipy.sparse.spmatrix` The following operators are supported:
-
-* Basic algebraic operations
-
-   * :obj:`operator.add` (:code:`x + y`)
-   * :obj:`operator.neg` (:code:`-x`)
-   * :obj:`operator.sub` (:code:`x - y`)
-   * :obj:`operator.mul` (:code:`x * y`)
-   * :obj:`operator.truediv` (:code:`x / y`)
-   * :obj:`operator.floordiv` (:code:`x // y`)
-   * :obj:`operator.pow` (:code:`x ** y`)
-
-* Comparison operators
-
-   * :obj:`operator.eq` (:code:`x == y`)
-   * :obj:`operator.ne` (:code:`x != y`)
-   * :obj:`operator.gt` (:code:`x > y`)
-   * :obj:`operator.ge` (:code:`x >= y`)
-   * :obj:`operator.lt` (:code:`x < y`)
-   * :obj:`operator.le` (:code:`x <= y`)
-
-* Bitwise operators
-
-   * :obj:`operator.and_` (:code:`x & y`)
-   * :obj:`operator.or_` (:code:`x | y`)
-   * :obj:`operator.xor` (:code:`x ^ y`)
-
-* Bit-shifting operators
-
-   * :obj:`operator.lshift` (:code:`x << y`)
-   * :obj:`operator.rshift` (:code:`x >> y`)
-
-.. warning::
-   While in-place operations are supported for compatibility with Numpy,
-   they are not truly in-place, and will effectively calculate the result separately.
-
 .. _operations-elemwise:
 
 Element-wise Operations
@@ -176,14 +131,11 @@ To illustrate, the following are all possible, and will produce another
    np.conj(x)
    np.expm1(x)
    np.log1p(x)
-
-However, the following are all unsupported and will raise a :obj:`ValueError`:
-
-.. code-block:: python
-
    np.exp(x)
    np.cos(x)
    np.log(x)
+
+As above, in the last three cases, an array with a nonzero fill value will be produced.
 
 Notice that you can apply any unary or binary :doc:`numpy.ufunc <reference/ufuncs>` to :obj:`COO`
 arrays, and :obj:`numpy.ndarray` objects and scalars and it will work so
@@ -255,7 +207,6 @@ scalars where expected. Assume that :code:`z.shape` is :code:`(5, 6, 7)`
    z[:3, :2, 3]
    z[::-1, 1, 3]
    z[-1]
-   z[[True, False, True, False, True], 3, 4]
 
 All of the following will raise an :obj:`IndexError`, like in Numpy 1.13 and later.
 
@@ -265,7 +216,6 @@ All of the following will raise an :obj:`IndexError`, like in Numpy 1.13 and lat
    z[3, 6]
    z[1, 4, 8]
    z[-6]
-   z[[True, True, False, True], 3, 4]
 
 .. note:: Numpy advanced indexing is currently not supported.
 
@@ -277,3 +227,7 @@ Other Operations
 :obj:`dot`, :obj:`tensordot`, :obj:`concatenate`
 and :obj:`stack`, :obj:`transpose <COO.transpose>` and :obj:`reshape <COO.reshape>`.
 You can view the full list on the :doc:`API reference page <generated/sparse>`.
+
+.. note:: Some operations require zero fill-values (such as :obj:`nonzero <COO.nonzero>`)
+   and others (such as :obj:`concatenate`) require that all inputs have consistent fill-values.
+   For details, check the API reference.

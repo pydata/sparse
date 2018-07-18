@@ -9,7 +9,7 @@ from .indexing import getitem
 from .umath import elemwise, broadcast_to
 from ..compatibility import int, range
 from ..sparse_array import SparseArray
-from ..utils import _zero_of_dtype, normalize_axis
+from ..utils import normalize_axis, equivalent, check_zero_fill_value
 
 
 class COO(SparseArray, NDArrayOperatorsMixin):
@@ -40,6 +40,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     cache : bool, optional
         Whether to enable cacheing for various operations. See
         :obj:`COO.enable_caching`
+    fill_value: scalar, optional
+        The fill value for this array.
 
     Attributes
     ----------
@@ -63,7 +65,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     >>> x[2, 3] = 5
     >>> s = COO.from_numpy(x)
     >>> s
-    <COO: shape=(4, 4), dtype=uint8, nnz=5>
+    <COO: shape=(4, 4), dtype=uint8, nnz=5, fill_value=0>
     >>> s.data  # doctest: +NORMALIZE_WHITESPACE
     array([1, 1, 1, 5, 1], dtype=uint8)
     >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
@@ -112,13 +114,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):
            [ 0. ,  0. ,  1. ,  2.2],
            [ 0. ,  0. ,  0. ,  1. ]])
 
-    Operations that will result in a dense array will raise a :obj:`ValueError`,
-    such as the following.
+    Operations that will result in a dense array will usually result in a different
+    fill value, such as the following.
 
     >>> np.exp(s)
-    Traceback (most recent call last):
-        ...
-    ValueError: Performing this operation would produce a dense result: <ufunc 'exp'>
+    <COO: shape=(4, 4), dtype=float16, nnz=5, fill_value=1.0>
 
     You can also create :obj:`COO` arrays from coordinates and data.
 
@@ -128,7 +128,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     >>> data = [1, 2, 3, 4, 5]
     >>> s4 = COO(coords, data, shape=(3, 4, 5))
     >>> s4
-    <COO: shape=(3, 4, 5), dtype=int64, nnz=5>
+    <COO: shape=(3, 4, 5), dtype=int64, nnz=5, fill_value=0>
 
     If the data is same across all coordinates, you can also specify a scalar.
 
@@ -138,7 +138,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     >>> data = 1
     >>> s5 = COO(coords, data, shape=(3, 4, 5))
     >>> s5
-    <COO: shape=(3, 4, 5), dtype=int64, nnz=5>
+    <COO: shape=(3, 4, 5), dtype=int64, nnz=5, fill_value=0>
 
     Following scipy.sparse conventions you can also pass these as a tuple with
     rows and columns
@@ -159,7 +159,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
     >>> d = {(0, 0, 0): 1, (1, 2, 3): 2, (1, 1, 0): 3}
     >>> COO(d)
-    <COO: shape=(2, 3, 4), dtype=int64, nnz=3>
+    <COO: shape=(2, 3, 4), dtype=int64, nnz=3, fill_value=0>
     >>> L = [((0, 0), 1),
     ...      ((1, 1), 2),
     ...      ((0, 0), 3)]
@@ -173,10 +173,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     >>> s6 = DOK((5, 5), dtype=np.int64)
     >>> s6[1:3, 1:3] = [[4, 5], [6, 7]]
     >>> s6
-    <DOK: shape=(5, 5), dtype=int64, nnz=4>
+    <DOK: shape=(5, 5), dtype=int64, nnz=4, fill_value=0>
     >>> s7 = s6.asformat('coo')
     >>> s7
-    <COO: shape=(5, 5), dtype=int64, nnz=4>
+    <COO: shape=(5, 5), dtype=int64, nnz=4, fill_value=0>
     >>> s7.todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[0, 0, 0, 0, 0],
            [0, 4, 5, 0, 0],
@@ -187,7 +187,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     __array_priority__ = 12
 
     def __init__(self, coords, data=None, shape=None, has_duplicates=True,
-                 sorted=False, cache=False):
+                 sorted=False, cache=False, fill_value=None):
         self._cache = None
         if cache:
             self.enable_caching()
@@ -215,7 +215,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             else:
                 shape = ()
 
-        super(COO, self).__init__(shape)
+        super(COO, self).__init__(shape, fill_value=fill_value)
         self.coords = self.coords.astype(np.intp)
         assert not self.shape or (len(self.data) == self.coords.shape[1] and
                                   len(self.shape) == self.coords.shape[0])
@@ -229,7 +229,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     def _make_shallow_copy_of(self, other):
         self.coords = other.coords
         self.data = other.data
-        super(COO, self).__init__(other.shape)
+        super(COO, self).__init__(other.shape, fill_value=other.fill_value)
 
     def enable_caching(self):
         """ Enable caching of reshape, transpose, and tocsr/csc operations
@@ -274,7 +274,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> x = np.eye(5)
         >>> s = COO.from_numpy(x)
         >>> s
-        <COO: shape=(5, 5), dtype=float64, nnz=5>
+        <COO: shape=(5, 5), dtype=float64, nnz=5, fill_value=0.0>
         """
         x = np.asanyarray(x)
         if x.shape:
@@ -311,7 +311,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> np.array_equal(x, x2)
         True
         """
-        x = np.zeros(shape=self.shape, dtype=self.dtype)
+        x = np.full(self.shape, self.fill_value, self.dtype)
 
         coords = tuple([self.coords[i, :] for i in range(self.ndim)])
         data = self.data
@@ -355,7 +355,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
                    sorted=x.has_canonical_format)
 
     @classmethod
-    def from_iter(cls, x, shape=None):
+    def from_iter(cls, x, shape=None, fill_value=None):
         """
         Converts an iterable in certain formats to a :obj:`COO` array. See examples
         for details.
@@ -366,6 +366,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             The iterable to convert to :obj:`COO`.
         shape : tuple[int], optional
             The shape of the array.
+        fill_value : scalar
+            The fill value for this array.
 
         Returns
         -------
@@ -435,7 +437,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
                 np.issubdtype(coords.dtype, np.integer) and np.all(coords >= 0)):
             raise ValueError('Invalid iterable to convert to COO.')
 
-        return COO(coords, data, shape=shape)
+        return COO(coords, data, shape=shape, fill_value=fill_value)
 
     @property
     def dtype(self):
@@ -547,7 +549,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     __getitem__ = getitem
 
     def __str__(self):
-        return "<COO: shape=%s, dtype=%s, nnz=%d>" % (self.shape, self.dtype, self.nnz)
+        return '<COO: shape={!s}, dtype={!s}, nnz={:d}, fill_value={!s}>'.format(
+            self.shape, self.dtype, self.nnz, self.fill_value
+        )
 
     __repr__ = __str__
 
@@ -624,12 +628,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         By default, this reduces the array by only the first axis.
 
         >>> s.reduce(np.add)
-        <COO: shape=(5,), dtype=int64, nnz=5>
+        <COO: shape=(5,), dtype=int64, nnz=5, fill_value=0>
         """
         axis = normalize_axis(axis, self.ndim)
-        zero_reduce_result = method.reduce([_zero_of_dtype(self.dtype)], **kwargs)
+        zero_reduce_result = method.reduce([self.fill_value, self.fill_value], **kwargs)
 
-        if zero_reduce_result != _zero_of_dtype(np.dtype(zero_reduce_result)):
+        if not equivalent(zero_reduce_result, self.fill_value):
             raise ValueError("Performing this reduction operation would produce "
                              "a dense result: %s" % str(method))
 
@@ -644,7 +648,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         if set(axis) == set(range(self.ndim)):
             result = method.reduce(self.data, **kwargs)
             if self.nnz != self.size:
-                result = method(result, _zero_of_dtype(self.dtype)[()], **kwargs)
+                result = method(result, self.fill_value, **kwargs)
         else:
             axis = tuple(axis)
             neg_axis = tuple(ax for ax in range(self.ndim) if ax not in set(axis))
@@ -656,11 +660,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             result, inv_idx, counts = _grouped_reduce(a.data, a.coords[0], method, **kwargs)
             missing_counts = counts != a.shape[1]
             result[missing_counts] = method(result[missing_counts],
-                                            _zero_of_dtype(self.dtype), **kwargs)
+                                            self.fill_value, **kwargs)
             coords = a.coords[0:1, inv_idx]
 
             # Filter out zeros
-            mask = result != _zero_of_dtype(result.dtype)
+            mask = ~equivalent(result, self.fill_value)
             coords = coords[:, mask]
             result = result[mask]
 
@@ -996,7 +1000,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         shape = tuple(self.shape[ax] for ax in axes)
         result = COO(self.coords[axes, :], self.data, shape,
                      has_duplicates=False,
-                     cache=self._cache is not None)
+                     cache=self._cache is not None,
+                     fill_value=self.fill_value)
 
         if self._cache is not None:
             self._cache['transpose'].append((axes, result))
@@ -1062,6 +1067,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             The result of the dot product. If the result turns out to be dense,
             then a dense array is returned, otherwise, a sparse array.
 
+        Raises
+        ------
+        ValueError
+            If all arguments don't have zero fill-values.
+
         See Also
         --------
         dot : Equivalent function for two arguments.
@@ -1113,11 +1123,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         return result
 
-    def __array__(self, dtype=None, **kwargs):
-        x = self.todense()
-        if dtype and x.dtype != dtype:
-            x = x.astype(dtype)
-        return x
+    def __array__(self, **kwargs):
+        return np.asarray(self.todense(), **kwargs)
 
     def linear_loc(self):
         """
@@ -1149,7 +1156,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         True
         """
         from .common import linear_loc
-
         return linear_loc(self.coords, self.shape)
 
     def reshape(self, shape):
@@ -1207,7 +1213,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         result = COO(coords, self.data, shape,
                      has_duplicates=False,
-                     sorted=True, cache=self._cache is not None)
+                     sorted=True, cache=self._cache is not None,
+                     fill_value=self.fill_value)
 
         if self._cache is not None:
             self._cache['reshape'].append((shape, result))
@@ -1227,11 +1234,16 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         ValueError
             If the array is not two-dimensional.
 
+        ValueError
+            If all the array doesn't zero fill-values.
+
         See Also
         --------
         COO.tocsr : Convert to a :obj:`scipy.sparse.csr_matrix`.
         COO.tocsc : Convert to a :obj:`scipy.sparse.csc_matrix`.
         """
+        check_zero_fill_value(self)
+
         if self.ndim != 2:
             raise ValueError("Can only convert a 2-dimensional array to a Scipy sparse matrix.")
 
@@ -1268,12 +1280,17 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         ValueError
             If the array is not two-dimensional.
 
+        ValueError
+            If all the array doesn't have zero fill-values.
+
         See Also
         --------
         COO.tocsc : Convert to a :obj:`scipy.sparse.csc_matrix`.
         COO.to_scipy_sparse : Convert to a :obj:`scipy.sparse.coo_matrix`.
         scipy.sparse.coo_matrix.tocsr : Equivalent Scipy function.
         """
+        check_zero_fill_value(self)
+
         if self._cache is not None:
             try:
                 return self._csr
@@ -1304,12 +1321,17 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         ValueError
             If the array is not two-dimensional.
 
+        ValueError
+            If the array doesn't have zero fill-values.
+
         See Also
         --------
         COO.tocsr : Convert to a :obj:`scipy.sparse.csr_matrix`.
         COO.to_scipy_sparse : Convert to a :obj:`scipy.sparse.coo_matrix`.
         scipy.sparse.coo_matrix.tocsc : Equivalent Scipy function.
         """
+        check_zero_fill_value(self)
+
         if self._cache is not None:
             try:
                 return self._csc
@@ -1345,7 +1367,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         """
         linear = self.linear_loc()
 
-        if (np.diff(linear) > 0).all():  # already sorted
+        if (np.diff(linear) >= 0).all():  # already sorted
             return
 
         order = np.argsort(linear)
@@ -1513,12 +1535,18 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         --------
         :obj:`numpy.ndarray.nonzero` : NumPy equivalent function
 
+        Raises
+        ------
+        ValueError
+            If the array doesn't have zero fill-values.
+
         Examples
         --------
         >>> s = COO.from_numpy(np.eye(5))
         >>> s.nonzero()
         (array([0, 1, 2, 3, 4]), array([0, 1, 2, 3, 4]))
         """
+        check_zero_fill_value(self)
         return tuple(self.coords)
 
     def asformat(self, format):

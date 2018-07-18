@@ -6,7 +6,7 @@ import numpy as np
 
 from ..compatibility import range, zip_longest
 from ..slicing import normalize_index
-from ..utils import _zero_of_dtype
+from ..utils import _zero_of_dtype, equivalent
 
 
 def getitem(x, index):
@@ -34,13 +34,20 @@ def getitem(x, index):
     if isinstance(index, str):
         data = x.data[index]
         idx = np.where(data)
+        data = data[idx].flatten()
         coords = list(x.coords[:, idx[0]])
         coords.extend(idx[1:])
 
-        return COO(coords, data[idx].flatten(),
+        fill_value_idx = np.asarray(x.fill_value[index]).flatten()
+        fill_value = fill_value_idx[0] if fill_value_idx.size else _zero_of_dtype(data.dtype)[()]
+
+        if not equivalent(fill_value, fill_value_idx).all():
+            raise ValueError('Fill-values in the array are inconsistent.')
+
+        return COO(coords, data,
                    shape=x.shape + x.data.dtype[index].shape,
                    has_duplicates=False,
-                   sorted=True)
+                   sorted=True, fill_value=fill_value)
 
     # Otherwise, convert into a tuple.
     if not isinstance(index, tuple):
@@ -103,14 +110,14 @@ def getitem(x, index):
             if n != 0:
                 return x.data[mask][0]
             else:
-                return _zero_of_dtype(x.dtype)[()]
+                return x.fill_value
 
     shape = tuple(shape)
     data = x.data[mask]
 
     return COO(coords, data, shape=shape,
                has_duplicates=False,
-               sorted=sorted)
+               sorted=sorted, fill_value=x.fill_value)
 
 
 def _mask(coords, indices, shape):
