@@ -187,7 +187,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     __array_priority__ = 12
 
     def __init__(self, coords, data=None, shape=None, has_duplicates=True,
-                 sorted=False, cache=False):
+                 sorted=False, cache=False, backend=None):
+        import numpy
+        self._T = numpy if backend is None else backend
+        T = self._T
+
         self._cache = None
         if cache:
             self.enable_caching()
@@ -197,17 +201,17 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             self._make_shallow_copy_of(arr)
             return
 
-        self.data = np.asarray(data)
-        self.coords = np.asarray(coords)
+        self.data = T.asarray(data)
+        self.coords = T.asarray(coords)
 
         if self.coords.ndim == 1:
             self.coords = self.coords[None, :]
 
         if self.data.ndim == 0:
-            self.data = np.broadcast_to(self.data, self.coords.shape[1])
+            self.data = T.broadcast_to(self.data, self.coords.shape[1])
 
         if shape and not self.coords.size:
-            self.coords = np.zeros((len(shape), 0), dtype=np.uint64)
+            self.coords = T.zeros((len(shape), 0), dtype=np.uint64)
 
         if shape is None:
             if self.coords.nbytes:
@@ -276,16 +280,17 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s
         <COO: shape=(5, 5), dtype=float64, nnz=5>
         """
-        x = np.asanyarray(x)
+        T = getattr(cls, '_T', np)
+        x = T.asanyarray(x)
         if x.shape:
-            coords = np.where(x)
+            coords = T.where(x)
             data = x[coords]
-            coords = np.vstack(coords)
+            coords = T.vstack(coords)
         else:
-            coords = np.empty((0, 1), dtype=np.uint8)
-            data = np.array(x, ndmin=1)
+            coords = T.empty((0, 1), dtype=np.uint8)
+            data = T.array(x, ndmin=1)
         return cls(coords, data, shape=x.shape, has_duplicates=False,
-                   sorted=True)
+                   sorted=True, backend=T)
 
     def todense(self):
         """
@@ -311,7 +316,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> np.array_equal(x, x2)
         True
         """
-        x = np.zeros(shape=self.shape, dtype=self.dtype)
+        T = self._T
+        x = T.zeros(shape=self.shape, dtype=self.dtype)
 
         coords = tuple([self.coords[i, :] for i in range(self.ndim)])
         data = self.data
@@ -346,13 +352,15 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> np.array_equal(x.todense(), s.todense())
         True
         """
+        T = getattr(cls, '_T', np)
         x = x.asformat('coo')
-        coords = np.empty((2, x.nnz), dtype=x.row.dtype)
+        coords = T.empty((2, x.nnz), dtype=x.row.dtype)
         coords[0, :] = x.row
         coords[1, :] = x.col
         return COO(coords, x.data, shape=x.shape,
                    has_duplicates=not x.has_canonical_format,
-                   sorted=x.has_canonical_format)
+                   sorted=x.has_canonical_format,
+                   backend=T)
 
     @classmethod
     def from_iter(cls, x, shape=None):
@@ -407,6 +415,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         array([[1, 0],
                [0, 1]])
         """
+        T = getattr(cls, '_T', np)
         if isinstance(x, dict):
             x = list(x.items())
 
@@ -418,24 +427,25 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         if not x:
             ndim = 0 if shape is None else len(shape)
-            coords = np.empty((ndim, 0), dtype=np.uint8)
-            data = np.empty((0,))
+            coords = T.empty((ndim, 0), dtype=np.uint8)
+            data = T.empty((0,))
 
             return COO(coords, data, shape=() if shape is None else shape,
-                       sorted=True, has_duplicates=False)
+                       sorted=True, has_duplicates=False,
+                       backend=T)
 
         if not isinstance(x[0][0], Iterable):
-            coords = np.stack(x[1], axis=0)
-            data = np.asarray(x[0])
+            coords = T.stack(x[1], axis=0)
+            data = T.asarray(x[0])
         else:
-            coords = np.array([item[0] for item in x]).T
-            data = np.array([item[1] for item in x])
+            coords = T.array([item[0] for item in x]).T
+            data = T.array([item[1] for item in x])
 
         if not (coords.ndim == 2 and data.ndim == 1 and
                 np.issubdtype(coords.dtype, np.integer) and np.all(coords >= 0)):
             raise ValueError('Invalid iterable to convert to COO.')
 
-        return COO(coords, data, shape=shape)
+        return COO(coords, data, shape=shape, backend=T)
 
     @property
     def dtype(self):
@@ -665,7 +675,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             result = result[mask]
 
             a = COO(coords, result, shape=(a.shape[0],),
-                    has_duplicates=False, sorted=True)
+                    has_duplicates=False, sorted=True, backend=self._T)
 
             a = a.reshape(tuple(self.shape[d] for d in neg_axis))
             result = a
@@ -996,7 +1006,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         shape = tuple(self.shape[ax] for ax in axes)
         result = COO(self.coords[axes, :], self.data, shape,
                      has_duplicates=False,
-                     cache=self._cache is not None)
+                     cache=self._cache is not None,
+                     backend=self._T)
 
         if self._cache is not None:
             self._cache['transpose'].append((axes, result))
@@ -1207,7 +1218,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         result = COO(coords, self.data, shape,
                      has_duplicates=False,
-                     sorted=True, cache=self._cache is not None)
+                     sorted=True, cache=self._cache is not None,
+                     backend=self._T)
 
         if self._cache is not None:
             self._cache['reshape'].append((shape, result))
