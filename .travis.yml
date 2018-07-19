@@ -2,29 +2,18 @@ sudo: False
 
 language: python
 
+cache: pip
+
 matrix:
   include:
     - python: 2.7
+    - python: 3.5
+    - python: 3.5
+      env: NUMPY_VERSION="<1.14.0"
     - python: 3.6
 
 install:
-  # Install conda
-  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update conda
-  - conda config --append channels conda-forge
-
-  # Install dependencies
-  - conda create -n test-sparse python=$TRAVIS_PYTHON_VERSION pytest numpy scipy pytest-cov nomkl numba pytest-flake8
-  - source activate test-sparse
-
-  # For CodeCov
-  - pip install --user codecov
-
-  # Install sparse
-  - pip install -e .[tests]
+  - ./ci/01-install.sh
 
 script:
   - py.test
