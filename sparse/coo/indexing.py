@@ -412,8 +412,8 @@ def _filter_pairs(starts, stops, coords, indices):  # pragma: no cover
                 elem = coords[k, j]
 
                 match &= ((elem - idx[0]) % idx[2] == 0 and
-                          ((idx[2] > 0 and idx[0] <= elem < idx[1])
-                           or (idx[2] < 0 and idx[0] >= elem > idx[1])))
+                          ((idx[2] > 0 and idx[0] <= elem < idx[1]) or
+                          (idx[2] < 0 and idx[0] >= elem > idx[1])))
 
             # and append to the mask if so.
             if match:
