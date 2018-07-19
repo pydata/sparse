@@ -11,7 +11,7 @@ with open('README.rst') as f:
 
 extras_require = {
     'tests': [
-        'pytest',
+        'pytest>=3.5',
         'pytest-flake8',
         'pytest-cov'
     ],
