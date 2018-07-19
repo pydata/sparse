@@ -35,12 +35,6 @@ def save_npz(filename, matrix, compressed=True):
     >>> loaded_mat = sparse.load_npz('mat.npz')
     >>> loaded_mat
     <COO: shape=(2, 2, 2), dtype=float64, nnz=2, fill_value=0.0>
-    >>> loaded_mat.todense()
-    array([[[0.        , 0.        ],
-            [0.        , 0.70677779]],
-    <BLANKLINE>
-           [[0.        , 0.        ],
-            [0.        , 0.86522495]]])
     >>> os.remove('mat.npz')
 
     See Also
@@ -53,9 +47,12 @@ def save_npz(filename, matrix, compressed=True):
 
     """
 
-    nodes = {'data':   matrix.data,
-             'coords': matrix.coords,
-             'shape':  matrix.shape}
+    nodes = {
+        'data': matrix.data,
+        'coords': matrix.coords,
+        'shape': matrix.shape,
+        'fill_value': matrix.fill_value,
+    }
 
     if compressed:
         np.savez_compressed(filename, **nodes)
@@ -98,7 +95,8 @@ def load_npz(filename):
             coords = fp['coords']
             data = fp['data']
             shape = tuple(fp['shape'])
+            fill_value = fp['fill_value'][()]
+            return COO(coords=coords, data=data, shape=shape, sorted=True, has_duplicates=False,
+                       fill_value=fill_value)
         except KeyError:
-            raise RuntimeError('The file {} does not contain a valid sparse matrix'.format(filename))
-
-    return COO(coords=coords, data=data, shape=shape, sorted=True, has_duplicates=False)
+            raise RuntimeError('The file {!s} does not contain a valid sparse matrix'.format(filename))
