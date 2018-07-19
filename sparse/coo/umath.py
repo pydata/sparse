@@ -53,8 +53,7 @@ def elemwise(func, *args, **kwargs):
     for i, arg in enumerate(args):
         if isinstance(arg, scipy.sparse.spmatrix):
             args[i] = COO.from_scipy_sparse(arg)
-        elif isscalar(arg) or (isinstance(arg, np.ndarray)
-                               and not arg.shape):
+        elif isscalar(arg) or (isinstance(arg, np.ndarray) and not arg.shape):
             # Faster and more reliable to pass ()-shaped ndarrays as scalars.
             args[i] = np.asarray(arg)[()]
 

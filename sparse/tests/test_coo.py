@@ -433,25 +433,25 @@ def test_trinary_broadcasting(shapes, func):
 
 @pytest.mark.parametrize('shapes, func', [
     ([
-         (2,),
-         (3, 2),
-         (4, 3, 2),
-     ], lambda x, y, z: (x + y) * z),
+        (2,),
+        (3, 2),
+        (4, 3, 2),
+    ], lambda x, y, z: (x + y) * z),
     ([
-         (3,),
-         (2, 3),
-         (2, 2, 3),
-     ], lambda x, y, z: x * (y + z)),
+        (3,),
+        (2, 3),
+        (2, 2, 3),
+    ], lambda x, y, z: x * (y + z)),
     ([
-         (2,),
-         (2, 2),
-         (2, 2, 2),
-     ], lambda x, y, z: x * y * z),
+        (2,),
+        (2, 2),
+        (2, 2, 2),
+    ], lambda x, y, z: x * y * z),
     ([
-         (4,),
-         (4, 4),
-         (4, 4, 4),
-     ], lambda x, y, z: x + y + z),
+        (4,),
+        (4, 4),
+        (4, 4, 4),
+    ], lambda x, y, z: x + y + z),
 ])
 @pytest.mark.parametrize('value', [
     np.nan,
