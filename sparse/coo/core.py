@@ -255,7 +255,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         self._cache = defaultdict(lambda: deque(maxlen=3))
 
     @classmethod
-    def from_numpy(cls, x):
+    def from_numpy(cls, x, approx=True):
         """
         Convert the given :obj:`numpy.ndarray` to a :obj:`COO` object.
 
@@ -263,6 +263,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         ----------
         x : np.ndarray
             The dense array to convert.
+        approx : bool, default True
+            Approximate values close to 0 as 0.
 
         Returns
         -------
@@ -278,6 +280,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         """
         x = np.asanyarray(x)
         if x.shape:
+            if approx and x.dtype and x.dtype.kind == 'f':
+                i = np.abs(x) < np.finfo(x.dtype).resolution * 10
+                x[i] = 0
             coords = np.where(x)
             data = x[coords]
             coords = np.vstack(coords)
