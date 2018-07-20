@@ -278,6 +278,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         """
         x = np.asanyarray(x)
         if x.shape:
+            if x.dtype and x.dtype.kind == 'f':
+                i = np.abs(x) < np.finfo(x.dtype).resolution
+                x[i] = 0
             coords = np.where(x)
             data = x[coords]
             coords = np.vstack(coords)

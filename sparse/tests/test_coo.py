@@ -471,6 +471,14 @@ def test_trinary_broadcasting_pathological(shapes, func, value, fraction):
     assert_eq(fs, func(*dense_args), equal_nan=True)
 
 
+def test_almost_zero_float():
+    x = np.array([1e-20, 1e-15, 1e-14], dtype=np.float16)
+    y = sparse.COO.from_numpy(x)
+    i = np.abs(x) < np.finfo(x.dtype).resolution
+    x[i] = 0
+    assert (y.todense() == x).all()
+
+
 def test_sparse_broadcasting(monkeypatch):
     orig_unmatch_coo = sparse.coo.umath._unmatch_coo
 
