@@ -1640,3 +1640,20 @@ class TestFailFillValue(object):
 
         with pytest.raises(ValueError):
             sparse.concatenate([xs, ys])
+
+
+@pytest.mark.parametrize("ndim", [2, 3, 4, 5])
+def test_initialization(ndim):
+    shape = [10, ] * ndim
+    shape[1] *= 2
+    shape = tuple(shape)
+
+    coords = np.random.randint(10, size=ndim * 20).reshape(ndim, 20)
+    data = np.random.rand(20)
+    COO(coords, data=data, shape=shape)
+
+    with pytest.raises(ValueError, match="data length"):
+        COO(coords, data=data[:5], shape=shape)
+    with pytest.raises(ValueError, match="shape of `coords`"):
+        coords = np.random.randint(10, size=20).reshape(1, 20)
+        COO(coords, data=data, shape=shape)

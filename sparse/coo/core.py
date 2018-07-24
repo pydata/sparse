@@ -217,8 +217,19 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         super(COO, self).__init__(shape, fill_value=fill_value)
         self.coords = self.coords.astype(np.intp)
-        assert not self.shape or (len(self.data) == self.coords.shape[1] and
-                                  len(self.shape) == self.coords.shape[0])
+
+        if self.shape:
+            if len(self.data) != self.coords.shape[1]:
+                msg = ('The data length does not match the coordinates '
+                       'given.\nlen(data) = {}, but {} coords specified.')
+                raise ValueError(msg.format(len(data), self.coords.shape[1]))
+            if len(self.shape) != self.coords.shape[0]:
+                msg = ("Shape specified by `shape` doesn't match the "
+                       "shape of `coords`; len(shape)={} != coords.shape[0]={}"
+                       "(and coords.shape={})")
+                raise ValueError(msg.format(len(shape),
+                                            self.coords.shape[0],
+                                            self.coords.shape))
 
         if not sorted:
             self._sort_indices()
