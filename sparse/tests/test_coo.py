@@ -433,25 +433,25 @@ def test_trinary_broadcasting(shapes, func):
 
 @pytest.mark.parametrize('shapes, func', [
     ([
-        (2,),
-        (3, 2),
-        (4, 3, 2),
-    ], lambda x, y, z: (x + y) * z),
+         (2,),
+         (3, 2),
+         (4, 3, 2),
+     ], lambda x, y, z: (x + y) * z),
     ([
-        (3,),
-        (2, 3),
-        (2, 2, 3),
-    ], lambda x, y, z: x * (y + z)),
+         (3,),
+         (2, 3),
+         (2, 2, 3),
+     ], lambda x, y, z: x * (y + z)),
     ([
-        (2,),
-        (2, 2),
-        (2, 2, 2),
-    ], lambda x, y, z: x * y * z),
+         (2,),
+         (2, 2),
+         (2, 2, 2),
+     ], lambda x, y, z: x * y * z),
     ([
-        (4,),
-        (4, 4),
-        (4, 4, 4),
-    ], lambda x, y, z: x + y + z),
+         (4,),
+         (4, 4),
+         (4, 4, 4),
+     ], lambda x, y, z: x + y + z),
 ])
 @pytest.mark.parametrize('value', [
     np.nan,
@@ -963,8 +963,11 @@ def test_slicing(index):
     (1, [2, 0], 0),
     ([True, False], slice(1, None), slice(-2, None)),
     (slice(1, None), slice(-2, None), [True, False, True, False]),
+    ([1, 0],),
+    (Ellipsis, [2, 1, 3],),
+    (slice(None), [2, 1, 2],),
+    (1, [2, 0, 1],),
 ])
-@pytest.mark.xfail(reason='Advanced indexing is temporarily broken.')
 def test_advanced_indexing(index):
     s = sparse.random((2, 3, 4), density=0.5)
     x = s.todense()
@@ -1001,6 +1004,8 @@ def test_custom_dtype_slicing():
     0.5,
     [0.5],
     {'potato': 'kartoffel'},
+    ([0, 1],) * 2,
+    ([[0, 1]],),
 ])
 def test_slicing_errors(index):
     s = sparse.random((2, 3, 4), density=0.5)

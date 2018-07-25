@@ -1,4 +1,3 @@
-from collections import Iterable
 from numbers import Integral
 
 import numba
@@ -60,11 +59,12 @@ def getitem(x, index):
     index = normalize_index(index, x.shape)
 
     # zip_longest so things like x[..., None] are picked up.
-    if len(index) != 0 and all(ind == slice(0, dim, 1) for ind, dim in zip_longest(index, x.shape)):
+    if len(index) != 0 and all(isinstance(ind, slice) and ind == slice(0, dim, 1)
+                               for ind, dim in zip_longest(index, x.shape)):
         return x
 
     # Get the mask
-    mask = _mask(x.coords, index, x.shape)
+    mask, adv_idx = _mask(x.coords, index, x.shape)
 
     # Get the length of the mask
     if isinstance(mask, slice):
@@ -76,8 +76,7 @@ def getitem(x, index):
     shape = []
     i = 0
 
-    sorted = True
-
+    sorted = adv_idx is None or adv_idx.pos == 0
     for ind in index:
         # Nothing is added to shape or coords if the index is an integer.
         if isinstance(ind, Integral):
@@ -88,11 +87,13 @@ def getitem(x, index):
             shape.append(len(range(ind.start, ind.stop, ind.step)))
             coords.append((x.coords[i, mask] - ind.start) // ind.step)
             i += 1
-
             if ind.step < 0:
                 sorted = False
-        elif isinstance(ind, Iterable):
-            raise NotImplementedError('Advanced indexing is not yet supported.')
+        # Add the index and shape for the advanced index.
+        elif isinstance(ind, np.ndarray):
+            shape.append(adv_idx.length)
+            coords.append(adv_idx.idx)
+            i += 1
         # Add a dimension for None.
         elif ind is None:
             coords.append(np.zeros(n, dtype=np.intp))
@@ -122,21 +123,61 @@ def getitem(x, index):
 
 def _mask(coords, indices, shape):
     indices = _prune_indices(indices, shape)
+    indices, adv_idx, adv_idx_pos = _separate_adv_indices(indices)
 
+    if len(adv_idx) != 0:
+        if len(adv_idx) != 1:
+            raise IndexError('Only indices with at most one iterable index are supported.')
+
+        adv_idx = adv_idx[0]
+        adv_idx_pos = adv_idx_pos[0]
+
+        if adv_idx.ndim != 1:
+            raise IndexError('Only one-dimensional iterable indices supported.')
+
+        mask, aidxs = _compute_multi_mask(coords, _ind_ar_from_indices(indices), adv_idx, adv_idx_pos)
+        return mask, _AdvIdxInfo(aidxs, adv_idx_pos, len(adv_idx))
+
+    mask, is_slice = _compute_mask(coords, _ind_ar_from_indices(indices))
+
+    if is_slice:
+        return slice(mask[0], mask[1], 1), None
+    else:
+        return mask, None
+
+
+def _ind_ar_from_indices(indices):
+    """
+    Computes an index "array" from indices, such that ``indices[i]`` is
+    transformed to ``ind_ar[i]`` and ``ind_ar[i].shape == (3,)``. It has the
+    format ``[start, stop, step]``. Integers are converted into steps as well.
+
+    Parameters
+    ----------
+    indices : Iterable
+        Input indices (slices and integers)
+
+    Returns
+    -------
+    ind_ar : np.ndarray
+        The output array.
+
+    Examples
+    --------
+    >>> _ind_ar_from_indices([1])
+    array([[1, 2, 1]])
+    >>> _ind_ar_from_indices([slice(5, 7, 2)])
+    array([[5, 7, 2]])
+    """
     ind_ar = np.empty((len(indices), 3), dtype=np.intp)
 
     for i, idx in enumerate(indices):
         if isinstance(idx, slice):
             ind_ar[i] = [idx.start, idx.stop, idx.step]
-        else:  # idx is an integer
+        elif isinstance(idx, Integral):
             ind_ar[i] = [idx, idx + 1, 1]
 
-    mask, is_slice = _compute_mask(coords, ind_ar)
-
-    if is_slice:
-        return slice(mask[0], mask[1], 1)
-    else:
-        return mask
+    return ind_ar
 
 
 def _prune_indices(indices, shape, prune_none=True):
@@ -183,6 +224,85 @@ def _prune_indices(indices, shape, prune_none=True):
     if i != 0:
         indices = indices[:-i]
     return indices
+
+
+def _separate_adv_indices(indices):
+    """
+    Separates advanced from normal indices.
+
+    Parameters
+    ----------
+    indices : list
+        The input indices
+
+    Returns
+    -------
+    new_idx : list
+        The normal indices.
+    adv_idx : list
+        The advanced indices.
+    adv_idx_pos : list
+        The positions of the advanced indices.
+    """
+    adv_idx_pos = []
+    new_idx = []
+    adv_idx = []
+
+    for i, idx in enumerate(indices):
+        if isinstance(idx, np.ndarray):
+            adv_idx.append(idx)
+            adv_idx_pos.append(i)
+        else:
+            new_idx.append(idx)
+
+    return new_idx, adv_idx, adv_idx_pos
+
+
+@numba.jit(nopython=True, nogil=True)
+def _compute_multi_mask(coords, indices, adv_idx, adv_idx_pos):  # pragma: no cover
+    """
+    Computes a mask with the advanced index, and also returns the advanced index
+    dimension.
+
+    Parameters
+    ----------
+    coords : np.ndarray
+        Coordinates of the input array.
+    indices : np.ndarray
+        The indices in slice format.
+    adv_idx : int
+        The advanced index.
+    adv_idx_pos : int
+        The position of the advanced index.
+
+    Returns
+    -------
+    mask : np.ndarray
+        The mask.
+    aidxs : np.ndarray
+        The advanced array index.
+    """
+    mask = []
+    a_indices = []
+    full_idx = np.empty((len(indices) + 1, 3), dtype=np.intp)
+
+    full_idx[:adv_idx_pos] = indices[:adv_idx_pos]
+    full_idx[adv_idx_pos + 1:] = indices[adv_idx_pos:]
+
+    for i, aidx in enumerate(adv_idx):
+        full_idx[adv_idx_pos] = [aidx, aidx + 1, 1]
+        partial_mask, is_slice = _compute_mask(coords, full_idx)
+        if is_slice:
+            slice_mask = []
+            for j in range(partial_mask[0], partial_mask[1]):
+                slice_mask.append(j)
+            partial_mask = np.array(slice_mask)
+
+        mask.extend(partial_mask)
+        for _ in range(len(partial_mask)):
+            a_indices.append(i)
+
+    return np.array(mask), np.array(a_indices)
 
 
 @numba.jit(nopython=True, nogil=True)
@@ -327,8 +447,8 @@ def _get_mask_pairs(starts_old, stops_old, c, idx):  # pragma: no cover
         # For each matching "integer" in the slice, search within the "sub-coords"
         # Using binary search.
         for p_match in range(idx[0], idx[1], idx[2]):
-            start = np.searchsorted(c[starts_old[j]:stops_old[j]], p_match) + starts_old[j]
-            stop = np.searchsorted(c[starts_old[j]:stops_old[j]], p_match + 1) + starts_old[j]
+            start = np.searchsorted(c[starts_old[j]:stops_old[j]], p_match, side='left') + starts_old[j]
+            stop = np.searchsorted(c[starts_old[j]:stops_old[j]], p_match, side='right') + starts_old[j]
 
             if start != stop:
                 starts.append(start)
@@ -413,7 +533,7 @@ def _filter_pairs(starts, stops, coords, indices):  # pragma: no cover
 
                 match &= ((elem - idx[0]) % idx[2] == 0 and
                           ((idx[2] > 0 and idx[0] <= elem < idx[1]) or
-                          (idx[2] < 0 and idx[0] >= elem > idx[1])))
+                           (idx[2] < 0 and idx[0] >= elem > idx[1])))
 
             # and append to the mask if so.
             if match:
@@ -460,3 +580,10 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
     stops.append(stops_old[-1])
 
     return starts, stops
+
+
+class _AdvIdxInfo(object):
+    def __init__(self, idx, pos, length):
+        self.idx = idx
+        self.pos = pos
+        self.length = length
