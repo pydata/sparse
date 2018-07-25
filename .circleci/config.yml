@@ -1,117 +1,29 @@
 version: 2
 
 jobs:
-  build_36:
-    machine: true
-    environment:
-      PYTHON: "3.6"
-      ENV_NAME: "py36-sparse-test"
+  build:
+    docker:
+      - image: circleci/python:3.6.6
     steps:
       - checkout
       - restore_cache:
-          keys:
-            - miniconda-v1-{{ checksum "ci/environment-3.6.yml" }}
+          key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "setup.py" }}
       - run:
-          name: Installing Miniconda
+          name: Install package
           command: |
-              if [ ! -d "/home/circleci/miniconda" ]; then
-                wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-                bash miniconda.sh -b -p $HOME/miniconda
-                export PATH="$HOME/miniconda/bin:$PATH"
-                conda config --set always_yes yes --set changeps1 no
-              fi
-              sudo chown -R $USER.$USER $HOME
-      - run:
-          name: Configuring conda
-          command: |
-              export PATH="$HOME/miniconda/bin:$PATH"
-              if [ ! -d "/home/circleci/miniconda/envs/py36-sparse-test" ]; then
-                conda update -q conda
-                conda env create -f ci/environment-${PYTHON}.yml --name=${ENV_NAME}
-                source activate ${ENV_NAME}
-              fi
-              conda env list
-              conda list ${ENV_NAME}
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -e .[docs]
+            pip uninstall -y sparse
       - save_cache:
-          key: miniconda-v1-{{ checksum "ci/environment-3.6.yml" }}
+          key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "setup.py" }}
           paths:
-            - "/home/circleci/miniconda"
+            - "venv"
       - run:
-          name: Installing package
+          name: Build DevDocs
           command: |
-            export PATH="$HOME/miniconda/bin:$PATH"
-            source activate ${ENV_NAME}
-            pip install -e .[tests]
-      - run:
-          name: Running unit tests
-          command: |
-            /home/circleci/miniconda/envs/py36-sparse-test/bin/pytest
-      - store_test_results:
-          path: test_results
-      - run:
-          name: Uploading coverage
-          command: |
-            export PATH="$HOME/miniconda/bin:$PATH"
-            source activate ${ENV_NAME}
-            codecov
-
-  build_27:
-    machine: true
-    environment:
-      PYTHON: "2.7"
-      ENV_NAME: "py27-sparse-test"
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - miniconda-v1-{{ checksum "ci/environment-2.7.yml" }}
-      - run:
-          name: Installing Miniconda
-          command: |
-              if [ ! -d "/home/circleci/miniconda" ]; then
-                wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-                bash miniconda.sh -b -p $HOME/miniconda
-                export PATH="$HOME/miniconda/bin:$PATH"
-                conda config --set always_yes yes --set changeps1 no
-              fi
-              sudo chown -R $USER.$USER $HOME
-      - run:
-          name: Configuring conda
-          command: |
-              export PATH="$HOME/miniconda/bin:$PATH"
-              if [ ! -d "/home/circleci/miniconda/envs/py27-sparse-test" ]; then
-                conda update -q conda
-                conda env create -f ci/environment-${PYTHON}.yml --name=${ENV_NAME}
-                source activate ${ENV_NAME}
-              fi
-              conda env list
-              conda list ${ENV_NAME}
-      - save_cache:
-          key: miniconda-v1-{{ checksum "ci/environment-2.7.yml" }}
-          paths:
-            - "/home/circleci/miniconda"
-      - run:
-          name: Installing package
-          command: |
-            export PATH="$HOME/miniconda/bin:$PATH"
-            source activate ${ENV_NAME}
-            pip install -e .[tests]
-      - run:
-          name: Running unit tests
-          command: |
-            /home/circleci/miniconda/envs/py27-sparse-test/bin/pytest
-      - store_test_results:
-          path: test_results
-      - run:
-          name: Uploading coverage
-          command: |
-            export PATH="$HOME/miniconda/bin:$PATH"
-            source activate ${ENV_NAME}
-            codecov
-
-workflows:
-  version: 2
-  run_all_pythons:
-    jobs:
-      - build_36
-      - build_27
+            . venv/bin/activate
+            pip install -e .[docs]
+            sphinx-build -W -b html docs/ _build/html
+      - store_artifacts:
+          path: _build/html

@@ -70,16 +70,20 @@ the root of your repository and run
 
 .. code-block:: bash
 
-   pytest
+   py.test
 
 This automatically checks code style and functionality, and prints code coverage,
 even though it doesn't fail on low coverage.
 
+Unit tests are automatically run on Travis CI for pull requests.
+
 Coverage
 --------
 
-The ``pytest`` script automatically reports coverage, both on the terminal for
+The ``py.test`` script automatically reports coverage, both on the terminal for
 missing line numbers, and in annotated HTML form in ``htmlcov/index.html``.
+
+Coverage is automatically checked on CodeCov for pull requests.
 
 Adding/Building the Documentation
 ---------------------------------
@@ -104,9 +108,12 @@ and run
 
 .. code-block:: bash
 
-   sphinx-build -b html . _build/html
+   sphinx-build -W -b html . _build/html
 
 After this, you can find an HTML version of the documentation in :code:`docs/_build/html/index.html`.
+
+Documentation for pull requests is automatically built on CircleCI and can be found in the build
+artifacts.
 
 Adding and Running Benchmarks
 -----------------------------
