@@ -24,6 +24,6 @@ jobs:
           command: |
             . venv/bin/activate
             pip install -e .[docs]
-            sphinx-build -b html docs/ _build/html
+            sphinx-build -W -b html docs/ _build/html
       - store_artifacts:
           path: _build/html
