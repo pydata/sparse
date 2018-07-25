@@ -6,8 +6,8 @@ jobs:
       - image: circleci/python:3.6.6
     steps:
       - checkout
-      - restore_cache
-          key: pip-packages-v1-{{ .Branch }}-{{ checksum "requirements.txt" }}
+      - restore_cache:
+          key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "setup.py" }}
       - run:
           name: Install package
           command: |
@@ -16,7 +16,7 @@ jobs:
             pip install -e .[docs]
             pip uninstall sparse
       - save_cache:
-          key: pip-packages-v1-{{ .Branch }}-{{ checksum "requirements.txt" }}
+          key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "setup.py" }}
           paths:
             - "venv"
       - run:
