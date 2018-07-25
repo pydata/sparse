@@ -7,7 +7,7 @@ jobs:
     steps:
       - checkout
       - restore_cache
-          key: deps-{{ checksum "requirements.txt" }}-{{ checksum "setup.py" }}
+          key: pip-packages-v1-{{ .Branch }}-{{ checksum "requirements.txt" }}
       - run:
           name: Install package
           command: |
@@ -16,7 +16,7 @@ jobs:
             pip install -e .[docs]
             pip uninstall sparse
       - save_cache:
-          key: deps-{{ checksum "requirements.txt" }}-{{ checksum "setup.py" }}
+          key: pip-packages-v1-{{ .Branch }}-{{ checksum "requirements.txt" }}
           paths:
             - "venv"
       - run:
