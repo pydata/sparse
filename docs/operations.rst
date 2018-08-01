@@ -217,7 +217,21 @@ All of the following will raise an :obj:`IndexError`, like in Numpy 1.13 and lat
    z[1, 4, 8]
    z[-6]
 
-.. note:: Numpy advanced indexing is currently not supported.
+
+Advanced Indexing
+~~~~~~~~~~~~~~~~~
+
+Advanced indexing (indexing arrays with other arrays) is supported, but only for indexing
+with a *single array*. Indexing a single array with multiple arrays is not supported at
+this time. As above, if  :code:`z.shape` is :code:`(5, 6, 7)`, all of the following will
+work like NumPy:
+
+.. code-block:: python
+
+   z[[0, 1, 2]]
+   z[1, [3]]
+   z[1, 4, [3, 6]]
+   z[:3, :2, [1, 5]]
 
 .. _operations-other:
 

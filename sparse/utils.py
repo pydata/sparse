@@ -12,7 +12,7 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
     if compare_dtype:
         assert x.dtype == y.dtype
 
-    checking_method = np.array_equal \
+    check_equal = np.array_equal \
         if np.issubdtype(x.dtype, np.integer) and np.issubdtype(y.dtype, np.integer) \
         else functools.partial(np.allclose, equal_nan=True)
 
@@ -22,7 +22,7 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
         assert is_canonical(y)
 
     if isinstance(x, COO) and isinstance(y, COO) and check_nnz:
-        assert np.array_equal(x.coords, y.coords) and checking_method(x.data, y.data, **kwargs)
+        assert np.array_equal(x.coords, y.coords) and check_equal(x.data, y.data, **kwargs)
         return
 
     if hasattr(x, 'todense'):
@@ -37,7 +37,7 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
             assert_nnz(y, yy)
     else:
         yy = y
-    assert checking_method(xx, yy, **kwargs)
+    assert check_equal(xx, yy, **kwargs)
 
 
 def assert_nnz(s, x):

@@ -3,6 +3,7 @@
 
 import math
 from numbers import Integral, Number
+from collections import Iterable
 
 import numpy as np
 
@@ -103,18 +104,18 @@ def check_index(ind, dimension):
     >>> check_index([6, 3], 5)
     Traceback (most recent call last):
     ...
-    IndexError: Index out of bounds 5
+    IndexError: Index out of bounds for dimension 5
     >>> check_index(slice(0, 3), 5)
     """
     # unknown dimension, assumed to be in bounds
-    if isinstance(ind, (list, np.ndarray)):
+    if isinstance(ind, Iterable):
         x = np.asanyarray(ind)
         if np.issubdtype(x.dtype, np.integer) and \
-                ((x >= dimension).any() or (x < -dimension).any()):
-            raise IndexError("Index out of bounds %s" % dimension)
+                ((x >= dimension) | (x < -dimension)).any():
+            raise IndexError("Index out of bounds for dimension {:d}".format(dimension))
         elif x.dtype == bool and len(x) != dimension:
-            raise IndexError("boolean index did not match indexed array; dimension is %s "
-                             "but corresponding boolean dimension is %s", (dimension, len(x)))
+            raise IndexError("boolean index did not match indexed array; dimension is {:d} "
+                             "but corresponding boolean dimension is {:d}".format(dimension, len(x)))
     elif isinstance(ind, slice):
         return
     elif not isinstance(ind, Integral):
@@ -122,12 +123,11 @@ def check_index(ind, dimension):
                          "integer or boolean arrays are valid indices")
 
     elif ind >= dimension:
-        raise IndexError("Index is not smaller than dimension %d >= %d" %
-                         (ind, dimension))
+        raise IndexError("Index is not smaller than dimension {:d} >= {:d}".format(ind, dimension))
 
     elif ind < -dimension:
-        msg = "Negative index is not greater than negative dimension %d <= -%d"
-        raise IndexError(msg % (ind, dimension))
+        msg = "Negative index is not greater than negative dimension {:d} <= -{:d}"
+        raise IndexError(msg.format(ind, dimension))
 
 
 def sanitize_index(ind):
@@ -157,7 +157,7 @@ def sanitize_index(ind):
     elif isinstance(ind, Number):
         return _sanitize_index_element(ind)
     index_array = np.asanyarray(ind)
-    if index_array.dtype == bool:
+    if index_array.dtype == np.bool_:
         nonzero = np.nonzero(index_array)
         if len(nonzero) == 1:
             # If a 1-element tuple, unwrap the element
