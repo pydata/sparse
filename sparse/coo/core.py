@@ -850,7 +850,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         ...               [True,  True ]])
         >>> s = COO.from_numpy(x)
         >>> s2 = s.any(axis=1)
-        >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
+        >>> s2.todense()  # doctest: +SKIP
         array([False,  True,  True,  True])
 
         You can also use the :code:`keepdims` argument to keep the dimensions after the
@@ -906,7 +906,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         ...               [True,  True ]])
         >>> s = COO.from_numpy(x)
         >>> s2 = s.all(axis=1)
-        >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
+        >>> s2.todense()  # doctest: +SKIP
         array([False, False, False,  True])
 
         You can also use the :code:`keepdims` argument to keep the dimensions after the
