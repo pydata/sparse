@@ -821,8 +821,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             The axes along which to minimize. Uses all axes by default.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
-        dtype: numpy.dtype
-            The data type of the output array.
 
         Returns
         -------
@@ -877,8 +875,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             The axes along which to minimize. Uses all axes by default.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
-        dtype: numpy.dtype
-            The data type of the output array.
 
         Returns
         -------
