@@ -16,8 +16,6 @@ from sparse.utils import assert_eq, random_value_array
     ('sum', {'dtype': np.float16}, {'atol': 1e-2}),
     ('prod', {}, {}),
     ('min', {}, {}),
-    ('all', {}, {}),
-    ('any', {}, {}),
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2), -3, (1, -1)])
 @pytest.mark.parametrize('keepdims', [True, False])
@@ -30,13 +28,25 @@ def test_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
 
 
 @pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
+    ('any', {}, {}),
+    ('all', {}, {}),
+])
+@pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2), -3, (1, -1)])
+@pytest.mark.parametrize('keepdims', [True, False])
+def test_reductions_bool(reduction, axis, keepdims, kwargs, eqkwargs):
+    x = sparse.random((2, 3, 4), density=.25).astype(bool)
+    y = x.todense()
+    xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
+    yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
+    assert_eq(xx, yy, **eqkwargs)
+
+
+@pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
     (np.max, {}, {}),
     (np.sum, {}, {}),
     (np.sum, {'dtype': np.float16}, {'atol': 1e-2}),
     (np.prod, {}, {}),
     (np.min, {}, {}),
-    (np.all, {}, {}),
-    (np.any, {}, {}),
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2), -1, (0, -1)])
 @pytest.mark.parametrize('keepdims', [True, False])
@@ -55,8 +65,6 @@ def test_ufunc_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     (np.add.reduce, {}),
     (np.add.reduce, {'keepdims': True}),
     (np.minimum.reduce, {'axis': 0}),
-    (np.logical_or.reduce, {'axis': 0}),
-    (np.logical_and.reduce, {'axis': 0}),
 ])
 def test_ufunc_reductions_kwargs(reduction, kwargs):
     x = sparse.random((2, 3, 4), density=.5)
@@ -439,25 +447,25 @@ def test_trinary_broadcasting(shapes, func):
 
 @pytest.mark.parametrize('shapes, func', [
     ([
-        (2,),
-        (3, 2),
-        (4, 3, 2),
-    ], lambda x, y, z: (x + y) * z),
+         (2,),
+         (3, 2),
+         (4, 3, 2),
+     ], lambda x, y, z: (x + y) * z),
     ([
-        (3,),
-        (2, 3),
-        (2, 2, 3),
-    ], lambda x, y, z: x * (y + z)),
+         (3,),
+         (2, 3),
+         (2, 2, 3),
+     ], lambda x, y, z: x * (y + z)),
     ([
-        (2,),
-        (2, 2),
-        (2, 2, 2),
-    ], lambda x, y, z: x * y * z),
+         (2,),
+         (2, 2),
+         (2, 2, 2),
+     ], lambda x, y, z: x * y * z),
     ([
-        (4,),
-        (4, 4),
-        (4, 4, 4),
-    ], lambda x, y, z: x + y + z),
+         (4,),
+         (4, 4),
+         (4, 4, 4),
+     ], lambda x, y, z: x + y + z),
 ])
 @pytest.mark.parametrize('value', [
     np.nan,

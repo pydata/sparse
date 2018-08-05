@@ -813,68 +813,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
     def any(self, axis=None, keepdims=False, out=None):
         """
-        Minimize along the given axes. Uses all axes by default.
-
-        Parameters
-        ----------
-        axis : Union[int, Iterable[int]], optional
-            The axes along which to minimize. Uses all axes by default.
-        keepdims : bool, optional
-            Whether or not to keep the dimensions of the original array.
-        dtype: numpy.dtype
-            The data type of the output array.
-
-        Returns
-        -------
-        COO
-            The reduced output sparse array.
-
-        See Also
-        --------
-        :obj:`numpy.min` : Equivalent numpy function.
-        scipy.sparse.coo_matrix.min : Equivalent Scipy function.
-        :obj:`nanmin` : Function with ``NaN`` skipping.
-
-        Notes
-        -----
-        * This function internally calls :obj:`COO.sum_duplicates` to bring the array into
-          canonical form.
-        * The :code:`out` parameter is provided just for compatibility with Numpy and
-          isn't actually supported.
-
-        Examples
-        --------
-        You can use :obj:`COO.min` to minimize an array across any dimension.
-
-        >>> x = np.add.outer(np.arange(5), np.arange(5))
-        >>> x  # doctest: +NORMALIZE_WHITESPACE
-        array([[0, 1, 2, 3, 4],
-               [1, 2, 3, 4, 5],
-               [2, 3, 4, 5, 6],
-               [3, 4, 5, 6, 7],
-               [4, 5, 6, 7, 8]])
-        >>> s = COO.from_numpy(x)
-        >>> s2 = s.any(axis=1)
-        >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
-        array([True, True, True, True, True])
-
-        You can also use the :code:`keepdims` argument to keep the dimensions after the
-        minimization.
-
-        >>> s3 = s.any(axis=1, keepdims=True)
-        >>> s3.shape
-        (5, 1)
-
-        By default, this reduces the array down to one number, minimizing along all axes.
-
-        >>> s.any()
-        True
-        """
-        return np.logical_or.reduce(self, out=out, axis=axis, keepdims=keepdims)
-
-    def all(self, axis=None, keepdims=False, out=None):
-        """
-        See if all values in array are True. Uses all axes by default.
+        See if any values along array are ``True``. Uses all axes by default.
 
         Parameters
         ----------
@@ -893,7 +832,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         See Also
         --------
         :obj:`numpy.all` : Equivalent numpy function.
-        scipy.sparse.coo_matrix.all : Equivalent Scipy function.
 
         Notes
         -----
@@ -906,26 +844,79 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         --------
         You can use :obj:`COO.min` to minimize an array across any dimension.
 
-        >>> x = np.all.outer(np.arange(5), np.arange(5))
-        >>> x  # doctest: +NORMALIZE_WHITESPACE
-        array([[0, 1, 2, 3, 4],
-               [1, 2, 3, 4, 5],
-               [2, 3, 4, 5, 6],
-               [3, 4, 5, 6, 7],
-               [4, 5, 6, 7, 8]])
+        >>> x = np.array([[False, False],
+        ...               [False, True ],
+        ...               [True,  False],
+        ...               [True,  True ]])
+        >>> s = COO.from_numpy(x)
+        >>> s2 = s.any(axis=1)
+        >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
+        array([False,  True,  True,  True])
+
+        You can also use the :code:`keepdims` argument to keep the dimensions after the
+        minimization.
+
+        >>> s3 = s.any(axis=1, keepdims=True)
+        >>> s3.shape
+        (4, 1)
+
+        By default, this reduces the array down to one number, minimizing along all axes.
+
+        >>> s.any()
+        True
+        """
+        return np.logical_or.reduce(self, out=out, axis=axis, keepdims=keepdims)
+
+    def all(self, axis=None, keepdims=False, out=None):
+        """
+        See if all values in an array are ``True``. Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : Union[int, Iterable[int]], optional
+            The axes along which to minimize. Uses all axes by default.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+        dtype: numpy.dtype
+            The data type of the output array.
+
+        Returns
+        -------
+        COO
+            The reduced output sparse array.
+
+        See Also
+        --------
+        :obj:`numpy.all` : Equivalent numpy function.
+
+        Notes
+        -----
+        * This function internally calls :obj:`COO.sum_duplicates` to bring the array into
+          canonical form.
+        * The :code:`out` parameter is provided just for compatibility with Numpy and
+          isn't actually supported.
+
+        Examples
+        --------
+        You can use :obj:`COO.min` to minimize an array across any dimension.
+
+        >>> x = np.array([[False, False],
+        ...               [False, True ],
+        ...               [True,  False],
+        ...               [True,  True ]])
         >>> s = COO.from_numpy(x)
         >>> s2 = s.all(axis=1)
         >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
-        array([False, True, True, True, True])
+        array([False, False, False,  True])
 
         You can also use the :code:`keepdims` argument to keep the dimensions after the
         minimization.
 
         >>> s3 = s.all(axis=1, keepdims=True)
         >>> s3.shape
-        (5, 1)
+        (4, 1)
 
-        By default, this reduces the array down to one number, minimizing along all axes.
+        By default, this reduces the array down to one boolean, minimizing along all axes.
 
         >>> s.all()
         False
@@ -986,7 +977,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s3.shape
         (5, 1)
 
-        By default, this reduces the array down to one number, minimizing along all axes.
+        By default, this reduces the array down to one boolean, minimizing along all axes.
 
         >>> s.min()
         0

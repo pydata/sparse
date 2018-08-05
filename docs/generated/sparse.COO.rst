@@ -40,10 +40,13 @@ COO
       :toctree:
 
       COO.reduce
+
       COO.sum
-      COO.max
-      COO.min
       COO.prod
+      COO.min
+      COO.max
+      COO.any
+      COO.all
 
    .. rubric:: :ref:`Converting to other formats <converting>`
    .. autosummary::
