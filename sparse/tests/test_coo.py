@@ -28,6 +28,20 @@ def test_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
 
 
 @pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
+    ('any', {}, {}),
+    ('all', {}, {}),
+])
+@pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2), -3, (1, -1)])
+@pytest.mark.parametrize('keepdims', [True, False])
+def test_reductions_bool(reduction, axis, keepdims, kwargs, eqkwargs):
+    x = sparse.random((2, 3, 4), density=.25).astype(bool)
+    y = x.todense()
+    xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
+    yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
+    assert_eq(xx, yy, **eqkwargs)
+
+
+@pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
     (np.max, {}, {}),
     (np.sum, {}, {}),
     (np.sum, {'dtype': np.float16}, {'atol': 1e-2}),
