@@ -1,5 +1,7 @@
 recursive-include sparse *.py
 recursive-include sparse *.html
+recursive-include docs *.py
+recursive-include docs requirements.txt
 recursive-include docs *.rst
 
 include setup.py
