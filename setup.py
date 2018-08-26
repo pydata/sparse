@@ -6,9 +6,6 @@ import versioneer
 with open('requirements.txt') as f:
     reqs = list(f.read().strip().split('\n'))
 
-with open('docs/requirements.txt') as f:
-    doc_reqs = list(f.read().strip().split('\n'))
-
 with open('README.rst') as f:
     long_desc = f.read()
 
@@ -18,7 +15,11 @@ extras_require = {
         'pytest-flake8',
         'pytest-cov'
     ],
-    'docs': doc_reqs,
+    'docs': [
+        'sphinx',
+        'sphinx_rtd_theme',
+        'releases',
+    ],
     'tox': [
         'tox',
     ],
