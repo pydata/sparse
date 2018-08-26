@@ -1,42 +1,49 @@
 Changelog
 =========
 
-
-0.2.0 / 2018-01-25
--------------------
-
--  Add Elementwise broadcasting and broadcast_to (:pr:`35`) `Hameer Abbasi`_
--  Add Bitwise ops (:pr:`38`) `Hameer Abbasi`_
--  Add slicing support for Ellipsis and None (:pr:`37`) `Matthew Rocklin`_
--  Add triu and tril and tests (:pr:`40`) `Hameer Abbasi`_
--  Extend gitignore file  (:pr:`42`) `Nils Werner`_
--  Update MANIFEST.in (:pr:`45`) `Matthew Rocklin`_
--  Remove auto densification and unify operator code (:pr:`46`) `Hameer Abbasi`_
--  Fix nnz for scalars (:pr:`48`) `Hameer Abbasi`_
--  Update README (:pr:`50`) (:pr:`53`) `Hameer Abbasi`_
--  Fix large concatenations and stacks (:pr:`50`) `Hameer Abbasi`_
--  Add __array_ufunc__ for __call__ and reduce (:pr:`49`) `Hameer Abbasi`_
--  Update documentation (:pr:`54`) `Hameer Abbasi`_
--  Flake8 and coverage in pytest (:pr:`59`) `Nils Werner`_
--  Copy constructor (:pr:`55`) `Nils Werner`_
--  Add random function (:pr:`41`) `Nils Werner`_
--  Add lots of indexing features (:pr:`57`) `Hameer Abbasi`_
--  Validate .transpose axes (:pr:`61`) `Nils Werner`_
--  Simplify axes normalization logic `Nils Werner`_
--  User higher density for sparse.random in tests (:pr:`64`) `Keisuke Fujii`_
--  Support left-side np.number elemwise operations (:pr:`67`) `Keisuke Fujii`_
--  Support len on COO (:pr:`68`) `Nils Werner`_
--  Update scipy version in requirements (:pr:`70`) `Hameer Abbasi`_
--  Documentation (:pr:`43`) `Nils Werner`_ and `Hameer Abbasi`_
--  Use Tox for cross Python-version testing (:pr:`77`) `Nils Werner`_
--  Support mixed sparse-dense when result is sparse (:pr:`75`) `Hameer Abbasi`_
--  Update contributing.rst (:pr:`76`) `Hameer Abbasi`_
--  Size and density properties (:pr:`69`) `Nils Werner`_
--  Fix large sum (:pr:`83`) `Hameer Abbasi`_
--  Add DOK (:pr:`85`) `Hameer Abbasi`_
--  Implement __array__ protocol (:pr:`87`) `Matthew Rocklin`_
-
-.. _`Matthew Rocklin`: https://github.com/mrocklin
-.. _`Hameer Abbasi`: https://github.com/hameerabbasi
-.. _`Nils Werner`: https://github.com/nils-werner
-.. _`Keisuke Fujii`: https://github.com/fujiisoup
+* :feature:`175` Added :code:`COO.any` and :code:`COO.all` methods.
+* :feature:`172` Indexing for :code:`COO` now accepts a single one-dimensional array index.
+* :feature:`165` The fill-value can now be something other than zero or :code:`False`.
+* :feature:`160` Added a :code:`sparse.roll` function.
+* :feature:`159` Numba code now releases the GIL. This leads to better multi-threaded performance in Dask.
+* :bug:`158` A number of bugs occurred, so to resolve them, :code:`COO.coords.dtype` is always :code:`np.int64`.
+  :code:`COO`, therefore, uses more memory than before.
+* :feature:`153` (via :issue:`154`) Add support for saving and loading :code:`COO` files from disk
+* :feature:`145` (via :issue:`148`) Support :code:`COO.nonzero` and :code:`np.argwhere`
+* :feature:`80` (via :issue:`146`) Allow faux in-place operations
+* :support:`141` :code:`COO` is now always canonical
+* :feature:`128` Improve indexing performance
+* :feature:`127` Improve element-wise performance
+* :feature:`117` (via :issue:`118`) Reductions now support a negative axis.
+* :bug:`107` (via :issue:`108`) Match behaviour of :code:`ufunc.reduce` from NumPy
+* :release:`0.3.1 <2018-04-12>`
+* :bug:`138` Fix packaging error.
+* :release:`0.3.0 <2018-02-22>`
+* :feature:`102` Add NaN-skipping aggregations
+* :feature:`102` Add equivalent to :code:`np.where`
+* :feature:`98` N-input universal functions now work
+* :feature:`96` Make :code:`dot` more consistent with NumPy
+* :support:`92` Create a base class :code:`SparseArray`
+* :support:`90` Minimum NumPy version is now 1.13
+* :bug:`93` (via :issue:`94`) Fix a bug where setting a :code:`DOK` element to zero did nothing.
+* :release:`0.2.0 <2018-01-25>`
+* :feature:`87` Support faster :code:`np.array(COO)`
+* :feature:`85` Add :code:`DOK` type
+* :bug:`82` (via :issue:`83`) Fix sum for large arrays
+* :feature:`69` Support :code:`.size` and :code:`.density`
+* :support:`43` Documentation added for the package
+* :support:`70` Minimum required SciPy version is now 0.19
+* :feature:`68` :code:`len(COO)` now works
+* :feature:`67` :code:`scalar op COO` now works for all operators
+* :bug:`61` Validate axes for :code:`.transpose()`
+* :feature:`57` Extend indexing support
+* :feature:`41` Add :code:`random` function for generating random sparse arrays
+* :feature:`55` :code:`COO(COO)` now copies the original object
+* :feature:`49` NumPy universal functions and reductions now work on :code:`COO` arrays
+* :bug:`32` (via :issue:`51`) Fix concatenate and stack for large arrays
+* :bug:`47` (via :issue:`48`) Fix :code:`nnz` for scalars
+* :feature:`46` Support more operators and remove all special cases
+* :feature:`40` Add support for :code:`triu` and :code:`tril`
+* :feature:`37` Add support for Ellipsis (:code:`...`) and :code:`None` when indexing
+* :feature:`38` Add support for bitwise bindary operations like :code:`&` and :code:`|`
+* :feature:`35` Support broadcasting in element-wise operations
