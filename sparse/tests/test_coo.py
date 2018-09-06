@@ -1558,7 +1558,7 @@ def test_as_coo(format):
     assert_eq(x, s2)
 
 
-def test_invalid_shape_error():
+def test_invalid_attrs_error():
     s = sparse.random((3, 4), density=0.5, format='coo')
 
     with pytest.raises(ValueError):
@@ -1566,6 +1566,12 @@ def test_invalid_shape_error():
 
     with pytest.raises(ValueError):
         COO(s, shape=(2, 3))
+
+    with pytest.raises(ValueError):
+        sparse.as_coo(s, fill_value=0.0)
+
+    with pytest.raises(ValueError):
+        COO(s, fill_value=0.0)
 
 
 def test_invalid_iterable_error():
