@@ -9,7 +9,7 @@ from .indexing import getitem
 from .umath import elemwise, broadcast_to
 from ..compatibility import int, range
 from ..sparse_array import SparseArray
-from ..utils import normalize_axis, equivalent, check_zero_fill_value
+from ..utils import normalize_axis, equivalent, check_zero_fill_value, _zero_of_dtype
 
 
 class COO(SparseArray, NDArrayOperatorsMixin):
@@ -193,7 +193,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             self.enable_caching()
 
         if data is None:
-            arr = as_coo(coords, shape=shape)
+            arr = as_coo(coords, shape=shape, fill_value=fill_value)
             self._make_shallow_copy_of(arr)
             return
 
@@ -266,7 +266,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         self._cache = defaultdict(lambda: deque(maxlen=3))
 
     @classmethod
-    def from_numpy(cls, x):
+    def from_numpy(cls, x, fill_value=None):
         """
         Convert the given :obj:`numpy.ndarray` to a :obj:`COO` object.
 
@@ -274,6 +274,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         ----------
         x : np.ndarray
             The dense array to convert.
+        fill_value : scalar
+            The fill value of the constructed :obj:`COO` array. Zero if
+            unspecified.
 
         Returns
         -------
@@ -286,17 +289,25 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s = COO.from_numpy(x)
         >>> s
         <COO: shape=(5, 5), dtype=float64, nnz=5, fill_value=0.0>
+
+        >>> x[x == 0] = np.nan
+        >>> COO.from_numpy(x, fill_value=np.nan)
+        <COO: shape=(5, 5), dtype=float64, nnz=5, fill_value=nan>
         """
         x = np.asanyarray(x)
+
+        if fill_value is None:
+            fill_value = _zero_of_dtype(x.dtype)
+
         if x.shape:
-            coords = np.where(x)
+            coords = np.where(~equivalent(x, fill_value))
             data = x[coords]
             coords = np.vstack(coords)
         else:
             coords = np.empty((0, 1), dtype=np.uint8)
             data = np.array(x, ndmin=1)
         return cls(coords, data, shape=x.shape, has_duplicates=False,
-                   sorted=True)
+                   sorted=True, fill_value=fill_value)
 
     def todense(self):
         """
@@ -1697,7 +1708,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         raise NotImplementedError('The given format is not supported.')
 
 
-def as_coo(x, shape=None):
+def as_coo(x, shape=None, fill_value=None):
     """
     Converts any given format to :obj:`COO`. See the "See Also" section for details.
 
@@ -1724,17 +1735,21 @@ def as_coo(x, shape=None):
         raise ValueError('Cannot provide a shape in combination with something '
                          'that already has a shape.')
 
+    if hasattr(x, 'fill_value') and fill_value is not None:
+        raise ValueError('Cannot provide a fill-value in combination with something '
+                         'that already has a fill-value.')
+
     if isinstance(x, SparseArray):
         return x.asformat('coo')
 
     if isinstance(x, np.ndarray):
-        return COO.from_numpy(x)
+        return COO.from_numpy(x, fill_value=fill_value)
 
     if isinstance(x, scipy.sparse.spmatrix):
         return COO.from_scipy_sparse(x)
 
     if isinstance(x, (Iterable, Iterator)):
-        return COO.from_iter(x, shape=shape)
+        return COO.from_iter(x, shape=shape, fill_value=fill_value)
 
     raise NotImplementedError('Format not supported for conversion. Supplied type is '
                               '%s, see help(sparse.as_coo) for supported formats.' % type(x))

@@ -33,7 +33,10 @@ class SparseArray(object):
         self.shape = tuple(int(l) for l in shape)
 
         if fill_value is not None:
-            self.fill_value = self.dtype.type(fill_value)
+            if not hasattr(fill_value, 'dtype') or fill_value.dtype != self.dtype:
+                self.fill_value = self.dtype.type(fill_value)
+            else:
+                self.fill_value = fill_value
         else:
             self.fill_value = _zero_of_dtype(self.dtype)
 
@@ -70,7 +73,6 @@ class SparseArray(object):
         >>> np.count_nonzero(x) == s.nnz
         True
         """
-        pass
 
     @property
     def ndim(self):
