@@ -60,6 +60,7 @@ test_results/
 
 # Sphinx documentation
 docs/_build/
+_build/
 
 # PyBuilder
 target/

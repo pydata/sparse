@@ -1,6 +1,4 @@
-*   Update changelog in docs/changelog.rst
-
-*   Bump version in sparse/version.py and commit.
+*   Update changelog in docs/changelog.rst and commit.
 
 *   Tag commit
 

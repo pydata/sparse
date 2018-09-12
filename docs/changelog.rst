@@ -1,6 +1,7 @@
 Changelog
 =========
 
+* :release:`0.4.0 <2018-09-12>`
 * :feature:`124` (via :issue:`182`) Allow mixed :code:`ndarray`-:obj:`COO` operations if the result is sparse.
 * :feature:`179` (via :issue:`180`) Allow specifying a fill-value when converting from NumPy arrays.
 * :feature:`175` Added :code:`COO.any` and :code:`COO.all` methods.
