@@ -51,7 +51,12 @@ Auto-Densification
 ~~~~~~~~~~~~~~~~~~
 Operations that would result in dense matrices, such as
 operations with :doc:`Numpy arrays <reference/generated/numpy.ndarray>`
-objects a :obj:`ValueError`.
+raises a :obj:`ValueError`. For example, the following will raise a
+:obj:`ValueError` if :code:`x` is a :obj:`numpy.ndarray`:
+
+.. code-block:: python
+
+   x + y
 
 However, all of the following are valid operations.
 
@@ -77,9 +82,21 @@ If densification is needed, it must be explicit. In other words, you must call
 :obj:`COO.todense` on the :obj:`COO` object. If both operands are :obj:`COO`,
 both must be densified.
 
-.. warning:: Previously, operations with Numpy arrays were sometimes supported. Now,
-   it is necessary to convert Numpy arrays to :obj:`COO` objects.
+Operations with NumPy arrays
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In certain situations, operations with NumPy arrays are also supported. For example,
+the following will work if :code:`x` is :obj:`COO` and :code:`y` is a NumPy array:
 
+.. code-block:: python
+
+   x * y
+
+The following conditions must be met when performing element-wise operations with
+NumPy arrays:
+
+* The operation must produce a consistent fill-values. In other words, the resulting
+  array must also be sparse.
+* Operating on the NumPy arrays must not increase the size when broadcasting the arrays.
 
 Operations with :obj:`scipy.sparse.spmatrix`
 --------------------------------------------
