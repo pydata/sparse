@@ -691,7 +691,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             result = result[mask]
 
             a = COO(coords, result, shape=(a.shape[0],),
-                    has_duplicates=False, sorted=True)
+                    has_duplicates=False, sorted=True, fill_value=self.fill_value)
 
             a = a.reshape(tuple(self.shape[d] for d in neg_axis))
             result = a

@@ -1639,6 +1639,17 @@ def test_invalid_iterable_error():
         COO.from_iter(x)
 
 
+def test_prod_along_axis():
+    s1 = sparse.random((10, 10), density=0.1)
+    s2 = 1 - s1
+
+    x1 = s1.todense()
+    x2 = s2.todense()
+
+    assert_eq(s1.prod(axis=0), x1.prod(axis=0))
+    assert_eq(s2.prod(axis=0), x2.prod(axis=0))
+
+
 class TestRoll(object):
 
     # test on 1d array #
