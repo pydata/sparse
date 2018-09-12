@@ -573,7 +573,7 @@ class _Elemwise(object):
         return coords, data
 
     @staticmethod
-    def _match_coo(*args, cache=None, return_midx=False, broadcast_shape=None):
+    def _match_coo(*args, **kwargs):
         """
         Matches the coordinates for any number of input :obj:`COO` arrays.
         Equivalent to "sparse" broadcasting for all arrays.
@@ -599,6 +599,13 @@ class _Elemwise(object):
         """
         from .core import COO
         from .common import linear_loc
+
+        cache = kwargs.pop('cache', None)
+        return_midx = kwargs.pop('return_midx', False)
+        broadcast_shape = kwargs.pop('broadcast_shape', None)
+
+        if kwargs:
+            raise ValueError('Unknown kwargs: {}'.format(kwargs.keys()))
 
         if return_midx and (len(args) != 2 or cache is not None):
             raise NotImplementedError('Matching indices only supported for two args, and no cache.')
