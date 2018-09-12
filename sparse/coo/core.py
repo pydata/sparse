@@ -1317,6 +1317,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):
                [15, 16, 17, 18, 19],
                [20, 21, 22, 23, 24]])
         """
+        if isinstance(shape, Iterable):
+            shape = tuple(shape)
+        else:
+            shape = (shape,)
+
         if self.shape == shape:
             return self
         if any(d == -1 for d in shape):

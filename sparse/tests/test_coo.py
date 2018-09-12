@@ -293,6 +293,59 @@ def test_elemwise_inplace(func):
     assert_eq(x, s)
 
 
+def test_elemwise_mixed():
+    s1 = sparse.random((2, 3, 4), density=0.5)
+    x2 = np.random.rand(4)
+
+    x1 = s1.todense()
+
+    assert_eq(s1 * x2, x1 * x2)
+
+
+def test_elemwise_mixed_empty():
+    s1 = sparse.random((2, 0, 4), density=0.5)
+    x2 = np.random.rand(2, 0, 4)
+
+    x1 = s1.todense()
+
+    assert_eq(s1 * x2, x1 * x2)
+
+
+def test_ndarray_bigger_shape():
+    s1 = sparse.random((2, 3, 4), density=0.5)
+    x2 = np.random.rand(5, 1, 1, 1)
+
+    with pytest.raises(ValueError):
+        s1 * x2
+
+
+def test_elemwise_unsupported():
+    class A():
+        pass
+
+    s1 = sparse.random((2, 3, 4), density=0.5)
+    x2 = A()
+
+    with pytest.raises(TypeError):
+        s1 + x2
+
+    assert sparse.elemwise(operator.add, s1, x2) is NotImplemented
+
+
+def test_elemwise_mixed_broadcast():
+    s1 = sparse.random((2, 3, 4), density=0.5)
+    s2 = sparse.random(4, density=0.5)
+    x3 = np.random.rand(3, 4)
+
+    x1 = s1.todense()
+    x2 = s2.todense()
+
+    def func(x1, x2, x3):
+        return x1 * x2 * x3
+
+    assert_eq(sparse.elemwise(func, s1, s2, x3), func(x1, x2, x3))
+
+
 @pytest.mark.parametrize('func', [
     operator.mul, operator.add, operator.sub, operator.gt,
     operator.lt, operator.ne
@@ -486,7 +539,7 @@ def test_trinary_broadcasting_pathological(shapes, func, value, fraction):
 
 
 def test_sparse_broadcasting(monkeypatch):
-    orig_unmatch_coo = sparse.coo.umath._unmatch_coo
+    orig_unmatch_coo = sparse.coo.umath._Elemwise._get_func_coords_data
 
     state = {'num_matches': 0}
 
@@ -495,10 +548,11 @@ def test_sparse_broadcasting(monkeypatch):
 
     def mock_unmatch_coo(*args, **kwargs):
         result = orig_unmatch_coo(*args, **kwargs)
-        state['num_matches'] += len(result[0])
+        if result is not None:
+            state['num_matches'] += 1
         return result
 
-    monkeypatch.setattr(sparse.coo.umath, '_unmatch_coo', mock_unmatch_coo)
+    monkeypatch.setattr(sparse.coo.umath._Elemwise, '_get_func_coords_data', mock_unmatch_coo)
 
     xs * ys
 
@@ -507,7 +561,7 @@ def test_sparse_broadcasting(monkeypatch):
 
 
 def test_dense_broadcasting(monkeypatch):
-    orig_unmatch_coo = sparse.coo.umath._unmatch_coo
+    orig_unmatch_coo = sparse.coo.umath._Elemwise._get_func_coords_data
 
     state = {'num_matches': 0}
 
@@ -516,10 +570,11 @@ def test_dense_broadcasting(monkeypatch):
 
     def mock_unmatch_coo(*args, **kwargs):
         result = orig_unmatch_coo(*args, **kwargs)
-        state['num_matches'] += len(result[0])
+        if result is not None:
+            state['num_matches'] += 1
         return result
 
-    monkeypatch.setattr(sparse.coo.umath, '_unmatch_coo', mock_unmatch_coo)
+    monkeypatch.setattr(sparse.coo.umath._Elemwise, '_get_func_coords_data', mock_unmatch_coo)
 
     xs + ys
 
@@ -545,7 +600,7 @@ def test_ndarray_densification_fails():
     xs = sparse.random((3, 4), density=0.5)
     y = np.random.rand(3, 4)
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         xs + y
 
 
@@ -553,7 +608,7 @@ def test_elemwise_noargs():
     def func():
         return np.float_(5.0)
 
-    assert sparse.elemwise(func) == func()
+    assert_eq(sparse.elemwise(func), func())
 
 
 @pytest.mark.parametrize('func', [

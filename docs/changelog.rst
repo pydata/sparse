@@ -1,6 +1,7 @@
 Changelog
 =========
 
+* :feature:`124` (via :issue:`182`) Allow mixed :code:`ndarray`-:obj:`COO` operations if the result is sparse.
 * :feature:`179` (via :issue:`180`) Allow specifying a fill-value when converting from NumPy arrays.
 * :feature:`175` Added :code:`COO.any` and :code:`COO.all` methods.
 * :feature:`172` Indexing for :code:`COO` now accepts a single one-dimensional array index.
