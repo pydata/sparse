@@ -799,3 +799,28 @@ def zeros(shape, dtype=float):
     data = np.empty(0, dtype=dtype)
     coords = np.empty((len(shape), 0), dtype=np.intp)
     return COO(coords, data=data, shape=shape, has_duplicates=False)
+
+
+def zeros_like(a, dtype=None):
+    """Return a COO array of zeros with the same shape and type as ``a``.
+
+    Parameters
+    ----------
+    a : array_like
+        The shape and data-type of the result will match those of `a`.
+    dtype : data-type, optional
+        Overrides the data type of the result.
+
+    Returns
+    -------
+    out : COO
+        Array of zeros with the same shape and type as `a`.
+
+    Examples
+    --------
+    >>> x = np.ones((2, 3), dtype='i8')
+    >>> zeros_like(x).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[0, 0, 0],
+           [0, 0, 0]])
+    """
+    return zeros(a.shape, dtype=(a.dtype if dtype is None else dtype))

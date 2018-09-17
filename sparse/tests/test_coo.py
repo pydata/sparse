@@ -1762,3 +1762,9 @@ def test_zeros():
     assert_eq(sparse.zeros(5), np.zeros(5))
     assert_eq(sparse.zeros((5, 4)), np.zeros((5, 4)))
     assert_eq(sparse.zeros((5, 4), dtype='i4'), np.zeros((5, 4), dtype='i4'))
+
+
+def test_zeros_like():
+    x = np.ones((5, 5), dtype='i8')
+    assert_eq(sparse.zeros_like(x), np.zeros_like(x))
+    assert_eq(sparse.zeros_like(x, dtype='f8'), np.zeros_like(x, dtype='f8'))
