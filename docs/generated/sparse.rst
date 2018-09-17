@@ -45,6 +45,10 @@ API
 
     nansum
 
+    ones
+
+    ones_like
+
     random
 
     roll

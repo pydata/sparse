@@ -762,9 +762,10 @@ def eye(N, M=None, k=0, dtype=float):
         n_coords = m_coords = np.arange(data_length, dtype=np.intp)
 
     coords = np.stack([n_coords, m_coords])
-    data = np.ones(data_length, dtype=dtype)
+    data = np.array(1, dtype=dtype)
 
-    return COO(coords, data=data, shape=(N, M), has_duplicates=False)
+    return COO(coords, data=data, shape=(N, M), has_duplicates=False,
+               sorted=True)
 
 
 def zeros(shape, dtype=float):
@@ -798,7 +799,8 @@ def zeros(shape, dtype=float):
         shape = (shape,)
     data = np.empty(0, dtype=dtype)
     coords = np.empty((len(shape), 0), dtype=np.intp)
-    return COO(coords, data=data, shape=shape, has_duplicates=False)
+    return COO(coords, data=data, shape=shape, has_duplicates=False,
+               sorted=True)
 
 
 def zeros_like(a, dtype=None):
@@ -824,3 +826,63 @@ def zeros_like(a, dtype=None):
            [0, 0, 0]])
     """
     return zeros(a.shape, dtype=(a.dtype if dtype is None else dtype))
+
+
+def ones(shape, dtype=float):
+    """Return a COO array of given shape and type, filled with ones.
+
+    Parameters
+    ----------
+    shape : int or tuple of ints
+        Shape of the new array, e.g., ``(2, 3)`` or ``2``.
+    dtype : data-type, optional
+        The desired data-type for the array, e.g., `numpy.int8`.  Default is
+        `numpy.float64`.
+
+    Returns
+    -------
+    out : COO
+        Array of ones with the given shape and dtype.
+
+    Examples
+    --------
+    >>> ones(5).todense()  # doctest: +SKIP
+    array([1., 1., 1., 1., 1.])
+
+    >>> ones((2, 2), dtype=int).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[1, 1],
+           [1, 1]])
+    """
+    from .core import COO
+
+    if not isinstance(shape, tuple):
+        shape = (shape,)
+    data = np.empty(0, dtype=dtype)
+    coords = np.empty((len(shape), 0), dtype=np.intp)
+    return COO(coords, data=data, shape=shape, fill_value=1,
+               has_duplicates=False, sorted=True)
+
+
+def ones_like(a, dtype=None):
+    """Return a COO array of ones with the same shape and type as ``a``.
+
+    Parameters
+    ----------
+    a : array_like
+        The shape and data-type of the result will match those of `a`.
+    dtype : data-type, optional
+        Overrides the data type of the result.
+
+    Returns
+    -------
+    out : COO
+        Array of ones with the same shape and type as `a`.
+
+    Examples
+    --------
+    >>> x = np.ones((2, 3), dtype='i8')
+    >>> ones_like(x).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[1, 1, 1],
+           [1, 1, 1]])
+    """
+    return ones(a.shape, dtype=(a.dtype if dtype is None else dtype))
