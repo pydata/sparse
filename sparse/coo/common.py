@@ -705,3 +705,63 @@ def roll(a, shift, axis=None):
             coords[ax] %= a.shape[ax]
 
         return COO(coords, data=data, shape=a.shape, has_duplicates=False, fill_value=a.fill_value)
+
+
+def eye(N, M=None, k=0, dtype=float):
+    """Return a 2-D COO array with ones on the diagonal and zeros elsewhere.
+
+    Parameters
+    ----------
+    N : int
+        Number of rows in the output.
+    M : int, optional
+        Number of columns in the output. If None, defaults to `N`.
+    k : int, optional
+        Index of the diagonal: 0 (the default) refers to the main diagonal,
+        a positive value refers to an upper diagonal, and a negative value
+        to a lower diagonal.
+    dtype : data-type, optional
+        Data-type of the returned array.
+
+    Returns
+    -------
+    I : COO array of shape (N, M)
+        An array where all elements are equal to zero, except for the `k`-th
+        diagonal, whose values are equal to one.
+
+    Examples
+    --------
+    >>> eye(2, dtype=int).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[1, 0],
+           [0, 1]])
+    >>> eye(3, k=1).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[0., 1., 0.],
+           [0., 0., 1.],
+           [0., 0., 0.]])
+    """
+    from .core import COO
+
+    if M is None:
+        M = N
+
+    N = int(N)
+    M = int(M)
+    k = int(k)
+
+    data_length = min(N, M)
+
+    if k > 0:
+        data_length = max(min(data_length, M - k), 0)
+        n_coords = np.arange(data_length)
+        m_coords = n_coords + k
+    elif k < 0:
+        data_length = max(min(data_length, N + k), 0)
+        m_coords = np.arange(data_length)
+        n_coords = m_coords - k
+    else:
+        n_coords = m_coords = np.arange(data_length)
+
+    coords = np.stack([n_coords, m_coords])
+    data = np.ones(data_length, dtype=dtype)
+
+    return COO(coords, data=data, shape=(N, M), has_duplicates=False)

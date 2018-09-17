@@ -1748,3 +1748,11 @@ def test_initialization(ndim):
     with pytest.raises(ValueError, match="shape of `coords`"):
         coords = np.random.randint(10, size=20).reshape(1, 20)
         COO(coords, data=data, shape=shape)
+
+
+@pytest.mark.parametrize('N, M', [(4, None), (4, 10), (10, 4), (0, 10)])
+def test_eye(N, M):
+    m = M or N
+    for k in [0, N - 2, N + 2, m - 2, m + 2]:
+        assert_eq(sparse.eye(N, M=M, k=k), np.eye(N, M=M, k=k))
+        assert_eq(sparse.eye(N, M=M, k=k, dtype='i4'), np.eye(N, M=M, k=k, dtype='i4'))
