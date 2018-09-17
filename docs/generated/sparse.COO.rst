@@ -63,6 +63,7 @@ COO
    .. autosummary::
       :toctree:
 
+      COO.copy
       COO.dot
       COO.reshape
       COO.transpose

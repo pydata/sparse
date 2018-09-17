@@ -1,4 +1,5 @@
 import operator
+import pickle
 
 import numpy as np
 import pytest
@@ -1731,6 +1732,40 @@ class TestFailFillValue(object):
 
         with pytest.raises(ValueError):
             sparse.concatenate([xs, ys])
+
+
+def test_pickle():
+    x = sparse.COO.from_numpy([1, 0, 0, 0, 0]).reshape((5, 1))
+    # Enable caching and add some data to it
+    x.enable_caching()
+    x.T
+    assert x._cache is not None
+    # Pickle sends data but not cache
+    x2 = pickle.loads(pickle.dumps(x))
+    assert_eq(x, x2)
+    assert x2._cache is None
+
+
+def test_copy():
+    x = sparse.COO.from_numpy([1, 0, 0, 0, 0]).reshape((5, 1))
+    # Enable caching and add some data to it
+    x.enable_caching()
+    x.T
+    assert x._cache is not None
+
+    # Deep copy
+    x2 = x.copy()
+    assert_eq(x, x2)
+    assert x2.data is not x.data
+    assert x2.coords is not x.coords
+    assert x2._cache is None
+
+    # Shallow copy
+    x3 = x.copy(deep=False)
+    assert_eq(x, x3)
+    assert x3.data is x.data
+    assert x3.coords is x.coords
+    assert x3._cache is None
 
 
 @pytest.mark.parametrize("ndim", [2, 3, 4, 5])
