@@ -1756,3 +1756,9 @@ def test_eye(N, M):
     for k in [0, N - 2, N + 2, m - 2, m + 2]:
         assert_eq(sparse.eye(N, M=M, k=k), np.eye(N, M=M, k=k))
         assert_eq(sparse.eye(N, M=M, k=k, dtype='i4'), np.eye(N, M=M, k=k, dtype='i4'))
+
+
+def test_zeros():
+    assert_eq(sparse.zeros(5), np.zeros(5))
+    assert_eq(sparse.zeros((5, 4)), np.zeros((5, 4)))
+    assert_eq(sparse.zeros((5, 4), dtype='i4'), np.zeros((5, 4), dtype='i4'))

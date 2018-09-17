@@ -752,16 +752,50 @@ def eye(N, M=None, k=0, dtype=float):
 
     if k > 0:
         data_length = max(min(data_length, M - k), 0)
-        n_coords = np.arange(data_length)
+        n_coords = np.arange(data_length, dtype=np.intp)
         m_coords = n_coords + k
     elif k < 0:
         data_length = max(min(data_length, N + k), 0)
-        m_coords = np.arange(data_length)
+        m_coords = np.arange(data_length, dtype=np.intp)
         n_coords = m_coords - k
     else:
-        n_coords = m_coords = np.arange(data_length)
+        n_coords = m_coords = np.arange(data_length, dtype=np.intp)
 
     coords = np.stack([n_coords, m_coords])
     data = np.ones(data_length, dtype=dtype)
 
     return COO(coords, data=data, shape=(N, M), has_duplicates=False)
+
+
+def zeros(shape, dtype=float):
+    """Return a COO array of given shape and type, filled with zeros.
+
+    Parameters
+    ----------
+    shape : int or tuple of ints
+        Shape of the new array, e.g., ``(2, 3)`` or ``2``.
+    dtype : data-type, optional
+        The desired data-type for the array, e.g., `numpy.int8`.  Default is
+        `numpy.float64`.
+
+    Returns
+    -------
+    out : COO
+        Array of zeros with the given shape and dtype.
+
+    Examples
+    --------
+    >>> zeros(5).todense()
+    array([0., 0., 0., 0., 0.])
+
+    >>> zeros((2, 2), dtype=int).todense()
+    array([[0, 0],
+           [0, 0]])
+    """
+    from .core import COO
+
+    if not isinstance(shape, tuple):
+        shape = (shape,)
+    data = np.empty(0, dtype=dtype)
+    coords = np.empty((len(shape), 0), dtype=np.intp)
+    return COO(coords, data=data, shape=shape, has_duplicates=False)
