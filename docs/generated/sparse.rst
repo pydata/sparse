@@ -27,6 +27,8 @@ API
 
     concatenate
 
+    eye
+
     dot
 
     elemwise
@@ -58,3 +60,7 @@ API
     triu
 
     where
+
+    zeros
+
+    zeros_like
