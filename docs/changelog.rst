@@ -1,6 +1,7 @@
 Changelog
 =========
 
+* :feature:`184` Added :code:`COO.copy` method, and changed pickle of :object:`COO` to not include its cache.
 * :feature:`183` Added :code:`sparse.eye`, :code:`sparse.zeros`,
   :code:`sparse.zeros_like`, :code:`sparse.ones`, and :code:`sparse.ones_like`.
 * :release:`0.4.1 <2018-09-12>`
