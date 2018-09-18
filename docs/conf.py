@@ -44,7 +44,6 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.extlinks',
-    'releases',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -186,4 +185,7 @@ intersphinx_mapping = {
     'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None)
 }
 
-releases_github_path = 'pydata/sparse'
+extlinks = {
+    'issue': ('https://github.com/pydata/sparse/issues/%s', 'Issue #'),
+    'pr': ('https://github.com/pydata/sparse/pull/%s', 'PR #')
+}
