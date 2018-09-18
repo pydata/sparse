@@ -1,3 +1,4 @@
+import copy as _copy
 from collections import Iterable, Iterator, Sized, defaultdict, deque
 
 import numpy as np
@@ -236,6 +237,24 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         if has_duplicates:
             self._sum_duplicates()
+
+    def __getstate__(self):
+        return (self.coords, self.data, self.shape, self.fill_value)
+
+    def __setstate__(self, state):
+        self.coords, self.data, self.shape, self.fill_value = state
+        self._cache = None
+
+    def copy(self, deep=True):
+        """Return a copy of the array.
+
+        Parameters
+        ----------
+        deep : boolean, optional
+            If True (default), the internal coords and data arrays are also
+            copied. Set to ``False`` to only make a shallow copy.
+        """
+        return _copy.deepcopy(self) if deep else _copy.copy(self)
 
     def _make_shallow_copy_of(self, other):
         self.coords = other.coords
