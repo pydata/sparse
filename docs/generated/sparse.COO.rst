@@ -33,6 +33,7 @@ COO
       :toctree:
 
       COO.astype
+      COO.clip
       COO.round
 
    .. rubric:: :ref:`Reductions <operations-reductions>`
