@@ -1630,10 +1630,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         Returns
         -------
-        clipped_array : ndarray
-            An array with the elements of `a`, but where values
-            < `a_min` are replaced with `a_min`, and those > `a_max`
-            with `a_max`.
+        clipped_array : COO
+            An array with the elements of `self`, but where values < `min` are
+            replaced with `min`, and those > `max` with `max`.
 
         Examples
         --------
