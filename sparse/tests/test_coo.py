@@ -1717,6 +1717,28 @@ class TestRoll(object):
             sparse.roll(x, *args)
 
 
+def test_clip():
+    x = np.array([[0, 0, 1, 0, 2],
+                  [5, 0, 0, 3, 0]])
+
+    s = sparse.COO.from_numpy(x)
+
+    assert_eq(s.clip(min=1), x.clip(min=1))
+    assert_eq(s.clip(max=3), x.clip(max=3))
+    assert_eq(s.clip(min=1, max=3), x.clip(min=1, max=3))
+    assert_eq(s.clip(min=1, max=3.0), x.clip(min=1, max=3.0))
+
+    assert_eq(np.clip(s, 1, 3), np.clip(x, 1, 3))
+
+    with pytest.raises(ValueError):
+        s.clip()
+
+    out = sparse.COO.from_numpy(np.zeros_like(x))
+    out2 = s.clip(min=1, max=3, out=out)
+    assert out is out2
+    assert_eq(out, x.clip(min=1, max=3))
+
+
 class TestFailFillValue(object):
     # Check failed fill_value op
     def test_nonzero_fv(self):
