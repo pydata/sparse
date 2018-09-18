@@ -1748,3 +1748,35 @@ def test_initialization(ndim):
     with pytest.raises(ValueError, match="shape of `coords`"):
         coords = np.random.randint(10, size=20).reshape(1, 20)
         COO(coords, data=data, shape=shape)
+
+
+@pytest.mark.parametrize('N, M', [(4, None), (4, 10), (10, 4), (0, 10)])
+def test_eye(N, M):
+    m = M or N
+    for k in [0, N - 2, N + 2, m - 2, m + 2]:
+        assert_eq(sparse.eye(N, M=M, k=k), np.eye(N, M=M, k=k))
+        assert_eq(sparse.eye(N, M=M, k=k, dtype='i4'), np.eye(N, M=M, k=k, dtype='i4'))
+
+
+def test_zeros():
+    assert_eq(sparse.zeros(5), np.zeros(5))
+    assert_eq(sparse.zeros((5, 4)), np.zeros((5, 4)))
+    assert_eq(sparse.zeros((5, 4), dtype='i4'), np.zeros((5, 4), dtype='i4'))
+
+
+def test_zeros_like():
+    x = np.ones((5, 5), dtype='i8')
+    assert_eq(sparse.zeros_like(x), np.zeros_like(x))
+    assert_eq(sparse.zeros_like(x, dtype='f8'), np.zeros_like(x, dtype='f8'))
+
+
+def test_ones():
+    assert_eq(sparse.ones(5), np.ones(5))
+    assert_eq(sparse.ones((5, 4)), np.ones((5, 4)))
+    assert_eq(sparse.ones((5, 4), dtype='i4'), np.ones((5, 4), dtype='i4'))
+
+
+def test_ones_like():
+    x = np.zeros((5, 5), dtype='i8')
+    assert_eq(sparse.ones_like(x), np.ones_like(x))
+    assert_eq(sparse.ones_like(x, dtype='f8'), np.ones_like(x, dtype='f8'))

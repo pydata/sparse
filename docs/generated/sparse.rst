@@ -27,6 +27,8 @@ API
 
     concatenate
 
+    eye
+
     dot
 
     elemwise
@@ -43,6 +45,10 @@ API
 
     nansum
 
+    ones
+
+    ones_like
+
     random
 
     roll
@@ -58,3 +64,7 @@ API
     triu
 
     where
+
+    zeros
+
+    zeros_like

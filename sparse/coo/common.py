@@ -705,3 +705,184 @@ def roll(a, shift, axis=None):
             coords[ax] %= a.shape[ax]
 
         return COO(coords, data=data, shape=a.shape, has_duplicates=False, fill_value=a.fill_value)
+
+
+def eye(N, M=None, k=0, dtype=float):
+    """Return a 2-D COO array with ones on the diagonal and zeros elsewhere.
+
+    Parameters
+    ----------
+    N : int
+        Number of rows in the output.
+    M : int, optional
+        Number of columns in the output. If None, defaults to `N`.
+    k : int, optional
+        Index of the diagonal: 0 (the default) refers to the main diagonal,
+        a positive value refers to an upper diagonal, and a negative value
+        to a lower diagonal.
+    dtype : data-type, optional
+        Data-type of the returned array.
+
+    Returns
+    -------
+    I : COO array of shape (N, M)
+        An array where all elements are equal to zero, except for the `k`-th
+        diagonal, whose values are equal to one.
+
+    Examples
+    --------
+    >>> eye(2, dtype=int).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[1, 0],
+           [0, 1]])
+    >>> eye(3, k=1).todense()  # doctest: +SKIP
+    array([[0., 1., 0.],
+           [0., 0., 1.],
+           [0., 0., 0.]])
+    """
+    from .core import COO
+
+    if M is None:
+        M = N
+
+    N = int(N)
+    M = int(M)
+    k = int(k)
+
+    data_length = min(N, M)
+
+    if k > 0:
+        data_length = max(min(data_length, M - k), 0)
+        n_coords = np.arange(data_length, dtype=np.intp)
+        m_coords = n_coords + k
+    elif k < 0:
+        data_length = max(min(data_length, N + k), 0)
+        m_coords = np.arange(data_length, dtype=np.intp)
+        n_coords = m_coords - k
+    else:
+        n_coords = m_coords = np.arange(data_length, dtype=np.intp)
+
+    coords = np.stack([n_coords, m_coords])
+    data = np.array(1, dtype=dtype)
+
+    return COO(coords, data=data, shape=(N, M), has_duplicates=False,
+               sorted=True)
+
+
+def zeros(shape, dtype=float):
+    """Return a COO array of given shape and type, filled with zeros.
+
+    Parameters
+    ----------
+    shape : int or tuple of ints
+        Shape of the new array, e.g., ``(2, 3)`` or ``2``.
+    dtype : data-type, optional
+        The desired data-type for the array, e.g., `numpy.int8`.  Default is
+        `numpy.float64`.
+
+    Returns
+    -------
+    out : COO
+        Array of zeros with the given shape and dtype.
+
+    Examples
+    --------
+    >>> zeros(5).todense()  # doctest: +SKIP
+    array([0., 0., 0., 0., 0.])
+
+    >>> zeros((2, 2), dtype=int).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[0, 0],
+           [0, 0]])
+    """
+    from .core import COO
+
+    if not isinstance(shape, tuple):
+        shape = (shape,)
+    data = np.empty(0, dtype=dtype)
+    coords = np.empty((len(shape), 0), dtype=np.intp)
+    return COO(coords, data=data, shape=shape, has_duplicates=False,
+               sorted=True)
+
+
+def zeros_like(a, dtype=None):
+    """Return a COO array of zeros with the same shape and type as ``a``.
+
+    Parameters
+    ----------
+    a : array_like
+        The shape and data-type of the result will match those of `a`.
+    dtype : data-type, optional
+        Overrides the data type of the result.
+
+    Returns
+    -------
+    out : COO
+        Array of zeros with the same shape and type as `a`.
+
+    Examples
+    --------
+    >>> x = np.ones((2, 3), dtype='i8')
+    >>> zeros_like(x).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[0, 0, 0],
+           [0, 0, 0]])
+    """
+    return zeros(a.shape, dtype=(a.dtype if dtype is None else dtype))
+
+
+def ones(shape, dtype=float):
+    """Return a COO array of given shape and type, filled with ones.
+
+    Parameters
+    ----------
+    shape : int or tuple of ints
+        Shape of the new array, e.g., ``(2, 3)`` or ``2``.
+    dtype : data-type, optional
+        The desired data-type for the array, e.g., `numpy.int8`.  Default is
+        `numpy.float64`.
+
+    Returns
+    -------
+    out : COO
+        Array of ones with the given shape and dtype.
+
+    Examples
+    --------
+    >>> ones(5).todense()  # doctest: +SKIP
+    array([1., 1., 1., 1., 1.])
+
+    >>> ones((2, 2), dtype=int).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[1, 1],
+           [1, 1]])
+    """
+    from .core import COO
+
+    if not isinstance(shape, tuple):
+        shape = (shape,)
+    data = np.empty(0, dtype=dtype)
+    coords = np.empty((len(shape), 0), dtype=np.intp)
+    return COO(coords, data=data, shape=shape, fill_value=1,
+               has_duplicates=False, sorted=True)
+
+
+def ones_like(a, dtype=None):
+    """Return a COO array of ones with the same shape and type as ``a``.
+
+    Parameters
+    ----------
+    a : array_like
+        The shape and data-type of the result will match those of `a`.
+    dtype : data-type, optional
+        Overrides the data type of the result.
+
+    Returns
+    -------
+    out : COO
+        Array of ones with the same shape and type as `a`.
+
+    Examples
+    --------
+    >>> x = np.ones((2, 3), dtype='i8')
+    >>> ones_like(x).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[1, 1, 1],
+           [1, 1, 1]])
+    """
+    return ones(a.shape, dtype=(a.dtype if dtype is None else dtype))

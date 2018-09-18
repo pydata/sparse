@@ -1,6 +1,8 @@
 Changelog
 =========
 
+* :feature:`183` Added :code:`sparse.eye`, :code:`sparse.zeros`,
+  :code:`sparse.zeros_like`, :code:`sparse.ones`, and :code:`sparse.ones_like`.
 * :release:`0.4.1 <2018-09-12>`
 * :feature:`124` (via :issue:`182`) Allow mixed :code:`ndarray`-:obj:`COO` operations if the result is sparse.
 * :feature:`179` (via :issue:`180`) Allow specifying a fill-value when converting from NumPy arrays.
