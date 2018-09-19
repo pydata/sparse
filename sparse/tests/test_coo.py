@@ -1808,25 +1808,37 @@ def test_eye(N, M):
         assert_eq(sparse.eye(N, M=M, k=k, dtype='i4'), np.eye(N, M=M, k=k, dtype='i4'))
 
 
-def test_zeros():
-    assert_eq(sparse.zeros(5), np.zeros(5))
-    assert_eq(sparse.zeros((5, 4)), np.zeros((5, 4)))
-    assert_eq(sparse.zeros((5, 4), dtype='i4'), np.zeros((5, 4), dtype='i4'))
+@pytest.mark.parametrize('funcname', ['ones', 'zeros'])
+def test_ones_zeros(funcname):
+    sp_func = getattr(sparse, funcname)
+    np_func = getattr(np, funcname)
+
+    assert_eq(sp_func(5), np_func(5))
+    assert_eq(sp_func((5, 4)), np_func((5, 4)))
+    assert_eq(sp_func((5, 4), dtype='i4'), np_func((5, 4), dtype='i4'))
+    assert_eq(sp_func((5, 4), dtype=None), np_func((5, 4), dtype=None))
 
 
-def test_zeros_like():
+@pytest.mark.parametrize('funcname', ['ones_like', 'zeros_like'])
+def test_ones_zeros_like(funcname):
+    sp_func = getattr(sparse, funcname)
+    np_func = getattr(np, funcname)
+
     x = np.ones((5, 5), dtype='i8')
-    assert_eq(sparse.zeros_like(x), np.zeros_like(x))
-    assert_eq(sparse.zeros_like(x, dtype='f8'), np.zeros_like(x, dtype='f8'))
+
+    assert_eq(sp_func(x), np_func(x))
+    assert_eq(sp_func(x, dtype='f8'), np_func(x, dtype='f8'))
+    assert_eq(sp_func(x, dtype=None), np_func(x, dtype=None))
 
 
-def test_ones():
-    assert_eq(sparse.ones(5), np.ones(5))
-    assert_eq(sparse.ones((5, 4)), np.ones((5, 4)))
-    assert_eq(sparse.ones((5, 4), dtype='i4'), np.ones((5, 4), dtype='i4'))
+def test_full():
+    assert_eq(sparse.full(5, 9), np.full(5, 9))
+    assert_eq(sparse.full(5, 9, dtype='f8'), np.full(5, 9, dtype='f8'))
+    assert_eq(sparse.full((5, 4), 9.5), np.full((5, 4), 9.5))
+    assert_eq(sparse.full((5, 4), 9.5, dtype='i4'), np.full((5, 4), 9.5, dtype='i4'))
 
 
-def test_ones_like():
+def test_full_like():
     x = np.zeros((5, 5), dtype='i8')
-    assert_eq(sparse.ones_like(x), np.ones_like(x))
-    assert_eq(sparse.ones_like(x, dtype='f8'), np.ones_like(x, dtype='f8'))
+    assert_eq(sparse.full_like(x, 9.5), np.full_like(x, 9.5))
+    assert_eq(sparse.full_like(x, 9.5, dtype='f8'), np.full_like(x, 9.5, dtype='f8'))
