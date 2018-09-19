@@ -1,5 +1,7 @@
 import copy as _copy
+import operator
 from collections import Iterable, Iterator, Sized, defaultdict, deque
+from functools import reduce
 
 import numpy as np
 import scipy.sparse
@@ -1141,9 +1143,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             axis = tuple(range(self.ndim))
         elif not isinstance(axis, tuple):
             axis = (axis,)
-        den = 1
-        for ax in axis:
-            den *= self.shape[ax]
+        den = reduce(operator.mul, (self.shape[i] for i in axis), 1)
 
         if dtype is None:
             if issubclass(self.dtype.type, (np.integer, np.bool_)):

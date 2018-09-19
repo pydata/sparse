@@ -466,9 +466,7 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
         axis = tuple(range(x.ndim))
     elif not isinstance(axis, tuple):
         axis = (axis,)
-    den = 1
-    for ax in axis:
-        den *= x.shape[ax]
+    den = reduce(operator.mul, (x.shape[i] for i in axis), 1)
     den -= nancount
 
     if np.any(den == 0):
