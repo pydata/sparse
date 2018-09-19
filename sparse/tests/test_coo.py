@@ -15,6 +15,8 @@ from sparse.utils import assert_eq, random_value_array
     ('max', {}, {}),
     ('sum', {}, {}),
     ('sum', {'dtype': np.float16}, {'atol': 1e-2}),
+    ('mean', {}, {}),
+    ('mean', {'dtype': np.float16}, {'atol': 1e-2}),
     ('prod', {}, {}),
     ('min', {}, {}),
 ])
@@ -46,6 +48,8 @@ def test_reductions_bool(reduction, axis, keepdims, kwargs, eqkwargs):
     (np.max, {}, {}),
     (np.sum, {}, {}),
     (np.sum, {'dtype': np.float16}, {'atol': 1e-2}),
+    (np.mean, {}, {}),
+    (np.mean, {'dtype': np.float16}, {'atol': 1e-2}),
     (np.prod, {}, {}),
     (np.min, {}, {}),
 ])
@@ -77,6 +81,7 @@ def test_ufunc_reductions_kwargs(reduction, kwargs):
 
 @pytest.mark.parametrize('reduction', [
     'nansum',
+    'nanmean',
     'nanprod',
     'nanmax',
     'nanmin',

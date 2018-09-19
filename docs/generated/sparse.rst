@@ -41,6 +41,8 @@ API
 
     nanmax
 
+    nanmean
+
     nanmin
 
     nanprod
