@@ -1,5 +1,7 @@
 import copy as _copy
+import operator
 from collections import Iterable, Iterator, Sized, defaultdict, deque
+from functools import reduce
 
 import numpy as np
 import scipy.sparse
@@ -1075,6 +1077,91 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         0
         """
         return np.multiply.reduce(self, out=out, axis=axis, keepdims=keepdims, dtype=dtype)
+
+    def mean(self, axis=None, keepdims=False, dtype=None, out=None):
+        """
+        Compute the mean along the given axes. Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : Union[int, Iterable[int]], optional
+            The axes along which to compute the mean. Uses all axes by default.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+        dtype: numpy.dtype
+            The data type of the output array.
+
+        Returns
+        -------
+        COO
+            The reduced output sparse array.
+
+        See Also
+        --------
+        numpy.ndarray.mean : Equivalent numpy method.
+        scipy.sparse.coo_matrix.mean : Equivalent Scipy method.
+
+        Notes
+        -----
+        * This function internally calls :obj:`COO.sum_duplicates` to bring the
+          array into canonical form.
+        * The :code:`out` parameter is provided just for compatibility with
+          Numpy and isn't actually supported.
+
+        Examples
+        --------
+        You can use :obj:`COO.mean` to compute the mean of an array across any
+        dimension.
+
+        >>> x = np.array([[1, 2, 0, 0],
+        ...               [0, 1, 0, 0]], dtype='i8')
+        >>> s = COO.from_numpy(x)
+        >>> s2 = s.mean(axis=1)
+        >>> s2.todense()  # doctest: +SKIP
+        array([0.5, 1.5, 0., 0.])
+
+        You can also use the :code:`keepdims` argument to keep the dimensions
+        after the mean.
+
+        >>> s3 = s.mean(axis=0, keepdims=True)
+        >>> s3.shape
+        (1, 4)
+
+        You can pass in an output datatype, if needed.
+
+        >>> s4 = s.mean(axis=0, dtype=np.float16)
+        >>> s4.dtype
+        dtype('float16')
+
+        By default, this reduces the array down to one number, computing the
+        mean along all axes.
+
+        >>> s.mean()
+        0.5
+        """
+        if axis is None:
+            axis = tuple(range(self.ndim))
+        elif not isinstance(axis, tuple):
+            axis = (axis,)
+        den = reduce(operator.mul, (self.shape[i] for i in axis), 1)
+
+        if dtype is None:
+            if issubclass(self.dtype.type, (np.integer, np.bool_)):
+                out_dtype = inter_dtype = np.dtype('f8')
+            else:
+                out_dtype = self.dtype
+                inter_dtype = (np.dtype('f4')
+                               if issubclass(out_dtype.type, np.float16)
+                               else out_dtype)
+        else:
+            out_dtype = inter_dtype = dtype
+
+        num = self.sum(axis=axis, keepdims=keepdims, dtype=inter_dtype)
+
+        if num.ndim:
+            out = np.true_divide(num, den, casting='unsafe')
+            return out.astype(out_dtype) if out.dtype != out_dtype else out
+        return (num / den).astype(out_dtype)
 
     def transpose(self, axes=None):
         """

@@ -11,52 +11,88 @@ from sparse import COO
 from sparse.utils import assert_eq, random_value_array
 
 
-@pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
-    ('max', {}, {}),
-    ('sum', {}, {}),
-    ('sum', {'dtype': np.float16}, {'atol': 1e-2}),
-    ('prod', {}, {}),
-    ('min', {}, {}),
+@pytest.fixture(scope='module', params=['f8', 'f4', 'i8', 'i4'])
+def random_sparse(request):
+    dtype = request.param
+    if np.issubdtype(dtype, np.integer):
+        def data_rvs(n):
+            return np.random.randint(-10000, 10000, n)
+    else:
+        data_rvs = None
+    return sparse.random((20, 30, 40), density=.25, data_rvs=data_rvs).astype(dtype)
+
+
+@pytest.mark.parametrize('reduction, kwargs', [
+    ('sum', {}),
+    ('sum', {'dtype': np.float32}),
+    ('mean', {}),
+    ('mean', {'dtype': np.float32}),
+    ('prod', {}),
+    ('max', {}),
+    ('min', {}),
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2), -3, (1, -1)])
 @pytest.mark.parametrize('keepdims', [True, False])
-def test_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
-    x = sparse.random((2, 3, 4), density=.25)
+def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
+    x = random_sparse
     y = x.todense()
     xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
-    assert_eq(xx, yy, **eqkwargs)
+    assert_eq(xx, yy)
 
 
-@pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
-    ('any', {}, {}),
-    ('all', {}, {}),
+@pytest.mark.xfail(reason=('Setting output dtype=float16 produces results '
+                           'inconsistent with numpy'))
+@pytest.mark.filterwarnings('ignore:overflow')
+@pytest.mark.parametrize('reduction, kwargs', [
+    ('sum', {'dtype': np.float16}),
+    ('mean', {'dtype': np.float16}),
+])
+@pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2)])
+def test_reductions_float16(random_sparse, reduction, kwargs, axis):
+    x = random_sparse
+    y = x.todense()
+    xx = getattr(x, reduction)(axis=axis, **kwargs)
+    yy = getattr(y, reduction)(axis=axis, **kwargs)
+    assert_eq(xx, yy, atol=1e-2)
+
+
+@pytest.mark.parametrize('reduction,kwargs', [
+    ('any', {}),
+    ('all', {}),
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2), -3, (1, -1)])
 @pytest.mark.parametrize('keepdims', [True, False])
-def test_reductions_bool(reduction, axis, keepdims, kwargs, eqkwargs):
-    x = sparse.random((2, 3, 4), density=.25).astype(bool)
-    y = x.todense()
+def test_reductions_bool(random_sparse, reduction, kwargs, axis, keepdims):
+    y = np.zeros((2, 3, 4), dtype=bool)
+    y[0] = True
+    y[1, 1, 1] = True
+    x = sparse.COO.from_numpy(y)
     xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
-    assert_eq(xx, yy, **eqkwargs)
+    assert_eq(xx, yy)
 
 
-@pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
-    (np.max, {}, {}),
-    (np.sum, {}, {}),
-    (np.sum, {'dtype': np.float16}, {'atol': 1e-2}),
-    (np.prod, {}, {}),
-    (np.min, {}, {}),
+@pytest.mark.parametrize('reduction,kwargs', [
+    (np.max, {}),
+    (np.sum, {}),
+    (np.sum, {'dtype': np.float32}),
+    (np.mean, {}),
+    (np.mean, {'dtype': np.float32}),
+    (np.prod, {}),
+    (np.min, {}),
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2), -1, (0, -1)])
 @pytest.mark.parametrize('keepdims', [True, False])
-def test_ufunc_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
-    x = sparse.random((2, 3, 4), density=.5)
+def test_ufunc_reductions(random_sparse, reduction, kwargs, axis, keepdims):
+    x = random_sparse
     y = x.todense()
     xx = reduction(x, axis=axis, keepdims=keepdims, **kwargs)
     yy = reduction(y, axis=axis, keepdims=keepdims, **kwargs)
-    assert_eq(xx, yy, **eqkwargs)
+    assert_eq(xx, yy)
+    # If not a scalar/1 element array, must be a sparse array
+    if xx.size > 1:
+        assert isinstance(xx, COO)
 
 
 @pytest.mark.parametrize('reduction,kwargs', [
@@ -73,10 +109,14 @@ def test_ufunc_reductions_kwargs(reduction, kwargs):
     xx = reduction(x, **kwargs)
     yy = reduction(y, **kwargs)
     assert_eq(xx, yy)
+    # If not a scalar/1 element array, must be a sparse array
+    if xx.size > 1:
+        assert isinstance(xx, COO)
 
 
 @pytest.mark.parametrize('reduction', [
     'nansum',
+    'nanmean',
     'nanprod',
     'nanmax',
     'nanmin',
@@ -85,6 +125,7 @@ def test_ufunc_reductions_kwargs(reduction, kwargs):
 @pytest.mark.parametrize('keepdims', [False])
 @pytest.mark.parametrize('fraction', [0.25, 0.5, 0.75, 1.0])
 @pytest.mark.filterwarnings('ignore:All-NaN')
+@pytest.mark.filterwarnings('ignore:Mean of empty slice')
 def test_nan_reductions(reduction, axis, keepdims, fraction):
     s = sparse.random((2, 3, 4), data_rvs=random_value_array(np.nan, fraction),
                       density=.25)
@@ -97,6 +138,7 @@ def test_nan_reductions(reduction, axis, keepdims, fraction):
 @pytest.mark.parametrize('reduction', [
     'nanmax',
     'nanmin',
+    'nanmean',
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1])
 def test_all_nan_reduction_warning(reduction, axis):
@@ -1263,10 +1305,14 @@ def test_op_scipy_sparse(func):
 @pytest.mark.parametrize('func', [
     operator.add,
     operator.sub,
-    pytest.mark.xfail(operator.mul, reason='Scipy sparse auto-densifies in this case.'),
-    pytest.mark.xfail(operator.gt, reason='Scipy sparse doesn\'t support this yet.'),
-    pytest.mark.xfail(operator.lt, reason='Scipy sparse doesn\'t support this yet.'),
-    pytest.mark.xfail(operator.ne, reason='Scipy sparse doesn\'t support this yet.'),
+    pytest.param(operator.mul,
+                 marks=pytest.mark.xfail(reason="Scipy sparse auto-densifies in this case.")),
+    pytest.param(operator.gt,
+                 marks=pytest.mark.xfail(reason="Scipy sparse doesn't support this yet.")),
+    pytest.param(operator.lt,
+                 marks=pytest.mark.xfail(reason="Scipy sparse doesn't support this yet.")),
+    pytest.param(operator.ne,
+                 marks=pytest.mark.xfail(reason="Scipy sparse doesn't support this yet.")),
 ])
 def test_op_scipy_sparse_left(func):
     ys = sparse.random((3, 4), density=0.5)

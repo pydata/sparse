@@ -4,6 +4,7 @@ Changelog
 Upcoming Release
 ----------------
 
+* Added :code:`COO.mean` and :code:`sparse.nanmean` (:pr:`190`).
 * Added :code:`sparse.full` and :code:`sparse.full_like` (:pr:`189`).
 * Added :code:`COO.clip` method (:pr:`185`).
 * Added :code:`COO.copy` method, and changed pickle of :code:`COO` to not

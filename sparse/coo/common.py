@@ -426,6 +426,60 @@ def nansum(x, axis=None, keepdims=False, dtype=None, out=None):
     return nanreduce(x, np.add, axis=axis, keepdims=keepdims, dtype=dtype)
 
 
+def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
+    """
+    Performs a ``NaN`` skipping mean operation along the given axes. Uses all axes by default.
+
+    Parameters
+    ----------
+    x : SparseArray
+        The array to perform the reduction on.
+    axis : Union[int, Iterable[int]], optional
+        The axes along which to compute the mean. Uses all axes by default.
+    keepdims : bool, optional
+        Whether or not to keep the dimensions of the original array.
+    dtype: numpy.dtype
+        The data type of the output array.
+
+    Returns
+    -------
+    COO
+        The reduced output sparse array.
+
+    See Also
+    --------
+    :obj:`COO.mean` : Function without ``NaN`` skipping.
+    numpy.nanmean : Equivalent Numpy function.
+    """
+    assert out is None
+    x = asCOO(x, name='nanmean')
+
+    if not np.issubdtype(x.dtype, np.floating):
+        return x.mean(axis=axis, keepdims=keepdims, dtype=dtype)
+
+    mask = np.isnan(x)
+    x2 = where(mask, 0, x)
+
+    # Count the number non-nan elements along axis
+    nancount = mask.sum(axis=axis, dtype='i8', keepdims=keepdims)
+    if axis is None:
+        axis = tuple(range(x.ndim))
+    elif not isinstance(axis, tuple):
+        axis = (axis,)
+    den = reduce(operator.mul, (x.shape[i] for i in axis), 1)
+    den -= nancount
+
+    if np.any(den == 0):
+        warnings.warn("Mean of empty slice", RuntimeWarning, stacklevel=2)
+
+    num = np.sum(x2, axis=axis, dtype=dtype, keepdims=keepdims)
+
+    with np.errstate(invalid='ignore', divide='ignore'):
+        if num.ndim:
+            return np.true_divide(num, den, casting='unsafe')
+        return (num / den).astype(dtype)
+
+
 def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
     """
     Maximize along the given axes, skipping ``NaN`` values. Uses all axes by default.

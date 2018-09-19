@@ -43,6 +43,7 @@ COO
       COO.reduce
 
       COO.sum
+      COO.mean
       COO.prod
       COO.min
       COO.max
