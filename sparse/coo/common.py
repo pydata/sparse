@@ -471,11 +471,15 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
         den *= x.shape[ax]
     den -= nancount
 
+    if np.any(den == 0):
+        warnings.warn("Mean of empty slice", RuntimeWarning, stacklevel=2)
+
     num = np.sum(x2, axis=axis, dtype=dtype, keepdims=keepdims)
 
-    if num.ndim:
-        return np.true_divide(num, den, casting='unsafe')
-    return (num / den).astype(dtype)
+    with np.errstate(invalid='ignore', divide='ignore'):
+        if num.ndim:
+            return np.true_divide(num, den, casting='unsafe')
+        return (num / den).astype(dtype)
 
 
 def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
