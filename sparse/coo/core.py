@@ -1394,7 +1394,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         from .common import linear_loc
         return linear_loc(self.coords, self.shape)
 
-    def reshape(self, shape):
+    def reshape(self, shape, order='C'):
         """
         Returns a new :obj:`COO` array that is a reshaped version of this array.
 
@@ -1412,6 +1412,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         --------
         numpy.ndarray.reshape : The equivalent Numpy function.
 
+        Notes
+        -----
+        The :code:`order` parameter is provided just for compatibility with
+        Numpy and isn't actually supported.
+
         Examples
         --------
         >>> s = COO.from_numpy(np.arange(25))
@@ -1427,6 +1432,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             shape = tuple(shape)
         else:
             shape = (shape,)
+
+        if order not in {'C', None}:
+            raise NotImplementedError("The `order` parameter is not supported")
 
         if self.shape == shape:
             return self

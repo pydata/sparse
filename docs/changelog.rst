@@ -4,6 +4,8 @@ Changelog
 Upcoming Release
 ----------------
 
+* Added :code:`order` parameter to :code:`COO.reshape` to make it work with
+  :code:`np.reshape` (:pr:`193`).
 * Added :code:`COO.mean` and :code:`sparse.nanmean` (:pr:`190`).
 * Added :code:`sparse.full` and :code:`sparse.full_like` (:pr:`189`).
 * Added :code:`COO.clip` method (:pr:`185`).
