@@ -229,10 +229,6 @@ def test_reshape_function():
     assert isinstance(s2, COO)
     assert_eq(s2, x.reshape(shape))
 
-    # order parameter not actually supported
-    with pytest.raises(NotImplementedError):
-        np.reshape(s, shape, order='F')
-
 
 def test_to_scipy_sparse():
     s = sparse.random((3, 5), density=0.5)
