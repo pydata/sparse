@@ -220,6 +220,20 @@ def test_reshape_same():
     assert s.reshape(s.shape) is s
 
 
+def test_reshape_function():
+    s = sparse.random((5, 3), density=0.5)
+    x = s.todense()
+    shape = (3, 5)
+
+    s2 = np.reshape(s, shape)
+    assert isinstance(s2, COO)
+    assert_eq(s2, x.reshape(shape))
+
+    # order parameter not actually supported
+    with pytest.raises(NotImplementedError):
+        np.reshape(s, shape, order='F')
+
+
 def test_to_scipy_sparse():
     s = sparse.random((3, 5), density=0.5)
     a = s.to_scipy_sparse()
