@@ -768,6 +768,71 @@ def eye(N, M=None, k=0, dtype=float):
                sorted=True)
 
 
+def full(shape, fill_value, dtype=None):
+    """Return a COO array of given shape and type, filled with `fill_value`.
+
+    Parameters
+    ----------
+    shape : int or tuple of ints
+        Shape of the new array, e.g., ``(2, 3)`` or ``2``.
+    fill_value : scalar
+        Fill value.
+    dtype : data-type, optional
+        The desired data-type for the array. The default, `None`, means
+        `np.array(fill_value).dtype`.
+
+    Returns
+    -------
+    out : COO
+        Array of `fill_value` with the given shape and dtype.
+
+    Examples
+    --------
+    >>> full(5, 9).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([9, 9, 9, 9, 9])
+
+    >>> full((2, 2), 9, dtype=float).todense()  # doctest: +SKIP
+    array([[9., 9.],
+           [9., 9.]])
+    """
+    from .core import COO
+
+    if dtype is None:
+        dtype = np.array(fill_value).dtype
+    if not isinstance(shape, tuple):
+        shape = (shape,)
+    data = np.empty(0, dtype=dtype)
+    coords = np.empty((len(shape), 0), dtype=np.intp)
+    return COO(coords, data=data, shape=shape,
+               fill_value=fill_value, has_duplicates=False,
+               sorted=True)
+
+
+def full_like(a, fill_value, dtype=None):
+    """Return a full array with the same shape and type as a given array.
+
+    Parameters
+    ----------
+    a : array_like
+        The shape and data-type of the result will match those of `a`.
+    dtype : data-type, optional
+        Overrides the data type of the result.
+
+    Returns
+    -------
+    out : COO
+        Array of `fill_value` with the same shape and type as `a`.
+
+    Examples
+    --------
+    >>> x = np.ones((2, 3), dtype='i8')
+    >>> full_like(x, 9.0).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[9, 9, 9],
+           [9, 9, 9]])
+    """
+    return full(a.shape, fill_value, dtype=(a.dtype if dtype is None else dtype))
+
+
 def zeros(shape, dtype=float):
     """Return a COO array of given shape and type, filled with zeros.
 
@@ -793,14 +858,7 @@ def zeros(shape, dtype=float):
     array([[0, 0],
            [0, 0]])
     """
-    from .core import COO
-
-    if not isinstance(shape, tuple):
-        shape = (shape,)
-    data = np.empty(0, dtype=dtype)
-    coords = np.empty((len(shape), 0), dtype=np.intp)
-    return COO(coords, data=data, shape=shape, has_duplicates=False,
-               sorted=True)
+    return full(shape, 0, np.dtype(dtype))
 
 
 def zeros_like(a, dtype=None):
@@ -853,14 +911,7 @@ def ones(shape, dtype=float):
     array([[1, 1],
            [1, 1]])
     """
-    from .core import COO
-
-    if not isinstance(shape, tuple):
-        shape = (shape,)
-    data = np.empty(0, dtype=dtype)
-    coords = np.empty((len(shape), 0), dtype=np.intp)
-    return COO(coords, data=data, shape=shape, fill_value=1,
-               has_duplicates=False, sorted=True)
+    return full(shape, 1, np.dtype(dtype))
 
 
 def ones_like(a, dtype=None):

@@ -27,11 +27,15 @@ API
 
     concatenate
 
-    eye
-
     dot
 
     elemwise
+
+    eye
+
+    full
+
+    full_like
 
     load_npz
 
