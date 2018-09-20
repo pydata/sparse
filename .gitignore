@@ -67,3 +67,6 @@ target/
 
 # PyCharm
 .idea/
+
+# Sandbox
+sandbox.py

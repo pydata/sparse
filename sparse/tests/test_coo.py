@@ -314,11 +314,11 @@ def test_dot_nocoercion():
         assert_eq(operator.matmul(a, lb), operator.matmul(sa, lb))
 
 
-@pytest.mark.parametrize('a_ndim', [1, 2])
-@pytest.mark.parametrize('b_ndim', [1, 2])
+@pytest.mark.parametrize('a_ndim', [1, 2, 3])
+@pytest.mark.parametrize('b_ndim', [1, 2, 3])
 def test_kron(a_ndim, b_ndim):
-    a_shape = (10, 11)[:a_ndim]
-    b_shape = (12, 13)[:b_ndim]
+    a_shape = (2, 3, 4)[:a_ndim]
+    b_shape = (5, 6, 7)[:b_ndim]
 
     sa = sparse.random(a_shape, density=0.5)
     a = sa.todense()
@@ -334,10 +334,36 @@ def test_kron(a_ndim, b_ndim):
         assert_eq(sparse.kron(a, b), sol)
 
 
-@pytest.mark.parametrize('ndim', [0, 1, 2])
+@pytest.mark.parametrize('a_spmatrix, b_spmatrix', [
+    (True, True),
+    (True, False),
+    (False, True)
+])
+def test_kron_spmatrix(a_spmatrix, b_spmatrix):
+    sa = sparse.random((3, 4), density=0.5)
+    a = sa.todense()
+    sb = sparse.random((5, 6), density=0.5)
+    b = sb.todense()
+
+    if a_spmatrix:
+        sa = sa.tocsr()
+
+    if b_spmatrix:
+        sb = sb.tocsr()
+
+    sol = np.kron(a, b)
+    assert_eq(sparse.kron(sa, sb), sol)
+    assert_eq(sparse.kron(sa, b), sol)
+    assert_eq(sparse.kron(a, sb), sol)
+
+    with pytest.raises(ValueError):
+        assert_eq(sparse.kron(a, b), sol)
+
+
+@pytest.mark.parametrize('ndim', [1, 2, 3])
 def test_kron_scalar(ndim):
     if ndim:
-        a_shape = (10, 11)[:ndim]
+        a_shape = (3, 4, 5)[:ndim]
         sa = sparse.random(a_shape, density=0.5)
         a = sa.todense()
     else:
