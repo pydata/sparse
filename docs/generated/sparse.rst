@@ -37,6 +37,8 @@ API
 
     full_like
 
+    kron
+
     load_npz
 
     nanmax

@@ -212,6 +212,78 @@ def _dot(a, b):
     return aa.dot(b)
 
 
+def kron(a, b):
+    """Kronecker product of 2 sparse arrays.
+
+    Parameters
+    ----------
+    a, b : SparseArray, scipy.sparse.spmatrix, or np.ndarray
+        The arrays over which to compute the Kronecker product.
+
+    Returns
+    -------
+    res : COO
+        The kronecker product
+
+    Raises
+    ------
+    ValueError
+        If all arguments don't have zero fill-values.
+
+    Notes
+    -----
+    Currently only arrays with ndim <= 2 are supported.
+
+    Examples
+    --------
+    >>> a = eye(3, dtype='i8')
+    >>> b = np.array([1, 2, 3], dtype='i8')
+    >>> res = kron(a, b)
+    >>> res.todense()  # doctest: +SKIP
+    array([[1, 2, 3, 0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0, 1, 2, 3]], dtype=int64)
+    """
+    from .core import COO, as_coo
+    check_zero_fill_value(a, b)
+
+    a_sparse = isinstance(a, SparseArray)
+    b_sparse = isinstance(b, SparseArray)
+    a_ndim = np.ndim(a)
+    b_ndim = np.ndim(b)
+
+    if not (a_sparse or a_ndim == 0) and not (b_sparse or b_ndim == 0):
+        raise ValueError('Performing this operation would produce a dense '
+                         'result: kron')
+
+    if a_ndim > 0:
+        a = as_coo(a)
+    if b_ndim > 0:
+        b = as_coo(b)
+
+    if a_ndim == 0 or b_ndim == 0:
+        return a * b
+    elif a_ndim > 2 or b_ndim > 2:
+        raise NotImplementedError("kron with ndim > 2 for either argument "
+                                  "is not supported")
+
+    # Determine output shape
+    a_shape = a.shape
+    b_shape = b.shape
+    if (b.ndim > a.ndim):
+        a_shape = (1,) * (b.ndim - a.ndim) + a_shape
+    elif (a.ndim > b.ndim):
+        b_shape = (1,) * (a.ndim - b.ndim) + b_shape
+    out_shape = tuple(i * j for i, j in zip(a_shape, b_shape))
+
+    # Reshape inputs to ensure 2 dimensions
+    a = a.reshape((1,) * (2 - a.ndim) + a.shape)
+    b = b.reshape((1,) * (2 - b.ndim) + b.shape)
+
+    res = scipy.sparse.kron(a.to_scipy_sparse(), b.to_scipy_sparse(), format='coo')
+    return COO.from_scipy_sparse(res).reshape(out_shape)
+
+
 def concatenate(arrays, axis=0):
     """
     Concatenate the input arrays along the given dimension.
