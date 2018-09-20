@@ -228,7 +228,7 @@ def kron(a, b):
     Raises
     ------
     ValueError
-        If all arguments don't have zero fill-values.
+        If all arguments are dense.
 
     Examples
     --------
