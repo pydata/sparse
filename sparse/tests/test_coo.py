@@ -329,7 +329,9 @@ def test_kron(a_ndim, b_ndim):
     assert_eq(sparse.kron(sa, sb), sol)
     assert_eq(sparse.kron(sa, b), sol)
     assert_eq(sparse.kron(a, sb), sol)
-    assert_eq(sparse.kron(a, b), sol)
+
+    with pytest.raises(ValueError):
+        assert_eq(sparse.kron(a, b), sol)
 
 
 @pytest.mark.parametrize('ndim', [0, 1, 2])

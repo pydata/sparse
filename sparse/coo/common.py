@@ -225,6 +225,11 @@ def kron(a, b):
     res : COO
         The kronecker product
 
+    Raises
+    ------
+    ValueError
+        If all arguments don't have zero fill-values.
+
     Notes
     -----
     Currently only arrays with ndim <= 2 are supported.
@@ -239,20 +244,28 @@ def kron(a, b):
            [0, 0, 0, 1, 2, 3, 0, 0, 0],
            [0, 0, 0, 0, 0, 0, 1, 2, 3]], dtype=int64)
     """
-    from .core import COO
+    from .core import COO, as_coo
+    check_zero_fill_value(a, b)
 
+    a_sparse = isinstance(a, SparseArray)
+    b_sparse = isinstance(b, SparseArray)
     a_ndim = np.ndim(a)
     b_ndim = np.ndim(b)
 
+    if not (a_sparse or a_ndim == 0) and not (b_sparse or b_ndim == 0):
+        raise ValueError('Performing this operation would produce a dense '
+                         'result: kron')
+
     if a_ndim > 0:
-        a = asCOO(a, name='kron', check=False)
+        a = as_coo(a)
     if b_ndim > 0:
-        b = asCOO(b, name='kron', check=False)
+        b = as_coo(b)
 
     if a_ndim == 0 or b_ndim == 0:
         return a * b
     elif a_ndim > 2 or b_ndim > 2:
-        raise NotImplementedError("kron with ndim > 2 for either argument")
+        raise NotImplementedError("kron with ndim > 2 for either argument "
+                                  "is not supported")
 
     # Determine output shape
     a_shape = a.shape
