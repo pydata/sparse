@@ -228,7 +228,7 @@ def kron(a, b):
     Raises
     ------
     ValueError
-        If all arguments are dense.
+        If all arguments are dense or arguments have nonzero fill-values.
 
     Examples
     --------
@@ -242,6 +242,7 @@ def kron(a, b):
     """
     from .core import COO
     from .umath import _cartesian_product
+    check_zero_fill_value(a, b)
 
     a_sparse = isinstance(a, (SparseArray, scipy.sparse.spmatrix))
     b_sparse = isinstance(b, (SparseArray, scipy.sparse.spmatrix))
@@ -271,7 +272,7 @@ def kron(a, b):
     o_data = a.data[a_idx] * b.data[b_idx]
     o_shape = tuple(i * j for i, j in zip(a.shape, b.shape))
 
-    return COO(o_coords, o_data, shape=o_shape, has_duplicates=False, fill_value=a.fill_value*b.fill_value)
+    return COO(o_coords, o_data, shape=o_shape, has_duplicates=False)
 
 
 def concatenate(arrays, axis=0):
