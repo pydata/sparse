@@ -314,11 +314,11 @@ def test_dot_nocoercion():
         assert_eq(operator.matmul(a, lb), operator.matmul(sa, lb))
 
 
-@pytest.mark.parametrize('a_ndim', [1, 2])
-@pytest.mark.parametrize('b_ndim', [1, 2])
+@pytest.mark.parametrize('a_ndim', [1, 2, 3])
+@pytest.mark.parametrize('b_ndim', [1, 2, 3])
 def test_kron(a_ndim, b_ndim):
-    a_shape = (10, 11)[:a_ndim]
-    b_shape = (12, 13)[:b_ndim]
+    a_shape = (3, 4, 5)[:a_ndim]
+    b_shape = (4, 5, 3)[:b_ndim]
 
     sa = sparse.random(a_shape, density=0.5)
     a = sa.todense()
@@ -334,10 +334,10 @@ def test_kron(a_ndim, b_ndim):
         assert_eq(sparse.kron(a, b), sol)
 
 
-@pytest.mark.parametrize('ndim', [0, 1, 2])
+@pytest.mark.parametrize('ndim', [1, 2, 3])
 def test_kron_scalar(ndim):
     if ndim:
-        a_shape = (10, 11)[:ndim]
+        a_shape = (3, 4, 5)[:ndim]
         sa = sparse.random(a_shape, density=0.5)
         a = sa.todense()
     else:
