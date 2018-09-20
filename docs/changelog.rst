@@ -4,7 +4,7 @@ Changelog
 Upcoming Release
 ----------------
 
-* Added :code:`sparse.kron` function (:pr:`194`).
+* Added :code:`sparse.kron` function (:pr:`194`, :pr:`195`).
 * Added :code:`order` parameter to :code:`COO.reshape` to make it work with
   :code:`np.reshape` (:pr:`193`).
 * Added :code:`COO.mean` and :code:`sparse.nanmean` (:pr:`190`).
