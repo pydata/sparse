@@ -314,6 +314,39 @@ def test_dot_nocoercion():
         assert_eq(operator.matmul(a, lb), operator.matmul(sa, lb))
 
 
+@pytest.mark.parametrize('a_ndim', [1, 2])
+@pytest.mark.parametrize('b_ndim', [1, 2])
+def test_kron(a_ndim, b_ndim):
+    a_shape = (10, 11)[:a_ndim]
+    b_shape = (12, 13)[:b_ndim]
+
+    sa = sparse.random(a_shape, density=0.5)
+    a = sa.todense()
+    sb = sparse.random(b_shape, density=0.5)
+    b = sb.todense()
+
+    sol = np.kron(a, b)
+    assert_eq(sparse.kron(sa, sb), sol)
+    assert_eq(sparse.kron(sa, b), sol)
+    assert_eq(sparse.kron(a, sb), sol)
+    assert_eq(sparse.kron(a, b), sol)
+
+
+@pytest.mark.parametrize('ndim', [0, 1, 2])
+def test_kron_scalar(ndim):
+    if ndim:
+        a_shape = (10, 11)[:ndim]
+        sa = sparse.random(a_shape, density=0.5)
+        a = sa.todense()
+    else:
+        sa = a = np.array(6)
+    scalar = np.array(5)
+
+    sol = np.kron(a, scalar)
+    assert_eq(sparse.kron(sa, scalar), sol)
+    assert_eq(sparse.kron(scalar, sa), sol)
+
+
 @pytest.mark.parametrize('func', [np.expm1, np.log1p, np.sin, np.tan,
                                   np.sinh, np.tanh, np.floor, np.ceil,
                                   np.sqrt, np.conj, np.round, np.rint,
