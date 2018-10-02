@@ -19,6 +19,8 @@ COO
       COO.nnz
       COO.size
       COO.density
+      COO.imag
+      COO.real
 
    .. rubric:: :doc:`Constructing COO objects <../construct>`
    .. autosummary::
@@ -33,6 +35,7 @@ COO
       :toctree:
 
       COO.astype
+      COO.conj
       COO.clip
       COO.round
 

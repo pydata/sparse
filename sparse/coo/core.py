@@ -1288,6 +1288,51 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         """
         return self.transpose(tuple(range(self.ndim))[::-1])
 
+    @property
+    def real(self):
+        """The real part of the array.
+
+        Examples
+        --------
+        >>> x = COO.from_numpy([1 + 0j, 0 + 1j])
+        >>> x.real.todense()  # doctest: +SKIP
+        array([1., 0.])
+        >>> x.real.dtype
+        dtype('float64')
+        """
+        return self.__array_ufunc__(np.real, '__call__', self)
+
+    @property
+    def imag(self):
+        """The imaginary part of the array.
+
+        Examples
+        --------
+        >>> x = COO.from_numpy([1 + 0j, 0 + 1j])
+        >>> x.imag.todense()  # doctest: +SKIP
+        array([0., 1.])
+        >>> x.imag.dtype
+        dtype('float64')
+        """
+        return self.__array_ufunc__(np.imag, '__call__', self)
+
+    def conj(self):
+        """Return the complex conjugate, element-wise.
+
+        The complex conjugate of a complex number is obtained by changing the
+        sign of its imaginary part.
+
+        Examples
+        --------
+        >>> x = COO.from_numpy([1 + 2j, 2 - 1j])
+        >>> res = x.conj()
+        >>> res.todense()  # doctest: +SKIP
+        array([1.-2.j, 2.+1.j])
+        >>> res.dtype
+        dtype('complex128')
+        """
+        return np.conj(self)
+
     def dot(self, other):
         """
         Performs the equivalent of :code:`x.dot(y)` for :obj:`COO`.
