@@ -1959,3 +1959,15 @@ def test_full_like():
     x = np.zeros((5, 5), dtype='i8')
     assert_eq(sparse.full_like(x, 9.5), np.full_like(x, 9.5))
     assert_eq(sparse.full_like(x, 9.5, dtype='f8'), np.full_like(x, 9.5, dtype='f8'))
+
+
+@pytest.mark.parametrize('complex', [True, False])
+def test_complex_methods(complex):
+    if complex:
+        x = np.array([1 + 2j, 2 - 1j, 0, 1, 0])
+    else:
+        x = np.array([1, 2, 0, 0, 0])
+    s = sparse.COO.from_numpy(x)
+    assert_eq(s.imag, x.imag)
+    assert_eq(s.real, x.real)
+    assert_eq(s.conj(), x.conj())
