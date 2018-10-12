@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Upcoming Release
-----------------
+0.5.0 / 2018-10-12
+------------------
 
 * Added :code:`COO.real`, `COO.imag`, and `COO.conj` (:pr:`196`).
 * Added :code:`sparse.kron` function (:pr:`194`, :pr:`195`).

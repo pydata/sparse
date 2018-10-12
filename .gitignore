@@ -65,8 +65,9 @@ _build/
 # PyBuilder
 target/
 
-# PyCharm
+# IDE
 .idea/
+.vscode/
 
 # Sandbox
 sandbox.py
