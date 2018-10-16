@@ -1971,3 +1971,10 @@ def test_complex_methods(complex):
     assert_eq(s.imag, x.imag)
     assert_eq(s.real, x.real)
     assert_eq(s.conj(), x.conj())
+
+
+def test_np_matrix():
+    x = np.random.rand(10, 1).view(type=np.matrix)
+    s = sparse.COO.from_numpy(x)
+
+    assert_eq(x, s)
