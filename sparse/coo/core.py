@@ -315,7 +315,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> COO.from_numpy(x, fill_value=np.nan)
         <COO: shape=(5, 5), dtype=float64, nnz=5, fill_value=nan>
         """
-        x = np.asanyarray(x)
+        x = np.asanyarray(x).view(type=np.ndarray)
 
         if fill_value is None:
             fill_value = _zero_of_dtype(x.dtype)
