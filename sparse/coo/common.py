@@ -153,6 +153,84 @@ def tensordot(a, b, axes=2):
         res = res.view(type=np.ndarray)
     return res.reshape(olda + oldb)
 
+def matmul(a, b):
+    """Perform the equivalent of :obj:`numpy.matmul` on two arrays.
+    
+    Parameters
+    ----------
+    a, b : Union[COO, np.ndarray, scipy.sparse.spmatrix]
+        The arrays to perform the :code:`matmul` operation on.
+
+    Returns
+    -------
+    Union[COO, numpy.ndarray]
+        The result of the operation.
+
+    Raises
+    ------
+    ValueError
+        If all arguments don't have zero fill-values, or the shape of the two arrays is not broadcastable.
+
+    See Also
+    --------
+    numpy.matmul : NumPy equivalent function.
+    COO.__matmul__ : Equivalent function for COO objects.
+    """
+    check_zero_fill_value(a, b)
+    if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
+        raise TypeError(
+            "Cannot perform dot product on types %s, %s" %
+            (type(a), type(b)))
+
+    # When one of the input is less than 2-d, it is equivalent to dot
+    if a.ndim <=2 or b.ndim <= 2:
+        return dot(a, b)
+
+    from .core import as_coo
+    if scipy.sparse.issparse(a):
+        a = as_coo(a)
+    if scipy.sparse.issparse(b):
+        b = as_coo(b)
+
+    # For matmul, left squeezing the lower dimensional input does not affect the result
+    to_squeeze = a if a.ndim < b.ndim else b
+    if np.prod(to_squeeze.shape[:-2]) == 1:
+        to_squeeze = to_squeeze.reshape(to_squeeze.shape[-2:])
+        if a.ndim < b.ndim:
+            return dot(to_squeeze, b)
+        else:
+            return dot(a, to_squeeze)
+
+    while a.ndim < b.ndim:
+        a = a[np.newaxis]
+    while a.ndim > b.ndim:
+        b = b[np.newaxis]
+    for i, j in zip(a.shape[:-2], b.shape[:-2]):
+        if i != 1 and j != 1 and i != j:
+            raise ValueError('shapes of a and b are not broadcastable')
+
+    def _dot_recurser(a, b):
+        if a.ndim == 2:
+            assert b.ndim == 2
+            if isinstance(a, SparseArray):
+                a = as_coo(a).tocsr()
+            if isinstance(b, SparseArray):
+                b = as_coo(b).tocsc()
+            return as_coo(a @ b)
+        res = []
+        for i in range(max(a.shape[0], b.shape[0])):
+            a_i = a[0] if a.shape[0] == 1 else a[i]
+            b_i = b[0] if b.shape[0] == 1 else b[i]
+            res.append(_dot_recurser(a_i, b_i))
+        mask = [isinstance(x, SparseArray) for x in res]
+        if all(mask):
+            return stack(res)
+        elif any(mask):
+            res = [x.todense() if isinstance(x, SparseArray) else x
+                   for x in res]
+        return np.stack(res)
+    return _dot_recurser(a, b)
+
 
 def dot(a, b):
     """
@@ -187,68 +265,25 @@ def dot(a, b):
     if a.ndim == 1 and b.ndim == 1:
         return (a * b).sum()
 
-    # ************************************************************
-    # Modified by Liyu Gong (gongliyu@gmail.com) 10/22/2018
-    # for fixing issue 202
-    # https://github.com/pydata/sparse/issues/202
-    # ************************************************************
-    # a_axis = -1
-    # b_axis = -2
+    a_axis = -1
+    b_axis = -2
 
-    # if b.ndim == 1:
-    #     b_axis = -1
-
-    # return tensordot(a, b, axes=(a_axis, b_axis))
     if b.ndim == 1:
-        return tensordot(a, b, axes=(-1, -1))
-
-    from .core import as_coo
-
-    if scipy.sparse.issparse(a):
-        a = as_coo(a)
-    if scipy.sparse.issparse(b):
-        b = as_coo(b)
-    while a.ndim < b.ndim:
-        a = a[np.newaxis]
-    while a.ndim > b.ndim:
-        b = b[np.newaxis]
-    for i, j in zip(a.shape[:-2], b.shape[:-2]):
-        if i != 1 and j != 1 and i != j:
-            raise ValueError('shapes of a and b are not broadcastable')
-
-    def _dot_recurser(a, b):
-        if a.ndim == 2:
-            assert b.ndim == 2
-            if isinstance(a, SparseArray):
-                a = as_coo(a).tocsr()
-            if isinstance(b, SparseArray):
-                b = as_coo(b).tocsc()
-            return as_coo(a @ b)
-        res = []
-        for i in range(max(a.shape[0], b.shape[0])):
-            a_i = a[0] if a.shape[0] == 1 else a[i]
-            b_i = b[0] if b.shape[0] == 1 else b[i]
-            res.append(_dot_recurser(a_i, b_i))
-        mask = [isinstance(x, SparseArray) for x in res]
-        if all(mask):
-            return stack(res)
-        elif any(mask):
-            res = [x.todense() if isinstance(x, SparseArray) else x
-                   for x in res]
-        return np.stack(res)
-    return _dot_recurser(a, b)
-        
+        b_axis = -1
+    return tensordot(a, b, axes=(a_axis, b_axis))        
 
 def _dot(a, b):
     from .core import COO
 
     if isinstance(b, COO) and not isinstance(a, COO):
         return _dot(b.T, a.T).T
-    aa = a.tocsr()
+
+    if isinstance(a, (COO, scipy.sparse.spmatrix)):
+        a = a.tocsr()
 
     if isinstance(b, (COO, scipy.sparse.spmatrix)):
         b = b.tocsc()
-    return aa.dot(b)
+    return a.dot(b)
 
 
 def kron(a, b):
