@@ -187,14 +187,57 @@ def dot(a, b):
     if a.ndim == 1 and b.ndim == 1:
         return (a * b).sum()
 
-    a_axis = -1
-    b_axis = -2
+    # ************************************************************
+    # Modified by Liyu Gong (gongliyu@gmail.com) 10/22/2018
+    # for fixing issue 202
+    # https://github.com/pydata/sparse/issues/202
+    # ************************************************************
+    # a_axis = -1
+    # b_axis = -2
 
+    # if b.ndim == 1:
+    #     b_axis = -1
+
+    # return tensordot(a, b, axes=(a_axis, b_axis))
     if b.ndim == 1:
-        b_axis = -1
+        return tensordot(a, b, axes=(-1, -1))
 
-    return tensordot(a, b, axes=(a_axis, b_axis))
+    from .core import as_coo
 
+    if scipy.sparse.issparse(a):
+        a = as_coo(a)
+    if scipy.sparse.issparse(b):
+        b = as_coo(b)
+    while a.ndim < b.ndim:
+        a = a[np.newaxis]
+    while a.ndim > b.ndim:
+        b = b[np.newaxis]
+    for i, j in zip(a.shape[:-2], b.shape[:-2]):
+        if i != 1 and j != 1 and i != j:
+            raise ValueError('shapes of a and b are not broadcastable')
+
+    def _dot_recurser(a, b):
+        if a.ndim == 2:
+            assert b.ndim == 2
+            if isinstance(a, SparseArray):
+                a = as_coo(a).tocsr()
+            if isinstance(b, SparseArray):
+                b = as_coo(b).tocsc()
+            return as_coo(a @ b)
+        res = []
+        for i in range(max(a.shape[0], b.shape[0])):
+            a_i = a[0] if a.shape[0] == 1 else a[i]
+            b_i = b[0] if b.shape[0] == 1 else b[i]
+            res.append(_dot_recurser(a_i, b_i))
+        mask = [isinstance(x, SparseArray) for x in res]
+        if all(mask):
+            return stack(res)
+        elif any(mask):
+            res = [x.todense() if isinstance(x, SparseArray) else x
+                   for x in res]
+        return np.stack(res)
+    return _dot_recurser(a, b)
+        
 
 def _dot(a, b):
     from .core import COO
