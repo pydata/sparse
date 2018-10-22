@@ -297,6 +297,24 @@ def test_dot(a_shape, b_shape):
         # assert_eq(eval("a @ sb"), eval("sa @ b"))
 
 
+@pytest.mark.parametrize('a_dense, b_dense, o_type', [
+    (False, False, sparse.SparseArray),
+    (False, True, np.ndarray),
+    (True, False, np.ndarray),
+])
+def test_dot_type(a_dense, b_dense, o_type):
+    a = sparse.random((3, 4), density=0.8)
+    b = sparse.random((4, 5), density=0.8)
+
+    if a_dense:
+        a = a.todense()
+
+    if b_dense:
+        b = b.todense()
+
+    assert isinstance(sparse.dot(a, b), o_type)
+
+
 @pytest.mark.xfail
 def test_dot_nocoercion():
     sa = sparse.random((3, 4, 5), density=0.5)
