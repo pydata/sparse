@@ -148,13 +148,9 @@ def tensordot(a, b, axes=2):
     bt = b.transpose(newaxes_b).reshape(newshape_b)
     res = _dot(at, bt)
     if isinstance(res, scipy.sparse.spmatrix):
-        if res.nnz > reduce(operator.mul, res.shape) / 2:
-            res = res.todense()
-        else:
-            res = COO.from_scipy_sparse(res)  # <--- modified
-            res.has_duplicates = False
-    if isinstance(res, np.matrix):
-        res = np.asarray(res)
+        res = COO.from_scipy_sparse(res)
+    else:
+        res = res.view(type=np.ndarray)
     return res.reshape(olda + oldb)
 
 
@@ -184,7 +180,7 @@ def dot(a, b):
     """
     check_zero_fill_value(a, b)
     if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
-        raise NotImplementedError(
+        raise TypeError(
             "Cannot perform dot product on types %s, %s" %
             (type(a), type(b)))
 
