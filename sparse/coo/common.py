@@ -156,7 +156,7 @@ def tensordot(a, b, axes=2):
 
 def matmul(a, b):
     """Perform the equivalent of :obj:`numpy.matmul` on two arrays.
-    
+
     Parameters
     ----------
     a, b : Union[COO, np.ndarray, scipy.sparse.spmatrix]
