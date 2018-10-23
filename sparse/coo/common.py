@@ -192,11 +192,6 @@ def matmul(a, b):
     if a.ndim <= 2 or b.ndim <= 2:
         return dot(a, b)
 
-    # if scipy.sparse.issparse(a):
-    #     a = asCOO(a)
-    # if scipy.sparse.issparse(b):
-    #     b = asCOO(b)
-
     # If a can be squeeze to a vector, use dot will be faster
     if a.ndim <= b.ndim and np.prod(a.shape[:-1]) == 1:
         res = dot(a.reshape(-1), b)
