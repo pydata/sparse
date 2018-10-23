@@ -41,6 +41,8 @@ API
 
     load_npz
 
+    matmul
+
     nanmax
 
     nanmean

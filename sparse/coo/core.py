@@ -7,7 +7,7 @@ import numpy as np
 import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
-from .common import dot
+from .common import dot, matmul
 from .indexing import getitem
 from .umath import elemwise, broadcast_to
 from ..compatibility import int, range
@@ -1405,13 +1405,13 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
     def __matmul__(self, other):
         try:
-            return dot(self, other)
+            return matmul(self, other)
         except NotImplementedError:
             return NotImplemented
 
     def __rmatmul__(self, other):
         try:
-            return dot(other, self)
+            return matmul(other, self)
         except NotImplementedError:
             return NotImplemented
 

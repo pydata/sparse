@@ -272,6 +272,49 @@ def test_tensordot(a_shape, b_shape, axes):
 
 
 @pytest.mark.parametrize('a_shape, b_shape', [
+    ((3, 1, 6, 5), (2, 1, 4, 5, 6)),
+    ((2, 1, 4, 5, 6), (3, 1, 6, 5)),
+    ((1, 1, 5), (3, 5, 6)),
+    ((3, 4, 5), (1, 5, 6)),
+    ((3, 4, 5), (3, 5, 6)),
+    ((3, 4, 5), (5, 6)),
+    ((4, 5), (5, 6)),
+    ((5,), (5, 6)),
+    ((4, 5), (5,)),
+    ((5,), (5,)),
+])
+def test_matmul(a_shape, b_shape):
+    sa = sparse.random(a_shape, density=0.5)
+    sb = sparse.random(b_shape, density=0.5)
+
+    a = sa.todense()
+    b = sb.todense()
+
+    assert_eq(np.matmul(a, b), sparse.matmul(sa, sb))
+    assert_eq(sparse.matmul(sa, b), sparse.matmul(a, sb))
+    assert_eq(sparse.matmul(a, b), sparse.matmul(sa, sb))
+
+    if a.ndim == 2 or b.ndim == 2:
+        assert_eq(
+            np.matmul(a, b),
+            sparse.matmul(scipy.sparse.coo_matrix(a) if a.ndim == 2 else sa,
+                          scipy.sparse.coo_matrix(b) if b.ndim == 2 else sb))
+
+    if hasattr(operator, 'matmul'):
+        assert_eq(operator.matmul(a, b), operator.matmul(sa, sb))
+
+
+def test_matmul_errors():
+    with pytest.raises(ValueError):
+        sa = sparse.random((3, 4, 5, 6), 0.5)
+        sb = sparse.random((3, 6, 5, 6), 0.5)
+        sparse.matmul(sa, sb)
+
+
+@pytest.mark.parametrize('a_shape, b_shape', [
+    ((1, 4, 5), (3, 5, 6)),
+    ((3, 4, 5), (1, 5, 6)),
+    ((3, 4, 5), (3, 5, 6)),
     ((3, 4, 5), (5, 6)),
     ((4, 5), (5, 6)),
     ((5,), (5, 6)),
@@ -287,11 +330,12 @@ def test_dot(a_shape, b_shape):
 
     assert_eq(a.dot(b), sa.dot(sb))
     assert_eq(np.dot(a, b), sparse.dot(sa, sb))
+    assert_eq(sparse.dot(sa, b), sparse.dot(a, sb))
+    assert_eq(sparse.dot(a, b), sparse.dot(sa, sb))
 
     if hasattr(operator, 'matmul'):
         # Basic equivalences
         assert_eq(operator.matmul(a, b), operator.matmul(sa, sb))
-
         # Test that SOO's and np.array's combine correctly
         # Not possible due to https://github.com/numpy/numpy/issues/9028
         # assert_eq(eval("a @ sb"), eval("sa @ b"))
