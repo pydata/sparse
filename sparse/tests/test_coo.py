@@ -270,6 +270,7 @@ def test_tensordot(a_shape, b_shape, axes):
 
     # assert isinstance(sparse.tensordot(a, sb, axes), COO)
 
+
 @pytest.mark.parametrize('a_shape, b_shape', [
     ((1, 4, 5), (3, 5, 6)),
     ((3, 4, 5), (1, 5, 6)),
@@ -320,10 +321,9 @@ def test_dot(a_shape, b_shape):
     if hasattr(operator, 'matmul'):
         # Basic equivalences
         assert_eq(operator.matmul(a, b), operator.matmul(sa, sb))
-        
         # Test that SOO's and np.array's combine correctly
         # Not possible due to https://github.com/numpy/numpy/issues/9028
-        #assert_eq(eval("a @ sb"), eval("sa @ b"))
+        # assert_eq(eval("a @ sb"), eval("sa @ b"))
 
 
 @pytest.mark.parametrize('a_dense, b_dense, o_type', [

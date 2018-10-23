@@ -153,6 +153,7 @@ def tensordot(a, b, axes=2):
         res = res.view(type=np.ndarray)
     return res.reshape(olda + oldb)
 
+
 def matmul(a, b):
     """Perform the equivalent of :obj:`numpy.matmul` on two arrays.
     
@@ -183,7 +184,7 @@ def matmul(a, b):
             (type(a), type(b)))
 
     # When one of the input is less than 2-d, it is equivalent to dot
-    if a.ndim <=2 or b.ndim <= 2:
+    if a.ndim <= 2 or b.ndim <= 2:
         return dot(a, b)
 
     from .core import as_coo
@@ -265,7 +266,8 @@ def dot(a, b):
 
     if b.ndim == 1:
         b_axis = -1
-    return tensordot(a, b, axes=(a_axis, b_axis))        
+    return tensordot(a, b, axes=(a_axis, b_axis))
+
 
 def _dot(a, b):
     from .core import COO
