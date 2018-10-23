@@ -193,14 +193,16 @@ def matmul(a, b):
     if scipy.sparse.issparse(b):
         b = as_coo(b)
 
-    # For matmul, left squeezing the lower dimensional input does not affect the result
-    to_squeeze = a if a.ndim < b.ndim else b
-    if np.prod(to_squeeze.shape[:-2]) == 1:
-        to_squeeze = to_squeeze.reshape(to_squeeze.shape[-2:])
-        if a.ndim < b.ndim:
-            return dot(to_squeeze, b)
-        else:
-            return dot(a, to_squeeze)
+    # If a can be squeeze to a vector, use dot will be faster
+    if a.ndim <= b.ndim and np.prod(a.shape[:-1]) == 1:
+        res = dot(a.reshape(-1), b)
+        shape = list(res.shape)
+        shape.insert(-1, 1)
+        return res.reshape(shape)
+
+    # If b can be squeeze to a matrix, use dot will be faster
+    if b.ndim <= a.ndim and np.prod(b.shape[:-2]) == 1:
+        return dot(a, b.reshape(b.shape[-2:]))
 
     while a.ndim < b.ndim:
         a = a[np.newaxis]
