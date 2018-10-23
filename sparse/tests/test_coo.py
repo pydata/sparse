@@ -294,8 +294,21 @@ def test_matmul(a_shape, b_shape):
     assert_eq(sparse.matmul(sa, b), sparse.matmul(a, sb))
     assert_eq(sparse.matmul(a, b), sparse.matmul(sa, sb))
 
+    if a.ndim == 2 or b.ndim == 2:
+        assert_eq(
+            np.matmul(a, b),
+            sparse.matmul(scipy.sparse.coo_matrix(a) if a.ndim == 2 else sa,
+                          scipy.sparse.coo_matrix(b) if b.ndim == 2 else sb))
+
     if hasattr(operator, 'matmul'):
         assert_eq(operator.matmul(a, b), operator.matmul(sa, sb))
+
+
+def test_matmul_errors():
+    with pytest.raises(ValueError):
+        sa = sparse.random((3, 4, 5, 6), 0.5)
+        sb = sparse.random((3, 6, 5, 6), 0.5)
+        sparse.matmul(sa, sb)
 
 
 @pytest.mark.parametrize('a_shape, b_shape', [

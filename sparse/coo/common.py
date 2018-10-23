@@ -86,6 +86,11 @@ def tensordot(a, b, axes=2):
     from .core import COO
     check_zero_fill_value(a, b)
 
+    if scipy.sparse.issparse(a):
+        a = asCOO(a)
+    if scipy.sparse.issparse(b):
+        b = asCOO(b)
+
     try:
         iter(axes)
     except TypeError:
@@ -187,11 +192,10 @@ def matmul(a, b):
     if a.ndim <= 2 or b.ndim <= 2:
         return dot(a, b)
 
-    from .core import as_coo
-    if scipy.sparse.issparse(a):
-        a = as_coo(a)
-    if scipy.sparse.issparse(b):
-        b = as_coo(b)
+    # if scipy.sparse.issparse(a):
+    #     a = asCOO(a)
+    # if scipy.sparse.issparse(b):
+    #     b = asCOO(b)
 
     # If a can be squeeze to a vector, use dot will be faster
     if a.ndim <= b.ndim and np.prod(a.shape[:-1]) == 1:
@@ -204,10 +208,10 @@ def matmul(a, b):
     if b.ndim <= a.ndim and np.prod(b.shape[:-2]) == 1:
         return dot(a, b.reshape(b.shape[-2:]))
 
-    while a.ndim < b.ndim:
-        a = a[np.newaxis]
-    while a.ndim > b.ndim:
-        b = b[np.newaxis]
+    if a.ndim < b.ndim:
+        a = a[(None,) * (b.ndim - a.ndim)]
+    if a.ndim > b.ndim:
+        b = b[(None,) * (a.ndim - b.ndim)]
     for i, j in zip(a.shape[:-2], b.shape[:-2]):
         if i != 1 and j != 1 and i != j:
             raise ValueError('shapes of a and b are not broadcastable')
@@ -223,10 +227,10 @@ def matmul(a, b):
         mask = [isinstance(x, SparseArray) for x in res]
         if all(mask):
             return stack(res)
-        elif any(mask):
+        else:
             res = [x.todense() if isinstance(x, SparseArray) else x
                    for x in res]
-        return np.stack(res)
+            return np.stack(res)
     return _matmul_recurser(a, b)
 
 

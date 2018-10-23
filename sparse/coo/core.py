@@ -1404,7 +1404,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         return dot(self, other)
 
     def __matmul__(self, other):
-        print('__matmul__')
         try:
             return matmul(self, other)
         except NotImplementedError:
