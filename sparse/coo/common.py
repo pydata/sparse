@@ -209,19 +209,14 @@ def matmul(a, b):
         if i != 1 and j != 1 and i != j:
             raise ValueError('shapes of a and b are not broadcastable')
 
-    def _dot_recurser(a, b):
+    def _matmul_recurser(a, b):
         if a.ndim == 2:
-            assert b.ndim == 2
-            if isinstance(a, SparseArray):
-                a = as_coo(a).tocsr()
-            if isinstance(b, SparseArray):
-                b = as_coo(b).tocsc()
-            return as_coo(a @ b)
+            return dot(a, b)
         res = []
         for i in range(max(a.shape[0], b.shape[0])):
             a_i = a[0] if a.shape[0] == 1 else a[i]
             b_i = b[0] if b.shape[0] == 1 else b[i]
-            res.append(_dot_recurser(a_i, b_i))
+            res.append(_matmul_recurser(a_i, b_i))
         mask = [isinstance(x, SparseArray) for x in res]
         if all(mask):
             return stack(res)
@@ -229,7 +224,7 @@ def matmul(a, b):
             res = [x.todense() if isinstance(x, SparseArray) else x
                    for x in res]
         return np.stack(res)
-    return _dot_recurser(a, b)
+    return _matmul_recurser(a, b)
 
 
 def dot(a, b):

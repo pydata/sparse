@@ -287,10 +287,13 @@ def test_matmul(a_shape, b_shape):
     a = sa.todense()
     b = sb.todense()
 
-    assert_eq(a @ b, sa @ sb)
     assert_eq(np.matmul(a, b), sparse.matmul(sa, sb))
     assert_eq(sparse.matmul(sa, b), sparse.matmul(a, sb))
     assert_eq(sparse.matmul(a, b), sparse.matmul(sa, sb))
+
+    if hasattr(operator, 'matmul'):
+        assert_eq(operator.matmul(a, b), operator.matmul(sa, sb))
+
 
 @pytest.mark.parametrize('a_shape, b_shape', [
     ((1, 4, 5), (3, 5, 6)),
