@@ -415,6 +415,7 @@ class _Elemwise(object):
 
         self.args = tuple(processed_args)
         self.func = func
+        self.dtype = kwargs.pop('dtype', None)
         self.kwargs = kwargs
         self.cache = {}
 
@@ -464,7 +465,13 @@ class _Elemwise(object):
         from .core import COO
 
         zero_args = tuple(arg.fill_value[...] if isinstance(arg, COO) else arg for arg in self.args)
-        fill_value_array = self.func(*zero_args, **self.kwargs)
+
+        # Some elemwise functions require a dtype argument, some abhorr it.
+        try:
+            fill_value_array = self.func(*zero_args, dtype=self.dtype, **self.kwargs)
+            self.dtype = None
+        except TypeError:
+            fill_value_array = self.func(*zero_args, **self.kwargs)
 
         try:
             fill_value = fill_value_array[(0,) * fill_value_array.ndim]
@@ -477,7 +484,12 @@ class _Elemwise(object):
             raise ValueError('Inconsistent fill-values in the result array: operating on the ndarray with'
                              'fill-values produces inconsistent results.')
 
+        # Store dtype separately if needed.
+        if self.dtype is not None:
+            fill_value = fill_value.astype(self.dtype)
+
         self.fill_value = fill_value
+        self.dtype = self.fill_value.dtype
 
     def _check_broadcast(self):
         """
@@ -542,7 +554,17 @@ class _Elemwise(object):
             else:
                 func_args.append(arg.fill_value)
 
-        func_data = self.func(*func_args, **self.kwargs)
+        # Try our best to preserve the output dtype.
+        try:
+            func_data = self.func(*func_args, dtype=self.dtype, **self.kwargs)
+        except TypeError:
+            try:
+                func_args = np.broadcast_arrays(*func_args)
+                out = np.empty(func_args[0].shape, dtype=self.dtype)
+                func_data = self.func(*func_args, out=out, **self.kwargs)
+            except TypeError:
+                func_data = self.func(*func_args, **self.kwargs)
+
         unmatched_mask = ~equivalent(func_data, self.fill_value)
 
         if not unmatched_mask.any():

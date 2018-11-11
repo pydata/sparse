@@ -1420,6 +1420,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         if out is not None and not all(isinstance(x, COO) for x in out):
             return NotImplemented
 
+        if out is not None:
+            kwargs['dtype'] = out[0].dtype
+
         if method == '__call__':
             result = elemwise(ufunc, *inputs, **kwargs)
         elif method == 'reduce':
