@@ -2040,3 +2040,13 @@ def test_np_matrix():
     s = sparse.COO.from_numpy(x)
 
     assert_eq(x, s)
+
+
+def test_out_dtype():
+    a = sparse.eye(5, dtype='float32')
+    b = sparse.eye(5, dtype='float64')
+
+    assert np.positive(a, out=b).dtype == \
+        np.positive(a.todense(), out=b.todense()).dtype
+    assert np.positive(a, out=b, dtype='float64').dtype == \
+        np.positive(a.todense(), out=b.todense(), dtype='float64').dtype
