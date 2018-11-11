@@ -563,7 +563,7 @@ class _Elemwise(object):
                 out = np.empty(func_args[0].shape, dtype=self.dtype)
                 func_data = self.func(*func_args, out=out, **self.kwargs)
             except TypeError:
-                func_data = self.func(*func_args, **self.kwargs)
+                func_data = self.func(*func_args, **self.kwargs).astype(self.dtype)
 
         unmatched_mask = ~equivalent(func_data, self.fill_value)
 
