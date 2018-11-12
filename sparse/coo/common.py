@@ -7,7 +7,7 @@ import numpy as np
 import scipy.sparse
 
 from ..sparse_array import SparseArray
-from ..compatibility import range
+from ..compatibility import range, int
 from ..utils import isscalar, normalize_axis, check_zero_fill_value, check_consistent_fill_value
 
 
@@ -48,7 +48,7 @@ def asCOO(x, name='asCOO', check=True):
 def linear_loc(coords, shape):
     out = np.zeros(coords.shape[1], dtype=np.intp)
     tmp = np.zeros(coords.shape[1], dtype=np.intp)
-    strides = 1
+    strides = int(1)
     for i, d in enumerate(shape[::-1]):
         np.multiply(coords[-(i + 1), :], strides, out=tmp)
         np.add(tmp, out, out=out)

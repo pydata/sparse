@@ -697,8 +697,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             neg_axis = tuple(ax for ax in range(self.ndim) if ax not in set(axis))
 
             a = self.transpose(neg_axis + axis)
-            a = a.reshape((np.prod([self.shape[d] for d in neg_axis]),
-                           np.prod([self.shape[d] for d in axis])))
+            a = a.reshape((np.prod([self.shape[d] for d in neg_axis], dtype=np.intp),
+                           np.prod([self.shape[d] for d in axis], dtype=np.intp)))
 
             result, inv_idx, counts = _grouped_reduce(a.data, a.coords[0], method, **kwargs)
             missing_counts = counts != a.shape[1]

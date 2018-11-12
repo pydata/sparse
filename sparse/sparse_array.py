@@ -6,6 +6,7 @@ from functools import reduce
 import operator
 
 from .utils import _zero_of_dtype
+from .compatibility import int
 
 
 class SparseArray(object):
