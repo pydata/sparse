@@ -14,5 +14,5 @@ else:
     from itertools import izip_longest as zip_longest
     from itertools import izip as zip
 
-    int = long
+    int = int
     range = xrange
