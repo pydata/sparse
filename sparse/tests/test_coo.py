@@ -2052,12 +2052,14 @@ def test_out_dtype():
     assert np.positive(a, out=b, dtype='float64').dtype == \
         np.positive(a.todense(), out=b.todense(), dtype='float64').dtype
 
-@pytest.mark.skipif(sys.version_info[0] == 2)
+
+@pytest.mark.skipif(sys.version_info[0] == 2, reason='Test won\'t run on Py2.')
 def test_failed_densification():
     import os
     from importlib import reload
 
     os.environ['SPARSE_AUTO_DENSIFY'] = '0'
+    reload(sparse)
 
     with pytest.raises(RuntimeError):
         s = sparse.random((3, 4, 5), density=0.5)
