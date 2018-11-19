@@ -38,7 +38,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         duplicates may result in undefined behaviour. See :obj:`COO.sum_duplicates`
     sorted : bool, optional
         A value indicating whether the values in `coords` are sorted. Note
-        that setting this to `False` when :code:`coords` isn't sorted may
+        that setting this to `True` when :code:`coords` isn't sorted may
         result in undefined behaviour. See :obj:`COO.sort_indices`.
     cache : bool, optional
         Whether to enable cacheing for various operations. See
