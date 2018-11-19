@@ -1,5 +1,6 @@
 import operator
 import pickle
+import sys
 
 import numpy as np
 import pytest
@@ -2051,16 +2052,12 @@ def test_out_dtype():
     assert np.positive(a, out=b, dtype='float64').dtype == \
         np.positive(a.todense(), out=b.todense(), dtype='float64').dtype
 
-
+@pytest.mark.skipif(sys.version_info[0] == 2)
 def test_failed_densification():
     import os
-    os.environ['SPARSE_AUTO_DENSIFY'] = '0'
+    from importlib import reload
 
-    try:
-        reload(sparse)
-    except NameError:
-        from importlib import reload
-        reload(sparse)
+    os.environ['SPARSE_AUTO_DENSIFY'] = '0'
 
     with pytest.raises(RuntimeError):
         s = sparse.random((3, 4, 5), density=0.5)
