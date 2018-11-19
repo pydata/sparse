@@ -250,6 +250,14 @@ work like NumPy:
    z[1, 4, [3, 6]]
    z[:3, :2, [1, 5]]
 
+
+Auto-Densification
+------------------
+
+By default, when performing something like ``np.array(COO)``, we allow the array
+to be converted into a dense one. To prevent this and raise a :obj:`RuntimeError`
+instead, set the environment variable ``SPARSE_AUTO_DENSIFY`` to ``0``.
+
 .. _operations-other:
 
 Other Operations
