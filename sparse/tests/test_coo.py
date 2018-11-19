@@ -2053,14 +2053,14 @@ def test_out_dtype():
 
 
 def test_failed_densification():
-    try:
-        from importlib import reload
-    except ImportError:
-        pass
     import os
-
     os.environ['SPARSE_AUTO_DENSIFY'] = '0'
-    reload(sparse)
+
+    try:
+        reload(sparse)
+    except NameError:
+        from importlib import reload
+        reload(sparse)
 
     with pytest.raises(RuntimeError):
         s = sparse.random((3, 4, 5), density=0.5)
