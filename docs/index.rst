@@ -1,6 +1,11 @@
 Sparse
 ======
 
+.. image:: logo.png
+   :alt: Logo
+   :align: center
+   :width: 20em
+
 This implements sparse arrays of arbitrary dimension on top of :obj:`numpy` and :obj:`scipy.sparse`.
 It generalizes the :obj:`scipy.sparse.coo_matrix` and :obj:`scipy.sparse.dok_matrix` layouts,
 but extends beyond just rows and columns to an arbitrary number of dimensions.
