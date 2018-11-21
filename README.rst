@@ -3,6 +3,11 @@ Sparse Multidimensional Arrays
 
 |Build Status| |Docs Status| |Coverage|
 
+.. image:: docs/logo.png
+   :alt: Logo
+   :align: center
+   :width: 20em   
+
 This library provides multi-dimensional sparse arrays.
 
 * `Documentation <https://sparse.pydata.org/>`_
