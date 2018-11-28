@@ -88,6 +88,7 @@ This library is licensed under BSD-3
    construct
    operations
    generated/sparse
+   roadmap
    contributing
    changelog
 
