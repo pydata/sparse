@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 from abc import ABCMeta, abstractmethod
-from collections import Iterable
+from collections.abc import Iterable
 from numbers import Integral
 from functools import reduce
 import operator

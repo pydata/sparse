@@ -1,5 +1,5 @@
 import functools
-from collections import Iterable
+from collections.abc import Iterable
 from numbers import Integral
 
 import numpy as np

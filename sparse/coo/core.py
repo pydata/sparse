@@ -1,7 +1,9 @@
 import copy as _copy
 import operator
-from collections import Iterable, Iterator, Sized, defaultdict, deque
+from collections.abc import Iterable, Iterator, Sized
+from collections import defaultdict, deque
 from functools import reduce
+import warnings
 
 import numpy as np
 import scipy.sparse
@@ -233,6 +235,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):
                 raise ValueError(msg.format(len(shape),
                                             self.coords.shape[0],
                                             self.coords.shape))
+
+        from .. import _AUTO_WARN_ON_TOO_DENSE
+        if _AUTO_WARN_ON_TOO_DENSE and self.nbytes >= self.size * self.data.itemsize:
+            warnings.warn("Attempting to create a sparse array that takes no less "
+                          "memory than than an equivalent dense array. You may want to "
+                          "use a dense array here instead.", RuntimeWarning)
 
         if not sorted:
             self._sort_indices()

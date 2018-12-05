@@ -11,5 +11,6 @@ del get_versions
 import os
 
 _AUTO_DENSIFICATION_ENABLED = bool(int(os.environ.get('SPARSE_AUTO_DENSIFY', '1')))
+_AUTO_WARN_ON_TOO_DENSE = bool(int(os.environ.get('SPARSE_WARN_ON_TOO_DENSE', '0')))
 
 del os
