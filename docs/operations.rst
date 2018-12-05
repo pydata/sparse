@@ -251,12 +251,16 @@ work like NumPy:
    z[:3, :2, [1, 5]]
 
 
-Auto-Densification
-------------------
+Package Configuration
+---------------------
 
 By default, when performing something like ``np.array(COO)``, we allow the array
 to be converted into a dense one. To prevent this and raise a :obj:`RuntimeError`
 instead, set the environment variable ``SPARSE_AUTO_DENSIFY`` to ``0``.
+
+If it is desired to raise a warning if creating a sparse array that takes no less
+memory than an equivalent desne array, set the environment variable
+``SPARSE_WARN_ON_TOO_DENSE`` to ``1``.
 
 .. _operations-other:
 
