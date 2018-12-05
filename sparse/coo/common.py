@@ -1,7 +1,7 @@
 from functools import reduce
 import operator
 import warnings
-import collections
+from collections import Iterable
 
 import numpy as np
 import scipy.sparse
@@ -870,7 +870,7 @@ def roll(a, shift, axis=None):
             axis = (axis,)
 
         # make shift iterable
-        if not isinstance(shift, collections.Iterable):
+        if not isinstance(shift, Iterable):
             shift = (shift,)
 
         elif np.ndim(shift) > 1:

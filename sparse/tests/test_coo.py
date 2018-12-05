@@ -2067,3 +2067,18 @@ def test_failed_densification():
 
     del os.environ['SPARSE_AUTO_DENSIFY']
     reload(sparse)
+
+
+@pytest.mark.skipif(sys.version_info[0] == 2, reason='Test won\'t run on Py2.')
+def test_warn_on_too_dense():
+    import os
+    from importlib import reload
+
+    os.environ['SPARSE_WARN_ON_TOO_DENSE'] = '1'
+    reload(sparse)
+
+    with pytest.warns(RuntimeWarning):
+        sparse.random((3, 4, 5), density=1.0)
+
+    del os.environ['SPARSE_WARN_ON_TOO_DENSE']
+    reload(sparse)
