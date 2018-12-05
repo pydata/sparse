@@ -3,7 +3,7 @@
 
 import math
 from numbers import Integral, Number
-from collections.abc import Iterable
+from collections import Iterable
 
 import numpy as np
 

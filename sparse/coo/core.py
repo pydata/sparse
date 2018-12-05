@@ -1,6 +1,6 @@
 import copy as _copy
 import operator
-from collections.abc import Iterable, Iterator, Sized
+from collections import Iterable, Iterator, Sized
 from collections import defaultdict, deque
 from functools import reduce
 import warnings

@@ -1,7 +1,7 @@
 from functools import reduce
 import operator
 import warnings
-from collections.abc import Iterable
+from collections import Iterable
 
 import numpy as np
 import scipy.sparse
