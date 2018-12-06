@@ -149,6 +149,11 @@ def tensordot(a, b, axes=2):
     newshape_b = (N2, -1)
     oldb = [bs[axis] for axis in notin]
 
+    # if either a or b is all zeros, we can just return a zeros COO
+    if ((isinstance(a, (COO, scipy.sparse.spmatrix)) and a.nnz == 0) or
+        (isinstance(b, (COO, scipy.sparse.spmatrix)) and b.nnz == 0)):
+        return zeros(tuple(olda + oldb))
+
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)
     res = _dot(at, bt)
