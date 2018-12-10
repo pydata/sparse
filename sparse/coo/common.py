@@ -1226,6 +1226,9 @@ def _dot_coo_coo_type(dt1, dt2):
             while didx1 < len(data1) and coords1[0, didx1] == oidx1:
                 didx1 += 1
 
+        if len(data_out) == 0:
+            return np.empty((2, 0), dtype=np.intp), np.empty((0,), dtype=dtr)
+
         return np.array(coords_out).T, np.array(data_out)
 
     return _dot_coo_coo
