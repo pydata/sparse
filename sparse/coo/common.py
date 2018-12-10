@@ -1172,8 +1172,10 @@ def _memoize_dtype(f):
 
 @_memoize_dtype
 def _dot_coo_coo_type(dt1, dt2):
+    dtr = np.result_type(dt1, dt2)
+
     @numba.jit(nopython=True, nogil=True,
-               locals={'data_curr': numba.numpy_support.from_dtype(np.result_type(dt1, dt2))})
+               locals={'data_curr': numba.numpy_support.from_dtype(dtr)})
     def _dot_coo_coo(coords1, data1, coords2, data2):  # pragma: no cover
         """
         Utility function taking in two ``COO`` objects and calculating a "sense"
@@ -1198,7 +1200,7 @@ def _dot_coo_coo_type(dt1, dt2):
 
             while didx2 < len(data2) and didx1 < len(data1) and coords1[0, didx1] == oidx1:
                 oidx2 = coords2[0, didx2]
-                data_curr = 0
+                data_curr = np.zeros((), dtype=dtr)[()]
 
                 while didx2 < len(data2) and didx1 < len(data1) and \
                         coords2[0, didx2] == oidx2 and coords1[0, didx1] == oidx1:
