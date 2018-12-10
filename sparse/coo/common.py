@@ -268,10 +268,6 @@ def dot(a, b):
 
 def _dot(a, b):
     from .core import COO
-
-    if a.shape[1] != b.shape[0]:
-        raise ValueError('Shape mismatch during dot product.')
-
     out_shape = (a.shape[0], b.shape[1])
     if isinstance(a, COO) and isinstance(b, COO):
         b = b.T
