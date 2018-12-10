@@ -1,4 +1,4 @@
-from functools import reduce
+from functools import reduce, wraps
 import operator
 import warnings
 from collections import Iterable
@@ -84,7 +84,6 @@ def tensordot(a, b, axes=2):
     """
     # Much of this is stolen from numpy/core/numeric.py::tensordot
     # Please see license at https://github.com/numpy/numpy/blob/master/LICENSE.txt
-    from .core import COO
     check_zero_fill_value(a, b)
 
     if scipy.sparse.issparse(a):
@@ -153,10 +152,6 @@ def tensordot(a, b, axes=2):
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)
     res = _dot(at, bt)
-    if isinstance(res, scipy.sparse.spmatrix):
-        res = COO.from_scipy_sparse(res)
-    elif isinstance(res, np.ndarray):
-        res = res.view(type=np.ndarray)
     return res.reshape(olda + oldb)
 
 
@@ -274,21 +269,26 @@ def dot(a, b):
 def _dot(a, b):
     from .core import COO
 
+    if a.shape[1] != b.shape[0]:
+        raise ValueError('Shape mismatch during dot product.')
+
+    out_shape = (a.shape[0], b.shape[1])
     if isinstance(a, COO) and isinstance(b, COO):
         b = b.T
         coords, data = _dot_coo_coo_type(a.dtype, b.dtype)(a.coords, a.data, b.coords, b.data)
 
-        return COO(coords, data, shape=(a.shape[0], b.shape[0]), has_duplicates=False, sorted=True)
+        return COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
 
-    if isinstance(b, COO) and not isinstance(a, COO):
-        return _dot(b.T, a.T).T
+    if isinstance(a, COO) and isinstance(b, np.ndarray):
+        b = b.view(type=np.ndarray).T
+        return _dot_coo_ndarray_type(a.dtype, b.dtype)(a.coords, a.data, b, out_shape)
 
-    if isinstance(a, (COO, scipy.sparse.spmatrix)):
-        a = a.tocsr()
+    if isinstance(a, np.ndarray) and isinstance(b, COO):
+        b = b.T
+        a = a.view(type=np.ndarray)
+        return _dot_ndarray_coo_type(a.dtype, b.dtype)(a, b.coords, b.data, out_shape)
 
-    if isinstance(b, (COO, scipy.sparse.spmatrix)):
-        b = b.tocsc()
-    return a.dot(b)
+    raise TypeError('One or both of the arguments must be sparse.')
 
 
 def kron(a, b):
@@ -1135,13 +1135,24 @@ def ones_like(a, dtype=None):
     return ones(a.shape, dtype=(a.dtype if dtype is None else dtype))
 
 
-_MEMOIZE_dot_coo_coo = {}
+def _memoize_dtype(f):
+    cache = {}
+
+    @wraps(f)
+    def wrapped(*args):
+        key = tuple(arg.name for arg in args)
+        if key in cache:
+            return cache[key]
+
+        result = f(*args)
+        cache[key] = result
+        return result
+
+    return wrapped
 
 
+@_memoize_dtype
 def _dot_coo_coo_type(dt1, dt2):
-    if (dt1.name, dt2.name) in _MEMOIZE_dot_coo_coo:
-        return _MEMOIZE_dot_coo_coo[dt1.name, dt2.name]
-
     @numba.jit(nopython=True, nogil=True,
                locals={'data_curr': numba.numpy_support.from_dtype(np.result_type(dt1, dt2))})
     def _dot_coo_coo(coords1, data1, coords2, data2):  # pragma: no cover
@@ -1184,5 +1195,46 @@ def _dot_coo_coo_type(dt1, dt2):
 
         return np.array(coords_out).T, np.array(data_out)
 
-    _MEMOIZE_dot_coo_coo[dt1.name, dt2.name] = _dot_coo_coo
     return _dot_coo_coo
+
+
+@_memoize_dtype
+def _dot_coo_ndarray_type(dt1, dt2):
+    dtr = np.result_type(dt1, dt2)
+
+    @numba.jit(nopython=True, nogil=True)
+    def _dot_coo_ndarray(coords1, data1, array2, out_shape):  # pragma: no cover
+        out = np.zeros(out_shape, dtype=dtr)
+        didx1 = 0
+
+        while didx1 < len(data1):
+            oidx1 = coords1[0, didx1]
+            didx1_curr = didx1
+
+            for oidx2 in range(out_shape[1]):
+                didx1 = didx1_curr
+                while didx1 < len(data1) and coords1[0, didx1] == oidx1:
+                    out[oidx1, oidx2] += data1[didx1] * array2[oidx2, coords1[1, didx1]]
+                    didx1 += 1
+
+        return out
+
+    return _dot_coo_ndarray
+
+
+@_memoize_dtype
+def _dot_ndarray_coo_type(dt1, dt2):
+    dtr = np.result_type(dt1, dt2)
+
+    @numba.jit(nopython=True, nogil=True)
+    def _dot_ndarray_coo(array1, coords2, data2, out_shape):  # pragma: no cover
+        out = np.zeros(out_shape, dtype=dtr)
+
+        for oidx1 in range(out_shape[0]):
+            for didx2 in range(len(data2)):
+                oidx2 = coords2[0, didx2]
+                out[oidx1, oidx2] += array1[oidx1, coords2[1, didx2]] * data2[didx2]
+
+        return out
+
+    return _dot_ndarray_coo

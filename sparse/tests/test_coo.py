@@ -293,7 +293,7 @@ def test_matmul(a_shape, b_shape):
 
     assert_eq(np.matmul(a, b), sparse.matmul(sa, sb))
     assert_eq(sparse.matmul(sa, b), sparse.matmul(a, sb))
-    assert_eq(sparse.matmul(a, b), sparse.matmul(sa, sb))
+    assert_eq(np.matmul(a, b), sparse.matmul(sa, sb))
 
     if a.ndim == 2 or b.ndim == 2:
         assert_eq(
@@ -332,7 +332,7 @@ def test_dot(a_shape, b_shape):
     assert_eq(a.dot(b), sa.dot(sb))
     assert_eq(np.dot(a, b), sparse.dot(sa, sb))
     assert_eq(sparse.dot(sa, b), sparse.dot(a, sb))
-    assert_eq(sparse.dot(a, b), sparse.dot(sa, sb))
+    assert_eq(np.dot(a, b), sparse.dot(sa, sb))
 
     if hasattr(operator, 'matmul'):
         # Basic equivalences
