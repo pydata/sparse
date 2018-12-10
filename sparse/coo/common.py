@@ -1200,7 +1200,7 @@ def _dot_coo_coo_type(dt1, dt2):
 
             while didx2 < len(data2) and didx1 < len(data1) and coords1[0, didx1] == oidx1:
                 oidx2 = coords2[0, didx2]
-                data_curr = np.zeros((), dtype=dtr)[()]
+                data_curr = 0
 
                 while didx2 < len(data2) and didx1 < len(data1) and \
                         coords2[0, didx2] == oidx2 and coords1[0, didx1] == oidx1:
