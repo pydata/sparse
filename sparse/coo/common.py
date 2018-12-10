@@ -1134,6 +1134,27 @@ def ones_like(a, dtype=None):
 
 
 def _memoize_dtype(f):
+    """
+    Memoizes a function taking in NumPy dtypes.
+
+    Parameters
+    ----------
+    f : Callable
+
+    Returns
+    -------
+    wrapped : Callable
+
+    Examples
+    --------
+    >>> def func(dt1):
+    ...     return object()
+    >>> func = _memoize_dtype(func)
+    >>> func(np.dtype('i8')) is func(np.dtype('int64'))
+    True
+    >>> func(np.dtype('i8')) is func(np.dtype('i4'))
+    False
+    """
     cache = {}
 
     @wraps(f)
@@ -1154,6 +1175,18 @@ def _dot_coo_coo_type(dt1, dt2):
     @numba.jit(nopython=True, nogil=True,
                locals={'data_curr': numba.numpy_support.from_dtype(np.result_type(dt1, dt2))})
     def _dot_coo_coo(coords1, data1, coords2, data2):  # pragma: no cover
+        """
+        Utility function taking in two ``COO`` objects and calculating a "sense"
+        of their dot product. Acually computes ``s1 @ s2.T``.
+
+        Parameters
+        ----------
+        data1, coords1 : np.ndarray
+            The data and coordinates of ``s1``.
+
+        data2, coords2 : np.ndarray
+            The data and coordinates of ``s2``.
+        """
         coords_out = []
         data_out = []
         didx1 = 0
@@ -1202,6 +1235,22 @@ def _dot_coo_ndarray_type(dt1, dt2):
 
     @numba.jit(nopython=True, nogil=True)
     def _dot_coo_ndarray(coords1, data1, array2, out_shape):  # pragma: no cover
+        """
+        Utility function taking in one `COO` and one ``ndarray`` and
+        calculating a "sense" of their dot product. Acually computes
+        ``s1 @ x2.T``.
+
+        Parameters
+        ----------
+        data1, coords1 : np.ndarray
+            The data and coordinates of ``s1``.
+
+        array2 : np.ndarray
+            The second input array ``x2``.
+
+        out_shape : Tuple[int]
+            The output shape.
+        """
         out = np.zeros(out_shape, dtype=dtr)
         didx1 = 0
 
@@ -1226,6 +1275,21 @@ def _dot_ndarray_coo_type(dt1, dt2):
 
     @numba.jit(nopython=True, nogil=True)
     def _dot_ndarray_coo(array1, coords2, data2, out_shape):  # pragma: no cover
+        """
+        Utility function taking in two one ``ndarray`` and one ``COO`` and
+        calculating a "sense" of their dot product. Acually computes ``x1 @ s2.T``.
+
+        Parameters
+        ----------
+        array1 : np.ndarray
+            The input array ``x1``.
+
+        data2, coords2 : np.ndarray
+            The data and coordinates of ``s2``.
+
+        out_shape : Tuple[int]
+            The output shape.
+        """
         out = np.zeros(out_shape, dtype=dtr)
 
         for oidx1 in range(out_shape[0]):
