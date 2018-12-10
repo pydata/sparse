@@ -5,6 +5,7 @@ from collections import Iterable
 
 import numpy as np
 import scipy.sparse
+import numba
 
 from ..sparse_array import SparseArray
 from ..compatibility import range, int
@@ -154,7 +155,7 @@ def tensordot(a, b, axes=2):
     res = _dot(at, bt)
     if isinstance(res, scipy.sparse.spmatrix):
         res = COO.from_scipy_sparse(res)
-    else:
+    elif isinstance(res, np.ndarray):
         res = res.view(type=np.ndarray)
     return res.reshape(olda + oldb)
 
@@ -272,6 +273,12 @@ def dot(a, b):
 
 def _dot(a, b):
     from .core import COO
+
+    if isinstance(a, COO) and isinstance(b, COO):
+        b = b.T
+        coords, data = _dot_coo_coo_type(a.dtype, b.dtype)(a.coords, a.data, b.coords, b.data)
+
+        return COO(coords, data, shape=(a.shape[0], b.shape[0]), has_duplicates=False, sorted=True)
 
     if isinstance(b, COO) and not isinstance(a, COO):
         return _dot(b.T, a.T).T
@@ -1126,3 +1133,56 @@ def ones_like(a, dtype=None):
            [1, 1, 1]])
     """
     return ones(a.shape, dtype=(a.dtype if dtype is None else dtype))
+
+
+_MEMOIZE_dot_coo_coo = {}
+
+
+def _dot_coo_coo_type(dt1, dt2):
+    if (dt1.name, dt2.name) in _MEMOIZE_dot_coo_coo:
+        return _MEMOIZE_dot_coo_coo[dt1.name, dt2.name]
+
+    @numba.jit(nopython=True, nogil=True,
+               locals={'data_curr': numba.numpy_support.from_dtype(np.result_type(dt1, dt2))})
+    def _dot_coo_coo(coords1, data1, coords2, data2):  # pragma: no cover
+        coords_out = []
+        data_out = []
+        didx1 = 0
+
+        while didx1 < len(data1):
+            oidx1 = coords1[0, didx1]
+            didx2 = 0
+            didx1_curr = didx1
+
+            while didx2 < len(data2) and didx1 < len(data1) and coords1[0, didx1] == oidx1:
+                oidx2 = coords2[0, didx2]
+                data_curr = 0
+
+                while didx2 < len(data2) and didx1 < len(data1) and \
+                        coords2[0, didx2] == oidx2 and coords1[0, didx1] == oidx1:
+                    if coords1[1, didx1] < coords2[1, didx2]:
+                        didx1 += 1
+                    elif coords1[1, didx1] > coords2[1, didx2]:
+                        didx2 += 1
+                    else:
+                        data_curr += data1[didx1] * data2[didx2]
+                        didx1 += 1
+                        didx2 += 1
+
+                while didx2 < len(data2) and coords2[0, didx2] == oidx2:
+                    didx2 += 1
+
+                if didx2 < len(data2):
+                    didx1 = didx1_curr
+
+                if data_curr != 0:
+                    coords_out.append([oidx1, oidx2])
+                    data_out.append(data_curr)
+
+            while didx1 < len(data1) and coords1[0, didx1] == oidx1:
+                didx1 += 1
+
+        return np.array(coords_out).T, np.array(data_out)
+
+    _MEMOIZE_dot_coo_coo[dt1.name, dt2.name] = _dot_coo_coo
+    return _dot_coo_coo
