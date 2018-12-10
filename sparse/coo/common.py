@@ -288,8 +288,6 @@ def _dot(a, b):
         a = a.view(type=np.ndarray)
         return _dot_ndarray_coo_type(a.dtype, b.dtype)(a, b.coords, b.data, out_shape)
 
-    raise TypeError('One or both of the arguments must be sparse.')
-
 
 def kron(a, b):
     """Kronecker product of 2 sparse arrays.
