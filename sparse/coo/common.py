@@ -1,10 +1,11 @@
-from functools import reduce
+from functools import reduce, wraps
 import operator
 import warnings
 from collections import Iterable
 
 import numpy as np
 import scipy.sparse
+import numba
 
 from ..sparse_array import SparseArray
 from ..compatibility import range, int
@@ -83,7 +84,6 @@ def tensordot(a, b, axes=2):
     """
     # Much of this is stolen from numpy/core/numeric.py::tensordot
     # Please see license at https://github.com/numpy/numpy/blob/master/LICENSE.txt
-    from .core import COO
     check_zero_fill_value(a, b)
 
     if scipy.sparse.issparse(a):
@@ -152,10 +152,6 @@ def tensordot(a, b, axes=2):
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)
     res = _dot(at, bt)
-    if isinstance(res, scipy.sparse.spmatrix):
-        res = COO.from_scipy_sparse(res)
-    else:
-        res = res.view(type=np.ndarray)
     return res.reshape(olda + oldb)
 
 
@@ -272,16 +268,21 @@ def dot(a, b):
 
 def _dot(a, b):
     from .core import COO
+    out_shape = (a.shape[0], b.shape[1])
+    if isinstance(a, COO) and isinstance(b, COO):
+        b = b.T
+        coords, data = _dot_coo_coo_type(a.dtype, b.dtype)(a.coords, a.data, b.coords, b.data)
 
-    if isinstance(b, COO) and not isinstance(a, COO):
-        return _dot(b.T, a.T).T
+        return COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
 
-    if isinstance(a, (COO, scipy.sparse.spmatrix)):
-        a = a.tocsr()
+    if isinstance(a, COO) and isinstance(b, np.ndarray):
+        b = b.view(type=np.ndarray).T
+        return _dot_coo_ndarray_type(a.dtype, b.dtype)(a.coords, a.data, b, out_shape)
 
-    if isinstance(b, (COO, scipy.sparse.spmatrix)):
-        b = b.tocsc()
-    return a.dot(b)
+    if isinstance(a, np.ndarray) and isinstance(b, COO):
+        b = b.T
+        a = a.view(type=np.ndarray)
+        return _dot_ndarray_coo_type(a.dtype, b.dtype)(a, b.coords, b.data, out_shape)
 
 
 def kron(a, b):
@@ -1126,3 +1127,177 @@ def ones_like(a, dtype=None):
            [1, 1, 1]])
     """
     return ones(a.shape, dtype=(a.dtype if dtype is None else dtype))
+
+
+def _memoize_dtype(f):
+    """
+    Memoizes a function taking in NumPy dtypes.
+
+    Parameters
+    ----------
+    f : Callable
+
+    Returns
+    -------
+    wrapped : Callable
+
+    Examples
+    --------
+    >>> def func(dt1):
+    ...     return object()
+    >>> func = _memoize_dtype(func)
+    >>> func(np.dtype('i8')) is func(np.dtype('int64'))
+    True
+    >>> func(np.dtype('i8')) is func(np.dtype('i4'))
+    False
+    """
+    cache = {}
+
+    @wraps(f)
+    def wrapped(*args):
+        key = tuple(arg.name for arg in args)
+        if key in cache:
+            return cache[key]
+
+        result = f(*args)
+        cache[key] = result
+        return result
+
+    return wrapped
+
+
+@_memoize_dtype
+def _dot_coo_coo_type(dt1, dt2):
+    dtr = np.result_type(dt1, dt2)
+
+    @numba.jit(nopython=True, nogil=True,
+               locals={'data_curr': numba.numpy_support.from_dtype(dtr)})
+    def _dot_coo_coo(coords1, data1, coords2, data2):  # pragma: no cover
+        """
+        Utility function taking in two ``COO`` objects and calculating a "sense"
+        of their dot product. Acually computes ``s1 @ s2.T``.
+
+        Parameters
+        ----------
+        data1, coords1 : np.ndarray
+            The data and coordinates of ``s1``.
+
+        data2, coords2 : np.ndarray
+            The data and coordinates of ``s2``.
+        """
+        coords_out = []
+        data_out = []
+        didx1 = 0
+
+        while didx1 < len(data1):
+            oidx1 = coords1[0, didx1]
+            didx2 = 0
+            didx1_curr = didx1
+
+            while didx2 < len(data2) and didx1 < len(data1) and coords1[0, didx1] == oidx1:
+                oidx2 = coords2[0, didx2]
+                data_curr = 0
+
+                while didx2 < len(data2) and didx1 < len(data1) and \
+                        coords2[0, didx2] == oidx2 and coords1[0, didx1] == oidx1:
+                    if coords1[1, didx1] < coords2[1, didx2]:
+                        didx1 += 1
+                    elif coords1[1, didx1] > coords2[1, didx2]:
+                        didx2 += 1
+                    else:
+                        data_curr += data1[didx1] * data2[didx2]
+                        didx1 += 1
+                        didx2 += 1
+
+                while didx2 < len(data2) and coords2[0, didx2] == oidx2:
+                    didx2 += 1
+
+                if didx2 < len(data2):
+                    didx1 = didx1_curr
+
+                if data_curr != 0:
+                    coords_out.append([oidx1, oidx2])
+                    data_out.append(data_curr)
+
+            while didx1 < len(data1) and coords1[0, didx1] == oidx1:
+                didx1 += 1
+
+        if len(data_out) == 0:
+            return np.empty((2, 0), dtype=np.intp), np.empty((0,), dtype=dtr)
+
+        return np.array(coords_out).T, np.array(data_out)
+
+    return _dot_coo_coo
+
+
+@_memoize_dtype
+def _dot_coo_ndarray_type(dt1, dt2):
+    dtr = np.result_type(dt1, dt2)
+
+    @numba.jit(nopython=True, nogil=True)
+    def _dot_coo_ndarray(coords1, data1, array2, out_shape):  # pragma: no cover
+        """
+        Utility function taking in one `COO` and one ``ndarray`` and
+        calculating a "sense" of their dot product. Acually computes
+        ``s1 @ x2.T``.
+
+        Parameters
+        ----------
+        data1, coords1 : np.ndarray
+            The data and coordinates of ``s1``.
+
+        array2 : np.ndarray
+            The second input array ``x2``.
+
+        out_shape : Tuple[int]
+            The output shape.
+        """
+        out = np.zeros(out_shape, dtype=dtr)
+        didx1 = 0
+
+        while didx1 < len(data1):
+            oidx1 = coords1[0, didx1]
+            didx1_curr = didx1
+
+            for oidx2 in range(out_shape[1]):
+                didx1 = didx1_curr
+                while didx1 < len(data1) and coords1[0, didx1] == oidx1:
+                    out[oidx1, oidx2] += data1[didx1] * array2[oidx2, coords1[1, didx1]]
+                    didx1 += 1
+
+        return out
+
+    return _dot_coo_ndarray
+
+
+@_memoize_dtype
+def _dot_ndarray_coo_type(dt1, dt2):
+    dtr = np.result_type(dt1, dt2)
+
+    @numba.jit(nopython=True, nogil=True)
+    def _dot_ndarray_coo(array1, coords2, data2, out_shape):  # pragma: no cover
+        """
+        Utility function taking in two one ``ndarray`` and one ``COO`` and
+        calculating a "sense" of their dot product. Acually computes ``x1 @ s2.T``.
+
+        Parameters
+        ----------
+        array1 : np.ndarray
+            The input array ``x1``.
+
+        data2, coords2 : np.ndarray
+            The data and coordinates of ``s2``.
+
+        out_shape : Tuple[int]
+            The output shape.
+        """
+        out = np.zeros(out_shape, dtype=dtr)
+
+        for oidx1 in range(out_shape[0]):
+            for didx2 in range(len(data2)):
+                oidx2 = coords2[0, didx2]
+                out[oidx1, oidx2] += array1[oidx1, coords2[1, didx2]] * data2[didx2]
+
+        return out
+
+    return _dot_ndarray_coo
