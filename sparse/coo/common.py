@@ -185,9 +185,15 @@ def matmul(a, b):
             (type(a), type(b)))
 
     # When one of the input is less than 2-d, it is equivalent to dot
-    if a.ndim <= 2 or b.ndim <= 2:
+    if b.ndim <= 2:
         return dot(a, b)
 
+    if a.ndim <= 2:
+        res = dot(a, b)
+        axes = list(range(res.ndim))
+        axes.insert(-1, axes.pop(0))
+        return res.transpose(axes)
+        
     # If a can be squeeze to a vector, use dot will be faster
     if a.ndim <= b.ndim and np.prod(a.shape[:-1]) == 1:
         res = dot(a.reshape(-1), b)
