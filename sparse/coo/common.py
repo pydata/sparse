@@ -184,10 +184,11 @@ def matmul(a, b):
             "Cannot perform dot product on types %s, %s" %
             (type(a), type(b)))
 
-    # When one of the input is less than 2-d, it is equivalent to dot
+    # When b is 2-d, it is equivalent to dot
     if b.ndim <= 2:
         return dot(a, b)
 
+    # when a is 2-d, we need to transpose result after dot
     if a.ndim <= 2:
         res = dot(a, b)
         axes = list(range(res.ndim))
