@@ -283,6 +283,7 @@ def test_tensordot(a_shape, b_shape, axes):
     ((5,), (5, 6)),
     ((4, 5), (5,)),
     ((5,), (5,)),
+    ((3, 4), (1, 2, 4, 3)),
 ])
 def test_matmul(a_shape, b_shape):
     sa = sparse.random(a_shape, density=0.5)
