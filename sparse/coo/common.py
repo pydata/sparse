@@ -194,7 +194,7 @@ def matmul(a, b):
         axes = list(range(res.ndim))
         axes.insert(-1, axes.pop(0))
         return res.transpose(axes)
-        
+
     # If a can be squeeze to a vector, use dot will be faster
     if a.ndim <= b.ndim and np.prod(a.shape[:-1]) == 1:
         res = dot(a.reshape(-1), b)
