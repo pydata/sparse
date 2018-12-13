@@ -1441,7 +1441,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         if out is not None:
             (out,) = out
             if out.shape != result.shape:
-                raise ValueError('non-broadcastable output operand with shape %s'
+                raise ValueError('non-broadcastable output operand with shape %s '
                                  'doesn\'t match the broadcast shape %s' % (out.shape, result.shape))
 
             out._make_shallow_copy_of(result)
