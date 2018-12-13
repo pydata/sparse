@@ -19,4 +19,5 @@ SparseArray
       :toctree:
 
       SparseArray.asformat
+      SparseArray.todense
 

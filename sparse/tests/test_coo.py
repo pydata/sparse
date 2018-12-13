@@ -1645,9 +1645,9 @@ def test_size():
 
 def test_np_array():
     s = sparse.random((20, 30, 40))
-    x = np.array(s)
-    assert isinstance(x, np.ndarray)
-    assert_eq(x, s)
+
+    with pytest.raises(RuntimeError):
+        np.array(s)
 
 
 @pytest.mark.parametrize('shapes', [
@@ -2059,12 +2059,14 @@ def test_failed_densification():
     import os
     from importlib import reload
 
-    os.environ['SPARSE_AUTO_DENSIFY'] = '0'
+    os.environ['SPARSE_AUTO_DENSIFY'] = '1'
     reload(sparse)
 
-    with pytest.raises(RuntimeError):
-        s = sparse.random((3, 4, 5), density=0.5)
-        np.array(s)
+    s = sparse.random((3, 4, 5), density=0.5)
+    x = np.array(s)
+
+    assert isinstance(x, np.ndarray)
+    assert_eq(s, x)
 
     del os.environ['SPARSE_AUTO_DENSIFY']
     reload(sparse)

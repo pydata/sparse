@@ -5,6 +5,8 @@ from numbers import Integral
 from functools import reduce
 import operator
 
+import numpy as np
+
 from .utils import _zero_of_dtype
 from .compatibility import int
 
@@ -177,3 +179,38 @@ class SparseArray(object):
         NotImplementedError
             If the format isn't supported.
         """
+
+    @abstractmethod
+    def todense(self):
+        """
+        Convert this :obj:`SparseArray` array to a dense :obj:`numpy.ndarray`. Note that
+        this may take a large amount of memory and time.
+
+        Returns
+        -------
+        numpy.ndarray
+            The converted dense array.
+
+        See Also
+        --------
+        DOK.todense : Equivalent :obj:`DOK` array method.
+        COO.todense : Equivalent :obj:`COO` array method.
+        scipy.sparse.coo_matrix.todense : Equivalent Scipy method.
+
+        Examples
+        --------
+        >>> import sparse
+        >>> x = np.random.randint(100, size=(7, 3))
+        >>> s = sparse.COO.from_numpy(x)
+        >>> x2 = s.todense()
+        >>> np.array_equal(x, x2)
+        True
+        """
+
+    def __array__(self, **kwargs):
+        from . import _AUTO_DENSIFICATION_ENABLED as densify
+        if not densify:
+            raise RuntimeError('Cannot convert a sparse array to dense automatically. '
+                               'To manually densify, use the todense method.')
+
+        return np.asarray(self.todense(), **kwargs)
