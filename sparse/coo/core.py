@@ -1763,7 +1763,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> data = np.array([1, 0, 1, 2])
         >>> s = COO(coords, data)
         >>> s._prune()
-        >>> s._prune()
         >>> s.nnz
         3
         """

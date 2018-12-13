@@ -22,7 +22,9 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
         assert is_canonical(y)
 
     if isinstance(x, COO) and isinstance(y, COO) and check_nnz:
-        assert np.array_equal(x.coords, y.coords) and check_equal(x.data, y.data, **kwargs)
+        assert np.array_equal(x.coords, y.coords)
+        assert check_equal(x.data, y.data, **kwargs)
+        assert x.fill_value == y.fill_value
         return
 
     if hasattr(x, 'todense'):

@@ -2085,3 +2085,14 @@ def test_warn_on_too_dense():
 
     del os.environ['SPARSE_WARN_ON_TOO_DENSE']
     reload(sparse)
+
+
+def test_prune_coo():
+    coords = np.array([[0, 1, 2, 3]])
+    data = np.array([1, 0, 1, 2])
+    s1 = COO(coords, data)
+    s2 = COO(coords, data, prune=True)
+    assert s2.nnz == 3
+
+    # Densify s1 because it isn't canonical
+    assert_eq(s1.todense(), s2, check_nnz=False)
