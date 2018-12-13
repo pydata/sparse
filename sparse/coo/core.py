@@ -42,6 +42,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         A value indicating whether the values in `coords` are sorted. Note
         that setting this to `True` when :code:`coords` isn't sorted may
         result in undefined behaviour. See :obj:`COO.sort_indices`.
+    prune : bool, optional
+        A flag indicating whether or not we should prune any fill-values present in
+        ``data``.
     cache : bool, optional
         Whether to enable cacheing for various operations. See
         :obj:`COO.enable_caching`
@@ -192,7 +195,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     __array_priority__ = 12
 
     def __init__(self, coords, data=None, shape=None, has_duplicates=True,
-                 sorted=False, cache=False, fill_value=None):
+                 sorted=False, prune=False, cache=False, fill_value=None):
         self._cache = None
         if cache:
             self.enable_caching()
@@ -247,6 +250,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         if has_duplicates:
             self._sum_duplicates()
+
+        if prune:
+            self._prune()
 
     def __getstate__(self):
         return (self.coords, self.data, self.shape, self.fill_value)
@@ -1745,6 +1751,25 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         self.data = data
         self.coords = coords
+
+    def _prune(self):
+        """
+        Prunes data so that if any fill-values are present, they are removed
+        from both coordinates and data.
+
+        Examples
+        --------
+        >>> coords = np.array([[0, 1, 2, 3]])
+        >>> data = np.array([1, 0, 1, 2])
+        >>> s = COO(coords, data)
+        >>> s._prune()
+        >>> s._prune()
+        >>> s.nnz
+        3
+        """
+        mask = ~equivalent(self.data, self.fill_value)
+        self.coords = self.coords[:, mask]
+        self.data = self.data[mask]
 
     def broadcast_to(self, shape):
         """
