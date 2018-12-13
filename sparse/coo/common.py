@@ -612,7 +612,7 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
     den = reduce(operator.mul, (x.shape[i] for i in axis), 1)
     den -= nancount
 
-    if np.any(den == 0):
+    if (den == 0).any():
         warnings.warn("Mean of empty slice", RuntimeWarning, stacklevel=2)
 
     num = np.sum(x2, axis=axis, dtype=dtype, keepdims=keepdims)

@@ -1449,14 +1449,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         return result
 
-    def __array__(self, **kwargs):
-        from .. import _AUTO_DENSIFICATION_ENABLED as densify
-        if not densify:
-            raise RuntimeError('Cannot convert a sparse array to dense automatically. '
-                               'To manually densify, use the todense method.')
-
-        return np.asarray(self.todense(), **kwargs)
-
     def linear_loc(self):
         """
         The nonzero coordinates of a flattened version of this array. Note that
