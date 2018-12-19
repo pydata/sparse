@@ -1,14 +1,17 @@
 Roadmap
 =======
 
+For a brochure version of this roadmap, see
+`this link <https://docs.wixstatic.com/ugd/095d2c_ac81d19db47047c79a55da7a6c31cf66.pdf>`_.
+
 Background
 ----------
 
 The aim of PyData/Sparse is to create sparse containers that implement the ndarray
 interface. Traditionally in the PyData ecosystem, sparse arrays have been provided
-by the scipy.sparse submodule. All containers there depend on and emulate the
-numpy.matrix interface. This means that they are limited to two dimensions and also
-don’t work well in places where numpy.ndarray would work.
+by the ``scipy.sparse`` submodule. All containers there depend on and emulate the
+``numpy.matrix`` interface. This means that they are limited to two dimensions and also
+don’t work well in places where ``numpy.ndarray`` would work.
 
 PyData/Sparse is well on its way to replacing ``scipy.sparse`` as the de-facto sparse array
 implementation in the PyData ecosystem.
