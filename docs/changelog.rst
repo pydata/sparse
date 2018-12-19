@@ -1,10 +1,34 @@
 Changelog
 =========
 
+0.6.0 / 2018-12-19
+------------------
+
+This release breaks backward-compatibility. Previously, if arrays were fed into
+NumPy functions, an attempt would be made to densify the array and apply the NumPy
+function. This was unintended behaviour in most cases, with the array filling up
+memory before raising a ``MemoryError`` if the array was too large.
+
+We have now changed this behaviour so that a ``RuntimeError`` is now raised if
+an attempt is made to automatically densify an array. To densify, use the explicit
+``.todense()`` method.
+
+* Fixed a bug where ``np.matrix`` could sometimes fail to
+  convert to a ``COO``. (:issue:`199`, :pr:`200`).
+* Make sure that ``sparse @ sparse`` returns a sparse array. (:issue:`201`, :pr:`203`)
+* Bring ``operator.matmul`` behaviour in line with NumPy for ``ndim > 2``.
+  (:issue:`202`, :pr:`204`, :pr:`217`)
+* Make sure ``dtype`` is preserved with the ``out`` kwarg. (:issue:`205`, :pr:`206`)
+* Fix integer overflow in ``reduce`` on Windows. (:issue:`207`, :pr:`208`)
+* Disallow auto-densification. (:issue:`218`, :pr:`220`)
+* Add auto-densification configuration, and a configurable warning for checking
+  if the array is too dense. (:pr:`210`, :pr:`213`)
+* Add pruning of fill-values to COO constructor. (:pr:`221`)
+
 0.5.0 / 2018-10-12
 ------------------
 
-* Added :code:`COO.real`, `COO.imag`, and `COO.conj` (:pr:`196`).
+* Added :code:`COO.real`, :code:`COO.imag`, and :code:`COO.conj` (:pr:`196`).
 * Added :code:`sparse.kron` function (:pr:`194`, :pr:`195`).
 * Added :code:`order` parameter to :code:`COO.reshape` to make it work with
   :code:`np.reshape` (:pr:`193`).

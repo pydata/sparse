@@ -482,7 +482,7 @@ class _Elemwise(object):
 
         if not equivalent(fill_value, fill_value_array).all():
             raise ValueError('Inconsistent fill-values in the result array: operating on the ndarray with'
-                             'fill-values produces inconsistent results.')
+                             ' fill-values produces inconsistent results.')
 
         # Store dtype separately if needed.
         if self.dtype is not None:

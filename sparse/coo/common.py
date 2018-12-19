@@ -1223,7 +1223,7 @@ def _dot_coo_coo_type(dt1, dt2):
                     didx1 = didx1_curr
 
                 if data_curr != 0:
-                    coords_out.append([oidx1, oidx2])
+                    coords_out.append((oidx1, oidx2))
                     data_out.append(data_curr)
 
             while didx1 < len(data1) and coords1[0, didx1] == oidx1:
