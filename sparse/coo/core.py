@@ -479,11 +479,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             ndim = 0 if shape is None else len(shape)
             coords = np.empty((ndim, 0), dtype=np.uint8)
             data = np.empty((0,))
+            shape = () if shape is None else shape
 
-            return COO(coords, data, shape=() if shape is None else shape,
-                       sorted=True, has_duplicates=False)
-
-        if not isinstance(x[0][0], Iterable):
+        elif not isinstance(x[0][0], Iterable):
             coords = np.stack(x[1], axis=0)
             data = np.asarray(x[0])
         else:
