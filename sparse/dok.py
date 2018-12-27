@@ -125,7 +125,7 @@ class DOK(SparseArray):
     def _make_shallow_copy_of(self, other):
         self.dtype = other.dtype
         self.data = other.data
-        super(DOK, self).__init__(other.shape)
+        super(DOK, self).__init__(other.shape, fill_value=other.fill_value)
 
     @classmethod
     def from_coo(cls, x):

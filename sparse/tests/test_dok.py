@@ -169,3 +169,11 @@ def test_asformat(format):
     s2 = s.asformat(format)
 
     assert_eq(s, s2)
+
+
+def test_coo_fv_interface():
+    s1 = sparse.full((5, 5), fill_value=1+np.random.rand())
+    s2 = sparse.DOK(s1)
+    assert_eq(s1, s2)
+    s3 = sparse.COO(s2)
+    assert_eq(s1, s3)
