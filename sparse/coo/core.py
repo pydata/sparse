@@ -215,7 +215,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             self.data = np.broadcast_to(self.data, self.coords.shape[1])
 
         if shape and not self.coords.size:
-            self.coords = np.zeros((len(shape), 0), dtype=np.uint64)
+            self.coords = np.zeros((len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.uint64)
 
         if shape is None:
             if self.coords.nbytes:

@@ -131,7 +131,7 @@ def random(
     # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
     from .coo import COO
 
-    elements = np.prod(shape)
+    elements = np.prod(shape, dtype=np.intp)
 
     nnz = int(elements * density)
 
@@ -157,7 +157,7 @@ def random(
 
     data = data_rvs(nnz)
 
-    ar = COO(ind[None, :], data, shape=nnz, fill_value=fill_value).reshape(shape)
+    ar = COO(ind[None, :], data, shape=elements, fill_value=fill_value).reshape(shape)
 
     return ar.asformat(format)
 
