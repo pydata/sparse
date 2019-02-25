@@ -3,7 +3,10 @@
 
 import math
 from numbers import Integral, Number
-from collections import Iterable
+try:
+    from collections.abc import Iterable
+except AttributeError:
+    from collections import Iterable
 
 import numpy as np
 

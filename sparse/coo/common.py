@@ -1,7 +1,10 @@
 from functools import reduce, wraps
 import operator
 import warnings
-from collections import Iterable
+try:
+    from collections.abc import Iterable
+except AttributeError:
+    from collections import Iterable
 
 import numpy as np
 import scipy.sparse
