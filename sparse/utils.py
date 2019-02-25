@@ -1,5 +1,8 @@
 import functools
-from collections import Iterable
+try:
+    from collections.abc import Iterable
+except (AttributeError, ImportError):
+    from collections import Iterable
 from numbers import Integral
 
 import numpy as np

@@ -1,6 +1,9 @@
 import copy as _copy
 import operator
-from collections import Iterable, Iterator, Sized
+try:
+    from collections.abc import Iterable, Iterator, Sized
+except (AttributeError, ImportError):
+    from collections import Iterable, Iterator, Sized
 from collections import defaultdict, deque
 from functools import reduce
 import warnings
