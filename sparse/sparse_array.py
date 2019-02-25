@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function
 from abc import ABCMeta, abstractmethod
 try:
     from collections.abc import Iterable
-except AttributeError:
+except (AttributeError, ImportError):
     from collections import Iterable
 from numbers import Integral
 from functools import reduce

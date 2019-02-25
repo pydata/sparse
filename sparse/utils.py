@@ -1,7 +1,7 @@
 import functools
 try:
     from collections.abc import Iterable
-except AttributeError:
+except (AttributeError, ImportError):
     from collections import Iterable
 from numbers import Integral
 

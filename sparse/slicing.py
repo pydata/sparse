@@ -5,7 +5,7 @@ import math
 from numbers import Integral, Number
 try:
     from collections.abc import Iterable
-except AttributeError:
+except (AttributeError, ImportError):
     from collections import Iterable
 
 import numpy as np
