@@ -14,7 +14,7 @@ install:
   - ./ci/01-install.sh
 
 script:
-  - py.test
+  - pytest
 
 after_success:
   - codecov

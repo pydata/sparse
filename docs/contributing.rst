@@ -70,7 +70,7 @@ the root of your repository and run
 
 .. code-block:: bash
 
-   py.test
+   pytest
 
 This automatically checks code style and functionality, and prints code coverage,
 even though it doesn't fail on low coverage.
@@ -80,7 +80,7 @@ Unit tests are automatically run on Travis CI for pull requests.
 Coverage
 --------
 
-The ``py.test`` script automatically reports coverage, both on the terminal for
+The ``pytest`` script automatically reports coverage, both on the terminal for
 missing line numbers, and in annotated HTML form in ``htmlcov/index.html``.
 
 Coverage is automatically checked on CodeCov for pull requests.
