@@ -1382,7 +1382,6 @@ def test_create_with_lists_of_tuples():
 
 
 def test_sizeof():
-    import sys
     x = np.eye(100)
     y = COO.from_numpy(x)
 
@@ -2054,7 +2053,6 @@ def test_out_dtype():
         np.positive(a.todense(), out=b.todense(), dtype='float64').dtype
 
 
-@pytest.mark.skipif(sys.version_info[0] == 2, reason='Test won\'t run on Py2.')
 def test_failed_densification():
     import os
     from importlib import reload
@@ -2072,7 +2070,6 @@ def test_failed_densification():
     reload(sparse)
 
 
-@pytest.mark.skipif(sys.version_info[0] == 2, reason='Test won\'t run on Py2.')
 def test_warn_on_too_dense():
     import os
     from importlib import reload

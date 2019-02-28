@@ -60,13 +60,10 @@ Running/Adding Unit Tests
 It is best if all new functionality and/or bug fixes have unit tests added
 with each use-case.
 
-Since we support both Python 2.7 and Python 3.5 and newer, it is recommended
-to test with at least these two versions before committing your code or opening
-a pull request. We use `pytest <https://docs.pytest.org/en/latest/>`_ as our unit
-testing framework, with the ``pytest-cov`` extension to check code coverage and
-``pytest-flake8`` to check code style. You don't need to configure these extensions
-yourself. Once you've configured your environment, you can just ``cd`` to
-the root of your repository and run
+We use `pytest <https://docs.pytest.org/en/latest/>`_ as our unit testing framework,
+with the ``pytest-cov`` extension to check code coverage and ``pytest-flake8`` to
+check code style. You don't need to configure these extensions yourself. Once you've
+configured your environment, you can just ``cd`` to the root of your repository and run
 
 .. code-block:: bash
 

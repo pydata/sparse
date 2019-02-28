@@ -1,17 +1,13 @@
 from functools import reduce, wraps
 import operator
 import warnings
-try:
-    from collections.abc import Iterable
-except (AttributeError, ImportError):
-    from collections import Iterable
+from collections.abc import Iterable
 
 import numpy as np
 import scipy.sparse
 import numba
 
 from ..sparse_array import SparseArray
-from ..compatibility import range, int
 from ..utils import isscalar, normalize_axis, check_zero_fill_value, check_consistent_fill_value
 
 

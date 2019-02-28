@@ -4,7 +4,6 @@ cache: pip
 
 matrix:
   include:
-    - python: 2.7
     - python: 3.5
     - python: 3.5
       env: NUMPY_VERSION="<1.14.0"

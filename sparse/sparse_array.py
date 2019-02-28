@@ -1,9 +1,6 @@
 from __future__ import absolute_import, division, print_function
 from abc import ABCMeta, abstractmethod
-try:
-    from collections.abc import Iterable
-except (AttributeError, ImportError):
-    from collections import Iterable
+from collections.abc import Iterable
 from numbers import Integral
 from functools import reduce
 import operator
@@ -11,7 +8,6 @@ import operator
 import numpy as np
 
 from .utils import _zero_of_dtype
-from .compatibility import int
 
 
 class SparseArray(object):

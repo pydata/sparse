@@ -4,7 +4,8 @@ import numba
 import numpy as np
 import scipy.sparse
 
-from ..compatibility import range, zip, zip_longest
+from itertools import zip_longest
+
 from ..utils import isscalar, equivalent, _zero_of_dtype
 
 

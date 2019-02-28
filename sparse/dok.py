@@ -5,7 +5,6 @@ import numpy as np
 from .slicing import normalize_index
 from .utils import equivalent
 from .sparse_array import SparseArray
-from .compatibility import int, range, zip
 
 
 class DOK(SparseArray):

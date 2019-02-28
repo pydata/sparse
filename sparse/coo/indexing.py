@@ -3,7 +3,8 @@ from numbers import Integral
 import numba
 import numpy as np
 
-from ..compatibility import range, zip_longest
+from itertools import zip_longest
+
 from ..slicing import normalize_index
 from ..utils import _zero_of_dtype, equivalent
 
