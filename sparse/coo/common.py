@@ -434,7 +434,7 @@ def stack(arrays, axis=0):
     from .core import COO
     check_consistent_fill_value(arrays)
 
-    assert len(set(x.shape for x in arrays)) == 1
+    assert len({x.shape for x in arrays}) == 1
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
     axis = normalize_axis(axis, arrays[0].ndim + 1)
     data = np.concatenate([x.data for x in arrays])
