@@ -1,7 +1,6 @@
 import pytest
 
 import numpy as np
-import six
 
 import sparse
 from sparse import DOK
@@ -72,7 +71,7 @@ def test_construct(shape, data):
     s = DOK(shape, data)
     x = np.zeros(shape, dtype=s.dtype)
 
-    for c, d in six.iteritems(data):
+    for c, d in data.items():
         x[c] = d
 
     assert_eq(x, s)

@@ -10,7 +10,7 @@ import numpy as np
 from .utils import _zero_of_dtype
 
 
-class SparseArray(object):
+class SparseArray:
     """
     An abstract base class for all the sparse array classes.
 

@@ -1831,7 +1831,7 @@ def test_prod_along_axis():
     assert_eq(s2.prod(axis=0), x2.prod(axis=0))
 
 
-class TestRoll(object):
+class TestRoll:
 
     # test on 1d array #
     @pytest.mark.parametrize('shift', [0, 2, -2, 20, -20])
@@ -1919,7 +1919,7 @@ def test_clip():
     assert_eq(out, x.clip(min=1, max=3))
 
 
-class TestFailFillValue(object):
+class TestFailFillValue:
     # Check failed fill_value op
     def test_nonzero_fv(self):
         xs = sparse.random((2, 3), density=0.5, fill_value=1)

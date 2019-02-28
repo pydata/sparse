@@ -380,7 +380,7 @@ def broadcast_to(x, shape):
                sorted=sorted, fill_value=x.fill_value)
 
 
-class _Elemwise(object):
+class _Elemwise:
     def __init__(self, func, *args, **kwargs):
         """
         Initialize the element-wise function calculator.

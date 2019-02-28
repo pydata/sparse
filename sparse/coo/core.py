@@ -222,7 +222,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             else:
                 shape = ()
 
-        super(COO, self).__init__(shape, fill_value=fill_value)
+        super().__init__(shape, fill_value=fill_value)
         self.coords = self.coords.astype(np.intp)
 
         if self.shape:
@@ -274,7 +274,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     def _make_shallow_copy_of(self, other):
         self.coords = other.coords
         self.data = other.data
-        super(COO, self).__init__(other.shape, fill_value=other.fill_value)
+        super().__init__(other.shape, fill_value=other.fill_value)
 
     def enable_caching(self):
         """ Enable caching of reshape, transpose, and tocsr/csc operations

@@ -583,7 +583,7 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
     return starts, stops
 
 
-class _AdvIdxInfo(object):
+class _AdvIdxInfo:
     def __init__(self, idx, pos, length):
         self.idx = idx
         self.pos = pos
