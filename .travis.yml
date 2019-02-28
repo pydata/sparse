@@ -1,5 +1,3 @@
-sudo: False
-
 language: python
 
 cache: pip
