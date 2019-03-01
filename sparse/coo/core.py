@@ -1,9 +1,6 @@
 import copy as _copy
 import operator
-try:
-    from collections.abc import Iterable, Iterator, Sized
-except (AttributeError, ImportError):
-    from collections import Iterable, Iterator, Sized
+from collections.abc import Iterable, Iterator, Sized
 from collections import defaultdict, deque
 from functools import reduce
 import warnings
@@ -15,7 +12,6 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from .common import dot, matmul
 from .indexing import getitem
 from .umath import elemwise, broadcast_to
-from ..compatibility import int, range
 from ..sparse_array import SparseArray
 from ..utils import normalize_axis, equivalent, check_zero_fill_value, _zero_of_dtype
 
@@ -226,7 +222,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             else:
                 shape = ()
 
-        super(COO, self).__init__(shape, fill_value=fill_value)
+        super().__init__(shape, fill_value=fill_value)
         self.coords = self.coords.astype(np.intp)
 
         if self.shape:
@@ -278,7 +274,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
     def _make_shallow_copy_of(self, other):
         self.coords = other.coords
         self.data = other.data
-        super(COO, self).__init__(other.shape, fill_value=other.fill_value)
+        super().__init__(other.shape, fill_value=other.fill_value)
 
     def enable_caching(self):
         """ Enable caching of reshape, transpose, and tocsr/csc operations

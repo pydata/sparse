@@ -3,7 +3,7 @@ import numpy as np
 import sparse
 
 
-class ElemwiseSuite(object):
+class ElemwiseSuite:
     def setup(self):
         np.random.seed(0)
         self.x = sparse.random((100, 100, 100), density=0.01)
@@ -21,7 +21,7 @@ class ElemwiseSuite(object):
         self.x[5]
 
 
-class ElemwiseBroadcastingSuite(object):
+class ElemwiseBroadcastingSuite:
     def setup(self):
         np.random.seed(0)
         self.x = sparse.random((100, 1, 100), density=0.01)
@@ -34,7 +34,7 @@ class ElemwiseBroadcastingSuite(object):
         self.x * self.y
 
 
-class IndexingSuite(object):
+class IndexingSuite:
     def setup(self):
         np.random.seed(0)
         self.x = sparse.random((100, 100, 100), density=0.01)

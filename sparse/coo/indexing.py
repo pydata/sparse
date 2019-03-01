@@ -3,7 +3,8 @@ from numbers import Integral
 import numba
 import numpy as np
 
-from ..compatibility import range, zip_longest
+from itertools import zip_longest
+
 from ..slicing import normalize_index
 from ..utils import _zero_of_dtype, equivalent
 
@@ -582,7 +583,7 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
     return starts, stops
 
 
-class _AdvIdxInfo(object):
+class _AdvIdxInfo:
     def __init__(self, idx, pos, length):
         self.idx = idx
         self.pos = pos

@@ -5,7 +5,6 @@ import numpy as np
 from .slicing import normalize_index
 from .utils import equivalent
 from .sparse_array import SparseArray
-from .compatibility import int, range, zip
 
 
 class DOK(SparseArray):
@@ -108,7 +107,7 @@ class DOK(SparseArray):
         if not data:
             data = dict()
 
-        super(DOK, self).__init__(shape, fill_value=fill_value)
+        super().__init__(shape, fill_value=fill_value)
 
         if isinstance(data, dict):
             if not dtype:
@@ -125,7 +124,7 @@ class DOK(SparseArray):
     def _make_shallow_copy_of(self, other):
         self.dtype = other.dtype
         self.data = other.data
-        super(DOK, self).__init__(other.shape, fill_value=other.fill_value)
+        super().__init__(other.shape, fill_value=other.fill_value)
 
     @classmethod
     def from_coo(cls, x):

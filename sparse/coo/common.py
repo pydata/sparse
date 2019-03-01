@@ -1,17 +1,13 @@
 from functools import reduce, wraps
 import operator
 import warnings
-try:
-    from collections.abc import Iterable
-except (AttributeError, ImportError):
-    from collections import Iterable
+from collections.abc import Iterable
 
 import numpy as np
 import scipy.sparse
 import numba
 
 from ..sparse_array import SparseArray
-from ..compatibility import range, int
 from ..utils import isscalar, normalize_axis, check_zero_fill_value, check_consistent_fill_value
 
 
@@ -438,7 +434,7 @@ def stack(arrays, axis=0):
     from .core import COO
     check_consistent_fill_value(arrays)
 
-    assert len(set(x.shape for x in arrays)) == 1
+    assert len({x.shape for x in arrays}) == 1
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
     axis = normalize_axis(axis, arrays[0].ndim + 1)
     data = np.concatenate([x.data for x in arrays])

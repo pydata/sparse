@@ -4,7 +4,8 @@ import numba
 import numpy as np
 import scipy.sparse
 
-from ..compatibility import range, zip, zip_longest
+from itertools import zip_longest
+
 from ..utils import isscalar, equivalent, _zero_of_dtype
 
 
@@ -379,7 +380,7 @@ def broadcast_to(x, shape):
                sorted=sorted, fill_value=x.fill_value)
 
 
-class _Elemwise(object):
+class _Elemwise:
     def __init__(self, func, *args, **kwargs):
         """
         Initialize the element-wise function calculator.

@@ -2,11 +2,8 @@
 # See license at https://github.com/dask/dask/blob/master/LICENSE.txt
 
 import math
+from collections.abc import Iterable
 from numbers import Integral, Number
-try:
-    from collections.abc import Iterable
-except (AttributeError, ImportError):
-    from collections import Iterable
 
 import numpy as np
 

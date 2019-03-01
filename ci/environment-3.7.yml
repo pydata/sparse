@@ -1,8 +1,8 @@
-name: py27-sparse-test
+name: py37-sparse-test
 channels:
   - conda-forge
 dependencies:
-  - python=2.7
+  - python=3.7
   - pytest
   - numpy
   - scipy
