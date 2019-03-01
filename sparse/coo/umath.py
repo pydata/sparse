@@ -482,8 +482,8 @@ class _Elemwise:
             fill_value = self.func(*zero_args, **self.kwargs)[()]
 
         if not equivalent(fill_value, fill_value_array).all():
-            raise ValueError('Inconsistent fill-values in the result array: operating on the ndarray with'
-                             ' fill-values produces inconsistent results.')
+            raise ValueError('Performing a mixed sparse-dense operation that would result in a dense array. '
+                             'Please make sure that func(sparse_fill_values, ndarrays) is a constant array.')
 
         # Store dtype separately if needed.
         if self.dtype is not None:
@@ -508,8 +508,8 @@ class _Elemwise:
         )
 
         if full_shape != non_ndarray_shape:
-            raise ValueError('All ndarrays must be broadcastable to the shape without ndarrays {}'
-                             .format(non_ndarray_shape))
+            raise ValueError('Please make sure that the broadcast shape of just the sparse arrays is '
+                             'the same as the broadcast shape of all the operands.')
 
         self.shape = full_shape
 
