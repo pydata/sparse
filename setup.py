@@ -5,7 +5,7 @@ import versioneer
 from pathlib import Path
 
 def open_reqs_file(file, reqs_path=Path('.')):
-    with open(reqs_path / file) as f:
+    with (reqs_path / file).open() as f:
         reqs = list(f.read().strip().split('\n'))
     
     i = 0
