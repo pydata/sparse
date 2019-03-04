@@ -2,37 +2,37 @@
 
 from setuptools import setup, find_packages
 import versioneer
+from pathlib import Path
 
-with open('requirements.txt') as f:
-    reqs = list(f.read().strip().split('\n'))
+def open_reqs_file(file, reqs_path=Path('.')):
+    with (reqs_path / file).open() as f:
+        reqs = list(f.read().strip().split('\n'))
+    
+    i = 0
+    while i < len(reqs):
+        if reqs[i].startswith('-r'):
+            reqs[i:i+1] = open_reqs_file(reqs[i][2:].strip(), reqs_path=reqs_path)
+        else:
+            i += 1
+
+    return reqs
+
+extras_require = {}
+reqs = []
+
+def parse_requires():
+    reqs_path = Path('./requirements')
+    reqs.extend(open_reqs_file('requirements.txt'))
+    for f in reqs_path.iterdir():
+        extras_require[f.stem] = open_reqs_file(f.parts[-1], reqs_path=reqs_path)
+
+parse_requires()
 
 with open('README.rst') as f:
     long_desc = f.read()
 
-extras_require = {
-    'tests': [
-        'pytest>=3.5',
-        'pytest-flake8',
-        'pytest-cov'
-    ],
-    'docs': [
-        'sphinx',
-        'sphinx_rtd_theme',
-    ],
-    'tox': [
-        'tox',
-    ],
-    'bench': [
-        'asv'
-    ],
-}
-
-all_requires = []
-
-for v in extras_require.values():
-    all_requires.extend(v)
-
-extras_require['all'] = all_requires
+print(repr(reqs))
+print(repr(reqs))
 
 setup(
     name='sparse',

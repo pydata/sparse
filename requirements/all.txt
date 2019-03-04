@@ -1,0 +1,2 @@
+-r tox.txt
+-r docs.txt
