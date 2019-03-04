@@ -1,0 +1,2 @@
+-r tests.txt
+tox
