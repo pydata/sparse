@@ -17,7 +17,7 @@ from ..utils import normalize_axis, equivalent, check_zero_fill_value, _zero_of_
 
 
 _reduce_super_ufunc = {
-    np.sum: np.multiply,
+    np.add: np.multiply,
     np.multiply: np.power,
 }
 
@@ -730,7 +730,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
                 result[missing_counts] = method(result[missing_counts],
                                                 self.fill_value, **kwargs)
             else:
-                result = method(result, reduce_super_ufunc(self.fill_value, a.shape[1] - counts))
+                result = method(result, reduce_super_ufunc(self.fill_value, a.shape[1] - counts)).astype(result.dtype)
                 result_fill_value = reduce_super_ufunc(self.fill_value, a.shape[1])
             coords = a.coords[0:1, inv_idx]
 
