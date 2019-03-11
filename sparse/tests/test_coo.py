@@ -17,10 +17,36 @@ def random_sparse(request):
     dtype = request.param
     if np.issubdtype(dtype, np.integer):
         def data_rvs(n):
-            return np.random.randint(-10000, 10000, n)
+            return np.random.randint(-1000, 1000, n)
     else:
         data_rvs = None
     return sparse.random((20, 30, 40), density=.25, data_rvs=data_rvs).astype(dtype)
+
+
+@pytest.fixture(scope='module', params=['f8', 'f4', 'i8', 'i4'])
+def random_sparse_small(request):
+    dtype = request.param
+    if np.issubdtype(dtype, np.integer):
+        def data_rvs(n):
+            return np.random.randint(-10, 10, n)
+    else:
+        data_rvs = None
+    return sparse.random((20, 30, 40), density=.25, data_rvs=data_rvs).astype(dtype)
+
+
+@pytest.mark.parametrize('reduction, kwargs', [
+    ('sum', {}),
+    ('sum', {'dtype': np.float32}),
+    ('prod', {}),
+])
+@pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2), -3, (1, -1)])
+@pytest.mark.parametrize('keepdims', [True, False])
+def test_reductions_fv(reduction, random_sparse_small, axis, keepdims, kwargs):
+    x = random_sparse_small + np.random.randint(-1, 1, dtype='i4')
+    y = x.todense()
+    xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
+    yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
+    assert_eq(xx, yy)
 
 
 @pytest.mark.parametrize('reduction, kwargs', [

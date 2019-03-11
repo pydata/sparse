@@ -16,6 +16,12 @@ from ..sparse_array import SparseArray
 from ..utils import normalize_axis, equivalent, check_zero_fill_value, _zero_of_dtype
 
 
+_reduce_super_ufunc = {
+    np.add: np.multiply,
+    np.multiply: np.power,
+}
+
+
 class COO(SparseArray, NDArrayOperatorsMixin):
     """
     A sparse multidimensional array.
@@ -686,10 +692,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         """
         axis = normalize_axis(axis, self.ndim)
         zero_reduce_result = method.reduce([self.fill_value, self.fill_value], **kwargs)
+        reduce_super_ufunc = None
 
         if not equivalent(zero_reduce_result, self.fill_value):
-            raise ValueError("Performing this reduction operation would produce "
-                             "a dense result: %s" % str(method))
+            reduce_super_ufunc = _reduce_super_ufunc.get(method, None)
+
+            if reduce_super_ufunc is None:
+                raise ValueError("Performing this reduction operation would produce "
+                                 "a dense result: %s" % str(method))
 
         if axis is None:
             axis = tuple(range(self.ndim))
@@ -699,37 +709,37 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         axis = tuple(a if a >= 0 else a + self.ndim for a in axis)
 
-        if set(axis) == set(range(self.ndim)):
-            result = method.reduce(self.data, **kwargs)
-            if self.nnz != self.size:
-                result = method(result, self.fill_value, **kwargs)
-        else:
-            axis = tuple(axis)
-            neg_axis = tuple(ax for ax in range(self.ndim) if ax not in set(axis))
+        neg_axis = tuple(ax for ax in range(self.ndim) if ax not in set(axis))
 
-            a = self.transpose(neg_axis + axis)
-            a = a.reshape((np.prod([self.shape[d] for d in neg_axis], dtype=np.intp),
-                           np.prod([self.shape[d] for d in axis], dtype=np.intp)))
+        a = self.transpose(neg_axis + axis)
+        a = a.reshape((np.prod([self.shape[d] for d in neg_axis], dtype=np.intp),
+                       np.prod([self.shape[d] for d in axis], dtype=np.intp)))
 
-            result, inv_idx, counts = _grouped_reduce(a.data, a.coords[0], method, **kwargs)
+        result, inv_idx, counts = _grouped_reduce(a.data, a.coords[0], method, **kwargs)
+
+        result_fill_value = self.fill_value
+
+        if reduce_super_ufunc is None:
             missing_counts = counts != a.shape[1]
             result[missing_counts] = method(result[missing_counts],
                                             self.fill_value, **kwargs)
-            coords = a.coords[0:1, inv_idx]
+        else:
+            result = method(result, reduce_super_ufunc(self.fill_value, a.shape[1] - counts)).astype(result.dtype)
+            result_fill_value = reduce_super_ufunc(self.fill_value, a.shape[1])
+        coords = a.coords[0:1, inv_idx]
 
-            # Filter out zeros
-            mask = ~equivalent(result, self.fill_value)
-            coords = coords[:, mask]
-            result = result[mask]
+        a = COO(coords, result, shape=(a.shape[0],),
+                has_duplicates=False, sorted=True, prune=True, fill_value=result_fill_value)
 
-            a = COO(coords, result, shape=(a.shape[0],),
-                    has_duplicates=False, sorted=True, fill_value=self.fill_value)
-
-            a = a.reshape(tuple(self.shape[d] for d in neg_axis))
-            result = a
+        a = a.reshape(tuple(self.shape[d] for d in neg_axis))
+        result = a
 
         if keepdims:
             result = _keepdims(self, result, axis)
+
+        if result.ndim == 0:
+            return result[()]
+
         return result
 
     def sum(self, axis=None, keepdims=False, dtype=None, out=None):
