@@ -212,3 +212,19 @@ class SparseArray:
                                'To manually densify, use the todense method.')
 
         return np.asarray(self.todense(), **kwargs)
+
+    def __array_function__(self, func, types, args, kwargs):
+        import sparse as module
+        for submodule in func.__module__.split('.')[1:]:
+            try:
+                module = getattr(module, submodule)
+            except AttributeError:
+                return NotImplemented
+        if not hasattr(module, func.__name__):
+            return NotImplemented
+        sparse_func = getattr(module, func.__name__)
+        if sparse_func is func:
+            return NotImplemented
+        if not any(issubclass(t, (SparseArray, np.ndarray)) for t in types):
+            return NotImplemented
+        return sparse_func(*args, **kwargs)

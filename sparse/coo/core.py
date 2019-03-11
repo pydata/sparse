@@ -1436,6 +1436,22 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         except NotImplementedError:
             return NotImplemented
 
+    def __array_function__(self, func, types, args, kwargs):
+        import sparse as module
+        for submodule in func.__module__.split('.')[1:]:
+            try:
+                module = getattr(module, submodule)
+            except AttributeError:
+                return NotImplemented
+        if not hasattr(module, func.__name__):
+            return NotImplemented
+        sparse_func = getattr(module, func.__name__)
+        if sparse_func is func:
+            return NotImplemented
+        if not any(issubclass(t, (COO, np.ndarray)) for t in types):
+            return NotImplemented
+        return sparse_func(*args, **kwargs)
+
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         out = kwargs.pop('out', None)
         if out is not None and not all(isinstance(x, COO) for x in out):
