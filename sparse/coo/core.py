@@ -734,13 +734,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
                 result_fill_value = reduce_super_ufunc(self.fill_value, a.shape[1])
             coords = a.coords[0:1, inv_idx]
 
-            # Filter out zeros
-            mask = ~equivalent(result, self.fill_value)
-            coords = coords[:, mask]
-            result = result[mask]
-
             a = COO(coords, result, shape=(a.shape[0],),
-                    has_duplicates=False, sorted=True, fill_value=result_fill_value)
+                    has_duplicates=False, sorted=True, prune=True, fill_value=result_fill_value)
 
             a = a.reshape(tuple(self.shape[d] for d in neg_axis))
             result = a
