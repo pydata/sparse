@@ -709,12 +709,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):
 
         axis = tuple(a if a >= 0 else a + self.ndim for a in axis)
 
-        if set(axis) == set(range(self.ndim)):
+        if set(axis) == set(range(self.ndim)) and reduce_super_ufunc is None:
             result = method.reduce(self.data, **kwargs)
             if self.nnz != self.size:
                 result = method(result, self.fill_value, **kwargs)
         else:
-            axis = tuple(axis)
             neg_axis = tuple(ax for ax in range(self.ndim) if ax not in set(axis))
 
             a = self.transpose(neg_axis + axis)
