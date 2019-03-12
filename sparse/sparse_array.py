@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Iterable
 from numbers import Integral
 from functools import reduce
+from typing import Callable
 import operator
 
 import numpy as np
@@ -212,3 +213,24 @@ class SparseArray:
                                'To manually densify, use the todense method.')
 
         return np.asarray(self.todense(), **kwargs)
+
+    def __array_function__(self, func, types, args, kwargs):
+        import sparse as module
+        try:
+            submodules = func.__module__.split('.')[1:]
+            for submodule in submodules:
+                module = getattr(module, submodule)
+            sparse_func = getattr(module, func.__name__)
+            return sparse_func(*args, **kwargs)
+        except AttributeError:
+            pass
+
+        if not hasattr(type(self), func.__name__):
+            return NotImplemented
+
+        sparse_func = getattr(type(self), func.__name__)
+
+        if not isinstance(sparse_func, Callable):
+            return getattr(self, func.__name__)
+
+        return sparse_func(*args, **kwargs)

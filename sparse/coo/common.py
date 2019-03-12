@@ -776,6 +776,36 @@ def where(condition, x=None, y=None):
     return elemwise(np.where, condition, x, y)
 
 
+def argwhere(a):
+    """
+    Find the indices of array elements that are non-zero, grouped by element.
+
+    Parameters
+    ----------
+    a: array_like
+        Input data.
+
+    Returns
+    -------
+    index_array: numpy.ndarray
+
+    See Also
+    --------
+    :obj:`where`, :obj:`COO.nonzero`
+
+    Examples
+    --------
+    >>> import sparse
+    >>> x = sparse.COO(np.arange(6).reshape((2, 3)))
+    >>> sparse.argwhere(x > 1)
+    array([[0, 2],
+           [1, 0],
+           [1, 1],
+           [1, 2]])
+    """
+    return np.transpose(a.nonzero())
+
+
 def _replace_nan(array, value):
     """
     Replaces ``NaN``s in ``array`` with ``value``.

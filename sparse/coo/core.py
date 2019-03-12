@@ -864,6 +864,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         """
         return np.maximum.reduce(self, out=out, axis=axis, keepdims=keepdims)
 
+    amax = max
+
     def any(self, axis=None, keepdims=False, out=None):
         """
         See if any values along array are ``True``. Uses all axes by default.
@@ -1032,6 +1034,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         0
         """
         return np.minimum.reduce(self, out=out, axis=axis, keepdims=keepdims)
+
+    amin = min
 
     def prod(self, axis=None, keepdims=False, dtype=None, out=None):
         """
@@ -1821,6 +1825,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         if out is not None and not isinstance(out, tuple):
             out = (out,)
         return self.__array_ufunc__(np.round, '__call__', self, decimals=decimals, out=out)
+
+    round_ = round
 
     def clip(self, min=None, max=None, out=None):
         """Clip (limit) the values in the array.
