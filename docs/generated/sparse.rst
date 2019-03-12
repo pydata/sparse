@@ -23,6 +23,8 @@ API
 .. autosummary::
     :toctree:
 
+    argwhere
+
     as_coo
 
     concatenate

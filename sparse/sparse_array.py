@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Iterable
 from numbers import Integral
 from functools import reduce
+from typing import Callable
 import operator
 
 import numpy as np
@@ -228,4 +229,8 @@ class SparseArray:
             return NotImplemented
 
         sparse_func = getattr(type(self), func.__name__)
+
+        if not isinstance(sparse_func, Callable):
+            return getattr(self, func.__name__)
+
         return sparse_func(*args, **kwargs)
