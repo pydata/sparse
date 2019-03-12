@@ -215,16 +215,17 @@ class SparseArray:
 
     def __array_function__(self, func, types, args, kwargs):
         import sparse as module
-        for submodule in func.__module__.split('.')[1:]:
-            try:
+        try:
+            submodules = func.__module__.split('.')[1:]
+            for submodule in submodules:
                 module = getattr(module, submodule)
-            except AttributeError:
-                return NotImplemented
-        if not hasattr(module, func.__name__):
+            sparse_func = getattr(module, func.__name__)
+            return sparse_func(*args, **kwargs)
+        except AttributeError:
+            pass
+
+        if not hasattr(type(self), func.__name__):
             return NotImplemented
-        sparse_func = getattr(module, func.__name__)
-        if sparse_func is func:
-            return NotImplemented
-        if not any(issubclass(t, (SparseArray, np.ndarray)) for t in types):
-            return NotImplemented
+
+        sparse_func = getattr(type(self), func.__name__)
         return sparse_func(*args, **kwargs)
