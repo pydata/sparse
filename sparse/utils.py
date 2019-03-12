@@ -255,7 +255,7 @@ def equivalent(x, y):
 
     # Can contain NaNs
     # FIXME: Complex floats and np.void with multiple values can't be compared properly.
-    return (x == y) | ((x != x) & (y != y))
+    return (x == y) | ((x != x) & (y != y))  # lgtm [py/comparison-of-identical-expressions]
 
 
 def check_zero_fill_value(*args):
