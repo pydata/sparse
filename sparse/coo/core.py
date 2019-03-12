@@ -9,6 +9,8 @@ import numpy as np
 import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
+import numba
+
 from .common import dot, matmul
 from .indexing import getitem
 from .umath import elemwise, broadcast_to
@@ -22,7 +24,7 @@ _reduce_super_ufunc = {
 }
 
 
-class COO(SparseArray, NDArrayOperatorsMixin):
+class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     """
     A sparse multidimensional array.
 
@@ -2047,6 +2049,30 @@ def _keepdims(original, new, axis):
     return new.reshape(shape)
 
 
+@numba.jit(nopython=True, nogil=True)  # pragma: no cover
+def _calc_counts_invidx(groups):
+    inv_idx = []
+    counts = []
+
+    if len(groups) == 0:
+        return (np.array(inv_idx, dtype=groups.dtype),
+                np.array(counts, dtype=groups.dtype))
+
+    inv_idx.append(0)
+
+    last_group = groups[0]
+    for i in range(1, len(groups)):
+        if groups[i] != last_group:
+            counts.append(i - inv_idx[-1])
+            inv_idx.append(i)
+            last_group = groups[i]
+
+    counts.append(len(groups) - inv_idx[-1])
+
+    return (np.array(inv_idx, dtype=groups.dtype),
+            np.array(counts, dtype=groups.dtype))
+
+
 def _grouped_reduce(x, groups, method, **kwargs):
     """
     Performs a :code:`ufunc` grouped reduce.
@@ -2075,8 +2101,6 @@ def _grouped_reduce(x, groups, method, **kwargs):
     """
     # Partial credit to @shoyer
     # Ref: https://gist.github.com/shoyer/f538ac78ae904c936844
-    flag = np.concatenate(([True] if len(x) != 0 else [], groups[1:] != groups[:-1]))
-    inv_idx = np.flatnonzero(flag)
+    inv_idx, counts = _calc_counts_invidx(groups)
     result = method.reduceat(x, inv_idx, **kwargs)
-    counts = np.diff(np.concatenate((inv_idx, [len(x)])))
     return result, inv_idx, counts

@@ -225,7 +225,7 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
         GITS = ["git.cmd", "git.exe"]
 
     _, rc = run_command(GITS, ["rev-parse", "--git-dir"], cwd=root,
-                          hide_stderr=True)
+                        hide_stderr=True)
     if rc != 0:
         if verbose:
             print("Directory %s not under git control" % root)
