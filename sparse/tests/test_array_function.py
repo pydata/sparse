@@ -1,9 +1,15 @@
 import sparse
 from sparse.utils import assert_eq
+import os
 import pytest
 np = pytest.importorskip('numpy', minversion='1.16')
 
 
+env_name = "NUMPY_EXPERIMENTAL_ARRAY_FUNCTION"
+
+
+@pytest.mark.skipif(env_name not in os.environ or os.environ[env_name] != "1",
+                    reason=env_name + " undefined or disabled")
 @pytest.mark.parametrize('func', [
     lambda x: np.dot(x, x),
     lambda x: np.mean(x),
