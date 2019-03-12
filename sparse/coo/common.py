@@ -803,7 +803,7 @@ def argwhere(a):
            [1, 1],
            [1, 2]])
     """
-    return np.transpose(np.nonzero(a))
+    return np.transpose(a.nonzero())
 
 
 def _replace_nan(array, value):

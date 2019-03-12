@@ -9,6 +9,7 @@ matrix:
       env: NUMPY_VERSION="<1.14.0"
     - python: 3.6
     - python: 3.7
+    - python: 3.7
       env:
         - NUMPY_EXPERIMENTAL_ARRAY_FUNCTION="1"
         - NUMPY_VERSION="==1.16.2"
