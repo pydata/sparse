@@ -1,6 +1,36 @@
 Changelog
 =========
 
+0.7.0 / 2019-03-14
+------------------
+
+This is a release that adds compatibility with NumPy's new
+``__array_function__`` protocol, for details refer to
+`NEP-18 <http://www.numpy.org/neps/nep-0018-array-function-protocol.html#coercion-to-a-numpy-array-as-a-catch-all-fallback>`_.
+
+The other big change is that we dropped compatibility with
+Python 2. Users on Python 2 should use version 0.6.0.
+
+There are also some bug-fixes relating to fill-values.
+
+This was mainly a contributor-driven release.
+
+The full list of changes can be found below:
+
+* Fixed a bug where going between :obj:`sparse.DOK` and
+  :obj:`sparse.COO` caused fill-values to be lost.
+  (:issue:`225`, :pr:`226`).
+* Fixed warning for a matrix that was incorrectly considered
+  too dense. (:issue:`228`, :pr:`229`)
+* Fixed some warnings in Python 3.7, the fix was needed.
+  in preparation for Python 3.8. (:pr:`233`, thanks `@nils-werner <https://github.com/nils-werner>`_)
+* Drop support for Python 2.7 (:issue:`234`, :pr:`235`, thanks `@hugovk <https://github.com/hugovk>`_)
+* Clearer error messages (:issue:`230`, :issue:`231`, :pr:`232`)
+* Restructure requirements.txt files. (:pr:`236`)
+* Support fill-value in reductions in specific cases. (:issue:`237`, :pr:`238`)
+* Add ``__array_function__`` support. (:pr:`239`, thanks, `@pentschev <https://github.com/pentschev>`_)
+* Cleaner code! (:pr:`240`)
+
 0.6.0 / 2018-12-19
 ------------------
 
