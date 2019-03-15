@@ -613,12 +613,16 @@ def test_elemwise_trinary(func, shape):
                                            ((1, 5), (5, 1)),
                                            ((3, 1), (3, 4)),
                                            ((3, 1), (1, 4)),
-                                           ((1, 4), (3, 4))])
+                                           ((1, 4), (3, 4)),
+                                           ((2, 2, 2), (1, 1, 1))])
 def test_binary_broadcasting(func, shape1, shape2):
-    xs = sparse.random(shape1, density=0.5)
+    density1 = 1 if np.prod(shape1) == 1 else 0.5
+    density2 = 1 if np.prod(shape2) == 1 else 0.5
+
+    xs = sparse.random(shape1, density=density1)
     x = xs.todense()
 
-    ys = sparse.random(shape2, density=0.5)
+    ys = sparse.random(shape2, density=density2)
     y = ys.todense()
 
     expected = func(x, y)

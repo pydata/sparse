@@ -260,7 +260,13 @@ def _get_expanded_coords_data(coords, data, params, broadcast_shape):
     dim = 0
 
     expanded_coords = np.empty((len(broadcast_shape), all_idx.shape[1]), dtype=np.intp)
-    expanded_data = data[all_idx[first_dim]]
+
+    if first_dim != -1:
+        expanded_data = data[all_idx[first_dim]]
+    else:
+        expanded_coords = all_idx
+        expanded_data = np.repeat(data, np.prod(broadcast_shape, dtype=np.int64))
+        return np.asarray(expanded_coords), np.asarray(expanded_data)
 
     for d, p, l in zip(range(len(broadcast_shape)), params, broadcast_shape):
         if p:
