@@ -604,7 +604,7 @@ def test_elemwise_trinary(func, shape):
     assert_eq(fs, func(x, y, z))
 
 
-@pytest.mark.parametrize('func', [operator.add, operator.mul, operator.sub])
+@pytest.mark.parametrize('func', [operator.add, operator.mul])
 @pytest.mark.parametrize('shape1,shape2', [((2, 3, 4), (3, 4)),
                                            ((3, 4), (2, 3, 4)),
                                            ((3, 1, 4), (3, 2, 4)),
@@ -617,7 +617,7 @@ def test_elemwise_trinary(func, shape):
                                            ((2, 2, 2), (1, 1, 1))])
 def test_binary_broadcasting(func, shape1, shape2):
     density1 = 1 if np.prod(shape1) == 1 else 0.5
-    density2 = 1 if np.prod(shape1) == 1 else 0.5
+    density2 = 1 if np.prod(shape2) == 1 else 0.5
 
     xs = sparse.random(shape1, density=density1)
     x = xs.todense()
