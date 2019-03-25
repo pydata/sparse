@@ -1218,7 +1218,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         ...               [0, 1, 0, 0]], dtype='i8')
         >>> s = COO.from_numpy(x)
         >>> s2 = s.var(axis=1)
-        >>> s2.todense()
+        >>> s2.todense()  # doctest: +SKIP
         array([0.6875, 0.1875])
 
         You can also use the :code:`keepdims` argument to keep the dimensions
@@ -1315,7 +1315,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         ...               [0, 1, 0, 0]], dtype='i8')
         >>> s = COO.from_numpy(x)
         >>> s2 = s.std(axis=1)
-        >>> s2.todense()
+        >>> s2.todense()  # doctest: +SKIP
         array([0.8291562, 0.4330127])
 
         You can also use the :code:`keepdims` argument to keep the dimensions
