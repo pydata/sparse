@@ -1334,7 +1334,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         By default, this reduces the array down to one number, computing the
         standard deviation along all axes.
 
-        >>> s.std()
+        >>> s.std()  # doctest: +SKIP
         0.7071067811865476
         """
         ret = self.var(axis=axis, dtype=dtype, out=out, ddof=ddof,
