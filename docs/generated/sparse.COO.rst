@@ -46,12 +46,14 @@ COO
       COO.reduce
 
       COO.sum
-      COO.mean
       COO.prod
       COO.min
       COO.max
       COO.any
       COO.all
+      COO.mean
+      COO.std
+      COO.var
 
    .. rubric:: :ref:`Converting to other formats <converting>`
    .. autosummary::

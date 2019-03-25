@@ -57,6 +57,8 @@ def test_reductions_fv(reduction, random_sparse_small, axis, keepdims, kwargs):
     ('prod', {}),
     ('max', {}),
     ('min', {}),
+    ('std', {}),
+    ('var', {}),
 ])
 @pytest.mark.parametrize('axis', [None, 0, 1, 2, (0, 2), -3, (1, -1)])
 @pytest.mark.parametrize('keepdims', [True, False])
