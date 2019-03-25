@@ -13,6 +13,8 @@ env_name = "NUMPY_EXPERIMENTAL_ARRAY_FUNCTION"
 @pytest.mark.parametrize('func', [
     lambda x: np.dot(x, x),
     lambda x: np.mean(x),
+    lambda x: np.std(x),
+    lambda x: np.var(x),
     lambda x: np.sum(x),
     lambda x: np.sum(x, axis=0),
     lambda x: np.stack([x, x]),
