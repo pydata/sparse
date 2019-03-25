@@ -772,8 +772,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         -----
         * This function internally calls :obj:`COO.sum_duplicates` to bring the array into
           canonical form.
-        * The :code:`out` parameter is provided just for compatibility with Numpy and
-          isn't actually supported.
 
         Examples
         --------
@@ -833,8 +831,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         -----
         * This function internally calls :obj:`COO.sum_duplicates` to bring the array into
           canonical form.
-        * The :code:`out` parameter is provided just for compatibility with Numpy and
-          isn't actually supported.
 
         Examples
         --------
@@ -892,8 +888,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         -----
         * This function internally calls :obj:`COO.sum_duplicates` to bring the array into
           canonical form.
-        * The :code:`out` parameter is provided just for compatibility with Numpy and
-          isn't actually supported.
 
         Examples
         --------
@@ -946,8 +940,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         -----
         * This function internally calls :obj:`COO.sum_duplicates` to bring the array into
           canonical form.
-        * The :code:`out` parameter is provided just for compatibility with Numpy and
-          isn't actually supported.
 
         Examples
         --------
@@ -1004,8 +996,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         -----
         * This function internally calls :obj:`COO.sum_duplicates` to bring the array into
           canonical form.
-        * The :code:`out` parameter is provided just for compatibility with Numpy and
-          isn't actually supported.
 
         Examples
         --------
@@ -1066,8 +1056,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         -----
         * This function internally calls :obj:`COO.sum_duplicates` to bring the array into
           canonical form.
-        * The :code:`out` parameter is provided just for compatibility with Numpy and
-          isn't actually supported.
 
         Examples
         --------
@@ -1174,21 +1162,186 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         if dtype is None:
             if issubclass(self.dtype.type, (np.integer, np.bool_)):
-                out_dtype = inter_dtype = np.dtype('f8')
+                dtype = inter_dtype = np.dtype('f8')
             else:
-                out_dtype = self.dtype
+                dtype = self.dtype
                 inter_dtype = (np.dtype('f4')
-                               if issubclass(out_dtype.type, np.float16)
-                               else out_dtype)
+                               if issubclass(dtype.type, np.float16)
+                               else dtype)
         else:
-            out_dtype = inter_dtype = dtype
+            inter_dtype = dtype
 
         num = self.sum(axis=axis, keepdims=keepdims, dtype=inter_dtype)
 
         if num.ndim:
             out = np.true_divide(num, den, casting='unsafe')
-            return out.astype(out_dtype) if out.dtype != out_dtype else out
-        return (num / den).astype(out_dtype)
+            return out.astype(dtype) if out.dtype != dtype else out
+        return np.divide(num, den, dtype=dtype, out=out)
+
+    def var(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False):
+        """
+        Compute the variance along the gi66ven axes. Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : Union[int, Iterable[int]], optional
+            The axes along which to compute the variance. Uses all axes by default.
+        dtype : numpy.dtype, optional
+            The output datatype.
+        out: COO, optional
+            The array to write the output to.
+        ddof: int
+            The degrees of freedom.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+
+        Returns
+        -------
+        COO
+            The reduced output sparse array.
+
+        See Also
+        --------
+        numpy.ndarray.var : Equivalent numpy method.
+
+        Notes
+        -----
+        * This function internally calls :obj:`COO.sum_duplicates` to bring the
+          array into canonical form.
+
+        Examples
+        --------
+        You can use :obj:`COO.var` to compute the variance of an array across any
+        dimension.
+
+        >>> x = np.array([[1, 2, 0, 0],
+        ...               [0, 1, 0, 0]], dtype='i8')
+        >>> s = COO.from_numpy(x)
+        >>> s2 = s.var(axis=1)
+        >>> s2.todense()
+        array([0.6875, 0.1875])
+
+        You can also use the :code:`keepdims` argument to keep the dimensions
+        after the variance.
+
+        >>> s3 = s.var(axis=0, keepdims=True)
+        >>> s3.shape
+        (1, 4)
+
+        You can pass in an output datatype, if needed.
+
+        >>> s4 = s.var(axis=0, dtype=np.float16)
+        >>> s4.dtype
+        dtype('float16')
+
+        By default, this reduces the array down to one number, computing the
+        variance along all axes.
+
+        >>> s.var()
+        0.5
+        """
+        axis = normalize_axis(axis, self.ndim)
+
+        if axis is None:
+            axis = tuple(range(self.ndim))
+
+        if not isinstance(axis, tuple):
+            axis = (axis,)
+
+        rcount = reduce(operator.mul, (self.shape[a] for a in axis), 1)
+        # Make this warning show up on top.
+        if ddof >= rcount:
+            warnings.warn("Degrees of freedom <= 0 for slice", RuntimeWarning)
+
+        # Cast bool, unsigned int, and int to float64 by default
+        if dtype is None and issubclass(self.dtype.type, (np.integer, np.bool_)):
+            dtype = np.dtype('f8')
+
+        arrmean = self.sum(axis, dtype=dtype, keepdims=True)
+        np.divide(arrmean, rcount, out=arrmean)
+        x = self - arrmean
+        if issubclass(self.dtype.type, np.complexfloating):
+            x = x.real * x.real + x.imag * x.imag
+        else:
+            x = np.multiply(x, x, out=x)
+
+        ret = x.sum(axis=axis, dtype=dtype, out=out, keepdims=keepdims)
+
+        # Compute degrees of freedom and make sure it is not negative.
+        rcount = max([rcount - ddof, 0])
+
+        ret = ret[...]
+        np.divide(ret, rcount, out=ret, casting='unsafe')
+        return ret[()]
+
+    def std(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False):
+        """
+        Compute the standard deviation along the given axes. Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : Union[int, Iterable[int]], optional
+            The axes along which to compute the standard deviation. Uses
+            all axes by default.
+        dtype : numpy.dtype, optional
+            The output datatype.
+        out: COO, optional
+            The array to write the output to.
+        ddof: int
+            The degrees of freedom.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+
+        Returns
+        -------
+        COO
+            The reduced output sparse array.
+
+        See Also
+        --------
+        numpy.ndarray.std : Equivalent numpy method.
+
+        Notes
+        -----
+        * This function internally calls :obj:`COO.sum_duplicates` to bring the
+          array into canonical form.
+
+        Examples
+        --------
+        You can use :obj:`COO.std` to compute the standard deviation of an array
+        across any dimension.
+
+        >>> x = np.array([[1, 2, 0, 0],
+        ...               [0, 1, 0, 0]], dtype='i8')
+        >>> s = COO.from_numpy(x)
+        >>> s2 = s.std(axis=1)
+        >>> s2.todense()
+        array([0.8291562, 0.4330127])
+
+        You can also use the :code:`keepdims` argument to keep the dimensions
+        after the standard deviation.
+
+        >>> s3 = s.std(axis=0, keepdims=True)
+        >>> s3.shape
+        (1, 4)
+
+        You can pass in an output datatype, if needed.
+
+        >>> s4 = s.std(axis=0, dtype=np.float16)
+        >>> s4.dtype
+        dtype('float16')
+
+        By default, this reduces the array down to one number, computing the
+        standard deviation along all axes.
+
+        >>> s.std()
+        0.7071067811865476
+        """
+        ret = self.var(axis=axis, dtype=dtype, out=out, ddof=ddof,
+                       keepdims=keepdims)
+
+        ret = np.sqrt(ret)
+        return ret
 
     def transpose(self, axes=None):
         """
@@ -1818,11 +1971,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         :obj:`numpy.round` : NumPy equivalent ufunc.
         :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
             arguments.
-
-        Notes
-        -----
-        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
-        actually supported.
         """
         if out is not None and not isinstance(out, tuple):
             out = (out,)
@@ -1882,11 +2030,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         numpy.ndarray.astype : NumPy equivalent ufunc.
         :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
             arguments.
-
-        Notes
-        -----
-        The :code:`out` parameter is provided just for compatibility with Numpy and isn't
-        actually supported.
         """
         return self.__array_ufunc__(np.ndarray.astype, '__call__', self, dtype=dtype)
 
