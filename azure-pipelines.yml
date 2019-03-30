@@ -11,9 +11,8 @@ strategy:
       python_version: '3.5'
     Array Function:
       template: 'ci/azure-pipelines-default-config.yml'
-      env:
-        NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: '1'
-        NUMPY_VERSION: '==1.16.2'
+      NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: '1'
+      NUMPY_VERSION: '==1.16.2'
     MacOS:
       template: 'ci/azure-pipelines-default-config.yml'
       imageName: 'macos-10.13'
