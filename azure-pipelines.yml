@@ -20,9 +20,6 @@ strategy:
       template: 'ci/azure-pipelines-default-config.yml'
       imageName: 'vs2017-win2016'
 
-pool:
-  vmImage: '$(imageName)'
-
 steps:
   - task: UsePythonVersion@0
     inputs:
