@@ -24,3 +24,6 @@ coverage:
     - sparse/tests/
     - sparse/_version.py
     - ^(?!sparse\/)
+
+codecov:
+  token: 8de77158-fc37-47be-930c-f98739f9e5bf
