@@ -1,4 +1,0 @@
-python_version: '3.5'
-imageName: 'ubuntu-16.04'
-pool:
-  vmImage: '$(imageName)'
