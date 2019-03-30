@@ -39,7 +39,7 @@ steps:
   - task: PublishTestResults@2
     condition: always()
     inputs:
-      testResultsFiles: "**/test_*.xml"
+      testResultsFiles: "$(System.DefaultWorkingDirectory)/**/test-*.xml"
       testRunTitle: "Publish test results"
 
   - task: PublishCodeCoverageResults@1
