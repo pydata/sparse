@@ -39,7 +39,7 @@ steps:
   - task: PublishTestResults@2
     condition: always()
     inputs:
-      testResultsFiles: "**/test-*.xml"
+      testResultsFiles: "**/test_*.xml"
       testRunTitle: "Publish test results"
 
   - task: PublishCodeCoverageResults@1
