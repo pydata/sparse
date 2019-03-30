@@ -36,6 +36,9 @@ steps:
   - script: pytest
     displayName: Run tests
 
+  - script: codecov
+    displayName: Upload coverage to CodeCov
+
   - task: PublishTestResults@2
     condition: always()
     inputs:
