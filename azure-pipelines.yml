@@ -1,32 +1,25 @@
-default_config: &default_config
-  python_version: '3.5'
-  imageName: 'ubuntu-16.04'
-
 strategy:
   matrix:
     Python 3.7:
-      <<: *default_config
       python_version: '3.7'
+      vmImage: 'ubuntu-16.04'
     Python 3.6:
-      <<: *default_config
       python_version: '3.6'
+      vmImage: 'ubuntu-16.04'
     Python 3.5:
-      <<: *default_config
       python_version: '3.5'
+      vmImage: 'ubuntu-16.04'
     Array Function:
-      <<: *default_config
-      env:
-        NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: '1'
-        NUMPY_VERSION: '==1.16.2'
+      python_version: '3.5'
+      NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: '1'
+      NUMPY_VERSION: '==1.16.2'
+      vmImage: 'ubuntu-16.04'
     MacOS:
-      <<: *default_config
-      imageName: 'macos-10.13'
+      python_version: '3.5'
+      vmImage: 'macos-10.13'
     Windows:
-      <<: *default_config
-      imageName: 'vs2017-win2016'
-
-pool:
-  vmImage: '$(imageName)'
+      python_version: '3.5'
+      vmImage: 'vs2017-win2016'
 
 steps:
   - task: UsePythonVersion@0
@@ -34,19 +27,22 @@ steps:
       versionSpec: $(python_version)
       architecture: "x64"
 
-  - script: pip install -e .[all]
-    displayName: Install package
-
   - script: |
       pip install numpy$NUMPY_VERSION;
       pip install -e .[tests]
       pip install codecov
+    displayName: Install package
+
+  - script: pytest
     displayName: Run tests
+
+  - script: codecov
+    displayName: Upload coverage to CodeCov
 
   - task: PublishTestResults@2
     condition: always()
     inputs:
-      testResultsFiles: "**/test-*.xml"
+      testResultsFiles: "$(System.DefaultWorkingDirectory)/**/test-*.xml"
       testRunTitle: "Publish test results"
 
   - task: PublishCodeCoverageResults@1
