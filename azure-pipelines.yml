@@ -1,28 +1,24 @@
-default_config: &default_config
-  python_version: '3.5'
-  imageName: 'ubuntu-16.04'
-
 strategy:
   matrix:
     Python 3.7:
-      <<: *default_config
+      template: 'ci/azure-pipelines-default-config.yml'
       python_version: '3.7'
     Python 3.6:
-      <<: *default_config
+      template: 'ci/azure-pipelines-default-config.yml'
       python_version: '3.6'
     Python 3.5:
-      <<: *default_config
+      template: 'ci/azure-pipelines-default-config.yml'
       python_version: '3.5'
     Array Function:
-      <<: *default_config
+      template: 'ci/azure-pipelines-default-config.yml'
       env:
         NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: '1'
         NUMPY_VERSION: '==1.16.2'
     MacOS:
-      <<: *default_config
+      template: 'ci/azure-pipelines-default-config.yml'
       imageName: 'macos-10.13'
     Windows:
-      <<: *default_config
+      template: 'ci/azure-pipelines-default-config.yml'
       imageName: 'vs2017-win2016'
 
 pool:
