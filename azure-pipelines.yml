@@ -27,13 +27,13 @@ steps:
       versionSpec: $(python_version)
       architecture: "x64"
 
-  - script: pip install -e .[all]
-    displayName: Install package
-
   - script: |
       pip install numpy$NUMPY_VERSION;
       pip install -e .[tests]
       pip install codecov
+    displayName: Install package
+
+  - script: pytest
     displayName: Run tests
 
   - task: PublishTestResults@2
