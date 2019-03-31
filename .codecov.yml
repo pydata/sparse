@@ -10,7 +10,6 @@ coverage:
           threshold: "3%"
     
     patch:
-      enabled: yes
       default:
           # Patch coverage must be 92%
           target: auto

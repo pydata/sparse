@@ -9,8 +9,8 @@ This library provides multi-dimensional sparse arrays.
 * `Contributing <https://github.com/pydata/sparse/blob/master/docs/contributing.rst>`_
 * `Bug Reports/Feature Requests <https://github.com/pydata/sparse/issues>`_
 
-.. |Build Status| image:: https://travis-ci.org/pydata/sparse.svg?branch=master
-   :target: https://travis-ci.org/pydata/sparse
+.. |Build Status| image:: https://dev.azure.com/einsteinedison/PyData%20Sparse/_apis/build/status/Tests?branchName=master
+   :target: https://dev.azure.com/einsteinedison/PyData%20Sparse/_apis/build/status/Tests?branchName=master
    :alt: Build status
 
 .. |Docs Status| image:: https://readthedocs.org/projects/sparse-nd/badge/?version=latest
