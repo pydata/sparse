@@ -1,52 +1,38 @@
-strategy:
-  matrix:
-    Python 3.7:
-      python_version: '3.7'
-      vmImage: 'ubuntu-16.04'
-    Python 3.6:
-      python_version: '3.6'
-      vmImage: 'ubuntu-16.04'
-    Python 3.5:
-      python_version: '3.5'
-      vmImage: 'ubuntu-16.04'
-    Array Function:
-      python_version: '3.5'
-      NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: '1'
-      NUMPY_VERSION: '==1.16.2'
-      vmImage: 'ubuntu-16.04'
-    MacOS:
-      python_version: '3.5'
-      vmImage: 'macos-10.13'
-    Windows:
-      python_version: '3.5'
-      vmImage: 'vs2017-win2016'
-
-steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: $(python_version)
-      architecture: "x64"
-
-  - script: |
-      pip install numpy$NUMPY_VERSION;
-      pip install -e .[tests]
-      pip install codecov
-    displayName: Install package
-
-  - script: pytest
-    displayName: Run tests
-
-  - script: codecov
-    displayName: Upload coverage to CodeCov
-
-  - task: PublishTestResults@2
-    condition: always()
-    inputs:
-      testResultsFiles: "$(System.DefaultWorkingDirectory)/**/test-*.xml"
-      testRunTitle: "Publish test results"
-
-  - task: PublishCodeCoverageResults@1
-    inputs:
-      codeCoverageTool: Cobertura
-      summaryFileLocation: "$(System.DefaultWorkingDirectory)/**/coverage.xml"
-      reportDirectory: "$(System.DefaultWorkingDirectory)/**/htmlcov"
+jobs:
+- job: Python37
+  variables:
+    python_version: '3.7'
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+    - template: ci/azure-steps.yml
+- job: Python36
+  variables:
+    python_version: '3.6'
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+    - template: ci/azure-steps.yml
+- job: Python35
+  variables:
+    python_version: '3.5'
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+    - template: ci/azure-steps.yml
+- job: MacOS
+  variables:
+    python_version: '3.5'
+    NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: '1'
+    NUMPY_VERSION: '==1.16.2'
+  pool:
+    vmImage: 'macos-10.14'
+  steps:
+    - template: ci/azure-steps.yml
+- job: Windows
+  variables:
+    python_version: '3.5'
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+    - template: ci/azure-steps.yml
