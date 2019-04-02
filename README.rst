@@ -10,7 +10,7 @@ This library provides multi-dimensional sparse arrays.
 * `Bug Reports/Feature Requests <https://github.com/pydata/sparse/issues>`_
 
 .. |Build Status| image:: https://dev.azure.com/einsteinedison/PyData%20Sparse/_apis/build/status/Tests?branchName=master
-   :target: https://dev.azure.com/einsteinedison/PyData%20Sparse/_apis/build/status/Tests?branchName=master
+   :target: https://dev.azure.com/einsteinedison/PyData%20Sparse/_build/latest?definitionId=1&branchName=master
    :alt: Build status
 
 .. |Docs Status| image:: https://readthedocs.org/projects/sparse-nd/badge/?version=latest
