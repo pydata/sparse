@@ -228,10 +228,14 @@ def test_transpose_error(axis):
 ])
 def test_resize(a, b):
     s = sparse.random(a, density=0.5)
+    orig_size = s.size
     x = s.todense()
 
     x.resize(b)
     s.resize(b)
+    temp = x.reshape(x.size)
+    temp[orig_size:] = s.fill_value
+    assert isinstance(s, sparse.SparseArray)
     assert_eq(x, s)
     
 @pytest.mark.parametrize("axis1", [-3, -2, -1, 0, 1, 2])
@@ -1689,6 +1693,7 @@ def test_add_many_sparse_arrays():
 
 def test_caching():
     x = COO({(9, 9, 9): 1})
+<<<<<<< HEAD
     assert (
         x[:].reshape((100, 10)).transpose().tocsr()
         is not x[:].reshape((100, 10)).transpose().tocsr()
@@ -1699,6 +1704,12 @@ def test_caching():
         x[:].reshape((100, 10)).transpose().tocsr()
         is x[:].reshape((100, 10)).transpose().tocsr()
     )
+=======
+    assert x[:].reshape((100, 10)).transpose().tocsr() is not x[:].reshape((100, 10)).transpose().tocsr()
+
+    x = COO({(9, 9, 9): 1}, cache=True)
+    assert x[:].reshape((100, 10)).transpose().tocsr() is x[:].reshape((100, 10)).transpose().tocsr()
+>>>>>>> Fix up tests and code.
 
     x = COO({(1, 1, 1, 1, 1, 1, 1, 2): 1}, cache=True)
 
