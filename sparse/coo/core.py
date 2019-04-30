@@ -1753,10 +1753,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         else:
             raise ValueError('Invalid input')
         
-        if any(d == -1 for d in shape):
-            extra = int(self.size /
-                        np.prod([d for d in shape if d != -1]))
-            shape = tuple([d if d != -1 else extra for d in shape])
+        if any(d < 0 for d in shape):
+            raise ValueError('negative dimensions not allowed')
         
         # TODO: this self.size enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
