@@ -226,8 +226,9 @@ def test_transpose_error(axis):
 def test_resize(a,b):
     s = sparse.random(a, density=0.5)
     x = s.todense()
-
-    assert_eq(x.resize(b), s.resize(b))
+    x.resize(b)
+    s.resize(b)
+    assert_eq(x, s)
         
 @pytest.mark.parametrize('a,b', [
     [(3, 4), (3, 4)],
