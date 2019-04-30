@@ -229,6 +229,10 @@ def test_resize(a,b):
     s = sparse.random(a, density=0.5)
     x = s.todense()
 
+    x.resize(b)
+    s.resize(b)
+    assert_eq(x, s)
+    
 @pytest.mark.parametrize("axis1", [-3, -2, -1, 0, 1, 2])
 @pytest.mark.parametrize("axis2", [-3, -2, -1, 0, 1, 2])
 def test_swapaxes(axis1, axis2):
