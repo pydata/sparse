@@ -1705,8 +1705,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if self.shape == shape:
             return self
 
-        if np.prod(self.shape) != np.prod(shape):
-            raise ValueError('cannot reshape array of size {} into shape {}'.format(np.prod(self.shape), shape))
+        if self.size != reduce(operator.mul, shape, 1):
+            raise ValueError('cannot reshape array of size {} into shape {}'.format(self.size, shape))
 
         if self._cache is not None:
             for sh, value in self._cache['reshape']:
@@ -1731,7 +1731,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             self._cache['reshape'].append((shape, result))
         return result
 
-    def resize(self, *args, refcheck=False):
+    def resize(self, *args, refcheck=True):
         """
         This method changes the shape and size of an array in-place.
 
@@ -1755,10 +1755,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if any(d < 0 for d in shape):
             raise ValueError('negative dimensions not allowed')
 
+        new_size = reduce(operator.mul, shape, 1)
+
         # TODO: this self.size enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
+        end_idx = np.searchsorted(linear_loc, new_size, side='left')
+        linear_loc = linear_loc[:end_idx]
 
-        coords = np.empty((len(shape), self.nnz), dtype=np.intp)
+        coords = np.empty((len(shape), len(linear_loc)), dtype=np.intp)
         strides = 1
         for i, d in enumerate(shape[::-1]):
             coords[-(i + 1), :] = (linear_loc // strides) % d
@@ -1766,6 +1770,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         self.shape = shape
         self.coords = coords
+
+        if len(self.data) != len(linear_loc):
+            self.data = self.data[:end_idx].copy()
 
     def to_scipy_sparse(self):
         """

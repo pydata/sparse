@@ -226,9 +226,13 @@ def test_transpose_error(axis):
 ])
 def test_resize(a, b):
     s = sparse.random(a, density=0.5)
+    orig_size = s.size
     x = s.todense()
-    x.resize(b)
+    x = np.resize(x, b)
     s.resize(b)
+    temp = x.reshape(x.size)
+    temp[orig_size:] = s.fill_value
+    assert isinstance(s, sparse.SparseArray)
     assert_eq(x, s)
 
 
@@ -1554,16 +1558,16 @@ def test_add_many_sparse_arrays():
 
 
 def test_caching():
-    x = COO({(10, 10, 10): 1})
+    x = COO({(9, 9, 9): 1})
     assert x[:].reshape((100, 10)).transpose().tocsr() is not x[:].reshape((100, 10)).transpose().tocsr()
 
-    x = COO({(10, 10, 10): 1}, cache=True)
+    x = COO({(9, 9, 9): 1}, cache=True)
     assert x[:].reshape((100, 10)).transpose().tocsr() is x[:].reshape((100, 10)).transpose().tocsr()
 
     x = COO({(1, 1, 1, 1, 1, 1, 1, 2): 1}, cache=True)
 
     for i in range(x.ndim):
-        x.reshape((1,) * i + (2,) + (1,) * (x.ndim - i - 1))
+        x.reshape(x.size)
 
     assert len(x._cache['reshape']) < 5
 
