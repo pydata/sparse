@@ -229,7 +229,6 @@ def test_resize(a,b):
     s = sparse.random(a, density=0.5)
     x = s.todense()
 
-<<<<<<< HEAD
 @pytest.mark.parametrize("axis1", [-3, -2, -1, 0, 1, 2])
 @pytest.mark.parametrize("axis2", [-3, -2, -1, 0, 1, 2])
 def test_swapaxes(axis1, axis2):
@@ -322,22 +321,6 @@ def test_resize(a, b):
         [(), ()],
     ],
 )
-=======
-    assert_eq(x.resize(b), s.resize(b))
-        
-@pytest.mark.parametrize('a,b', [
-    [(3, 4), (3, 4)],
-    [(12,), (3, 4)],
-    [(12,), (3, -1)],
-    [(3, 4), (12,)],
-    [(3, 4), (-1, 4)],
-    [(3, 4), (3, -1)],
-    [(2, 3, 4, 5), (8, 15)],
-    [(2, 3, 4, 5), (24, 5)],
-    [(2, 3, 4, 5), (20, 6)],
-    [(), ()],
-])
->>>>>>> Update test_coo.py
 def test_reshape(a, b):
     s = sparse.random(a, density=0.5)
     x = s.todense()
