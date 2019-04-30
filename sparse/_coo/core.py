@@ -1834,9 +1834,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         if self.shape == shape:
             return self
-        
+
         if np.prod(self.shape) != np.prod(shape):
-            raise ValueError('cannot reshape array of size {} into shape {}'.format(np.prod(self.shape),shape))
+            raise ValueError('cannot reshape array of size {} into shape {}'.format(np.prod(self.shape), shape))
 
         if self.size != reduce(operator.mul, shape, 1):
             raise ValueError(

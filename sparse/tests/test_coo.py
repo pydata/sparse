@@ -213,19 +213,20 @@ def test_transpose_error(axis):
     with pytest.raises(ValueError):
         x.transpose(axis)
 
+
 @pytest.mark.parametrize('a,b', [
     [(3, 4), (5, 5)],
     [(12,), (3, 4)],
     [(12,), (3, 6)],
-    [(5,5,5), (6,6,6)],
+    [(5, 5, 5), (6, 6, 6)],
     [(3, 4), (9, 4)],
     [(5,), (4,)],
     [(2, 3, 4, 5), (2, 3, 4, 5, 6)],
-    [(100,), (5,5)],
+    [(100,), (5, 5)],
     [(2, 3, 4, 5), (20, 6)],
     [(), ()],
 ])
-def test_resize(a,b):
+def test_resize(a, b):
     s = sparse.random(a, density=0.5)
     x = s.todense()
 
