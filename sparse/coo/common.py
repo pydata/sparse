@@ -1,4 +1,5 @@
 from functools import reduce, wraps
+from itertools import chain
 import operator
 import warnings
 from collections.abc import Iterable
@@ -147,6 +148,13 @@ def tensordot(a, b, axes=2):
         N2 *= bs[axis]
     newshape_b = (N2, -1)
     oldb = [bs[axis] for axis in notin]
+
+    if any(dim == 0 for dim in chain(newshape_a, newshape_b)):
+        res = asCOO(np.empty(olda + oldb), check=False)
+        if isinstance(a, np.ndarray) or isinstance(b, np.ndarray):
+            res = res.todense()
+
+        return res
 
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)

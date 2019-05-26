@@ -324,6 +324,15 @@ def test_tensordot(a_shape, b_shape, axes):
     # assert isinstance(sparse.tensordot(a, sb, axes), COO)
 
 
+def test_tensordot_empty():
+    x1 = np.empty((0, 0, 0))
+    x2 = np.empty((0, 0, 0))
+    s1 = sparse.COO.from_numpy(x1)
+    s2 = sparse.COO.from_numpy(x2)
+
+    assert_eq(np.tensordot(x1, x2), sparse.tensordot(s1, s2))
+
+
 @pytest.mark.parametrize('a_shape, b_shape', [
     ((3, 1, 6, 5), (2, 1, 4, 5, 6)),
     ((2, 1, 4, 5, 6), (3, 1, 6, 5)),
