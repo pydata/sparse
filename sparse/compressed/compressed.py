@@ -1,12 +1,13 @@
 import numpy as np
 from functools import reduce
 from operator import mul
-from sparse import SparseArray
-from sparse.coo.common import linear_loc
-from sparse.utils import normalize_axis, equivalent, check_zero_fill_value, _zero_of_dtype
-import sparse
 import scipy.sparse as ss
-from .convert import compress_dimension, uncompress_dimension
+
+from ..sparse_array import SparseArray
+from ..coo.common import linear_loc
+from ..utils import normalize_axis, equivalent, check_zero_fill_value, _zero_of_dtype
+from ..coo.core import COO 
+from .convert import uncompress_dimension
 from .indexing import getitem
 
 
@@ -40,9 +41,9 @@ class compressed(SparseArray):
     def __init__(self,arg,shape=None,fill_value=0):
 
         if isinstance(arg,np.ndarray):
-            arg, shape, fill_value = _from_coo(sparse.COO(arg),self.format)
+            arg, shape, fill_value = _from_coo(COO(arg),self.format)
 
-        elif isinstance(arg,sparse.coo.core.COO):
+        elif isinstance(arg,COO):
             arg, shape, fill_value = _from_coo(arg,self.format)
 
         if isinstance(arg,tuple):
@@ -60,7 +61,7 @@ class compressed(SparseArray):
 
     @classmethod
     def from_numpy(cls,x,fill_value=0):
-        coo = sparse.COO(x,fill_value=fill_value)
+        coo = COO(x,fill_value=fill_value)
         return cls.from_coo(coo)
 
 
@@ -81,7 +82,7 @@ class compressed(SparseArray):
 
     @classmethod
     def from_iter(cls,x,shape=None,fill_value=None):
-        return cls.from_coo(sparse.COO.from_iter(x,shape,fill_value))
+        return cls.from_coo(COO.from_iter(x,shape,fill_value))
 
     @property
     def nnz(self):
@@ -110,7 +111,7 @@ class compressed(SparseArray):
     def tocoo(self):
         uncompressed = uncompress_dimension(self.indptr,self.indices)
         coords = np.vstack((uncompressed,self.indices)) if self.format is 'CSR' else np.vstack((self.indices,uncompressed))
-        return sparse.COO(coords,self.data,shape=self.compressed_shape,fill_value=self.fill_value).reshape(self.shape) 
+        return COO(coords,self.data,shape=self.compressed_shape,fill_value=self.fill_value).reshape(self.shape) 
 
     def todense(self):       
         return self.tocoo().todense()
@@ -118,7 +119,7 @@ class compressed(SparseArray):
 
     def todok(self):
 
-        from sparse import DOK 
+        from ..dok import DOK 
         return DOK.from_coo(self.tocoo()) # probably a temporary solution
 
 
@@ -246,7 +247,7 @@ class compressed(SparseArray):
         col_size = np.prod(shape[midpoint:])
         uncompressed = uncompress_dimension(self.indptr,self.indices)
         coords = np.vstack((uncompressed,self.indices)) if self.format is "CSR" else np.vstack((self.indices,uncompressed))
-        reshaped_coords = sparse.COO(coords,self.data,shape=self.compressed_shape).reshape((row_size,col_size)).coords
+        reshaped_coords = COO(coords,self.data,shape=self.compressed_shape).reshape((row_size,col_size)).coords
 
         if self.format is 'CSR':
             indptr = np.zeros(row_size+1,dtype=int)
@@ -299,7 +300,7 @@ class compressed(SparseArray):
         col_size = np.prod(shape[midpoint:])
         uncompressed = uncompress_dimension(self.indptr,self.indices)
         coords = np.vstack((uncompressed,self.indices)) if self.format is "CSR" else np.vstack((self.indices,uncompressed))
-        resized = sparse.COO(coords,self.data,shape=self.compressed_shape).resize((row_size,col_size))
+        resized = COO(coords,self.data,shape=self.compressed_shape).resize((row_size,col_size))
         resized_coords = resized.coords
         self.data = resized.data
         self.shape = shape
