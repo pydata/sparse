@@ -1,7 +1,7 @@
 import numpy as np 
-from sparse.slicing import normalize_index
-from sparse.coo.common import linear_loc
-import sparse
+from ..slicing import normalize_index
+from ..coo.common import linear_loc
+from ..coo.core import COO
 from functools import reduce
 from operator import mul
 from .convert import convert_prep,uncompress_dimension
@@ -164,7 +164,7 @@ def manage_csc_output(x,arg,shape,row_inds,col_inds):
     elif col_inds > row_inds: # r + c + c ##########################################
         raise NotImplementedError('The data returns in the wrong order. Still working on this issue')
         uncompressed = uncompress_dimension(indptr,indices)
-        coords = sparse.COO(np.vstack((indices,uncompressed)),data=data).reshape((row_size,col_size)).coords
+        coords = COO(np.vstack((indices,uncompressed)),data=data).reshape((row_size,col_size)).coords
         uncompressed = None
         indptr = np.zeros(col_size+1,dtype=int)
         np.cumsum(np.bincount(coords[1],minlength=col_size),out=indptr[1:])

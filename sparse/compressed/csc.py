@@ -1,5 +1,5 @@
 import numpy as np 
-from sparse.coo.common import linear_loc
+from ..coo.common import linear_loc
 from .compressed import compressed
 from .convert import uncompress_dimension
 
