@@ -17,10 +17,8 @@ def convert_prep(inds,shape):
 
     rows = np.empty(row_idx_size,dtype=int)
     row_operations = np.prod([ind.size for ind in inds[:midpoint-1]])
-    print(row_operations) 
     row_key_vals = [int(row_inds[i][0]) for i in range(len(row_inds[:-1]))]
     j = np.zeros(len(row_shapes)-1,dtype=int)
-    print('row j: ', j)
     rows = convert_to_2d(row_inds,row_key_vals,row_shapes,row_operations,rows,j)
 
     if len(col_shapes)==1:
@@ -30,18 +28,13 @@ def convert_prep(inds,shape):
         col_operations = np.prod([ind.size for ind in inds[midpoint:-1]])
         col_key_vals = [int(col_inds[i][0]) for i in range(len(col_inds[:-1]))]
         j = np.zeros(len(col_shapes)-1,dtype=int)
-        print('col j: ', j)
         cols = convert_to_2d(col_inds,col_key_vals,col_shapes,col_operations,cols,j)
-        print('motherfucker I am back')
-    print('rows: ',rows)
-    print('cols: ',cols)
     return rows,cols
 
 #@numba.jit(nopython=True,nogil=True)
 def convert_to_2d(inds,key_vals,shape,operations,indices,j):
     
     pos = len(key_vals)-1
-    print(pos)
     increment = 0
     for i in range(operations):
         if key_vals[pos] == inds[pos][-1]:
