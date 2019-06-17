@@ -1,6 +1,8 @@
 import numpy as np
+from numpy.lib.mixins import NDArrayOperatorsMixin
 from functools import reduce
 from operator import mul
+from collections.abc import Iterable
 import scipy.sparse as ss
 
 from ..sparse_array import SparseArray
@@ -12,77 +14,98 @@ from .indexing import getitem
 
 
 
-def _from_coo(x,format):
-    midpoint = int(len(x.shape) // 2)
-    midpoint = midpoint + 1 if len(x.shape) % 2 == 1 else midpoint # where do col axes start
-    if len(x.shape)==3:
-        midpoint = 2
-    row_size = int(np.prod(x.shape[:midpoint]))
-    col_size = int(np.prod(x.shape[midpoint:]))
-    coords = x.reshape((row_size,col_size)).coords
+def _from_coo(x,compressed_axes=None):
+    if compressed_axes == None:
+        compressed_axes = (np.argmin(x.shape),) # defaults to best compression ratio
+    
+    if not isinstance(compressed_axes,Iterable):
+        raise ValueError('compressed_axes must be an iterable')
+    
+    if len(compressed_axes) == len(x.shape):
+        raise ValueError('cannot compress all axes')
+    
+    axis_order = list(compressed_axes)
+    axisptr = len(compressed_axes) # array location where the uncompressed dimensions start
+    axis_order.extend(np.setdiff1d(np.arange(len(x.shape)),compressed_axes))
+    new_shape = np.array(x.shape)[axis_order]
+    row_size = np.prod(new_shape[:axisptr])
+    col_size = np.prod(new_shape[axisptr:])
+    compressed_shape = (row_size,col_size)
+    shape = x.shape
 
-    if format is 'CSR':
-        indptr = np.zeros(row_size+1,dtype=int)
-        np.cumsum(np.bincount(coords[0], minlength=row_size), out=indptr[1:])
-        indices = coords[1]
-        data = x.data
-    else: 
-        linear = linear_loc(coords[[1,0]],(col_size,row_size))
-        order = np.argsort(linear)
-        coords = coords[:,order]
-        indptr = np.zeros(col_size+1,dtype=int)
-        np.cumsum(np.bincount(coords[1], minlength=col_size), out=indptr[1:])
-        indices = coords[0]
-        data = x.data[order]
-    return (data,indices,indptr), x.shape, x.fill_value
+    x = x.transpose(axis_order)
+    linear = linear_loc(x.coords,new_shape)
+    order = np.argsort(linear)
+    coords = x.reshape((compressed_shape)).coords # linearizing twice is unnecessary, fix needed
+    indptr = np.empty(row_size+1,dtype=np.intp); indptr[0] = 0
+    np.cumsum(np.bincount(coords[0],minlength=row_size),out=indptr[1:])
+    indices = coords[1]
+    data = x.data[order]
+    return (data,indices,indptr),shape, compressed_shape,compressed_axes,axis_order,new_shape,axisptr,x.fill_value
 
-class compressed(SparseArray):
+class CSD(SparseArray,NDArrayOperatorsMixin):
 
-    def __init__(self,arg,shape=None,fill_value=0):
+    __array_priority__ = 12
+
+    def __init__(self,arg,shape=None,compressed_axes=None,fill_value=0):
 
         if isinstance(arg,np.ndarray):
-            arg, shape, fill_value = _from_coo(COO(arg),self.format)
+            arg, shape, compressed_shape,compressed_axes,axis_order,reordered_shape,axisptr, fill_value = _from_coo(COO(arg),compressed_axes)
 
         elif isinstance(arg,COO):
-            arg, shape, fill_value = _from_coo(arg,self.format)
+            arg, shape, compressed_shape,compressed_axes,axis_order,reordered_shape,axisptr, fill_value = _from_coo(arg,compressed_axes)
+
+        if shape==None:
+            raise ValueError('missing `shape` attribute')
+
+        if compressed_axes == None:
+            compressed_axes = (np.argmin(self.shape),)
+        elif len(compressed_axes) >= len(shape):
+            raise ValueError('cannot compress all axes')
+
+        compressed_axes = tuple(np.unique(compressed_axes))
+        axis_order = list(compressed_axes)
+        axisptr = len(compressed_axes) # array location where the uncompressed dimensions start
+        axis_order.extend(np.setdiff1d(np.arange(len(shape)),compressed_axes))
+        reordered_shape = np.array(shape)[axis_order]
+        row_size = np.prod(reordered_shape[:axisptr])
+        col_size = np.prod(reordered_shape[axisptr:])
+        compressed_shape = (row_size,col_size)
 
         if isinstance(arg,tuple):
-            data,indices,indptr = arg
-            self.data = data
-            self.indices = indices
-            self.indptr = indptr
+            self.data,self.indices,self.indptr = arg
             self.shape = shape
-            sl = len(shape)
-            row_size = int(np.prod(shape[:sl//2+1]) if sl%2==1 else np.prod(shape[:sl//2]))
-            col_size = int(np.prod(shape[sl//2+1:]) if sl%2==1 else np.prod(shape[sl//2:]))
-            self.compressed_shape = (row_size,col_size)
+            self.compressed_shape = compressed_shape
+            self.compressed_axes = compressed_axes
+            self.axis_order = axis_order
+            self.axisptr = axisptr
+            self.reordered_shape = reordered_shape
             self.fill_value = fill_value
             self.dtype = self.data.dtype
 
     @classmethod
-    def from_numpy(cls,x,fill_value=0):
+    def from_numpy(cls,x,compressed_axes=None,fill_value=0):
         coo = COO(x,fill_value=fill_value)
-        return cls.from_coo(coo)
+        return cls.from_coo(coo,compressed_axes)
 
 
     @classmethod
-    def from_coo(cls,x):
-        arg, shape, fill_value = _from_coo(x,cls.format)
-        return cls(arg,shape=shape,fill_value=fill_value)
+    def from_coo(cls,x,compressed_axes=None):
+        arg, shape, compressed_shape,compressed_axes,axis_order,reordered_shape,axisptr,fill_value = _from_coo(x,compressed_axes)
+        return cls(arg,shape=shape, compressed_axes=compressed_axes,fill_value=fill_value)
 
     @classmethod
     def from_scipy_sparse(cls,x):
-        if cls.format is 'CSR':
-            x = x.asformat('csr')
-            return cls((x.data,x.indices,x.indptr),shape=x.shape)
+        if x.format == 'csc':
+            return cls((x.data,x.indices,x.indptr),shape=x.shape,compressed_axes=(1,))
         else:
-            x = x.asformat('csc')
-            return cls((x.data,x.indices,x.indptr),shape=x.shape)
+            x = x.asformat('csr')
+            return cls((x.data,x.indices,x.indptr),shape=x.shape,compressed_axes=(0,))
         
 
     @classmethod
-    def from_iter(cls,x,shape=None,fill_value=None):
-        return cls.from_coo(COO.from_iter(x,shape,fill_value))
+    def from_iter(cls,x,shape=None,compressed_axes=None,fill_value=None):
+        return cls.from_coo(COO.from_iter(x,shape,fill_value),compressed_axes=compressed_axes)
 
     @property
     def nnz(self):
@@ -101,17 +124,39 @@ class compressed(SparseArray):
         return len(self.shape)
 
     def __str__(self):
-        return '<{}: shape={}, dtype={}, nnz={}, fill_value={}>'.format(self.format,self.shape,self.dtype,self.nnz,self.fill_value)
+        return '<CSD: shape={}, dtype={}, nnz={}, fill_value={}, compressed_axes={}>'.format(self.shape,
+            self.dtype,self.nnz,self.fill_value,self.compressed_axes)
 
     __repr__ = __str__      
 
 
     __getitem__ = getitem
 
+
+    def change_compressed_axes(self,new_compressed_axes):
+        """
+        changes the compressed axes in-place.
+        right now the space complexity feels a little high
+        """
+        new_compressed_axes = tuple(np.unique(new_compressed_axes))
+        if len(new_compressed_axes) >= len(self.shape):
+            raise ValueError('cannot compress all axes')
+        coo = self.tocoo()
+        arg, shape, compressed_shape,compressed_axes,axis_order,reordered_shape,axisptr,fill_value = _from_coo(coo,new_compressed_axes)
+        self.data,self.indices,self.indptr = arg
+        self.compressed_shape = compressed_shape
+        self.compressed_axes = new_compressed_axes
+        self.axis_order = axis_order
+        self.reordered_shape = reordered_shape
+        self.axisptr = axisptr      
+
+
     def tocoo(self):
         uncompressed = uncompress_dimension(self.indptr,self.indices)
-        coords = np.vstack((uncompressed,self.indices)) if self.format is 'CSR' else np.vstack((self.indices,uncompressed))
-        return COO(coords,self.data,shape=self.compressed_shape,fill_value=self.fill_value).reshape(self.shape) 
+        coords = np.vstack((uncompressed,self.indices))
+        order =  np.argsort(self.axis_order)
+        return COO(coords,self.data,shape=self.compressed_shape,fill_value=self.fill_value).reshape(self.reordered_shape).transpose(order) 
+    
 
     def todense(self):       
         return self.tocoo().todense()
@@ -125,7 +170,7 @@ class compressed(SparseArray):
 
     def to_scipy_sparse(self):
         """
-        Converts this :obj:`CSR` or `CSC` object into a :obj:`scipy.sparse.csr_matrix` or `scipy.sparse.csc_matrix`.
+        Converts this :obj:`CSD` object into a :obj:`scipy.sparse.csr_matrix` or `scipy.sparse.csc_matrix`.
         Returns
         -------
         :obj:`scipy.sparse.csr_matrix` or `scipy.sparse.csc_matrix`
@@ -143,7 +188,7 @@ class compressed(SparseArray):
         if self.ndim != 2:
             raise ValueError("Can only convert a 2-dimensional array to a Scipy sparse matrix.")
 
-        if self.format is 'CSR':
+        if 0 in self.compressed_axes:
             return ss.csr_matrix((self.data,self.indices,self.indptr),shape=self.shape)
         else:
             return ss.csc_matrix((self.data,self.indices,self.indptr),shape=self.shape)
@@ -168,10 +213,6 @@ class compressed(SparseArray):
 
         if format is 'coo':
             return self.tocoo()
-        elif format is 'csc':
-            return self.tocsc()
-        elif format is 'csr':
-            return self.tocsr()
         elif format is 'dok':
             return self.todok()
         
@@ -226,7 +267,7 @@ class compressed(SparseArray):
         Numpy and isn't actually supported.
         
         """
-
+        pass
 
         if order not in {'C', None}:
             raise NotImplementedError("The 'order' parameter is not supported")
@@ -246,17 +287,17 @@ class compressed(SparseArray):
         row_size = np.prod(shape[:midpoint])
         col_size = np.prod(shape[midpoint:])
         uncompressed = uncompress_dimension(self.indptr,self.indices)
-        coords = np.vstack((uncompressed,self.indices)) if self.format is "CSR" else np.vstack((self.indices,uncompressed))
+        #coords = np.vstack((uncompressed,self.indices)) if self.format is "CSR" else np.vstack((self.indices,uncompressed))
         reshaped_coords = COO(coords,self.data,shape=self.compressed_shape).reshape((row_size,col_size)).coords
 
-        if self.format is 'CSR':
-            indptr = np.zeros(row_size+1,dtype=int)
-            np.cumsum(np.bincount(reshaped_coords[0], minlength=row_size), out=indptr[1:])
-            indices = reshaped_coords[1]
-        else:
-            indptr = np.zeros(col_size+1,dtype=int)
-            np.cumsum(np.bincount(reshaped_coords[1], minlength=col_size), out=indptr[1:])
-            indices = reshaped_coords[0]
+        #if self.format is 'CSR':
+        #    indptr = np.zeros(row_size+1,dtype=int)
+        #    np.cumsum(np.bincount(reshaped_coords[0], minlength=row_size), out=indptr[1:])
+        #    indices = reshaped_coords[1]
+        #else:
+        #    indptr = np.zeros(col_size+1,dtype=int)
+        #    np.cumsum(np.bincount(reshaped_coords[1], minlength=col_size), out=indptr[1:])
+        #    indices = reshaped_coords[0]
         
         return self.__class__((self.data,indices,indptr),shape=shape,fill_value=self.fill_value)
             
@@ -299,18 +340,18 @@ class compressed(SparseArray):
         row_size = np.prod(shape[:midpoint])
         col_size = np.prod(shape[midpoint:])
         uncompressed = uncompress_dimension(self.indptr,self.indices)
-        coords = np.vstack((uncompressed,self.indices)) if self.format is "CSR" else np.vstack((self.indices,uncompressed))
-        resized = COO(coords,self.data,shape=self.compressed_shape).resize((row_size,col_size))
+        #coords = np.vstack((uncompressed,self.indices)) if self.format is "CSR" else np.vstack((self.indices,uncompressed))
+        #resized = COO(coords,self.data,shape=self.compressed_shape).resize((row_size,col_size))
         resized_coords = resized.coords
         self.data = resized.data
         self.shape = shape
 
-        if self.format is 'CSR':
-            self.indptr = np.zeros(row_size+1,dtype=int)
-            np.cumsum(np.bincount(resized_coords[0], minlength=row_size), out=self.indptr[1:])
-            self.indices = resized_coords[1]
-        else:
-            self.indptr = np.zeros(col_size+1,dtype=int)
-            np.cumsum(np.bincount(resized_coords[1], minlength=col_size), out=self.indptr[1:])
-            self.indices = resized_coords[0]
+        #if self.format is 'CSR':
+        #    self.indptr = np.zeros(row_size+1,dtype=int)
+        #    np.cumsum(np.bincount(resized_coords[0], minlength=row_size), out=self.indptr[1:])
+        #    self.indices = resized_coords[1]
+        #else:
+        #    self.indptr = np.zeros(col_size+1,dtype=int)
+        #    np.cumsum(np.bincount(resized_coords[1], minlength=col_size), out=self.indptr[1:])
+        #    self.indices = resized_coords[0]
         

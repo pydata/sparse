@@ -1,2 +1,1 @@
-from .csr import CSR
-from .csc import CSC
+from .compressed import CSD

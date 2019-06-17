@@ -3,29 +3,30 @@ from functools import reduce
 from operator import mul
 import numba
 
-def convert_prep(inds,shape):
+def convert_prep(inds,shape,axisptr):
 
     inds = [np.array(ind) for ind in inds]
-    midpoint = len(shape)//2
-    midpoint = midpoint + 1 if len(shape)==3 else midpoint
-    row_shapes = np.array(shape[:midpoint])
-    col_shapes = np.array(shape[midpoint:])
-    row_idx_size = np.prod([ind.size for ind in inds[:midpoint]])
-    col_idx_size = np.prod([ind.size for ind in inds[midpoint:]])
-    row_inds = inds[:midpoint]
-    col_inds = inds[midpoint:]
+    row_shapes = np.array(shape[:axisptr])
+    col_shapes = np.array(shape[axisptr:])
+    row_idx_size = np.prod([ind.size for ind in inds[:axisptr]])
+    col_idx_size = np.prod([ind.size for ind in inds[axisptr:]])
+    row_inds = inds[:axisptr]
+    col_inds = inds[axisptr:]
+    print(col_inds) 
 
-    rows = np.empty(row_idx_size,dtype=int)
-    row_operations = np.prod([ind.size for ind in inds[:midpoint-1]])
-    row_key_vals = [int(row_inds[i][0]) for i in range(len(row_inds[:-1]))]
-    j = np.zeros(len(row_shapes)-1,dtype=int)
-    rows = convert_to_2d(row_inds,row_key_vals,row_shapes,row_operations,rows,j)
-
+    if len(row_shapes)==1:
+        rows = row_inds[0]
+    else:
+        rows = np.empty(row_idx_size,dtype=np.intp)
+        row_operations = np.prod([ind.size for ind in inds[:axisptr-1]])
+        row_key_vals = [int(row_inds[i][0]) for i in range(len(row_inds[:-1]))]
+        j = np.zeros(len(row_shapes)-1,dtype=int)
+        rows = convert_to_2d(row_inds,row_key_vals,row_shapes,row_operations,rows,j)
     if len(col_shapes)==1:
         cols = col_inds[0]
     else:
         cols = np.empty(col_idx_size,dtype=int)
-        col_operations = np.prod([ind.size for ind in inds[midpoint:-1]])
+        col_operations = np.prod([ind.size for ind in inds[axisptr:-1]])
         col_key_vals = [int(col_inds[i][0]) for i in range(len(col_inds[:-1]))]
         j = np.zeros(len(col_shapes)-1,dtype=int)
         cols = convert_to_2d(col_inds,col_key_vals,col_shapes,col_operations,cols,j)
