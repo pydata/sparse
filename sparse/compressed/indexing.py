@@ -35,7 +35,6 @@ def getitem(x,key):
     compressed_inds = 0
     uncompressed_inds = 0
     reordered_key = copy.copy(key)
-    print(key)
     for i,ind in enumerate(key):
         if isinstance(ind,Integral):
             continue
