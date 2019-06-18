@@ -282,25 +282,9 @@ class CSD(SparseArray,NDArrayOperatorsMixin):
         if self.size != reduce(mul,shape,1):
             raise ValueError('cannot reshape array of size {} into shape {}'.format(self.size,shape))
         
-        midpoint = int(len(shape)//2)
-        midpoint = midpoint + 1 if len(shape) % 2 == 1 else midpoint
-        row_size = np.prod(shape[:midpoint])
-        col_size = np.prod(shape[midpoint:])
-        uncompressed = uncompress_dimension(self.indptr,self.indices)
-        #coords = np.vstack((uncompressed,self.indices)) if self.format is "CSR" else np.vstack((self.indices,uncompressed))
-        reshaped_coords = COO(coords,self.data,shape=self.compressed_shape).reshape((row_size,col_size)).coords
-
-        #if self.format is 'CSR':
-        #    indptr = np.zeros(row_size+1,dtype=int)
-        #    np.cumsum(np.bincount(reshaped_coords[0], minlength=row_size), out=indptr[1:])
-        #    indices = reshaped_coords[1]
-        #else:
-        #    indptr = np.zeros(col_size+1,dtype=int)
-        #    np.cumsum(np.bincount(reshaped_coords[1], minlength=col_size), out=indptr[1:])
-        #    indices = reshaped_coords[0]
-        
-        return self.__class__((self.data,indices,indptr),shape=shape,fill_value=self.fill_value)
-            
+        # there's likely a way to do this without decompressing to COO
+        coo = self.tocoo().reshape(shape)
+        return CSD.from_coo(coo,compressed_axes)
         
         
 
@@ -335,23 +319,13 @@ class CSD(SparseArray,NDArrayOperatorsMixin):
             return
         
         
-        midpoint = int(len(shape)//2)
-        midpoint = midpoint + 1 if len(shape) % 2 == 1 else midpoint
-        row_size = np.prod(shape[:midpoint])
-        col_size = np.prod(shape[midpoint:])
-        uncompressed = uncompress_dimension(self.indptr,self.indices)
-        #coords = np.vstack((uncompressed,self.indices)) if self.format is "CSR" else np.vstack((self.indices,uncompressed))
-        #resized = COO(coords,self.data,shape=self.compressed_shape).resize((row_size,col_size))
-        resized_coords = resized.coords
-        self.data = resized.data
-        self.shape = shape
-
-        #if self.format is 'CSR':
-        #    self.indptr = np.zeros(row_size+1,dtype=int)
-        #    np.cumsum(np.bincount(resized_coords[0], minlength=row_size), out=self.indptr[1:])
-        #    self.indices = resized_coords[1]
-        #else:
-        #    self.indptr = np.zeros(col_size+1,dtype=int)
-        #    np.cumsum(np.bincount(resized_coords[1], minlength=col_size), out=self.indptr[1:])
-        #    self.indices = resized_coords[0]
+        # there's likely a way to do this without decompressing to COO
+        coo = self.tocoo().resize(shape)
+        arg, shape, compressed_shape,compressed_axes,axis_order,reordered_shape,axisptr,fill_value = _from_coo(coo,new_compressed_axes)
+        self.data,self.indices,self.indptr = arg
+        self.compressed_shape = compressed_shape
+        self.compressed_axes = new_compressed_axes
+        self.axis_order = axis_order
+        self.reordered_shape = reordered_shape
+        self.axisptr = axisptr     
         
