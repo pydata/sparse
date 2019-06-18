@@ -15,14 +15,17 @@ from .indexing import getitem
 
 
 def _from_coo(x,compressed_axes=None):
+    
+    compressed_axes = normalize_axis(compressed_axes,x.ndim)
     if compressed_axes == None:
         compressed_axes = (np.argmin(x.shape),) # defaults to best compression ratio
     
     if not isinstance(compressed_axes,Iterable):
         raise ValueError('compressed_axes must be an iterable')
-    
     if len(compressed_axes) == len(x.shape):
         raise ValueError('cannot compress all axes')
+    if not np.array_equal(np.unique(compressed_shape),sorted(np.array(compressed_shape))):
+            raise ValueError('repeated axis in compressed_axes')
     
     axis_order = list(compressed_axes)
     axisptr = len(compressed_axes) # array location where the uncompressed dimensions start
@@ -57,13 +60,16 @@ class GCXS(SparseArray,NDArrayOperatorsMixin):
 
         if shape==None:
             raise ValueError('missing `shape` attribute')
-
+        
+        compressed_axes = normalize_axis(compressed_axis,len(shape))
+        
         if compressed_axes == None:
             compressed_axes = (np.argmin(self.shape),)
         elif len(compressed_axes) >= len(shape):
             raise ValueError('cannot compress all axes')
-
-        compressed_axes = tuple(np.unique(compressed_axes))
+        if not np.array_equal(np.unique(compressed_shape),sorted(np.array(compressed_shape))):
+            raise ValueError('repeated axis in compressed_axes')
+            
         axis_order = list(compressed_axes)
         axisptr = len(compressed_axes) # array location where the uncompressed dimensions start
         axis_order.extend(np.setdiff1d(np.arange(len(shape)),compressed_axes))
@@ -138,9 +144,11 @@ class GCXS(SparseArray,NDArrayOperatorsMixin):
         changes the compressed axes in-place.
         right now the space complexity feels a little high
         """
-        new_compressed_axes = tuple(np.unique(new_compressed_axes))
+        new_compressed_axes = normalize_axis(new_compressed_axes,self.shape)
         if len(new_compressed_axes) >= len(self.shape):
             raise ValueError('cannot compress all axes')
+        if not np.array_equal(np.unique(compressed_shape),sorted(np.array(compressed_shape))):
+            raise ValueError('repeated axis in compressed_axes')
         coo = self.tocoo()
         arg, shape, compressed_shape,compressed_axes,axis_order,reordered_shape,axisptr,fill_value = _from_coo(coo,new_compressed_axes)
         self.data,self.indices,self.indptr = arg
