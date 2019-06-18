@@ -43,7 +43,7 @@ def _from_coo(x,compressed_axes=None):
     data = x.data[order]
     return (data,indices,indptr),shape, compressed_shape,compressed_axes,axis_order,new_shape,axisptr,x.fill_value
 
-class CSD(SparseArray,NDArrayOperatorsMixin):
+class GCXS(SparseArray,NDArrayOperatorsMixin):
 
     __array_priority__ = 12
 
@@ -124,7 +124,7 @@ class CSD(SparseArray,NDArrayOperatorsMixin):
         return len(self.shape)
 
     def __str__(self):
-        return '<CSD: shape={}, dtype={}, nnz={}, fill_value={}, compressed_axes={}>'.format(self.shape,
+        return '<GCXS: shape={}, dtype={}, nnz={}, fill_value={}, compressed_axes={}>'.format(self.shape,
             self.dtype,self.nnz,self.fill_value,self.compressed_axes)
 
     __repr__ = __str__      
@@ -283,7 +283,7 @@ class CSD(SparseArray,NDArrayOperatorsMixin):
         
         # there's likely a way to do this without decompressing to COO
         coo = self.tocoo().reshape(shape)
-        return CSD.from_coo(coo,compressed_axes)
+        return GCXS.from_coo(coo,compressed_axes)
         
         
 
