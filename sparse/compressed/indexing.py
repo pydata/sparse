@@ -60,7 +60,7 @@ def getitem(x,key):
 
     shape = tuple(shape)
 
-    # this is all temporary, only works if returning the same number of dimensions
+    # this is all temporary and currently doesn't work
     rows,cols = convert_prep(reordered_key,x.reordered_shape,x.axisptr)
     reordered_shape = np.array(shape)[x.axis_order] 
     indptr = np.empty(np.prod(reordered_shape[x.axisptr])+1,dtype=np.intp)
