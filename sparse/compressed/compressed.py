@@ -246,16 +246,16 @@ class CSD(SparseArray,NDArrayOperatorsMixin):
                             "large sparse array to dense")
     
 
-    def reshape(self,shape, order='C'):
+    def reshape(self,shape, order='C', compressed_axes=None):
         """
-        Returns a new :obj:`CSR` or `CSC` array that is a reshaped version of this array.
+        Returns a new :obj:`CSD` array that is a reshaped version of this array.
         Parameters
         ----------
         shape : tuple[int]
             The desired shape of the output array.
         Returns
         -------
-        CSR or CSC
+        CSD
             The reshaped output array.
         See Also
         --------
@@ -267,7 +267,6 @@ class CSD(SparseArray,NDArrayOperatorsMixin):
         Numpy and isn't actually supported.
         
         """
-        pass
 
         if order not in {'C', None}:
             raise NotImplementedError("The 'order' parameter is not supported")
@@ -288,7 +287,7 @@ class CSD(SparseArray,NDArrayOperatorsMixin):
         
         
 
-    def resize(self, *args, refcheck=True):
+    def resize(self, *args, refcheck=True, compressed_axes=None):
         """
         This method changes the shape and size of an array in-place.
         
@@ -317,11 +316,10 @@ class CSD(SparseArray,NDArrayOperatorsMixin):
         
         if self.shape==shape:
             return
-        
-        
+     
         # there's likely a way to do this without decompressing to COO
         coo = self.tocoo().resize(shape)
-        arg, shape, compressed_shape,compressed_axes,axis_order,reordered_shape,axisptr,fill_value = _from_coo(coo,new_compressed_axes)
+        arg, shape, compressed_shape,compressed_axes,axis_order,reordered_shape,axisptr,fill_value = _from_coo(coo,compressed_axes)
         self.data,self.indices,self.indptr = arg
         self.compressed_shape = compressed_shape
         self.compressed_axes = new_compressed_axes
