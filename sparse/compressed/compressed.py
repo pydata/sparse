@@ -117,7 +117,7 @@ class CSD(SparseArray,NDArrayOperatorsMixin):
     
     @property
     def density(self):
-        return self.nnz / reduce(mul,self.shape)
+        return self.nnz / reduce(mul,self.shape,1)
 
     @property
     def ndim(self):
