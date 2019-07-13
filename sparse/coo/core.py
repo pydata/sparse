@@ -2066,7 +2066,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         return self.__array_ufunc__(np.clip, '__call__', self, a_min=min,
                                     a_max=max, out=out)
 
-    def astype(self, dtype):
+    def astype(self, dtype, copy=True):
         """
         Copy of the array, cast to a specified type.
 
@@ -2077,7 +2077,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
             arguments.
         """
-        return self.__array_ufunc__(np.ndarray.astype, '__call__', self, dtype=dtype)
+        return self.__array_ufunc__(np.ndarray.astype, '__call__', self, dtype=dtype, copy=copy)
 
     def maybe_densify(self, max_size=1000, min_density=0.25):
         """
