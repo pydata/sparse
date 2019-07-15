@@ -7,7 +7,7 @@ import scipy.sparse as ss
 
 from ..sparse_array import SparseArray
 from ..coo.common import linear_loc
-from ..utils import normalize_axis, equivalent, check_zero_fill_value, _zero_of_dtype
+from ..utils import normalize_axis, check_zero_fill_value
 from ..coo.core import COO 
 from .convert import uncompress_dimension
 from .indexing import getitem
@@ -17,7 +17,7 @@ from .indexing import getitem
 def _from_coo(x,compressed_axes=None):
     
     compressed_axes = normalize_axis(compressed_axes,x.ndim)
-    if compressed_axes == None:
+    if compressed_axes is None:
         compressed_axes = (np.argmin(x.shape),) # defaults to best compression ratio
     
     if not isinstance(compressed_axes,Iterable):
@@ -58,12 +58,12 @@ class GXCS(SparseArray,NDArrayOperatorsMixin):
         elif isinstance(arg,COO):
             arg, shape, compressed_shape,compressed_axes,axis_order,reordered_shape,axisptr, fill_value = _from_coo(arg,compressed_axes)
 
-        if shape==None:
+        if shape is None:
             raise ValueError('missing `shape` attribute')
         
         compressed_axes = normalize_axis(compressed_axes,len(shape))
         
-        if compressed_axes == None:
+        if compressed_axes is None:
             compressed_axes = (np.argmin(self.shape),)
         elif len(compressed_axes) >= len(shape):
             raise ValueError('cannot compress all axes')
