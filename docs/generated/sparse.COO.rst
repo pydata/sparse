@@ -73,6 +73,7 @@ COO
       COO.copy
       COO.dot
       COO.reshape
+      COO.resize
       COO.transpose
       COO.nonzero
 

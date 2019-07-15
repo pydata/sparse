@@ -47,6 +47,7 @@ coverage.xml
 *,cover
 .pytest_cache/
 test_results/
+junit/
 
 # Airspeed velocity
 .asv/
