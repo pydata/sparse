@@ -1,13 +1,8 @@
 import numpy as np
 import numba
-import copy
 from numbers import Integral
 from collections.abc import Iterable 
 from ..slicing import normalize_index
-from ..coo.common import linear_loc
-from ..coo.core import COO
-from functools import reduce
-from operator import mul
 from .convert import convert_to_flat,uncompress_dimension
 
 
