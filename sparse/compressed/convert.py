@@ -1,6 +1,4 @@
 import numpy as np 
-from functools import reduce
-from operator import mul
 import numba
 
 def convert_to_flat(inds,shape,axisptr):
