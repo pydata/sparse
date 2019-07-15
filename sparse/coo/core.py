@@ -1656,26 +1656,21 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     def reshape(self, shape, order='C'):
         """
         Returns a new :obj:`COO` array that is a reshaped version of this array.
-
         Parameters
         ----------
         shape : tuple[int]
             The desired shape of the output array.
-
         Returns
         -------
         COO
             The reshaped output array.
-
         See Also
         --------
         numpy.ndarray.reshape : The equivalent Numpy function.
-
         Notes
         -----
         The :code:`order` parameter is provided just for compatibility with
         Numpy and isn't actually supported.
-
         Examples
         --------
         >>> s = COO.from_numpy(np.arange(25))
@@ -1704,9 +1699,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         if self.shape == shape:
             return self
-        
-        if np.prod(self.shape) != np.prod(shape):
-            raise ValueError('cannot reshape array of size {} into shape {}'.format(np.prod(self.shape),shape))
+
+        if self.size != reduce(operator.mul, shape, 1):
+            raise ValueError('cannot reshape array of size {} into shape {}'.format(self.size, shape))
 
         if self._cache is not None:
             for sh, value in self._cache['reshape']:
@@ -1731,45 +1726,46 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             self._cache['reshape'].append((shape, result))
         return result
 
-    
-    def resize(self,*args,refcheck=False):
+    def resize(self, *args, refcheck=True):
         """
         This method changes the shape and size of an array in-place.
-        
         Parameters
         ----------
         args : tuple, or series of integers
             The desired shape of the output array.
-        
         See Also
         --------
         numpy.ndarray.resize : The equivalent Numpy function.
-        
         """
-        if len(args)==1 and isinstance(args[0],tuple):
+        if len(args) == 1 and isinstance(args[0], tuple):
             shape = args[0]
-        elif all(isinstance(arg,int) for arg in args):
+        elif all(isinstance(arg, int) for arg in args):
             shape = tuple(args)
         else:
             raise ValueError('Invalid input')
-        
-        if any(d == -1 for d in shape):
-            extra = int(self.size /
-                        np.prod([d for d in shape if d != -1]))
-            shape = tuple([d if d != -1 else extra for d in shape])
-        
+
+        if any(d < 0 for d in shape):
+            raise ValueError('negative dimensions not allowed')
+
+        new_size = reduce(operator.mul, shape, 1)
+
         # TODO: this self.size enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
+        end_idx = np.searchsorted(linear_loc, new_size, side='left')
+        linear_loc = linear_loc[:end_idx]
 
-        coords = np.empty((len(shape), self.nnz), dtype=np.intp)
+        coords = np.empty((len(shape), len(linear_loc)), dtype=np.intp)
         strides = 1
         for i, d in enumerate(shape[::-1]):
             coords[-(i + 1), :] = (linear_loc // strides) % d
             strides *= d
-        
+
         self.shape = shape
         self.coords = coords
-        
+
+        if len(self.data) != len(linear_loc):
+            self.data = self.data[:end_idx].copy()
+
     def to_scipy_sparse(self):
         """
         Converts this :obj:`COO` object into a :obj:`scipy.sparse.coo_matrix`.
