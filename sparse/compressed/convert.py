@@ -36,6 +36,8 @@ def convert_to_2d(inds,key_vals,shape,operations,indices,positions):
         increment += len(inds[-1])
     
     return indices
+
+@numba.jit(nopython=True,nogil=True)
 def uncompress_dimension(indptr):
     """converts an index pointer array into an array of coordinates"""
     uncompressed = np.empty(indptr[-1],dtype=np.intp)
