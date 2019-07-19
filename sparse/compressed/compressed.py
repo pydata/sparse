@@ -181,7 +181,9 @@ class GXCS(SparseArray, NDArrayOperatorsMixin):
         if self.ndim == 1:
             raise NotImplementedError('no axes to compress for 1d array')
 
-        new_compressed_axes = normalize_axis(new_compressed_axes, self.shape)
+        new_compressed_axes = tuple(normalize_axis(new_compressed_axes[i],
+            self.ndim) for i in range(len(new_compressed_axes)))
+        
         if len(new_compressed_axes) >= len(self.shape):
             raise ValueError('cannot compress all axes')
         if len(set(new_compressed_axes)) != len(new_compressed_axes):
