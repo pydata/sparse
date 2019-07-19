@@ -55,7 +55,8 @@ def _from_coo(x, compressed_axes=None):
     np.cumsum(np.bincount(coords[0], minlength=row_size), out=indptr[1:])
     indices = coords[1]
     data = x.data[order]
-    return (data, indices, indptr), shape, compressed_shape, compressed_axes, axis_order, new_shape, axisptr, x.fill_value
+    return ((data, indices, indptr), shape, compressed_shape, compressed_axes, axis_order,
+            new_shape, axisptr, x.fill_value)
 
 
 class GXCS(SparseArray, NDArrayOperatorsMixin):
@@ -77,7 +78,7 @@ class GXCS(SparseArray, NDArrayOperatorsMixin):
 
         if len(shape) != 1:
 
-             # if initializing directly with (data,indices,indptr)
+            # if initializing directly with (data,indices,indptr)
             compressed_axes = normalize_axis(compressed_axes, len(shape))
 
             if compressed_axes is None:
@@ -183,9 +184,7 @@ class GXCS(SparseArray, NDArrayOperatorsMixin):
         new_compressed_axes = normalize_axis(new_compressed_axes, self.shape)
         if len(new_compressed_axes) >= len(self.shape):
             raise ValueError('cannot compress all axes')
-        if not np.array_equal(
-            np.unique(compressed_axes), sorted(
-                np.array(compressed_axes))):
+        if len(set(new_compressed_axes)) != len(new_compressed_axes):
             raise ValueError('repeated axis in compressed_axes')
         coo = self.tocoo()
         arg, shape, compressed_shape, compressed_axes, axis_order, reordered_shape, axisptr, fill_value = _from_coo(
@@ -264,9 +263,9 @@ class GXCS(SparseArray, NDArrayOperatorsMixin):
             If the format isn't supported.
         """
 
-        if format is 'coo':
+        if format == 'coo':
             return self.tocoo()
-        elif format is 'dok':
+        elif format == 'dok':
             return self.todok()
 
         raise NotImplementedError('The given format is not supported.')

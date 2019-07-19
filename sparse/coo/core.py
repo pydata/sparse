@@ -8,7 +8,6 @@ import warnings
 import numpy as np
 import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
- 
 import numba
 
 from .common import dot, matmul
