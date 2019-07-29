@@ -363,8 +363,8 @@ def _compute_mask(coords, indices):  # pragma: no cover
     This is equivalent to mask being ``slice(0, 4, 1)``.
     """
     # Set the initial mask to be the entire range of coordinates.
-    starts = numba.typed.List()
-    stops = numba.typed.List()
+    starts = numba.typed.List.empty_list(numba.types.intp)
+    stops = numba.typed.List.empty_list(numba.types.intp)
     stops.append(coords.shape[1])
     n_matches = coords.shape[1]
 
@@ -399,8 +399,11 @@ def _compute_mask(coords, indices):  # pragma: no cover
     # Convert start-stop pairs into mask, filtering by remaining
     # coordinates.
     mask = _filter_pairs(starts, stops, coords[i:], indices[i:])
+    mask_ar = np.empty(len(mask), dtype=np.intp)
+    for i in range(len(mask)):
+        mask_ar[i] = mask[i]
 
-    return np.array(mask, dtype=np.intp), False
+    return mask_ar, False
 
 
 @numba.jit(nopython=True, nogil=True)
@@ -435,8 +438,8 @@ def _get_mask_pairs(starts_old, stops_old, c, idx):  # pragma: no cover
     Examples
     --------
     >>> c = np.array([1, 2, 1, 2, 1, 1, 2, 2])
-    >>> starts_old = [4]
-    >>> stops_old = [8]
+    >>> starts_old = numba.typed.List([4])
+    >>> stops_old = numba.typed.List([8])
     >>> idx = np.array([1, 2, 1])
     >>> _get_mask_pairs(starts_old, stops_old, c, idx)
     ([4], [6], 2)
@@ -513,8 +516,8 @@ def _filter_pairs(starts, stops, coords, indices):  # pragma: no cover
     Examples
     --------
     >>> import numpy as np
-    >>> starts = [2]
-    >>> stops = [7]
+    >>> starts = numba.typed.List([2])
+    >>> stops = numba.typed.List([7])
     >>> coords = np.array([[0, 1, 2, 3, 4, 5, 6, 7]])
     >>> indices = np.array([[2, 8, 2]]) # Start, stop, step pairs
     >>> _filter_pairs(starts, stops, coords, indices)
@@ -563,8 +566,8 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
 
     Examples
     --------
-    >>> starts = [2, 5]
-    >>> stops = [5, 7]
+    >>> starts = numba.typed.List([2, 5])
+    >>> stops = numba.typed.List([5, 7])
     >>> _join_adjacent_pairs(starts, stops)
     ([2], [7])
     """
