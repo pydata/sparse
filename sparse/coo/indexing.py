@@ -300,7 +300,7 @@ def _compute_multi_mask(coords, indices, adv_idx, adv_idx_pos):  # pragma: no co
             partial_mask = array_from_list_intp(slice_mask)
 
         for j in range(len(partial_mask)):
-            mask.append(partial_mask[i])
+            mask.append(partial_mask[j])
             a_indices.append(i)
 
     return array_from_list_intp(mask), array_from_list_intp(a_indices)
