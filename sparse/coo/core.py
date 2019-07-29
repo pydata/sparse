@@ -2148,7 +2148,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         check_zero_fill_value(self)
         return tuple(self.coords)
 
-    def asformat(self, format):
+    def asformat(self, format, compressed_axes=None):
         """
         Convert this sparse array to a given format.
 
