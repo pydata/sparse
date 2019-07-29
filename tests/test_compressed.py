@@ -146,7 +146,7 @@ def test_slicing(index):
     (1, [2, 0, 1],),
 ])
 def test_advanced_indexing(index):
-    s = GXCS.from_coo(sparse.random((2, 3, 4), density=0.5))
+    s = sparse.random((2, 3, 4), density=0.5, format='gxcs')
     x = s.todense()
 
     assert_eq(x[index], s[index])
@@ -167,7 +167,7 @@ def test_advanced_indexing(index):
     ([[0, 1]],),
 ])
 def test_slicing_errors(index):
-    s = GXCS.from_coo(sparse.random((2, 3, 4), density=0.5))
+    s = sparse.random((2, 3, 4), density=0.5, format='gxcs')
 
     with pytest.raises(IndexError):
         s[index]
