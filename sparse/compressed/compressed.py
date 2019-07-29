@@ -15,6 +15,12 @@ from .indexing import getitem
 
 def _from_coo(x, compressed_axes=None):
 
+    if x.ndim == 0:
+        if compressed_axes is not None:
+            raise ValueError('no axes to compress for 0d array')
+        return (
+            x.data, x.coords, []), x.shape, None, (), None, None, None, x.fill_value
+    
     if x.ndim == 1:
         if compressed_axes is not None:
             raise ValueError('no axes to compress for 1d array')
@@ -83,7 +89,7 @@ class GXCS(SparseArray, NDArrayOperatorsMixin):
 
             if compressed_axes is None:
                 raise ValueError('missing `compressed_axes` argument')
-            elif len(compressed_axes) >= len(shape):
+            elif compressed_axes != () and len(compressed_axes) >= len(shape):
                 raise ValueError('cannot compress all axes')
             if not np.array_equal(
                 np.unique(compressed_axes), sorted(
@@ -213,6 +219,8 @@ class GXCS(SparseArray, NDArrayOperatorsMixin):
             self.reordered_shape).transpose(order)
 
     def todense(self):
+        if self.compressed_axes == ():
+            return np.full(self.shape, self.fill_value, self.dtype)
         return self.tocoo().todense()
 
     def todok(self):
