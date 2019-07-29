@@ -44,7 +44,7 @@ def convert_to_2d(inds, key_vals, shape, operations, indices, positions):
         pos = len(key_vals) - 1
         positions[pos] += 1
         linearized = np.ravel_multi_index(key_vals + [inds[-1][0]], shape)
-        indices[increment:increment + len(inds[-1])] = inds[-1] + linearized
+        indices[increment:increment + len(inds[-1])] = inds[-1] + linearized - inds[-1][0]
         increment += len(inds[-1])
 
     return indices
