@@ -376,10 +376,12 @@ class GXCS(SparseArray, NDArrayOperatorsMixin):
             return
 
         # there's likely a way to do this without decompressing to COO
-        coo = self.tocoo().resize(shape)
+        coo = self.tocoo()
+        coo.resize(shape)
         arg, shape, compressed_shape, compressed_axes, axis_order, reordered_shape, axisptr, fill_value = _from_coo(
             coo, compressed_axes)
         self.data, self.indices, self.indptr = arg
+        self.shape = shape
         self.compressed_shape = compressed_shape
         self.compressed_axes = compressed_axes
         self.axis_order = axis_order
