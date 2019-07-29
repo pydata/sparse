@@ -283,8 +283,8 @@ def _compute_multi_mask(coords, indices, adv_idx, adv_idx_pos):  # pragma: no co
     aidxs : np.ndarray
         The advanced array index.
     """
-    mask = []
-    a_indices = []
+    mask = numba.types.List.empty_list(numba.types.intp)
+    a_indices = numba.types.List.empty_list(numba.types.intp)
     full_idx = np.empty((len(indices) + 1, 3), dtype=np.intp)
 
     full_idx[:adv_idx_pos] = indices[:adv_idx_pos]
@@ -294,7 +294,7 @@ def _compute_multi_mask(coords, indices, adv_idx, adv_idx_pos):  # pragma: no co
         full_idx[adv_idx_pos] = [aidx, aidx + 1, 1]
         partial_mask, is_slice = _compute_mask(coords, full_idx)
         if is_slice:
-            slice_mask = []
+            slice_mask = numba.types.List.empty_list(numba.types.intp)
             for j in range(partial_mask[0], partial_mask[1]):
                 slice_mask.append(j)
             partial_mask = np.array(slice_mask)
@@ -363,8 +363,9 @@ def _compute_mask(coords, indices):  # pragma: no cover
     This is equivalent to mask being ``slice(0, 4, 1)``.
     """
     # Set the initial mask to be the entire range of coordinates.
-    starts = [0]
-    stops = [coords.shape[1]]
+    starts = numba.typed.List()
+    stops = numba.typed.List()
+    stops.append(coords.shape[1])
     n_matches = coords.shape[1]
 
     i = 0
@@ -440,8 +441,8 @@ def _get_mask_pairs(starts_old, stops_old, c, idx):  # pragma: no cover
     >>> _get_mask_pairs(starts_old, stops_old, c, idx)
     ([4], [6], 2)
     """
-    starts = []
-    stops = []
+    starts = numba.typed.List.empty_list(numba.types.intp)
+    stops = numba.typed.List.empty_list(numba.types.intp)
     n_matches = 0
 
     for j in range(len(starts_old)):
@@ -519,7 +520,7 @@ def _filter_pairs(starts, stops, coords, indices):  # pragma: no cover
     >>> _filter_pairs(starts, stops, coords, indices)
     [2, 4, 6]
     """
-    mask = []
+    mask = numba.typed.List.empty_list(numba.types.intp)
 
     # For each pair,
     for i in range(len(starts)):
@@ -570,8 +571,9 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
     if len(starts_old) <= 1:
         return starts_old, stops_old
 
-    starts = [starts_old[0]]
-    stops = []
+    starts = numba.typed.List.empty_list(numba.types.intp)
+    starts.append(starts_old[0])
+    stops = numba.typed.List.empty_list(numba.types.intp)
 
     for i in range(1, len(starts_old)):
         if starts_old[i] != stops_old[i - 1]:
