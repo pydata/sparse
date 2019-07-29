@@ -108,6 +108,7 @@ def getitem(x, key):
         else:
             indices = uncompressed % size
             indptr = np.empty(shape[0] + 1, dtype=np.intp)
+            indptr[0] = 0
             np.cumsum(np.bincount(uncompressed //
                                   size, minlength=shape[0]), out=indptr[1:])
     if not np.any(compressed_inds):
@@ -117,6 +118,7 @@ def getitem(x, key):
         else:
             uncompressed = indices // size
             indptr = np.empty(shape[0] + 1, dtype=np.intp)
+            indptr[0] = 0
             np.cumsum(np.bincount(uncompressed,
                                   minlength=shape[0]), out=indptr[1:])
             indices = indices % size
