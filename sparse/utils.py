@@ -74,6 +74,7 @@ def random(
         random_state=None,
         data_rvs=None,
         format='coo',
+        compressed_axes=None,
         fill_value=None
 ):
     """ Generate a random sparse multidimensional array
@@ -135,6 +136,9 @@ def random(
 
     nnz = int(elements * density)
 
+    if format != 'gxcs' and compressed_axes is not None:
+        raise ValueError('compressed_axes is not supported for {} format'.format(format))
+
     if random_state is None:
         random_state = np.random
     elif isinstance(random_state, Integral):
@@ -159,7 +163,7 @@ def random(
 
     ar = COO(ind[None, :], data, shape=elements, fill_value=fill_value).reshape(shape)
 
-    return ar.asformat(format)
+    return ar.asformat(format,compressed_axes=compressed_axes)
 
 
 def isscalar(x):
