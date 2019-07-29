@@ -297,13 +297,13 @@ def _compute_multi_mask(coords, indices, adv_idx, adv_idx_pos):  # pragma: no co
             slice_mask = numba.types.List.empty_list(numba.types.intp)
             for j in range(partial_mask[0], partial_mask[1]):
                 slice_mask.append(j)
-            partial_mask = np.array(slice_mask)
+            partial_mask = array_from_list_intp(slice_mask)
 
-        mask.extend(partial_mask)
-        for _ in range(len(partial_mask)):
+        for j in range(len(partial_mask)):
+            mask.append(partial_mask[i])
             a_indices.append(i)
 
-    return np.array(mask), np.array(a_indices)
+    return array_from_list_intp(mask), array_from_list_intp(a_indices)
 
 
 @numba.jit(nopython=True, nogil=True)
@@ -366,7 +366,7 @@ def _compute_mask(coords, indices):  # pragma: no cover
     starts = numba.typed.List.empty_list(numba.types.intp)
     stops = numba.typed.List.empty_list(numba.types.intp)
     stops.append(coords.shape[1])
-    n_matches = coords.shape[1]
+    n_matches = np.intp(coords.shape[1])
 
     i = 0
     while i < len(indices):
@@ -399,11 +399,7 @@ def _compute_mask(coords, indices):  # pragma: no cover
     # Convert start-stop pairs into mask, filtering by remaining
     # coordinates.
     mask = _filter_pairs(starts, stops, coords[i:], indices[i:])
-    mask_ar = np.empty(len(mask), dtype=np.intp)
-    for i in range(len(mask)):
-        mask_ar[i] = mask[i]
-
-    return mask_ar, False
+    return array_from_list_intp(mask), False
 
 
 @numba.jit(nopython=True, nogil=True)
@@ -446,7 +442,7 @@ def _get_mask_pairs(starts_old, stops_old, c, idx):  # pragma: no cover
     """
     starts = numba.typed.List.empty_list(numba.types.intp)
     stops = numba.typed.List.empty_list(numba.types.intp)
-    n_matches = 0
+    n_matches = np.intp(0)
 
     for j in range(len(starts_old)):
         # For each matching "integer" in the slice, search within the "sub-coords"
@@ -586,6 +582,17 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
     stops.append(stops_old[-1])
 
     return starts, stops
+
+
+@numba.jit(nopython=True, nogil=True)
+def array_from_list_intp(l):
+    n = len(l)
+    a = np.empty(n, dtype=np.intp)
+
+    for i in range(n):
+        a[i] = l[i]
+
+    return a
 
 
 class _AdvIdxInfo:
