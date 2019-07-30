@@ -5,6 +5,8 @@ import numba
 def convert_to_flat(inds, shape, axisptr):
 
     inds = [np.array(ind) for ind in inds]
+    if any(ind.ndim > 1 for ind in inds):
+        raise IndexError('Only one-dimensional iterable indices supported.')
     col_shapes = np.array(shape[axisptr:])
     col_idx_size = np.prod([ind.size for ind in inds[axisptr:]])
     col_inds = inds[axisptr:]
