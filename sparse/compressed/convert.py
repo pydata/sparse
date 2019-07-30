@@ -28,9 +28,7 @@ def convert_to_flat(inds, shape, axisptr):
     return cols
 
 
-numba.jit(nopython=True, nogil=True)
-
-
+@numba.jit(nopython=True, nogil=True)
 def convert_to_2d(inds, key_vals, shape, operations, indices, positions):
 
     pos = len(key_vals) - 1
