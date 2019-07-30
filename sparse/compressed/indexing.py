@@ -62,8 +62,8 @@ def getitem(x, key):
     # find starts and ends of rows
     a = x.indptr[:-1].reshape(x.reordered_shape[:x.axisptr])
     b = x.indptr[1:].reshape(x.reordered_shape[:x.axisptr])
-    starts, ends = a[reordered_key[:x.axisptr]].flatten(
-    ), b[reordered_key[:x.axisptr]].flatten()
+    starts = a[tuple(reordered_key[:x.axisptr])].flatten()
+    ends = b[tuple(reordered_key[:x.axisptr])].flatten()
 
     # prepare for converting to flat indices
     for i, ind in enumerate(reordered_key):
