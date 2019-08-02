@@ -15,21 +15,28 @@ def convert_to_flat(inds, shape, axisptr):
     cols = np.empty(col_idx_size, dtype=int)
     col_operations = np.prod(
         [ind.size for ind in inds[axisptr:-1]]) if len(inds[axisptr:]) > 1 else 1
-    col_key_vals = [int(col_inds[i][0]) for i in range(
-        len(col_inds[:-1]))] if len(col_inds) > 1 else [int(col_inds[0][0])]
+    col_key_vals = np.array([int(col_inds[i][0]) for i in range(
+        len(col_inds[:-1]))] if len(col_inds) > 1 else [int(col_inds[0][0])])
     positions = np.zeros(len(col_shapes) - 1, dtype=int)
     cols = convert_to_2d(
         col_inds,
         col_key_vals,
-        col_shapes,
+        transform_shape(col_shapes),
         col_operations,
         cols,
         positions)
     return cols
 
+def transform_shape(shape):
+    shape_bins = np.empty(len(shape),dtype=np.intp)
+    shape_bins[-1] = 1
+    for i in range(len(shape)-1):
+        shape_bins[i] = np.prod(shape[i:-1])
+    return shape_bins
+
 
 @numba.jit(nopython=True, nogil=True)
-def convert_to_2d(inds, key_vals, shape, operations, indices, positions):
+def convert_to_2d(inds, key_vals, shape_bins, operations, indices, positions):
 
     pos = len(key_vals) - 1
     increment = 0
@@ -43,8 +50,8 @@ def convert_to_2d(inds, key_vals, shape, operations, indices, positions):
         key_vals[pos] = inds[pos][positions[pos]]
         pos = len(key_vals) - 1
         positions[pos] += 1
-        linearized = np.ravel_multi_index(key_vals + [inds[-1][0]], shape)
-        indices[increment:increment + len(inds[-1])] = inds[-1] + linearized - inds[-1][0]
+        linearized = ((key_vals + np.array([inds[-1][0]])) * shape_bins).sum()
+        indices[increment:increment + len(inds[-1])] =  inds[-1] + linearized - inds[-1][0]
         increment += len(inds[-1])
 
     return indices
