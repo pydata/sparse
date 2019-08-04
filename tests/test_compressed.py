@@ -163,7 +163,6 @@ def test_advanced_indexing(index):
     0.5,
     [0.5],
     {'potato': 'kartoffel'},
-    ([0, 1],) * 2,
     ([[0, 1]],),
 ])
 def test_slicing_errors(index):
