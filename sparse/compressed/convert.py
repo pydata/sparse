@@ -40,8 +40,8 @@ def transform_shape(shape):
     """
     shape_bins = np.empty(len(shape),dtype=np.intp)
     shape_bins[-1] = 1
-    for i in range(len(shape)-1):
-        shape_bins[i] = np.prod(shape[i:-1])
+    for i in range(len(shape)-2,-1,-1):
+        shape_bins[i] = np.prod(shape[i+1:])
     return shape_bins
 
 @numba.jit(nopython=True, nogil=True)
