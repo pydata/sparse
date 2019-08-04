@@ -58,19 +58,22 @@ def getitem(x, key):
         count += 1
 
     reordered_key = [key[i] for i in x.axis_order]
-
+    
+    # prepare for converting to flat indices
+    for i, ind in enumerate(reordered_key[:x.axisptr]):
+        if isinstance(ind,slice):
+            reordered_key[i] = range(ind.start,ind.stop,ind.step)
+    for i, ind in enumerate(reordered_key[x.axisptr:]):
+        if isinstance(ind, Integral):
+            reordered_key[i + x.axisptr] = [ind]
+        elif isinstance(ind, slice):
+            reordered_key[i + x.axisptr] = np.arange(ind.start, ind.stop, ind.step)
+    
     # find starts and ends of rows
     a = x.indptr[:-1].reshape(x.reordered_shape[:x.axisptr])
     b = x.indptr[1:].reshape(x.reordered_shape[:x.axisptr])
     starts = a[tuple(reordered_key[:x.axisptr])].flatten()
     ends = b[tuple(reordered_key[:x.axisptr])].flatten()
-
-    # prepare for converting to flat indices
-    for i, ind in enumerate(reordered_key):
-        if isinstance(ind, Integral):
-            reordered_key[i] = [ind]
-        elif isinstance(ind, slice):
-            reordered_key[i] = np.arange(ind.start, ind.stop, ind.step)
 
     shape = np.array(shape)
 
