@@ -42,30 +42,30 @@ def getitem(x, key):
     uncompressed_inds = np.zeros(len(x.shape), dtype=np.bool)
     shape_key = np.zeros(len(x.shape), dtype=np.intp)
 
-    i = 0
-    for ind in key:
+    Nones_removed = [k for k in key if k is not None]
+    count = 0
+    for i,ind in enumerate(Nones_removed):
         if isinstance(ind, Integral):
             continue
+        elif ind is None:
+            # handle the None cases at the end
+            continue
         elif isinstance(ind, slice):
-            shape_key[i] = i
+            shape_key[i] = count
             shape.append(len(range(ind.start, ind.stop, ind.step)))
             if i in x.compressed_axes:
                 compressed_inds[i] = True
             else:
                 uncompressed_inds[i] = True
         elif isinstance(ind, Iterable):
-            shape_key[i] = i
+            shape_key[i] = count
             shape.append(len(ind))
             if i in x.compressed_axes:
                 compressed_inds[i] = True
             else:
                 uncompressed_inds[i] = True
-        elif ind is None:
-            # handle the None cases at the end
-            continue
-
-        i += 1
-    Nones_removed = [k for k in key if k is not None]
+        count += 1
+        
     reordered_key = [Nones_removed[i] for i in x.axis_order]
     
     # prepare for converting to flat indices
