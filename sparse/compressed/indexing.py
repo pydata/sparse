@@ -1,6 +1,7 @@
 import numpy as np
 import numba
 from numbers import Integral
+from itertools import zip_longest
 from collections.abc import Iterable
 from ..slicing import normalize_index
 from .convert import convert_to_flat, uncompress_dimension
@@ -19,6 +20,11 @@ def getitem(x, key):
 
     key = list(normalize_index(key, x.shape))
 
+    # zip_longest so things like x[..., None] are picked up.
+    if len(key) != 0 and all(isinstance(k, slice) and k == slice(0, dim, 1)
+                               for k, dim in zip_longest(key, x.shape)):
+        return x
+    
     # return a single element
     if all(isinstance(k, int) for k in key):  # indexing for a single element
         key = np.array(key)[x.axis_order]  # reordering the input
@@ -36,28 +42,31 @@ def getitem(x, key):
     uncompressed_inds = np.zeros(len(x.shape), dtype=np.bool)
     shape_key = np.zeros(len(x.shape), dtype=np.intp)
 
-    count = 0
-    for i, ind in enumerate(key):
+    i = 0
+    for ind in key:
         if isinstance(ind, Integral):
             continue
         elif isinstance(ind, slice):
-            shape_key[i] = count
+            shape_key[i] = i
             shape.append(len(range(ind.start, ind.stop, ind.step)))
             if i in x.compressed_axes:
                 compressed_inds[i] = True
             else:
                 uncompressed_inds[i] = True
         elif isinstance(ind, Iterable):
-            shape_key[i] = count
+            shape_key[i] = i
             shape.append(len(ind))
             if i in x.compressed_axes:
                 compressed_inds[i] = True
             else:
                 uncompressed_inds[i] = True
+        elif ind is None:
+            # handle the None cases at the end
+            continue
 
-        count += 1
-
-    reordered_key = [key[i] for i in x.axis_order]
+        i += 1
+    Nones_removed = [k for k in key if k is not None]
+    reordered_key = [Nones_removed[i] for i in x.axis_order]
     
     # prepare for converting to flat indices
     for i, ind in enumerate(reordered_key[:x.axisptr]):
@@ -98,7 +107,6 @@ def getitem(x, key):
     indptr = np.empty(row_size + 1, dtype=np.intp)
     indptr[0] = 0
     arg = get_array_selection(x.data, x.indices, indptr, starts, ends, cols)
-    shape = tuple(shape)
 
     data, indices, indptr = arg
     size = np.prod(shape[1:])
@@ -125,10 +133,22 @@ def getitem(x, key):
             np.cumsum(np.bincount(uncompressed,
                                   minlength=shape[0]), out=indptr[1:])
             indices = indices % size
+    
     arg = (data, indices, indptr)
 
+    compressed_axes = np.array(compressed_axes)
+    shape = shape.tolist()
+    for i in range(len(key)):
+        if key[i] is None:
+            shape.insert(i,1)
+            compressed_axes[compressed_axes>=i] += 1
+
+    compressed_axes = tuple(compressed_axes)
+    shape = tuple(shape)
+    
     if len(shape) == 1:
         compressed_axes = None
+
 
     return GXCS(
         arg,
