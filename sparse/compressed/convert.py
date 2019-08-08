@@ -1,5 +1,6 @@
 import numpy as np
 import numba
+from numba.typed import List
 
 def convert_to_flat(inds, shape, axisptr):
     inds = [np.array(ind) for ind in inds]
@@ -8,7 +9,9 @@ def convert_to_flat(inds, shape, axisptr):
     uncompressed_inds = inds[axisptr:]
     cols = np.empty(np.prod([ind.size for ind in uncompressed_inds]),dtype=np.intp)
     shape_bins = transform_shape(shape[axisptr:])
-    increments = [uncompressed_inds[i] * shape_bins[i] for i in range(len(uncompressed_inds))]
+    increments = List()
+    for i in range(len(uncompressed_inds)):
+        increments.append(uncompressed_inds[i] * shape_bins[i])
     operations = np.prod([ind.shape[0] for ind in increments[:-1]])
     return compute_flat(increments,cols,operations)
     
