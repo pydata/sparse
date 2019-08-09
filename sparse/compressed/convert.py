@@ -13,7 +13,8 @@ def convert_to_flat(inds, shape, axisptr):
     shape_bins = transform_shape(shape[axisptr:])
     increments = List()
     for i in range(len(uncompressed_inds)):
-        increments.append(uncompressed_inds[i] * shape_bins[i])
+        increments.append(
+            (uncompressed_inds[i] * shape_bins[i]).astype(np.int32))
     operations = np.prod([ind.shape[0] for ind in increments[:-1]])
     return compute_flat(increments, cols, operations)
 
