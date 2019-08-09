@@ -22,9 +22,9 @@ def getitem(x, key):
 
     # zip_longest so things like x[..., None] are picked up.
     if len(key) != 0 and all(isinstance(k, slice) and k == slice(0, dim, 1)
-                               for k, dim in zip_longest(key, x.shape)):
+                             for k, dim in zip_longest(key, x.shape)):
         return x
-    
+
     # return a single element
     if all(isinstance(k, int) for k in key):  # indexing for a single element
         key = np.array(key)[x.axis_order]  # reordering the input
@@ -44,7 +44,7 @@ def getitem(x, key):
 
     Nones_removed = [k for k in key if k is not None]
     count = 0
-    for i,ind in enumerate(Nones_removed):
+    for i, ind in enumerate(Nones_removed):
         if isinstance(ind, Integral):
             continue
         elif ind is None:
@@ -65,19 +65,20 @@ def getitem(x, key):
             else:
                 uncompressed_inds[i] = True
         count += 1
-        
+
     reordered_key = [Nones_removed[i] for i in x.axis_order]
-    
+
     # prepare for converting to flat indices
     for i, ind in enumerate(reordered_key[:x.axisptr]):
-        if isinstance(ind,slice):
-            reordered_key[i] = range(ind.start,ind.stop,ind.step)
+        if isinstance(ind, slice):
+            reordered_key[i] = range(ind.start, ind.stop, ind.step)
     for i, ind in enumerate(reordered_key[x.axisptr:]):
         if isinstance(ind, Integral):
             reordered_key[i + x.axisptr] = [ind]
         elif isinstance(ind, slice):
-            reordered_key[i + x.axisptr] = np.arange(ind.start, ind.stop, ind.step)
-    
+            reordered_key[i +
+                          x.axisptr] = np.arange(ind.start, ind.stop, ind.step)
+
     # find starts and ends of rows
     a = x.indptr[:-1].reshape(x.reordered_shape[:x.axisptr])
     b = x.indptr[1:].reshape(x.reordered_shape[:x.axisptr])
@@ -133,22 +134,21 @@ def getitem(x, key):
             np.cumsum(np.bincount(uncompressed,
                                   minlength=shape[0]), out=indptr[1:])
             indices = indices % size
-    
+
     arg = (data, indices, indptr)
 
     compressed_axes = np.array(compressed_axes)
     shape = shape.tolist()
     for i in range(len(key)):
         if key[i] is None:
-            shape.insert(i,1)
-            compressed_axes[compressed_axes>=i] += 1
+            shape.insert(i, 1)
+            compressed_axes[compressed_axes >= i] += 1
 
     compressed_axes = tuple(compressed_axes)
     shape = tuple(shape)
-    
+
     if len(shape) == 1:
         compressed_axes = None
-
 
     return GXCS(
         arg,
