@@ -41,7 +41,7 @@ def compute_flat(increments, cols, operations):
 
 def transform_shape(shape):
     """
-    turns a shape into the linearized increments that 
+    turns a shape into the linearized increments that
     it represents. For example, given (5,5,5), it returns
     np.array([25,5,1]).
     """
@@ -50,7 +50,6 @@ def transform_shape(shape):
     for i in range(len(shape)-2, -1, -1):
         shape_bins[i] = np.prod(shape[i+1:])
     return shape_bins
-
 
 @numba.jit(nopython=True, nogil=True)
 def uncompress_dimension(indptr):
