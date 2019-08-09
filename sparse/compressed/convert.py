@@ -51,6 +51,7 @@ def transform_shape(shape):
         shape_bins[i] = np.prod(shape[i+1:])
     return shape_bins
 
+
 @numba.jit(nopython=True, nogil=True)
 def uncompress_dimension(indptr):
     """converts an index pointer array into an array of coordinates"""
