@@ -20,7 +20,7 @@ def _from_coo(x, compressed_axes=None):
             raise ValueError('no axes to compress for 0d array')
         return (
             x.data, x.coords, []), x.shape, None, (), None, None, None, x.fill_value
-    
+
     if x.ndim == 1:
         if compressed_axes is not None:
             raise ValueError('no axes to compress for 1d array')
@@ -188,8 +188,8 @@ class GXCS(SparseArray, NDArrayOperatorsMixin):
             raise NotImplementedError('no axes to compress for 1d array')
 
         new_compressed_axes = tuple(normalize_axis(new_compressed_axes[i],
-            self.ndim) for i in range(len(new_compressed_axes)))
-        
+                                                   self.ndim) for i in range(len(new_compressed_axes)))
+
         if len(new_compressed_axes) >= len(self.shape):
             raise ValueError('cannot compress all axes')
         if len(set(new_compressed_axes)) != len(new_compressed_axes):
