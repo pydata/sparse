@@ -6,6 +6,7 @@ import scipy
 from sparse import GXCS
 from sparse.utils import assert_eq
 
+
 @pytest.mark.parametrize('a,b', [
     [(3, 4), (5, 5)],
     [(12,), (3, 4)],
@@ -18,7 +19,6 @@ from sparse.utils import assert_eq
     [(2, 3, 4, 5), (20, 6)],
     [(), ()],
 ])
-
 def test_resize(a, b):
     s = sparse.random(a, density=0.5, format='gxcs')
     orig_size = s.size
@@ -50,7 +50,6 @@ def test_reshape(a, b):
     assert_eq(x.reshape(b), s.reshape(b))
 
 
-
 def test_reshape_same():
     s = sparse.random((3, 5), density=0.5, format='gxcs')
 
@@ -58,18 +57,18 @@ def test_reshape_same():
 
 
 def test_to_scipy_sparse():
-    s = sparse.random((3, 5), density=0.5,format='gxcs',compressed_axes=(0,))
+    s = sparse.random((3, 5), density=0.5, format='gxcs', compressed_axes=(0,))
     a = s.to_scipy_sparse()
     b = scipy.sparse.csr_matrix(s.todense())
 
     assert_eq(a, b)
 
+
 def test_tocoo():
-    coo = sparse.random((5,6),density=.5)
+    coo = sparse.random((5, 6), density=.5)
     b = GXCS.from_coo(coo)
 
-    assert_eq(b.tocoo(),coo)
-
+    assert_eq(b.tocoo(), coo)
 
 
 @pytest.mark.parametrize('index', [
@@ -171,11 +170,12 @@ def test_slicing_errors(index):
     with pytest.raises(IndexError):
         s[index]
 
+
 def test_change_compressed_axes():
-    coo = sparse.random((3,4,5),density=.5)
-    s = GXCS.from_coo(coo, compressed_axes=(0,1))
-    b = GXCS.from_coo(coo, compressed_axes=(1,2))
+    coo = sparse.random((3, 4, 5), density=.5)
+    s = GXCS.from_coo(coo, compressed_axes=(0, 1))
+    b = GXCS.from_coo(coo, compressed_axes=(1, 2))
 
-    s.change_compressed_axes((1,2))
+    s.change_compressed_axes((1, 2))
 
-    assert_eq(s,b)
+    assert_eq(s, b)
