@@ -20,7 +20,7 @@ def convert_to_flat(inds, shape, axisptr):
 
 
 @numba.jit(nopython=True, nogil=True)
-def compute_flat(increments, cols, operations): # pragma: no cover
+def compute_flat(increments, cols, operations):  # pragma: no cover
     start = 0
     end = increments[-1].shape[0]
     positions = np.zeros(len(increments)-1, dtype=np.intp)
@@ -54,7 +54,7 @@ def transform_shape(shape):
 
 
 @numba.jit(nopython=True, nogil=True)
-def uncompress_dimension(indptr): # pragma: no cover
+def uncompress_dimension(indptr):  # pragma: no cover
     """converts an index pointer array into an array of coordinates"""
     uncompressed = np.empty(indptr[-1], dtype=np.intp)
     for i in range(len(indptr) - 1):
