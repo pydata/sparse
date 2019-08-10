@@ -1,4 +1,5 @@
 from .coo import *
+from .compressed import GXCS
 from .dok import DOK
 from .sparse_array import SparseArray
 from .utils import random

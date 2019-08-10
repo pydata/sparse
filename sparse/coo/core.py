@@ -8,7 +8,6 @@ import warnings
 import numpy as np
 import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
-
 import numba
 
 from .common import dot, matmul
@@ -222,7 +221,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             self.data = np.broadcast_to(self.data, self.coords.shape[1])
 
         if shape and not self.coords.size:
-            self.coords = np.zeros((len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.uint64)
+            self.coords = np.zeros((len(shape) if isinstance(
+                shape, Iterable) else 1, 0), dtype=np.uint64)
 
         if shape is None:
             if self.coords.nbytes:
@@ -693,7 +693,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         <COO: shape=(5,), dtype=int64, nnz=5, fill_value=0>
         """
         axis = normalize_axis(axis, self.ndim)
-        zero_reduce_result = method.reduce([self.fill_value, self.fill_value], **kwargs)
+        zero_reduce_result = method.reduce(
+            [self.fill_value, self.fill_value], **kwargs)
         reduce_super_ufunc = None
 
         if not equivalent(zero_reduce_result, self.fill_value):
@@ -717,7 +718,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         a = a.reshape((np.prod([self.shape[d] for d in neg_axis], dtype=np.intp),
                        np.prod([self.shape[d] for d in axis], dtype=np.intp)))
 
-        result, inv_idx, counts = _grouped_reduce(a.data, a.coords[0], method, **kwargs)
+        result, inv_idx, counts = _grouped_reduce(
+            a.data, a.coords[0], method, **kwargs)
 
         result_fill_value = self.fill_value
 
@@ -726,7 +728,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             result[missing_counts] = method(result[missing_counts],
                                             self.fill_value, **kwargs)
         else:
-            result = method(result, reduce_super_ufunc(self.fill_value, a.shape[1] - counts)).astype(result.dtype)
+            result = method(result, reduce_super_ufunc(
+                self.fill_value, a.shape[1] - counts)).astype(result.dtype)
             result_fill_value = reduce_super_ufunc(self.fill_value, a.shape[1])
         coords = a.coords[0:1, inv_idx]
 
@@ -1656,26 +1659,21 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     def reshape(self, shape, order='C'):
         """
         Returns a new :obj:`COO` array that is a reshaped version of this array.
-
         Parameters
         ----------
         shape : tuple[int]
             The desired shape of the output array.
-
         Returns
         -------
         COO
             The reshaped output array.
-
         See Also
         --------
         numpy.ndarray.reshape : The equivalent Numpy function.
-
         Notes
         -----
         The :code:`order` parameter is provided just for compatibility with
         Numpy and isn't actually supported.
-
         Examples
         --------
         >>> s = COO.from_numpy(np.arange(25))
@@ -1706,7 +1704,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             return self
 
         if self.size != reduce(operator.mul, shape, 1):
-            raise ValueError('cannot reshape array of size {} into shape {}'.format(self.size, shape))
+            raise ValueError(
+                'cannot reshape array of size {} into shape {}'.format(self.size, shape))
 
         if self._cache is not None:
             for sh, value in self._cache['reshape']:
@@ -1734,7 +1733,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     def resize(self, *args, refcheck=True):
         """
         This method changes the shape and size of an array in-place.
-
         Parameters
         ----------
         args : tuple, or series of integers
@@ -1799,7 +1797,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         check_zero_fill_value(self)
 
         if self.ndim != 2:
-            raise ValueError("Can only convert a 2-dimensional array to a Scipy sparse matrix.")
+            raise ValueError(
+                "Can only convert a 2-dimensional array to a Scipy sparse matrix.")
 
         result = scipy.sparse.coo_matrix((self.data,
                                           (self.coords[0],
@@ -2155,7 +2154,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         check_zero_fill_value(self)
         return tuple(self.coords)
 
-    def asformat(self, format):
+    def asformat(self, format, compressed_axes=None):
         """
         Convert this sparse array to a given format.
 
@@ -2174,6 +2173,13 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         NotImplementedError
             If the format isn't supported.
         """
+        from ..compressed import GXCS
+        if format == 'gxcs' or format is GXCS:
+            return GXCS.from_coo(self, compressed_axes=compressed_axes)
+        elif compressed_axes is not None:
+            raise ValueError(
+                'compressed_axes is not supported for {} format'.format(format))
+
         if format == 'coo' or format is COO:
             return self
 
