@@ -158,7 +158,7 @@ def getitem(x, key):
 
 
 @numba.jit(nopython=True, nogil=True)
-def get_array_selection(arr_data, arr_indices, indptr, starts, ends, col):
+def get_array_selection(arr_data, arr_indices, indptr, starts, ends, col): # pragma: no cover
     """
     This is a very general algorithm to be used when more optimized methods don't apply.
     It performs a binary search for each of the requested elements.
