@@ -221,14 +221,15 @@ class SparseArray:
             for submodule in submodules:
                 module = getattr(module, submodule)
             sparse_func = getattr(module, func.__name__)
-            return sparse_func(*args, **kwargs)
         except AttributeError:
             pass
+        else:
+            return sparse_func(*args, **kwargs)
 
-        if not hasattr(type(self), func.__name__):
+        try:
+            sparse_func = getattr(type(self), func.__name__)
+        except AttributeError:
             return NotImplemented
-
-        sparse_func = getattr(type(self), func.__name__)
 
         if not isinstance(sparse_func, Callable):
             return getattr(self, func.__name__)
