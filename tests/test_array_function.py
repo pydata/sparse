@@ -67,12 +67,12 @@ def test_stack():
 
 
 @pytest.mark.parametrize('arg_order', [
-    pytest.param((0, 0, 1), marks=pytest.mark.xfail),
+    pytest.param((0, 0, 1), marks=pytest.mark.xfail(reason="#271")),
     (0, 1, 0),
     (0, 1, 1),
-    pytest.param((1, 0, 0), marks=pytest.mark.xfail),
+    pytest.param((1, 0, 0), marks=pytest.mark.xfail(reason="#271")),
     (1, 0, 1),
-    pytest.param((1, 1, 0), marks=pytest.mark.xfail),
+    pytest.param((1, 1, 0), marks=pytest.mark.xfail(reason="#271")),
     (1, 1, 1),
 ])
 @pytest.mark.parametrize('func', [
