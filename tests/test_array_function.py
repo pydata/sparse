@@ -1,21 +1,11 @@
 import sparse
+from sparse.settings import NEP18_ENABLED
 from sparse.utils import assert_eq
 import numpy as np
 import pytest
 
 
-def is_nep18_active():
-    class A():
-        def __array_function__(self, *args, **kwargs):
-            return True
-
-    try:
-        return np.concatenate([A()])
-    except ValueError:
-        return False
-
-
-if not is_nep18_active():
+if not NEP18_ENABLED:
     pytest.skip(
         "NEP18 is not enabled", allow_module_level=True
     )
