@@ -20,7 +20,8 @@ env_name = "NUMPY_EXPERIMENTAL_ARRAY_FUNCTION"
     lambda x: np.stack([x, x]),
     lambda x: np.tensordot(x, x),
     lambda x: np.transpose(x),
-    lambda x: np.where(x > np.transpose(x), x, np.transpose(x))
+    lambda x: np.where(x > np.transpose(x), x, np.transpose(x)),
+    lambda x: np.matmul(x, x)
 ])
 def test_array_function(func):
     x = sparse.random((50, 50), density=.25)

@@ -1603,6 +1603,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if out is not None and not all(isinstance(x, COO) for x in out):
             return NotImplemented
 
+        if getattr(ufunc, 'signature', None) is not None:
+            return self.__array_function__(ufunc, (np.ndarray, COO), inputs, kwargs)
+
         if out is not None:
             kwargs['dtype'] = out[0].dtype
 

@@ -217,7 +217,7 @@ class SparseArray:
     def __array_function__(self, func, types, args, kwargs):
         import sparse as module
         try:
-            submodules = func.__module__.split('.')[1:]
+            submodules = getattr(func, '__module__', 'numpy').split('.')[1:]
             for submodule in submodules:
                 module = getattr(module, submodule)
             sparse_func = getattr(module, func.__name__)
