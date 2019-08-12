@@ -25,7 +25,6 @@ if array_function_env != "1":
     np.sum,
     lambda x: np.sum(x, axis=0),
     lambda x: np.transpose(x),
-    lambda x: np.matmul(x, x)
 ])
 def test_unary(func):
     y = sparse.random((50, 50), density=.25)
@@ -42,6 +41,7 @@ def test_unary(func):
     np.dot,
     np.result_type,
     np.tensordot,
+    np.matmul,
 ])
 def test_binary(func, arg_order):
     y = sparse.random((50, 50), density=.25)
