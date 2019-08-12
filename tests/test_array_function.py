@@ -1,20 +1,23 @@
-import os
 import sparse
 from sparse.utils import assert_eq
+import numpy as np
 import pytest
-np = pytest.importorskip('numpy', minversion='1.16')
 
 
-env_name = "NUMPY_EXPERIMENTAL_ARRAY_FUNCTION"
+def is_nep18_active():
+    class A():
+        def __array_function__(self, *args, **kwargs):
+            return True
 
-if np.__version__ < "1.17":
-    array_function_env = os.getenv(env_name, "0")
-else:
-    array_function_env = os.getenv(env_name, "1")
+    try:
+        return np.concatenate([A()])
+    except ValueError:
+        return False
 
-if array_function_env != "1":
+
+if not is_nep18_active():
     pytest.skip(
-        "NUMPY_EXPERIMENTAL_ARRAY_FUNCTION is not enabled", allow_module_level=True
+        "NEP18 is not enabled", allow_module_level=True
     )
 
 
