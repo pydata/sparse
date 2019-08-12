@@ -67,6 +67,8 @@ API
 
     random
 
+    result_type
+
     roll
 
     save_npz

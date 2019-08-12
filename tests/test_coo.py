@@ -9,6 +9,7 @@ import scipy.stats
 
 import sparse
 from sparse import COO
+from sparse.settings import NEP18_ENABLED
 from sparse.utils import assert_eq, random_value_array
 
 
@@ -2123,7 +2124,7 @@ def test_failed_densification():
     from importlib import reload
 
     os.environ['SPARSE_AUTO_DENSIFY'] = '1'
-    reload(sparse)
+    reload(sparse.settings)
 
     s = sparse.random((3, 4, 5), density=0.5)
     x = np.array(s)
@@ -2132,7 +2133,7 @@ def test_failed_densification():
     assert_eq(s, x)
 
     del os.environ['SPARSE_AUTO_DENSIFY']
-    reload(sparse)
+    reload(sparse.settings)
 
 
 def test_warn_on_too_dense():
@@ -2140,13 +2141,13 @@ def test_warn_on_too_dense():
     from importlib import reload
 
     os.environ['SPARSE_WARN_ON_TOO_DENSE'] = '1'
-    reload(sparse)
+    reload(sparse.settings)
 
     with pytest.warns(RuntimeWarning):
         sparse.random((3, 4, 5), density=1.0)
 
     del os.environ['SPARSE_WARN_ON_TOO_DENSE']
-    reload(sparse)
+    reload(sparse.settings)
 
 
 def test_prune_coo():
@@ -2158,3 +2159,28 @@ def test_prune_coo():
 
     # Densify s1 because it isn't canonical
     assert_eq(s1.todense(), s2, check_nnz=False)
+
+
+RESULT_TYPE_DTYPES = [
+    'i1', 'i2', 'i4', 'i8', 'u1', 'u2', 'u4', 'u8',
+    'f4', 'f8', 'c8', 'c16', object,
+]
+@pytest.mark.parametrize('t1', RESULT_TYPE_DTYPES)
+@pytest.mark.parametrize('t2', RESULT_TYPE_DTYPES)
+@pytest.mark.parametrize('func', [
+    sparse.result_type,
+    pytest.param(
+        np.result_type,
+        marks=pytest.mark.skipif(not NEP18_ENABLED, reason="NEP18 is not enabled")
+    ),
+])
+@pytest.mark.parametrize('data', [1, [1]])  # Not the same outputs!
+def test_result_type(t1, t2, func, data):
+    a = np.array(data, dtype=t1)
+    b = np.array(data, dtype=t2)
+    expect = np.result_type(a, b)
+    assert func(a, sparse.COO(b)) == expect
+    assert func(sparse.COO(a), b) == expect
+    assert func(sparse.COO(a), sparse.COO(b)) == expect
+    assert func(a.dtype, sparse.COO(b)) == np.result_type(a.dtype, b)
+    assert func(sparse.COO(a), b.dtype) == np.result_type(a, b.dtype)

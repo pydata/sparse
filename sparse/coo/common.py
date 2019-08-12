@@ -1397,3 +1397,23 @@ def isneginf(x, out=None):
     """
     from .core import elemwise
     return elemwise(lambda x, out=None, dtype=None: np.isneginf(x, out=out), x, out=out)
+
+
+def result_type(*arrays_and_dtypes):
+    """Returns the type that results from applying the NumPy type promotion rules to the
+    arguments.
+
+    See Also
+    --------
+    numpy.result_type : The NumPy equivalent
+    """
+    return np.result_type(*(_as_result_type_arg(x) for x in arrays_and_dtypes))
+
+
+def _as_result_type_arg(x):
+    if not isinstance(x, SparseArray):
+        return x
+    if x.ndim > 0:
+        return x.dtype
+    # 0-dimensional arrays give different result_type outputs than their dtypes
+    return x.todense()

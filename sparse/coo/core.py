@@ -246,8 +246,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                                             self.coords.shape[0],
                                             self.coords.shape))
 
-        from .. import _AUTO_WARN_ON_TOO_DENSE
-        if _AUTO_WARN_ON_TOO_DENSE and self.nbytes >= self.size * self.data.itemsize:
+        from ..settings import WARN_ON_TOO_DENSE
+        if WARN_ON_TOO_DENSE and self.nbytes >= self.size * self.data.itemsize:
             warnings.warn("Attempting to create a sparse array that takes no less "
                           "memory than than an equivalent dense array. You may want to "
                           "use a dense array here instead.", RuntimeWarning)

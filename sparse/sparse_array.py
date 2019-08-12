@@ -207,8 +207,8 @@ class SparseArray:
         """
 
     def __array__(self, **kwargs):
-        from . import _AUTO_DENSIFICATION_ENABLED as densify
-        if not densify:
+        from .settings import AUTO_DENSIFY
+        if not AUTO_DENSIFY:
             raise RuntimeError('Cannot convert a sparse array to dense automatically. '
                                'To manually densify, use the todense method.')
 
