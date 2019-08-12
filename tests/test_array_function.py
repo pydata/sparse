@@ -24,7 +24,8 @@ if array_function_env != "1":
     np.var,
     np.sum,
     lambda x: np.sum(x, axis=0),
-    np.transpose,
+    lambda x: np.transpose(x),
+    lambda x: np.matmul(x, x)
 ])
 def test_unary(func):
     y = sparse.random((50, 50), density=.25)
