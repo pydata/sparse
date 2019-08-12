@@ -840,7 +840,7 @@ def test_sparsearray_elemwise(format):
 
 
 def test_ndarray_densification_fails():
-    xs = sparse.random((3, 4), density=0.5)
+    xs = sparse.random((2, 3, 4), density=0.5)
     y = np.random.rand(3, 4)
 
     with pytest.raises(ValueError):
@@ -1536,7 +1536,7 @@ def test_cache_csr():
 def test_empty_shape():
     x = COO(np.empty((0, 1), dtype=np.int8), [1.0])
     assert x.shape == ()
-    assert ((2 * x).todense() == np.array(2.0)).all()
+    assert_eq(2 * x, np.float_(2.0))
 
 
 def test_single_dimension():
