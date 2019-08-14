@@ -283,8 +283,8 @@ def _compute_multi_mask(coords, indices, adv_idx, adv_idx_pos):  # pragma: no co
     aidxs : np.ndarray
         The advanced array index.
     """
-    mask = []
-    a_indices = []
+    mask = numba.typed.List.empty_list(numba.types.intp)
+    a_indices = numba.typed.List.empty_list(numba.types.intp)
     full_idx = np.empty((len(indices) + 1, 3), dtype=np.intp)
 
     full_idx[:adv_idx_pos] = indices[:adv_idx_pos]
@@ -294,16 +294,16 @@ def _compute_multi_mask(coords, indices, adv_idx, adv_idx_pos):  # pragma: no co
         full_idx[adv_idx_pos] = [aidx, aidx + 1, 1]
         partial_mask, is_slice = _compute_mask(coords, full_idx)
         if is_slice:
-            slice_mask = []
+            slice_mask = numba.typed.List.empty_list(numba.types.intp)
             for j in range(partial_mask[0], partial_mask[1]):
                 slice_mask.append(j)
-            partial_mask = np.array(slice_mask)
+            partial_mask = array_from_list_intp(slice_mask)
 
-        mask.extend(partial_mask)
-        for _ in range(len(partial_mask)):
+        for j in range(len(partial_mask)):
+            mask.append(partial_mask[j])
             a_indices.append(i)
 
-    return np.array(mask), np.array(a_indices)
+    return array_from_list_intp(mask), array_from_list_intp(a_indices)
 
 
 @numba.jit(nopython=True, nogil=True)
@@ -363,9 +363,11 @@ def _compute_mask(coords, indices):  # pragma: no cover
     This is equivalent to mask being ``slice(0, 4, 1)``.
     """
     # Set the initial mask to be the entire range of coordinates.
-    starts = [0]
-    stops = [coords.shape[1]]
-    n_matches = coords.shape[1]
+    starts = numba.typed.List.empty_list(numba.types.intp)
+    starts.append(0)
+    stops = numba.typed.List.empty_list(numba.types.intp)
+    stops.append(coords.shape[1])
+    n_matches = np.intp(coords.shape[1])
 
     i = 0
     while i < len(indices):
@@ -398,8 +400,7 @@ def _compute_mask(coords, indices):  # pragma: no cover
     # Convert start-stop pairs into mask, filtering by remaining
     # coordinates.
     mask = _filter_pairs(starts, stops, coords[i:], indices[i:])
-
-    return np.array(mask, dtype=np.intp), False
+    return array_from_list_intp(mask), False
 
 
 @numba.jit(nopython=True, nogil=True)
@@ -434,15 +435,15 @@ def _get_mask_pairs(starts_old, stops_old, c, idx):  # pragma: no cover
     Examples
     --------
     >>> c = np.array([1, 2, 1, 2, 1, 1, 2, 2])
-    >>> starts_old = [4]
-    >>> stops_old = [8]
+    >>> starts_old = numba.typed.List(); starts_old.append(4)
+    >>> stops_old = numba.typed.List(); stops_old.append(8)
     >>> idx = np.array([1, 2, 1])
     >>> _get_mask_pairs(starts_old, stops_old, c, idx)
-    ([4], [6], 2)
+    (ListType[int64]([4]), ListType[int64]([6]), 2)
     """
-    starts = []
-    stops = []
-    n_matches = 0
+    starts = numba.typed.List.empty_list(numba.types.intp)
+    stops = numba.typed.List.empty_list(numba.types.intp)
+    n_matches = np.intp(0)
 
     for j in range(len(starts_old)):
         # For each matching "integer" in the slice, search within the "sub-coords"
@@ -512,14 +513,14 @@ def _filter_pairs(starts, stops, coords, indices):  # pragma: no cover
     Examples
     --------
     >>> import numpy as np
-    >>> starts = [2]
-    >>> stops = [7]
+    >>> starts = numba.typed.List(); starts.append(2)
+    >>> stops = numba.typed.List(); stops.append(7)
     >>> coords = np.array([[0, 1, 2, 3, 4, 5, 6, 7]])
     >>> indices = np.array([[2, 8, 2]]) # Start, stop, step pairs
     >>> _filter_pairs(starts, stops, coords, indices)
-    [2, 4, 6]
+    ListType[int64]([2, 4, 6])
     """
-    mask = []
+    mask = numba.typed.List.empty_list(numba.types.intp)
 
     # For each pair,
     for i in range(len(starts)):
@@ -562,16 +563,17 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
 
     Examples
     --------
-    >>> starts = [2, 5]
-    >>> stops = [5, 7]
+    >>> starts = numba.typed.List(); starts.append(2); starts.append(5)
+    >>> stops = numba.typed.List(); stops.append(5); stops.append(7)
     >>> _join_adjacent_pairs(starts, stops)
-    ([2], [7])
+    (ListType[int64]([2]), ListType[int64]([7]))
     """
     if len(starts_old) <= 1:
         return starts_old, stops_old
 
-    starts = [starts_old[0]]
-    stops = []
+    starts = numba.typed.List.empty_list(numba.types.intp)
+    starts.append(starts_old[0])
+    stops = numba.typed.List.empty_list(numba.types.intp)
 
     for i in range(1, len(starts_old)):
         if starts_old[i] != stops_old[i - 1]:
@@ -581,6 +583,17 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
     stops.append(stops_old[-1])
 
     return starts, stops
+
+
+@numba.jit(nopython=True, nogil=True)
+def array_from_list_intp(l):  # pragma: no cover
+    n = len(l)
+    a = np.empty(n, dtype=np.intp)
+
+    for i in range(n):
+        a[i] = l[i]
+
+    return a
 
 
 class _AdvIdxInfo:
