@@ -586,7 +586,7 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
 
 
 @numba.jit(nopython=True, nogil=True)
-def array_from_list_intp(l):
+def array_from_list_intp(l):  # pragma: no cover
     n = len(l)
     a = np.empty(n, dtype=np.intp)
 
