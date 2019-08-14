@@ -283,8 +283,8 @@ def _compute_multi_mask(coords, indices, adv_idx, adv_idx_pos):  # pragma: no co
     aidxs : np.ndarray
         The advanced array index.
     """
-    mask = numba.types.List.empty_list(numba.types.intp)
-    a_indices = numba.types.List.empty_list(numba.types.intp)
+    mask = numba.typed.List.empty_list(numba.types.intp)
+    a_indices = numba.typed.List.empty_list(numba.types.intp)
     full_idx = np.empty((len(indices) + 1, 3), dtype=np.intp)
 
     full_idx[:adv_idx_pos] = indices[:adv_idx_pos]
@@ -294,7 +294,7 @@ def _compute_multi_mask(coords, indices, adv_idx, adv_idx_pos):  # pragma: no co
         full_idx[adv_idx_pos] = [aidx, aidx + 1, 1]
         partial_mask, is_slice = _compute_mask(coords, full_idx)
         if is_slice:
-            slice_mask = numba.types.List.empty_list(numba.types.intp)
+            slice_mask = numba.typed.List.empty_list(numba.types.intp)
             for j in range(partial_mask[0], partial_mask[1]):
                 slice_mask.append(j)
             partial_mask = array_from_list_intp(slice_mask)
@@ -364,6 +364,7 @@ def _compute_mask(coords, indices):  # pragma: no cover
     """
     # Set the initial mask to be the entire range of coordinates.
     starts = numba.typed.List.empty_list(numba.types.intp)
+    starts.append(0)
     stops = numba.typed.List.empty_list(numba.types.intp)
     stops.append(coords.shape[1])
     n_matches = np.intp(coords.shape[1])
@@ -434,11 +435,11 @@ def _get_mask_pairs(starts_old, stops_old, c, idx):  # pragma: no cover
     Examples
     --------
     >>> c = np.array([1, 2, 1, 2, 1, 1, 2, 2])
-    >>> starts_old = numba.typed.List([4])
-    >>> stops_old = numba.typed.List([8])
+    >>> starts_old = numba.typed.List(); starts_old.append(4)
+    >>> stops_old = numba.typed.List(); stops_old.append(8)
     >>> idx = np.array([1, 2, 1])
     >>> _get_mask_pairs(starts_old, stops_old, c, idx)
-    ([4], [6], 2)
+    (ListType[int64]([4]), ListType[int64]([6]), 2)
     """
     starts = numba.typed.List.empty_list(numba.types.intp)
     stops = numba.typed.List.empty_list(numba.types.intp)
@@ -512,12 +513,12 @@ def _filter_pairs(starts, stops, coords, indices):  # pragma: no cover
     Examples
     --------
     >>> import numpy as np
-    >>> starts = numba.typed.List([2])
-    >>> stops = numba.typed.List([7])
+    >>> starts = numba.typed.List(); starts.append(2)
+    >>> stops = numba.typed.List(); stops.append(7)
     >>> coords = np.array([[0, 1, 2, 3, 4, 5, 6, 7]])
     >>> indices = np.array([[2, 8, 2]]) # Start, stop, step pairs
     >>> _filter_pairs(starts, stops, coords, indices)
-    [2, 4, 6]
+    ListType[int64]([2, 4, 6])
     """
     mask = numba.typed.List.empty_list(numba.types.intp)
 
@@ -562,10 +563,10 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
 
     Examples
     --------
-    >>> starts = numba.typed.List([2, 5])
-    >>> stops = numba.typed.List([5, 7])
+    >>> starts = numba.typed.List(); starts.append(2); starts.append(5)
+    >>> stops = numba.typed.List(); stops.append(5); stops.append(7)
     >>> _join_adjacent_pairs(starts, stops)
-    ([2], [7])
+    (ListType[int64]([2]), ListType[int64]([7]))
     """
     if len(starts_old) <= 1:
         return starts_old, stops_old
