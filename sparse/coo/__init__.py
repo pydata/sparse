@@ -3,9 +3,7 @@ from .umath import elemwise
 from .common import (tensordot, dot, matmul, concatenate, stack, triu, tril, where,
                      nansum, nanmean, nanprod, nanmin, nanmax, nanreduce, roll,
                      eye, full, full_like, zeros, zeros_like, ones, ones_like,
-                     kron, argwhere, isposinf, isneginf)
-
-from numpy.core._multiarray_umath import result_type
+                     kron, argwhere, isposinf, isneginf, result_type)
 
 __all__ = ['COO', 'as_coo', 'elemwise', 'tensordot', 'dot', 'matmul', 'concatenate', 'stack', 'triu', 'tril', 'where', 'nansum', 'nanmean',
            'nanprod', 'nanmin', 'nanmax', 'nanreduce', 'roll', 'eye', 'full', 'full_like', 'zeros', 'zeros_like', 'ones', 'ones_like', 'kron', 'argwhere',
