@@ -1926,7 +1926,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if (np.diff(linear) >= 0).all():  # already sorted
             return
 
-        order = np.argsort(linear)
+        order = np.argsort(linear, kind='mergesort')
         self.coords = self.coords[:, order]
         self.data = self.data[order]
 

@@ -377,7 +377,7 @@ def _compute_mask(coords, indices):  # pragma: no cover
         # (n_searches * log(avg_length))
         # The other is an estimated time of a linear filter for the mask.
         n_pairs = len(starts)
-        n_current_slices = _get_slice_len(indices[i]) * n_pairs + 2
+        n_current_slices = len(range(indices[i, 0], indices[i, 1], indices[i, 2])) * n_pairs + 2
         if n_current_slices * np.log(n_current_slices / max(n_pairs, 1)) > \
                 n_matches + n_pairs:
             break
@@ -458,35 +458,6 @@ def _get_mask_pairs(starts_old, stops_old, c, idx):  # pragma: no cover
                 n_matches += stop - start
 
     return starts, stops, n_matches
-
-
-@numba.jit(nopython=True, nogil=True)
-def _get_slice_len(idx):  # pragma: no cover
-    """
-    Get the number of elements in a slice.
-
-    Parameters
-    ----------
-    idx : np.ndarray
-        A (3,) shaped array containing start, stop, step
-
-    Returns
-    -------
-    n : int
-        The length of the slice.
-
-    Examples
-    --------
-    >>> idx = np.array([5, 15, 5])
-    >>> _get_slice_len(idx)
-    2
-    """
-    start, stop, step = idx[0], idx[1], idx[2]
-
-    if step > 0:
-        return (stop - start + step - 1) // step
-    else:
-        return (start - stop - step - 1) // (-step)
 
 
 @numba.jit(nopython=True, nogil=True)
