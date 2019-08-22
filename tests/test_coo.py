@@ -1757,6 +1757,16 @@ def test_np_array():
         (2, 1),
         (2, 1, 1)
     ],
+    [
+        (3,),
+        (),
+        (2, 3)
+    ],
+    [
+        (4, 4),
+        (),
+        ()
+    ]
 ])
 def test_three_arg_where(shapes):
     cs = sparse.random(shapes[0], density=0.5).astype(np.bool)
