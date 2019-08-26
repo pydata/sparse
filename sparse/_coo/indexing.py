@@ -5,8 +5,8 @@ import numpy as np
 
 from itertools import zip_longest
 
-from ..slicing import normalize_index
-from ..utils import _zero_of_dtype, equivalent
+from .._slicing import normalize_index
+from .._utils import _zero_of_dtype, equivalent
 
 
 def getitem(x, index):

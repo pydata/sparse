@@ -7,7 +7,7 @@ import operator
 
 import numpy as np
 
-from .utils import _zero_of_dtype
+from ._utils import _zero_of_dtype
 
 
 class SparseArray:
@@ -207,7 +207,7 @@ class SparseArray:
         """
 
     def __array__(self, **kwargs):
-        from .settings import AUTO_DENSIFY
+        from ._settings import AUTO_DENSIFY
         if not AUTO_DENSIFY:
             raise RuntimeError('Cannot convert a sparse array to dense automatically. '
                                'To manually densify, use the todense method.')

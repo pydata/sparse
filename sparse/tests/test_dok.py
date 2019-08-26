@@ -4,7 +4,7 @@ import numpy as np
 
 import sparse
 from sparse import DOK
-from sparse.utils import assert_eq
+from sparse._utils import assert_eq
 
 
 @pytest.mark.parametrize('shape', [

@@ -8,8 +8,8 @@ import numpy as np
 import scipy.sparse
 import numba
 
-from ..sparse_array import SparseArray
-from ..utils import isscalar, normalize_axis, check_zero_fill_value, check_consistent_fill_value
+from .._sparse_array import SparseArray
+from .._utils import isscalar, normalize_axis, check_zero_fill_value, check_consistent_fill_value
 
 
 def asCOO(x, name='asCOO', check=True):

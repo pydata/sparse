@@ -67,7 +67,7 @@ configured your environment, you can just ``cd`` to the root of your repository 
 
 .. code-block:: bash
 
-   pytest
+   pytest --pyargs sparse
 
 This automatically checks code style and functionality, and prints code coverage,
 even though it doesn't fail on low coverage.

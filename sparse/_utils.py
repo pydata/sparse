@@ -6,7 +6,7 @@ import numpy as np
 
 
 def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
-    from .coo import COO
+    from ._coo import COO
     assert x.shape == y.shape
 
     if compare_dtype:
@@ -131,7 +131,7 @@ def random(
     """
     # Copied, in large part, from scipy.sparse.random
     # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
-    from .coo import COO
+    from ._coo import COO
 
     elements = np.prod(shape, dtype=np.intp)
 
@@ -170,7 +170,7 @@ def random(
 
 
 def isscalar(x):
-    from .sparse_array import SparseArray
+    from ._sparse_array import SparseArray
     return not isinstance(x, SparseArray) and np.isscalar(x)
 
 
@@ -328,7 +328,7 @@ def check_consistent_fill_value(arrays):
         which is different from a fill_value of 0.1 in the first argument.
     """
     arrays = list(arrays)
-    from .sparse_array import SparseArray
+    from ._sparse_array import SparseArray
 
     if not all(isinstance(s, SparseArray) for s in arrays):
         raise ValueError('All arrays must be instances of SparseArray.')

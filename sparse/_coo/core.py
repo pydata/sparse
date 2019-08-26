@@ -13,8 +13,8 @@ import numba
 from .common import dot, matmul
 from .indexing import getitem
 from .umath import elemwise, broadcast_to
-from ..sparse_array import SparseArray
-from ..utils import normalize_axis, equivalent, check_zero_fill_value, _zero_of_dtype
+from .._sparse_array import SparseArray
+from .._utils import normalize_axis, equivalent, check_zero_fill_value, _zero_of_dtype
 
 
 _reduce_super_ufunc = {
@@ -246,7 +246,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                                             self.coords.shape[0],
                                             self.coords.shape))
 
-        from ..settings import WARN_ON_TOO_DENSE
+        from .._settings import WARN_ON_TOO_DENSE
         if WARN_ON_TOO_DENSE and self.nbytes >= self.size * self.data.itemsize:
             warnings.warn("Attempting to create a sparse array that takes no less "
                           "memory than than an equivalent dense array. You may want to "
@@ -2176,7 +2176,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         NotImplementedError
             If the format isn't supported.
         """
-        from ..compressed import GXCS
+        from .._compressed import GXCS
         if format == 'gxcs' or format is GXCS:
             return GXCS.from_coo(self, compressed_axes=compressed_axes)
         elif compressed_axes is not None:
@@ -2186,7 +2186,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if format == 'coo' or format is COO:
             return self
 
-        from ..dok import DOK
+        from .._dok import DOK
         if format == 'dok' or format is DOK:
             return DOK.from_coo(self)
 

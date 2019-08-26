@@ -2,9 +2,9 @@ from numbers import Integral
 
 import numpy as np
 
-from .slicing import normalize_index
-from .utils import equivalent
-from .sparse_array import SparseArray
+from ._slicing import normalize_index
+from ._utils import equivalent
+from ._sparse_array import SparseArray
 
 
 class DOK(SparseArray):
@@ -89,7 +89,7 @@ class DOK(SparseArray):
     """
 
     def __init__(self, shape, data=None, dtype=None, fill_value=None):
-        from .coo import COO
+        from ._coo import COO
         self.data = dict()
 
         if isinstance(shape, COO):
@@ -175,7 +175,7 @@ class DOK(SparseArray):
         >>> s2
         <COO: shape=(5, 5), dtype=float64, nnz=4, fill_value=0.0>
         """
-        from .coo import COO
+        from ._coo import COO
         return COO(self)
 
     @classmethod
@@ -370,7 +370,7 @@ class DOK(SparseArray):
         if format == 'dok' or format is DOK:
             return self
 
-        from .coo import COO
+        from ._coo import COO
         if format == 'coo' or format is COO:
             return COO.from_iter(self.data, shape=self.shape, fill_value=self.fill_value)
 

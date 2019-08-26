@@ -9,8 +9,8 @@ import scipy.stats
 
 import sparse
 from sparse import COO
-from sparse.settings import NEP18_ENABLED
-from sparse.utils import assert_eq, random_value_array
+from sparse._settings import NEP18_ENABLED
+from sparse._utils import assert_eq, random_value_array
 
 
 @pytest.fixture(scope='module', params=['f8', 'f4', 'i8', 'i4'])
@@ -783,7 +783,7 @@ def test_trinary_broadcasting_pathological(shapes, func, value, fraction):
 
 
 def test_sparse_broadcasting(monkeypatch):
-    orig_unmatch_coo = sparse.coo.umath._Elemwise._get_func_coords_data
+    orig_unmatch_coo = sparse._coo.umath._Elemwise._get_func_coords_data
 
     state = {'num_matches': 0}
 
@@ -796,7 +796,7 @@ def test_sparse_broadcasting(monkeypatch):
             state['num_matches'] += 1
         return result
 
-    monkeypatch.setattr(sparse.coo.umath._Elemwise, '_get_func_coords_data', mock_unmatch_coo)
+    monkeypatch.setattr(sparse._coo.umath._Elemwise, '_get_func_coords_data', mock_unmatch_coo)
 
     xs * ys
 
@@ -805,7 +805,7 @@ def test_sparse_broadcasting(monkeypatch):
 
 
 def test_dense_broadcasting(monkeypatch):
-    orig_unmatch_coo = sparse.coo.umath._Elemwise._get_func_coords_data
+    orig_unmatch_coo = sparse._coo.umath._Elemwise._get_func_coords_data
 
     state = {'num_matches': 0}
 
@@ -818,7 +818,7 @@ def test_dense_broadcasting(monkeypatch):
             state['num_matches'] += 1
         return result
 
-    monkeypatch.setattr(sparse.coo.umath._Elemwise, '_get_func_coords_data', mock_unmatch_coo)
+    monkeypatch.setattr(sparse._coo.umath._Elemwise, '_get_func_coords_data', mock_unmatch_coo)
 
     xs + ys
 
@@ -2135,7 +2135,7 @@ def test_failed_densification():
     from importlib import reload
 
     os.environ['SPARSE_AUTO_DENSIFY'] = '1'
-    reload(sparse.settings)
+    reload(sparse._settings)
 
     s = sparse.random((3, 4, 5), density=0.5)
     x = np.array(s)
@@ -2144,7 +2144,7 @@ def test_failed_densification():
     assert_eq(s, x)
 
     del os.environ['SPARSE_AUTO_DENSIFY']
-    reload(sparse.settings)
+    reload(sparse._settings)
 
 
 def test_warn_on_too_dense():
@@ -2152,13 +2152,13 @@ def test_warn_on_too_dense():
     from importlib import reload
 
     os.environ['SPARSE_WARN_ON_TOO_DENSE'] = '1'
-    reload(sparse.settings)
+    reload(sparse._settings)
 
     with pytest.warns(RuntimeWarning):
         sparse.random((3, 4, 5), density=1.0)
 
     del os.environ['SPARSE_WARN_ON_TOO_DENSE']
-    reload(sparse.settings)
+    reload(sparse._settings)
 
 
 def test_prune_coo():
