@@ -1,6 +1,40 @@
 Changelog
 =========
 
+0.8.0 / 2019-08-26
+------------------
+
+This release switches to Numba's new typed lists, a lot of
+back-end work with the CI infrastructure, so Linux, macOS
+and Windows are officially tested. It also includes bug fixes.
+
+It also adds in-progress, not yet public support for the GCXS
+format, which is a generalisation of CSR/CSC. (huge thanks to
+:ghuser:`daletovar`)
+
+* Fixed a bug where an array with size == 1 and nnz == 0
+  could not be broadcast. (:issue:`242`, :pr:`243`)
+* Add ``std`` and ``var``. (:pr:`244`)
+* Move to Azure Pipelines with CI for Windows, macOS and
+  Linux. (:pr:`245`, :pr:`246`, :pr:`247`, :pr:`248`)
+* Add ``resize``, and change ``reshape`` so it raises a
+  ``ValueError`` on shapes that don't correspond to the
+  same size. (:issue:`241`, :issue:`250`, :pr:`256`
+  thanks, :ghuser:`daletovar`)
+* Add ``isposinf`` and ``isneginf``. (:issue:`252`, :pr:`253`)
+* Fix ``tensordot`` when nnz = 0. (:issue:`255`, :pr:`256`)
+* Modifications to ``__array_function__`` to allow for sparse
+  XArrays. (:pr:`261`, thanks :ghuser:`nvictus`)
+* Add not-yet-public support for GCXS. (:pr:`258`, thanks :ghuser:`daletovar`)
+* Improvements to ``__array_function__``. (:pr:`267`, :pr:`272`, thanks
+  :ghuser:`crusaderky`)
+* Convert all Numba lists to typed lists. (:pr:`264`)
+* Why write code when it exists elsewhere? (:pr:`277`)
+* Fix some element-wise operations with scalars. (:pr:`278`)
+* Private modules should be private, and tests should be in the package.
+  (:pr:`280`)
+
+
 0.7.0 / 2019-03-14
 ------------------
 
@@ -23,12 +57,13 @@ The full list of changes can be found below:
 * Fixed warning for a matrix that was incorrectly considered
   too dense. (:issue:`228`, :pr:`229`)
 * Fixed some warnings in Python 3.7, the fix was needed.
-  in preparation for Python 3.8. (:pr:`233`, thanks `@nils-werner <https://github.com/nils-werner>`_)
-* Drop support for Python 2.7 (:issue:`234`, :pr:`235`, thanks `@hugovk <https://github.com/hugovk>`_)
+  in preparation for Python 3.8. (:pr:`233`, thanks :ghuser:`nils-werner`)
+* Drop support for Python 2.7 (:issue:`234`, :pr:`235`, thanks
+  :ghuser:`hugovk`)
 * Clearer error messages (:issue:`230`, :issue:`231`, :pr:`232`)
 * Restructure requirements.txt files. (:pr:`236`)
 * Support fill-value in reductions in specific cases. (:issue:`237`, :pr:`238`)
-* Add ``__array_function__`` support. (:pr:`239`, thanks, `@pentschev <https://github.com/pentschev>`_)
+* Add ``__array_function__`` support. (:pr:`239`, thanks, :ghuser:`pentschev`)
 * Cleaner code! (:pr:`240`)
 
 0.6.0 / 2018-12-19
