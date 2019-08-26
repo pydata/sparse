@@ -6,7 +6,7 @@ import scipy.sparse
 
 from itertools import zip_longest
 
-from ..utils import isscalar, equivalent, _zero_of_dtype
+from .._utils import isscalar, equivalent, _zero_of_dtype
 
 
 def elemwise(func, *args, **kwargs):
@@ -401,7 +401,7 @@ class _Elemwise:
             Extra arguments to pass to the function.
         """
         from .core import COO
-        from ..sparse_array import SparseArray
+        from .._sparse_array import SparseArray
 
         processed_args = []
 

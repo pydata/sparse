@@ -7,7 +7,7 @@ import numpy as np
 import sparse
 
 from sparse import save_npz, load_npz
-from sparse.utils import assert_eq
+from sparse._utils import assert_eq
 
 
 @pytest.mark.parametrize('compression', [True, False])

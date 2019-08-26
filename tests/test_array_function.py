@@ -1,6 +1,6 @@
 import sparse
-from sparse.settings import NEP18_ENABLED
-from sparse.utils import assert_eq
+from sparse._settings import NEP18_ENABLED
+from sparse._utils import assert_eq
 import numpy as np
 import pytest
 

@@ -3,8 +3,8 @@ import pytest
 import numpy as np
 import scipy
 
-from sparse import GXCS
-from sparse.utils import assert_eq
+from sparse._compressed import GXCS
+from sparse._utils import assert_eq
 
 
 @pytest.mark.parametrize('a,b', [
