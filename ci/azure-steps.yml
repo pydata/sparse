@@ -10,7 +10,7 @@ steps:
       pip install codecov
     displayName: Install package
 
-  - script: pytest
+  - script: pytest --pyargs sparse
     displayName: Run tests
 
   - script: codecov
