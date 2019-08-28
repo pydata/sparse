@@ -7,7 +7,7 @@ import operator
 
 import numpy as np
 
-from .utils import _zero_of_dtype
+from ._utils import _zero_of_dtype
 
 
 class SparseArray:
@@ -207,8 +207,8 @@ class SparseArray:
         """
 
     def __array__(self, **kwargs):
-        from . import _AUTO_DENSIFICATION_ENABLED as densify
-        if not densify:
+        from ._settings import AUTO_DENSIFY
+        if not AUTO_DENSIFY:
             raise RuntimeError('Cannot convert a sparse array to dense automatically. '
                                'To manually densify, use the todense method.')
 
@@ -217,18 +217,19 @@ class SparseArray:
     def __array_function__(self, func, types, args, kwargs):
         import sparse as module
         try:
-            submodules = func.__module__.split('.')[1:]
+            submodules = getattr(func, '__module__', 'numpy').split('.')[1:]
             for submodule in submodules:
                 module = getattr(module, submodule)
             sparse_func = getattr(module, func.__name__)
-            return sparse_func(*args, **kwargs)
         except AttributeError:
             pass
+        else:
+            return sparse_func(*args, **kwargs)
 
-        if not hasattr(type(self), func.__name__):
+        try:
+            sparse_func = getattr(type(self), func.__name__)
+        except AttributeError:
             return NotImplemented
-
-        sparse_func = getattr(type(self), func.__name__)
 
         if not isinstance(sparse_func, Callable):
             return getattr(self, func.__name__)

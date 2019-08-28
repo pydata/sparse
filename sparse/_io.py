@@ -1,6 +1,6 @@
 import numpy as np
 
-from .coo.core import COO
+from ._coo.core import COO
 
 
 def save_npz(filename, matrix, compressed=True):

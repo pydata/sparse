@@ -6,7 +6,7 @@ import scipy.sparse
 
 from itertools import zip_longest
 
-from ..utils import isscalar, equivalent, _zero_of_dtype
+from .._utils import isscalar, equivalent, _zero_of_dtype
 
 
 def elemwise(func, *args, **kwargs):
@@ -400,9 +400,8 @@ class _Elemwise:
         kwargs : dict
             Extra arguments to pass to the function.
         """
-
         from .core import COO
-        from ..sparse_array import SparseArray
+        from .._sparse_array import SparseArray
 
         processed_args = []
 
@@ -426,13 +425,17 @@ class _Elemwise:
         self.kwargs = kwargs
         self.cache = {}
 
-        self._get_fill_value()
         self._check_broadcast()
+        self._get_fill_value()
 
     def get_result(self):
         from .core import COO
         if self.args is None:
             return NotImplemented
+
+        if self.shape == self.ndarray_shape:
+            args = [a.todense() if isinstance(a, COO) else a for a in self.args]
+            return self.func(*args, **self.kwargs)
 
         if any(s == 0 for s in self.shape):
             data = np.empty((0,), dtype=self.fill_value.dtype)
@@ -487,7 +490,7 @@ class _Elemwise:
                 arg.fill_value if isinstance(arg, COO) else _zero_of_dtype(arg.dtype) for arg in self.args)
             fill_value = self.func(*zero_args, **self.kwargs)[()]
 
-        if not equivalent(fill_value, fill_value_array).all():
+        if not equivalent(fill_value, fill_value_array).all() and self.shape != self.ndarray_shape:
             raise ValueError('Performing a mixed sparse-dense operation that would result in a dense array. '
                              'Please make sure that func(sparse_fill_values, ndarrays) is a constant array.')
 
@@ -512,12 +515,17 @@ class _Elemwise:
         non_ndarray_shape = _get_nary_broadcast_shape(
             *tuple(arg.shape for arg in self.args if isinstance(arg, COO))
         )
+        ndarray_shape = _get_nary_broadcast_shape(
+            *tuple(arg.shape for arg in self.args if isinstance(arg, np.ndarray))
+        )
 
         if full_shape != non_ndarray_shape:
             raise ValueError('Please make sure that the broadcast shape of just the sparse arrays is '
                              'the same as the broadcast shape of all the operands.')
 
         self.shape = full_shape
+        self.ndarray_shape = ndarray_shape
+        self.non_ndarray_shape = non_ndarray_shape
 
     def _get_func_coords_data(self, mask):
         """
@@ -653,9 +661,9 @@ class _Elemwise:
             params = [_get_broadcast_parameters(arg.shape, current_shape) for arg in cargs]
             reduced_params = [all(p) for p in zip(*params)]
             reduced_shape = _get_reduced_shape(arg2.shape,
-                                               reduced_params[-arg2.ndim:])
+                                               _rev_idx(reduced_params, arg2.ndim))
 
-            reduced_coords = [_get_reduced_coords(arg.coords, reduced_params[-arg.ndim:])
+            reduced_coords = [_get_reduced_coords(arg.coords, _rev_idx(reduced_params, arg.ndim))
                               for arg in cargs]
 
             linear = [linear_loc(rc, reduced_shape) for rc in reduced_coords]
@@ -693,3 +701,10 @@ class _Elemwise:
             ]
 
         return matched_arrays
+
+
+def _rev_idx(arg, idx):
+    if idx == 0:
+        return arg[len(arg):]
+
+    return arg[-idx:]

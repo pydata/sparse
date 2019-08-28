@@ -6,7 +6,7 @@ import numpy as np
 
 
 def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
-    from .coo import COO
+    from ._coo import COO
     assert x.shape == y.shape
 
     if compare_dtype:
@@ -43,7 +43,8 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
 
 
 def assert_nnz(s, x):
-    fill_value = s.fill_value if hasattr(s, 'fill_value') else _zero_of_dtype(s.dtype)
+    fill_value = s.fill_value if hasattr(
+        s, 'fill_value') else _zero_of_dtype(s.dtype)
     assert np.sum(~equivalent(x, fill_value)) == s.nnz
 
 
@@ -74,6 +75,7 @@ def random(
         random_state=None,
         data_rvs=None,
         format='coo',
+        compressed_axes=None,
         fill_value=None
 ):
     """ Generate a random sparse multidimensional array
@@ -129,11 +131,15 @@ def random(
     """
     # Copied, in large part, from scipy.sparse.random
     # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
-    from .coo import COO
+    from ._coo import COO
 
     elements = np.prod(shape, dtype=np.intp)
 
     nnz = int(elements * density)
+
+    if format != 'gxcs' and compressed_axes is not None:
+        raise ValueError(
+            'compressed_axes is not supported for {} format'.format(format))
 
     if random_state is None:
         random_state = np.random
@@ -157,13 +163,14 @@ def random(
 
     data = data_rvs(nnz)
 
-    ar = COO(ind[None, :], data, shape=elements, fill_value=fill_value).reshape(shape)
+    ar = COO(ind[None, :], data, shape=elements,
+             fill_value=fill_value).reshape(shape)
 
-    return ar.asformat(format)
+    return ar.asformat(format, compressed_axes=compressed_axes)
 
 
 def isscalar(x):
-    from .sparse_array import SparseArray
+    from ._sparse_array import SparseArray
     return not isinstance(x, SparseArray) and np.isscalar(x)
 
 
@@ -205,7 +212,8 @@ def normalize_axis(axis, ndim):
             axis += ndim
 
         if axis >= ndim or axis < 0:
-            raise ValueError('Invalid axis index %d for ndim=%d' % (axis, ndim))
+            raise ValueError(
+                'Invalid axis index %d for ndim=%d' % (axis, ndim))
 
         return axis
 
@@ -255,7 +263,8 @@ def equivalent(x, y):
 
     # Can contain NaNs
     # FIXME: Complex floats and np.void with multiple values can't be compared properly.
-    return (x == y) | ((x != x) & (y != y))  # lgtm [py/comparison-of-identical-expressions]
+    # lgtm [py/comparison-of-identical-expressions]
+    return (x == y) | ((x != x) & (y != y))
 
 
 def check_zero_fill_value(*args):
@@ -319,7 +328,7 @@ def check_consistent_fill_value(arrays):
         which is different from a fill_value of 0.1 in the first argument.
     """
     arrays = list(arrays)
-    from .sparse_array import SparseArray
+    from ._sparse_array import SparseArray
 
     if not all(isinstance(s, SparseArray) for s in arrays):
         raise ValueError('All arrays must be instances of SparseArray.')

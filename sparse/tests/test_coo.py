@@ -9,7 +9,8 @@ import scipy.stats
 
 import sparse
 from sparse import COO
-from sparse.utils import assert_eq, random_value_array
+from sparse._settings import NEP18_ENABLED
+from sparse._utils import assert_eq, random_value_array
 
 
 @pytest.fixture(scope='module', params=['f8', 'f4', 'i8', 'i4'])
@@ -322,6 +323,15 @@ def test_tensordot(a_shape, b_shape, axes):
               sparse.tensordot(a, sb, axes))
 
     # assert isinstance(sparse.tensordot(a, sb, axes), COO)
+
+
+def test_tensordot_empty():
+    x1 = np.empty((0, 0, 0))
+    x2 = np.empty((0, 0, 0))
+    s1 = sparse.COO.from_numpy(x1)
+    s2 = sparse.COO.from_numpy(x2)
+
+    assert_eq(np.tensordot(x1, x2), sparse.tensordot(s1, s2))
 
 
 @pytest.mark.parametrize('a_shape, b_shape', [
@@ -773,7 +783,7 @@ def test_trinary_broadcasting_pathological(shapes, func, value, fraction):
 
 
 def test_sparse_broadcasting(monkeypatch):
-    orig_unmatch_coo = sparse.coo.umath._Elemwise._get_func_coords_data
+    orig_unmatch_coo = sparse._coo.umath._Elemwise._get_func_coords_data
 
     state = {'num_matches': 0}
 
@@ -786,7 +796,7 @@ def test_sparse_broadcasting(monkeypatch):
             state['num_matches'] += 1
         return result
 
-    monkeypatch.setattr(sparse.coo.umath._Elemwise, '_get_func_coords_data', mock_unmatch_coo)
+    monkeypatch.setattr(sparse._coo.umath._Elemwise, '_get_func_coords_data', mock_unmatch_coo)
 
     xs * ys
 
@@ -795,7 +805,7 @@ def test_sparse_broadcasting(monkeypatch):
 
 
 def test_dense_broadcasting(monkeypatch):
-    orig_unmatch_coo = sparse.coo.umath._Elemwise._get_func_coords_data
+    orig_unmatch_coo = sparse._coo.umath._Elemwise._get_func_coords_data
 
     state = {'num_matches': 0}
 
@@ -808,7 +818,7 @@ def test_dense_broadcasting(monkeypatch):
             state['num_matches'] += 1
         return result
 
-    monkeypatch.setattr(sparse.coo.umath._Elemwise, '_get_func_coords_data', mock_unmatch_coo)
+    monkeypatch.setattr(sparse._coo.umath._Elemwise, '_get_func_coords_data', mock_unmatch_coo)
 
     xs + ys
 
@@ -831,7 +841,7 @@ def test_sparsearray_elemwise(format):
 
 
 def test_ndarray_densification_fails():
-    xs = sparse.random((3, 4), density=0.5)
+    xs = sparse.random((2, 3, 4), density=0.5)
     y = np.random.rand(3, 4)
 
     with pytest.raises(ValueError):
@@ -1251,6 +1261,7 @@ def test_gt():
     # Pathological - Wrong ordering of start/stop
     (slice(5, 0),),
     (slice(0, 5, -1),),
+    (slice(0, 0, None),),
 ])
 def test_slicing(index):
     s = sparse.random((2, 3, 4), density=0.5)
@@ -1264,6 +1275,7 @@ def test_slicing(index):
     (1, [0, 2]),
     (0, [1, 0], 0),
     (1, [2, 0], 0),
+    (1, [], 0),
     ([True, False], slice(1, None), slice(-2, None)),
     (slice(1, None), slice(-2, None), [True, False, True, False]),
     ([1, 0],),
@@ -1527,7 +1539,7 @@ def test_cache_csr():
 def test_empty_shape():
     x = COO(np.empty((0, 1), dtype=np.int8), [1.0])
     assert x.shape == ()
-    assert ((2 * x).todense() == np.array(2.0)).all()
+    assert_eq(2 * x, np.float_(2.0))
 
 
 def test_single_dimension():
@@ -1746,6 +1758,16 @@ def test_np_array():
         (2, 1),
         (2, 1, 1)
     ],
+    [
+        (3,),
+        (),
+        (2, 3)
+    ],
+    [
+        (4, 4),
+        (),
+        ()
+    ]
 ])
 def test_three_arg_where(shapes):
     cs = sparse.random(shapes[0], density=0.5).astype(np.bool)
@@ -2114,7 +2136,7 @@ def test_failed_densification():
     from importlib import reload
 
     os.environ['SPARSE_AUTO_DENSIFY'] = '1'
-    reload(sparse)
+    reload(sparse._settings)
 
     s = sparse.random((3, 4, 5), density=0.5)
     x = np.array(s)
@@ -2123,7 +2145,7 @@ def test_failed_densification():
     assert_eq(s, x)
 
     del os.environ['SPARSE_AUTO_DENSIFY']
-    reload(sparse)
+    reload(sparse._settings)
 
 
 def test_warn_on_too_dense():
@@ -2131,13 +2153,13 @@ def test_warn_on_too_dense():
     from importlib import reload
 
     os.environ['SPARSE_WARN_ON_TOO_DENSE'] = '1'
-    reload(sparse)
+    reload(sparse._settings)
 
     with pytest.warns(RuntimeWarning):
         sparse.random((3, 4, 5), density=1.0)
 
     del os.environ['SPARSE_WARN_ON_TOO_DENSE']
-    reload(sparse)
+    reload(sparse._settings)
 
 
 def test_prune_coo():
@@ -2149,3 +2171,28 @@ def test_prune_coo():
 
     # Densify s1 because it isn't canonical
     assert_eq(s1.todense(), s2, check_nnz=False)
+
+
+RESULT_TYPE_DTYPES = [
+    'i1', 'i2', 'i4', 'i8', 'u1', 'u2', 'u4', 'u8',
+    'f4', 'f8', 'c8', 'c16', object,
+]
+@pytest.mark.parametrize('t1', RESULT_TYPE_DTYPES)
+@pytest.mark.parametrize('t2', RESULT_TYPE_DTYPES)
+@pytest.mark.parametrize('func', [
+    sparse.result_type,
+    pytest.param(
+        np.result_type,
+        marks=pytest.mark.skipif(not NEP18_ENABLED, reason="NEP18 is not enabled")
+    ),
+])
+@pytest.mark.parametrize('data', [1, [1]])  # Not the same outputs!
+def test_result_type(t1, t2, func, data):
+    a = np.array(data, dtype=t1)
+    b = np.array(data, dtype=t2)
+    expect = np.result_type(a, b)
+    assert func(a, sparse.COO(b)) == expect
+    assert func(sparse.COO(a), b) == expect
+    assert func(sparse.COO(a), sparse.COO(b)) == expect
+    assert func(a.dtype, sparse.COO(b)) == np.result_type(a.dtype, b)
+    assert func(sparse.COO(a), b.dtype) == np.result_type(a, b.dtype)

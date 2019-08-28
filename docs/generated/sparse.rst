@@ -39,6 +39,10 @@ API
 
     full_like
 
+    isposinf
+
+    isneginf
+
     kron
 
     load_npz
@@ -62,6 +66,8 @@ API
     ones_like
 
     random
+
+    result_type
 
     roll
 

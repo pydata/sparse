@@ -1,4 +1,5 @@
 from functools import reduce, wraps
+from itertools import chain
 import operator
 import warnings
 from collections.abc import Iterable
@@ -7,8 +8,8 @@ import numpy as np
 import scipy.sparse
 import numba
 
-from ..sparse_array import SparseArray
-from ..utils import isscalar, normalize_axis, check_zero_fill_value, check_consistent_fill_value
+from .._sparse_array import SparseArray
+from .._utils import isscalar, normalize_axis, check_zero_fill_value, check_consistent_fill_value
 
 
 def asCOO(x, name='asCOO', check=True):
@@ -147,6 +148,13 @@ def tensordot(a, b, axes=2):
         N2 *= bs[axis]
     newshape_b = (N2, -1)
     oldb = [bs[axis] for axis in notin]
+
+    if any(dim == 0 for dim in chain(newshape_a, newshape_b)):
+        res = asCOO(np.empty(olda + oldb), check=False)
+        if isinstance(a, np.ndarray) or isinstance(b, np.ndarray):
+            res = res.todense()
+
+        return res
 
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)
@@ -1337,3 +1345,75 @@ def _dot_ndarray_coo_type(dt1, dt2):
         return out
 
     return _dot_ndarray_coo
+
+
+def isposinf(x, out=None):
+    """
+    Test element-wise for positive infinity, return result as sparse ``bool`` array.
+
+    Parameters
+    ----------
+    x
+        Input
+    out, optional
+        Output array
+
+    Examples
+    --------
+    >>> import sparse
+    >>> x = sparse.as_coo(np.array([np.inf]))
+    >>> sparse.isposinf(x).todense()
+    array([ True])
+
+    See Also
+    --------
+    numpy.isposinf : The NumPy equivalent
+    """
+    from .core import elemwise
+    return elemwise(lambda x, out=None, dtype=None: np.isposinf(x, out=out), x, out=out)
+
+
+def isneginf(x, out=None):
+    """
+    Test element-wise for negative infinity, return result as sparse ``bool`` array.
+
+    Parameters
+    ----------
+    x
+        Input
+    out, optional
+        Output array
+
+    Examples
+    --------
+    >>> import sparse
+    >>> x = sparse.as_coo(np.array([-np.inf]))
+    >>> sparse.isneginf(x).todense()
+    array([ True])
+
+    See Also
+    --------
+    numpy.isneginf : The NumPy equivalent
+    """
+    from .core import elemwise
+    return elemwise(lambda x, out=None, dtype=None: np.isneginf(x, out=out), x, out=out)
+
+
+def result_type(*arrays_and_dtypes):
+    """Returns the type that results from applying the NumPy type promotion rules to the
+    arguments.
+
+    See Also
+    --------
+    numpy.result_type : The NumPy equivalent
+    """
+    return np.result_type(*(_as_result_type_arg(x) for x in arrays_and_dtypes))
+
+
+def _as_result_type_arg(x):
+    if not isinstance(x, SparseArray):
+        return x
+    if x.ndim > 0:
+        return x.dtype
+    # 0-dimensional arrays give different result_type outputs than their dtypes
+    return x.todense()
