@@ -65,7 +65,7 @@ def _from_coo(x, compressed_axes=None):
             new_shape, axisptr, x.fill_value)
 
 
-class GXCS(SparseArray, NDArrayOperatorsMixin):
+class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     __array_priority__ = 12
 
@@ -172,7 +172,7 @@ class GXCS(SparseArray, NDArrayOperatorsMixin):
         return len(self.shape)
 
     def __str__(self):
-        return '<GXCS: shape={}, dtype={}, nnz={}, fill_value={}, compressed_axes={}>'.format(
+        return '<GCXS: shape={}, dtype={}, nnz={}, fill_value={}, compressed_axes={}>'.format(
             self.shape, self.dtype, self.nnz, self.fill_value, self.compressed_axes)
 
     __repr__ = __str__
@@ -345,7 +345,7 @@ class GXCS(SparseArray, NDArrayOperatorsMixin):
 
         # there's likely a way to do this without decompressing to COO
         coo = self.tocoo().reshape(shape)
-        return GXCS.from_coo(coo, compressed_axes)
+        return GCXS.from_coo(coo, compressed_axes)
 
     def resize(self, *args, refcheck=True, compressed_axes=None):
         """

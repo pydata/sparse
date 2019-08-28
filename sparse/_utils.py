@@ -137,7 +137,7 @@ def random(
 
     nnz = int(elements * density)
 
-    if format != 'gxcs' and compressed_axes is not None:
+    if format != 'gcxs' and compressed_axes is not None:
         raise ValueError(
             'compressed_axes is not supported for {} format'.format(format))
 
