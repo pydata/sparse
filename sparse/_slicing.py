@@ -156,15 +156,17 @@ def sanitize_index(ind):
                      _sanitize_index_element(ind.step))
     elif isinstance(ind, Number):
         return _sanitize_index_element(ind)
-    index_array = np.asanyarray(ind)
-    if index_array.dtype == np.bool_:
-        nonzero = np.nonzero(index_array)
+    if not hasattr(ind, 'dtype') and len(ind) == 0:
+        ind = np.array([], dtype=np.intp)
+    ind = np.asarray(ind)
+    if ind.dtype == np.bool_:
+        nonzero = np.nonzero(ind)
         if len(nonzero) == 1:
             # If a 1-element tuple, unwrap the element
             nonzero = nonzero[0]
         return np.asanyarray(nonzero)
-    elif np.issubdtype(index_array.dtype, np.integer):
-        return index_array
+    elif np.issubdtype(ind.dtype, np.integer):
+        return ind
     else:
         raise IndexError("only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and "
                          "integer or boolean arrays are valid indices")
