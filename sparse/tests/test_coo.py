@@ -1275,6 +1275,7 @@ def test_slicing(index):
     (1, [0, 2]),
     (0, [1, 0], 0),
     (1, [2, 0], 0),
+    (1, [], 0),
     ([True, False], slice(1, None), slice(-2, None)),
     (slice(1, None), slice(-2, None), [True, False, True, False]),
     ([1, 0],),
