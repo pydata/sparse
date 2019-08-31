@@ -266,6 +266,67 @@ def equivalent(x, y):
     # lgtm [py/comparison-of-identical-expressions]
     return (x == y) | ((x != x) & (y != y))
 
+# copied from zarr 
+# See https://github.com/zarr-developers/zarr-python/blob/master/zarr/util.py
+def human_readable_size(size):
+    if size < 2**10:
+        return '%s' % size
+    elif size < 2**20:
+        return '%.1fK' % (size / float(2**10))
+    elif size < 2**30:
+        return '%.1fM' % (size / float(2**20))
+    elif size < 2**40:
+        return '%.1fG' % (size / float(2**30))
+    elif size < 2**50:
+        return '%.1fT' % (size / float(2**40))
+    else:
+        return '%.1fP' % (size / float(2**50))
+
+def html_table(arr):
+    table = '<table>'
+    table += '<tbody>'
+    headings = ['Format','Data Type', 'Shape',
+        'nnz', 'Density','Read-only', 'No. Bytes', 
+        'No. Bytes as dense']
+    info = [arr.format, str(arr.dtype), str(arr.shape),
+        str(arr.nnz), str(arr.nnz/np.prod(arr.shape))]
+        
+    # read-only
+    if arr.format == 'dok':
+        info.append(str(False))
+    else:
+        info.append(str(True))
+    
+    if arr.nbytes > 2**10:
+        info.append('%s (%s)' % (arr.nbytes, human_readable_size(arr.nbytes)))
+    else:
+        info.append(str(arr.nbytes))
+    
+    dense_bytes = np.prod(arr.shape) * arr.dtype.itemsize
+    if dense_bytes > 2**10:
+        info.append('%s (%s)' % (dense_bytes, human_readable_size(dense_bytes)))
+    else:
+        info.append(dense_bytes)
+    
+    headings.append('Storage ratio')
+    info.append('%.1f' % (arr.nbytes / dense_bytes))
+
+    # compressed_axes
+    if arr.format == 'gcxs':
+        headings.append('Compressed Axes')
+        info.append(str(arr.compressed_axes))
+
+    for h, i in zip(headings,info):
+        table += '<tr>' \
+                  '<th style="text-align: left">%s</th>' \
+                  '<td style="text-align: left">%s</td>' \
+                  '</tr>' \
+                  % (h, i)
+    table += '</tbody>'
+    table += '</table>'
+    return table
+
+
 
 def check_zero_fill_value(*args):
     """
@@ -343,3 +404,4 @@ def check_consistent_fill_value(arrays):
                              'but argument {:d} had a fill value of {!s}, which '
                              'is different from a fill_value of {!s} in the first '
                              'argument.'.format(i, arg.fill_value, fv))
+
