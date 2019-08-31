@@ -158,7 +158,6 @@ class SparseArray:
         """
         return self.nnz / self.size
 
-
     def _repr_html_(self):
         """
         Diagnostic report about this array.
@@ -177,7 +176,7 @@ class SparseArray:
         Read-only          : True
         No. bytes          : 3200000 (3.1M)
         No. Bytes as dense : 8000000 (7.6M)
-        Storage ratio      : 0.4 
+        Storage ratio      : 0.4
         """
         return html_table(self)
 
