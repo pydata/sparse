@@ -213,6 +213,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         self.data = np.asarray(data)
         self.coords = np.asarray(coords)
+        self.format = 'coo'
 
         if self.coords.ndim == 1:
             self.coords = self.coords[None, :]
