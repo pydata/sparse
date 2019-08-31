@@ -7,7 +7,7 @@ import operator
 
 import numpy as np
 
-from ._utils import _zero_of_dtype
+from ._utils import _zero_of_dtype, html_table
 
 
 class SparseArray:
@@ -157,6 +157,29 @@ class SparseArray:
         0.125
         """
         return self.nnz / self.size
+
+
+    def _repr_html_(self):
+        """
+        Diagnostic report about this array.
+        Renders in Jupyter.
+
+        Examples
+        --------
+        >>> import sparse
+        >>> x = sparse.random((100,100,100),density=.1)
+        >>> x
+        Format             : coo
+        Data type          : float64
+        Shape              : (100, 100, 100)
+        nnz                : 100000
+        Density            : 0.1
+        Read-only          : True
+        No. bytes          : 3200000 (3.1M)
+        No. Bytes as dense : 8000000 (7.6M)
+        Storage ratio      : 0.4 
+        """
+        return html_table(self)
 
     @abstractmethod
     def asformat(self, format):
