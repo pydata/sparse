@@ -25,7 +25,7 @@ def _from_coo(x, compressed_axes=None):
         if compressed_axes is not None:
             raise ValueError('no axes to compress for 1d array')
         return (
-            x.data, x.coords[0], []), x.shape, None, None, None, None, None, x.fill_value
+            x.data, x.coords[0], np.array([])), x.shape, None, None, None, None, None, x.fill_value
 
     compressed_axes = normalize_axis(compressed_axes, x.ndim)
     if compressed_axes is None:
@@ -110,7 +110,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             compressed_shape = (row_size, col_size)
         else:
             compressed_axes = compressed_shape = axis_order = reordered_shape = axisptr = None
-
+        
+        self.format = 'gcxs'
         self.data, self.indices, self.indptr = arg
         self.shape = shape
         self.compressed_shape = compressed_shape
