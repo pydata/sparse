@@ -91,6 +91,7 @@ class DOK(SparseArray):
     def __init__(self, shape, data=None, dtype=None, fill_value=None):
         from ._coo import COO
         self.data = dict()
+        self.format = 'dok'
 
         if isinstance(shape, COO):
             ar = DOK.from_coo(shape)
@@ -237,6 +238,30 @@ class DOK(SparseArray):
         1
         """
         return len(self.data)
+
+    @property
+    def nbytes(self):
+        """
+        The number of bytes taken up by this object. Note that for small arrays,
+        this may undercount the number of bytes due to the large constant overhead.
+
+        Returns
+        -------
+        int
+            The approximate bytes of memory taken by this object.
+
+        See Also
+        --------
+        numpy.ndarray.nbytes : The equivalent Numpy property.
+
+        Examples
+        --------
+        >>> import sparse
+        >>> x = sparse.random((100,100),density=.1,format='dok')
+        >>> x.nbytes
+        8000
+        """
+        return self.nnz * self.dtype.itemsize
 
     def __getitem__(self, key):
         key = normalize_index(key, self.shape)
