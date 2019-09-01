@@ -110,7 +110,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             compressed_shape = (row_size, col_size)
         else:
             compressed_axes = compressed_shape = axis_order = reordered_shape = axisptr = None
-        
+
         self.format = 'gcxs'
         self.data, self.indices, self.indptr = arg
         self.shape = shape
