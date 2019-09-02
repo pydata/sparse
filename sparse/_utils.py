@@ -7,14 +7,17 @@ import numpy as np
 
 def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
     from ._coo import COO
+
     assert x.shape == y.shape
 
     if compare_dtype:
         assert x.dtype == y.dtype
 
-    check_equal = np.array_equal \
-        if np.issubdtype(x.dtype, np.integer) and np.issubdtype(y.dtype, np.integer) \
+    check_equal = (
+        np.array_equal
+        if np.issubdtype(x.dtype, np.integer) and np.issubdtype(y.dtype, np.integer)
         else functools.partial(np.allclose, equal_nan=True)
+    )
 
     if isinstance(x, COO):
         assert is_canonical(x)
@@ -27,13 +30,13 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
         assert x.fill_value == y.fill_value
         return
 
-    if hasattr(x, 'todense'):
+    if hasattr(x, "todense"):
         xx = x.todense()
         if check_nnz:
             assert_nnz(x, xx)
     else:
         xx = x
-    if hasattr(y, 'todense'):
+    if hasattr(y, "todense"):
         yy = y.todense()
         if check_nnz:
             assert_nnz(y, yy)
@@ -43,13 +46,15 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
 
 
 def assert_nnz(s, x):
-    fill_value = s.fill_value if hasattr(
-        s, 'fill_value') else _zero_of_dtype(s.dtype)
+    fill_value = s.fill_value if hasattr(s, "fill_value") else _zero_of_dtype(s.dtype)
     assert np.sum(~equivalent(x, fill_value)) == s.nnz
 
 
 def is_canonical(x):
-    return not x.shape or ((np.diff(x.linear_loc()) > 0).all() and not equivalent(x.data, x.fill_value).any())
+    return not x.shape or (
+        (np.diff(x.linear_loc()) > 0).all()
+        and not equivalent(x.data, x.fill_value).any()
+    )
 
 
 def _zero_of_dtype(dtype):
@@ -70,13 +75,13 @@ def _zero_of_dtype(dtype):
 
 
 def random(
-        shape,
-        density=0.01,
-        random_state=None,
-        data_rvs=None,
-        format='coo',
-        compressed_axes=None,
-        fill_value=None
+    shape,
+    density=0.01,
+    random_state=None,
+    data_rvs=None,
+    format="coo",
+    compressed_axes=None,
+    fill_value=None,
 ):
     """ Generate a random sparse multidimensional array
 
@@ -137,9 +142,10 @@ def random(
 
     nnz = int(elements * density)
 
-    if format != 'gxcs' and compressed_axes is not None:
+    if format != "gxcs" and compressed_axes is not None:
         raise ValueError(
-            'compressed_axes is not supported for {} format'.format(format))
+            "compressed_axes is not supported for {} format".format(format)
+        )
 
     if random_state is None:
         random_state = np.random
@@ -163,14 +169,14 @@ def random(
 
     data = data_rvs(nnz)
 
-    ar = COO(ind[None, :], data, shape=elements,
-             fill_value=fill_value).reshape(shape)
+    ar = COO(ind[None, :], data, shape=elements, fill_value=fill_value).reshape(shape)
 
     return ar.asformat(format, compressed_axes=compressed_axes)
 
 
 def isscalar(x):
     from ._sparse_array import SparseArray
+
     return not isinstance(x, SparseArray) and np.isscalar(x)
 
 
@@ -212,8 +218,7 @@ def normalize_axis(axis, ndim):
             axis += ndim
 
         if axis >= ndim or axis < 0:
-            raise ValueError(
-                'Invalid axis index %d for ndim=%d' % (axis, ndim))
+            raise ValueError("Invalid axis index %d for ndim=%d" % (axis, ndim))
 
         return axis
 
@@ -257,8 +262,7 @@ def equivalent(x, y):
     x = np.asarray(x)
     y = np.asarray(y)
     # Can't contain NaNs
-    if any(np.issubdtype(x.dtype, t) for t in
-           [np.integer, np.bool_, np.character]):
+    if any(np.issubdtype(x.dtype, t) for t in [np.integer, np.bool_, np.character]):
         return x == y
 
     # Can contain NaNs
@@ -296,10 +300,13 @@ def check_zero_fill_value(*args):
     ValueError: This operation requires zero fill values, but argument 1 had a fill value of 0.5.
     """
     for i, arg in enumerate(args):
-        if (hasattr(arg, 'fill_value') and
-                not equivalent(arg.fill_value, _zero_of_dtype(arg.dtype))):
-            raise ValueError('This operation requires zero fill values, '
-                             'but argument {:d} had a fill value of {!s}.'.format(i, arg.fill_value))
+        if hasattr(arg, "fill_value") and not equivalent(
+            arg.fill_value, _zero_of_dtype(arg.dtype)
+        ):
+            raise ValueError(
+                "This operation requires zero fill values, "
+                "but argument {:d} had a fill value of {!s}.".format(i, arg.fill_value)
+            )
 
 
 def check_consistent_fill_value(arrays):
@@ -331,15 +338,17 @@ def check_consistent_fill_value(arrays):
     from ._sparse_array import SparseArray
 
     if not all(isinstance(s, SparseArray) for s in arrays):
-        raise ValueError('All arrays must be instances of SparseArray.')
+        raise ValueError("All arrays must be instances of SparseArray.")
     if len(arrays) == 0:
-        raise ValueError('At least one array required.')
+        raise ValueError("At least one array required.")
 
     fv = arrays[0].fill_value
 
     for i, arg in enumerate(arrays):
         if not equivalent(fv, arg.fill_value):
-            raise ValueError('This operation requires consistent fill-values, '
-                             'but argument {:d} had a fill value of {!s}, which '
-                             'is different from a fill_value of {!s} in the first '
-                             'argument.'.format(i, arg.fill_value, fv))
+            raise ValueError(
+                "This operation requires consistent fill-values, "
+                "but argument {:d} had a fill value of {!s}, which "
+                "is different from a fill_value of {!s} in the first "
+                "argument.".format(i, arg.fill_value, fv)
+            )

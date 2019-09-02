@@ -48,10 +48,10 @@ def save_npz(filename, matrix, compressed=True):
     """
 
     nodes = {
-        'data': matrix.data,
-        'coords': matrix.coords,
-        'shape': matrix.shape,
-        'fill_value': matrix.fill_value,
+        "data": matrix.data,
+        "coords": matrix.coords,
+        "shape": matrix.shape,
+        "fill_value": matrix.fill_value,
     }
 
     if compressed:
@@ -92,11 +92,19 @@ def load_npz(filename):
 
     with np.load(filename) as fp:
         try:
-            coords = fp['coords']
-            data = fp['data']
-            shape = tuple(fp['shape'])
-            fill_value = fp['fill_value'][()]
-            return COO(coords=coords, data=data, shape=shape, sorted=True, has_duplicates=False,
-                       fill_value=fill_value)
+            coords = fp["coords"]
+            data = fp["data"]
+            shape = tuple(fp["shape"])
+            fill_value = fp["fill_value"][()]
+            return COO(
+                coords=coords,
+                data=data,
+                shape=shape,
+                sorted=True,
+                has_duplicates=False,
+                fill_value=fill_value,
+            )
         except KeyError:
-            raise RuntimeError('The file {!s} does not contain a valid sparse matrix'.format(filename))
+            raise RuntimeError(
+                "The file {!s} does not contain a valid sparse matrix".format(filename)
+            )

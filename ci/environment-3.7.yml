@@ -3,11 +3,14 @@ channels:
   - conda-forge
 dependencies:
   - python=3.7
+  - pip
   - pytest
   - numpy
   - scipy
   - pytest-cov
   - nomkl
   - numba
-  - pytest-flake8
+  - black
   - codecov
+  - pip:
+    - pytest-black
