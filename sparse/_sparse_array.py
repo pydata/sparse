@@ -29,13 +29,15 @@ class SparseArray:
             shape = (shape,)
 
         if not all(isinstance(l, Integral) and int(l) >= 0 for l in shape):
-            raise ValueError('shape must be an non-negative integer or a tuple '
-                             'of non-negative integers.')
+            raise ValueError(
+                "shape must be an non-negative integer or a tuple "
+                "of non-negative integers."
+            )
 
         self.shape = tuple(int(l) for l in shape)
 
         if fill_value is not None:
-            if not hasattr(fill_value, 'dtype') or fill_value.dtype != self.dtype:
+            if not hasattr(fill_value, "dtype") or fill_value.dtype != self.dtype:
                 self.fill_value = self.dtype.type(fill_value)
             else:
                 self.fill_value = fill_value
@@ -208,16 +210,20 @@ class SparseArray:
 
     def __array__(self, **kwargs):
         from ._settings import AUTO_DENSIFY
+
         if not AUTO_DENSIFY:
-            raise RuntimeError('Cannot convert a sparse array to dense automatically. '
-                               'To manually densify, use the todense method.')
+            raise RuntimeError(
+                "Cannot convert a sparse array to dense automatically. "
+                "To manually densify, use the todense method."
+            )
 
         return np.asarray(self.todense(), **kwargs)
 
     def __array_function__(self, func, types, args, kwargs):
         import sparse as module
+
         try:
-            submodules = getattr(func, '__module__', 'numpy').split('.')[1:]
+            submodules = getattr(func, "__module__", "numpy").split(".")[1:]
             for submodule in submodules:
                 module = getattr(module, submodule)
             sparse_func = getattr(module, func.__name__)

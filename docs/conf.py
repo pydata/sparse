@@ -20,7 +20,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath(".."))
 from sparse import __version__  # flake8: noqa E402
 
 # -- General configuration ------------------------------------------------
@@ -34,36 +34,38 @@ from sparse import __version__  # flake8: noqa E402
 # ones.
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.coverage',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.inheritance_diagram',
-    'sphinx.ext.extlinks',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.coverage",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.inheritance_diagram",
+    "sphinx.ext.extlinks",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
-mathjax_path = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+mathjax_path = (
+    "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+)
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
-project = 'sparse'
-copyright = '2018, Sparse developers'
-author = 'Sparse Developers'
+project = "sparse"
+copyright = "2018, Sparse developers"
+author = "Sparse Developers"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -84,11 +86,10 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', '**tests**', '**setup**', '**extern**',
-                    '**data**']
+exclude_patterns = ["_build", "**tests**", "**setup**", "**extern**", "**data**"]
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
@@ -130,7 +131,7 @@ html_favicon = "logo.png"
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'sparsedoc'
+htmlhelp_basename = "sparsedoc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -138,15 +139,12 @@ latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     #
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     #
     # 'preamble': '',
-
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
@@ -156,18 +154,14 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'sparse.tex', 'sparse Documentation',
-     'Sparse Developers', 'manual'),
+    (master_doc, "sparse.tex", "sparse Documentation", "Sparse Developers", "manual")
 ]
 
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'sparse', 'sparse Documentation',
-     [author], 1)
-]
+man_pages = [(master_doc, "sparse", "sparse Documentation", [author], 1)]
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -175,20 +169,26 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'sparse', 'sparse Documentation',
-     author, 'sparse', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        master_doc,
+        "sparse",
+        "sparse Documentation",
+        author,
+        "sparse",
+        "One line description of project.",
+        "Miscellaneous",
+    )
 ]
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3/', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None)
+    "python": ("https://docs.python.org/3/", None),
+    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
 }
 
 extlinks = {
-    'issue': ('https://github.com/pydata/sparse/issues/%s', 'Issue #'),
-    'pr': ('https://github.com/pydata/sparse/pull/%s', 'PR #'),
-    'ghuser': ('https://github.com/%s', '@')
+    "issue": ("https://github.com/pydata/sparse/issues/%s", "Issue #"),
+    "pr": ("https://github.com/pydata/sparse/pull/%s", "PR #"),
+    "ghuser": ("https://github.com/%s", "@"),
 }

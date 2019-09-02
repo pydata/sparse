@@ -21,8 +21,10 @@ def getitem(x, key):
     key = list(normalize_index(key, x.shape))
 
     # zip_longest so things like x[..., None] are picked up.
-    if len(key) != 0 and all(isinstance(k, slice) and k == slice(0, dim, 1)
-                             for k, dim in zip_longest(key, x.shape)):
+    if len(key) != 0 and all(
+        isinstance(k, slice) and k == slice(0, dim, 1)
+        for k, dim in zip_longest(key, x.shape)
+    ):
         return x
 
     # return a single element
@@ -30,7 +32,7 @@ def getitem(x, key):
         key = np.array(key)[x.axis_order]  # reordering the input
         ind = np.ravel_multi_index(key, x.reordered_shape)
         row, col = np.unravel_index(ind, x.compressed_shape)
-        current_row = x.indices[x.indptr[row]:x.indptr[row + 1]]
+        current_row = x.indices[x.indptr[row] : x.indptr[row + 1]]
         item = np.searchsorted(current_row, col)
         if not (item >= current_row.size or current_row[item] != col):
             item += x.indptr[row]
@@ -69,21 +71,20 @@ def getitem(x, key):
     reordered_key = [Nones_removed[i] for i in x.axis_order]
 
     # prepare for converting to flat indices
-    for i, ind in enumerate(reordered_key[:x.axisptr]):
+    for i, ind in enumerate(reordered_key[: x.axisptr]):
         if isinstance(ind, slice):
             reordered_key[i] = range(ind.start, ind.stop, ind.step)
-    for i, ind in enumerate(reordered_key[x.axisptr:]):
+    for i, ind in enumerate(reordered_key[x.axisptr :]):
         if isinstance(ind, Integral):
             reordered_key[i + x.axisptr] = [ind]
         elif isinstance(ind, slice):
-            reordered_key[i +
-                          x.axisptr] = np.arange(ind.start, ind.stop, ind.step)
+            reordered_key[i + x.axisptr] = np.arange(ind.start, ind.stop, ind.step)
 
     # find starts and ends of rows
-    a = x.indptr[:-1].reshape(x.reordered_shape[:x.axisptr])
-    b = x.indptr[1:].reshape(x.reordered_shape[:x.axisptr])
-    starts = a[tuple(reordered_key[:x.axisptr])].flatten()
-    ends = b[tuple(reordered_key[:x.axisptr])].flatten()
+    a = x.indptr[:-1].reshape(x.reordered_shape[: x.axisptr])
+    b = x.indptr[1:].reshape(x.reordered_shape[: x.axisptr])
+    starts = a[tuple(reordered_key[: x.axisptr])].flatten()
+    ends = b[tuple(reordered_key[: x.axisptr])].flatten()
 
     shape = np.array(shape)
 
@@ -121,8 +122,9 @@ def getitem(x, key):
             indices = uncompressed % size
             indptr = np.empty(shape[0] + 1, dtype=np.intp)
             indptr[0] = 0
-            np.cumsum(np.bincount(uncompressed //
-                                  size, minlength=shape[0]), out=indptr[1:])
+            np.cumsum(
+                np.bincount(uncompressed // size, minlength=shape[0]), out=indptr[1:]
+            )
     if not np.any(compressed_inds):
 
         if len(shape) == 1:
@@ -131,8 +133,7 @@ def getitem(x, key):
             uncompressed = indices // size
             indptr = np.empty(shape[0] + 1, dtype=np.intp)
             indptr[0] = 0
-            np.cumsum(np.bincount(uncompressed,
-                                  minlength=shape[0]), out=indptr[1:])
+            np.cumsum(np.bincount(uncompressed, minlength=shape[0]), out=indptr[1:])
             indices = indices % size
 
     arg = (data, indices, indptr)
@@ -151,14 +152,14 @@ def getitem(x, key):
         compressed_axes = None
 
     return GXCS(
-        arg,
-        shape=shape,
-        compressed_axes=compressed_axes,
-        fill_value=x.fill_value)
+        arg, shape=shape, compressed_axes=compressed_axes, fill_value=x.fill_value
+    )
 
 
 @numba.jit(nopython=True, nogil=True)
-def get_array_selection(arr_data, arr_indices, indptr, starts, ends, col):  # pragma: no cover
+def get_array_selection(
+    arr_data, arr_indices, indptr, starts, ends, col
+):  # pragma: no cover
     """
     This is a very general algorithm to be used when more optimized methods don't apply.
     It performs a binary search for each of the requested elements.
