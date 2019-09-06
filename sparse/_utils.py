@@ -144,7 +144,7 @@ def random(
 
     nnz = int(elements * density)
 
-    if format != 'gcxs' and compressed_axes is not None:
+    if format != "gcxs" and compressed_axes is not None:
         raise ValueError(
             "compressed_axes is not supported for {} format".format(format)
         )
@@ -272,59 +272,67 @@ def equivalent(x, y):
     # lgtm [py/comparison-of-identical-expressions]
     return (x == y) | ((x != x) & (y != y))
 
+
 # copied from zarr
 # See https://github.com/zarr-developers/zarr-python/blob/master/zarr/util.py
 def human_readable_size(size):
-    if size < 2**10:
-        return '%s' % size
-    elif size < 2**20:
-        return '%.1fK' % (size / float(2**10))
-    elif size < 2**30:
-        return '%.1fM' % (size / float(2**20))
-    elif size < 2**40:
-        return '%.1fG' % (size / float(2**30))
-    elif size < 2**50:
-        return '%.1fT' % (size / float(2**40))
+    if size < 2 ** 10:
+        return "%s" % size
+    elif size < 2 ** 20:
+        return "%.1fK" % (size / float(2 ** 10))
+    elif size < 2 ** 30:
+        return "%.1fM" % (size / float(2 ** 20))
+    elif size < 2 ** 40:
+        return "%.1fG" % (size / float(2 ** 30))
+    elif size < 2 ** 50:
+        return "%.1fT" % (size / float(2 ** 40))
     else:
-        return '%.1fP' % (size / float(2**50))
+        return "%.1fP" % (size / float(2 ** 50))
 
 
 def html_table(arr):
-    table = '<table>'
-    table += '<tbody>'
-    headings = ['Format', 'Data Type', 'Shape',
-                'nnz', 'Density', 'Read-only', 'size']
-    info = [arr.format, str(arr.dtype), str(arr.shape),
-            str(arr.nnz), str(arr.nnz/arr.size)]
+    table = "<table>"
+    table += "<tbody>"
+    headings = ["Format", "Data Type", "Shape", "nnz", "Density", "Read-only", "Size"]
+    info = [
+        arr.format,
+        str(arr.dtype),
+        str(arr.shape),
+        str(arr.nnz),
+        str(arr.nnz / arr.size),
+    ]
 
     # read-only
-    if arr.format == 'dok':
+    if arr.format == "dok":
         info.append(str(False))
     else:
         info.append(str(True))
 
-    if arr.nbytes > 2**10:
-        info.append('%s (%s)' % (arr.nbytes, human_readable_size(arr.nbytes)))
+    if arr.nbytes > 2 ** 10:
+        info.append("%s (%s)" % (arr.nbytes, human_readable_size(arr.nbytes)))
     else:
         info.append(str(arr.nbytes))
 
-    headings.append('Storage ratio')
-    info.append('%.1f' % (arr.nbytes / (reduce(operator.mul,
-                                               arr.shape,1) * arr.dtype.itemsize)))
+    headings.append("Storage ratio")
+    info.append(
+        "%.1f"
+        % (arr.nbytes / (reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize))
+    )
 
     # compressed_axes
-    if arr.format == 'gcxs':
-        headings.append('Compressed Axes')
+    if arr.format == "gcxs":
+        headings.append("Compressed Axes")
         info.append(str(arr.compressed_axes))
 
     for h, i in zip(headings, info):
-        table += '<tr>' \
-            '<th style="text-align: left">%s</th>' \
-            '<td style="text-align: left">%s</td>' \
-            '</tr>' \
-            % (h, i)
-    table += '</tbody>'
-    table += '</table>'
+        table += (
+            "<tr>"
+            '<th style="text-align: left">%s</th>'
+            '<td style="text-align: left">%s</td>'
+            "</tr>" % (h, i)
+        )
+    table += "</tbody>"
+    table += "</table>"
     return table
 
 
