@@ -1,7 +1,9 @@
 import functools
 from collections.abc import Iterable
 from numbers import Integral
+from functools import reduce
 
+import operator
 import numpy as np
 
 
@@ -268,8 +270,6 @@ def equivalent(x, y):
 
 # copied from zarr
 # See https://github.com/zarr-developers/zarr-python/blob/master/zarr/util.py
-
-
 def human_readable_size(size):
     if size < 2**10:
         return '%s' % size
@@ -289,8 +289,7 @@ def html_table(arr):
     table = '<table>'
     table += '<tbody>'
     headings = ['Format', 'Data Type', 'Shape',
-                'nnz', 'Density', 'Read-only', 'No. Bytes',
-                'No. Bytes as dense']
+                'nnz', 'Density', 'Read-only', 'size']
     info = [arr.format, str(arr.dtype), str(arr.shape),
             str(arr.nnz), str(arr.nnz/arr.size)]
 
@@ -305,15 +304,9 @@ def html_table(arr):
     else:
         info.append(str(arr.nbytes))
 
-    dense_bytes = np.prod(arr.shape) * arr.dtype.itemsize
-    if dense_bytes > 2**10:
-        info.append('%s (%s)' %
-                    (dense_bytes, human_readable_size(dense_bytes)))
-    else:
-        info.append(dense_bytes)
-
     headings.append('Storage ratio')
-    info.append('%.1f' % (arr.nbytes / dense_bytes))
+    info.append('%.1f' % (arr.nbytes / (reduce(operator.mul,
+                                               arr.shape,1) * arr.dtype.itemsize)))
 
     # compressed_axes
     if arr.format == 'gcxs':
