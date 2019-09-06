@@ -220,7 +220,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         self.data = np.asarray(data)
         self.coords = np.asarray(coords)
-        self.format = 'coo'
 
         if self.coords.ndim == 1:
             if self.coords.size == 0 and shape is not None:
@@ -570,6 +569,31 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         True
         """
         return self.data.dtype
+    
+    @property
+    def format(self):
+        """
+        The storage format of this array.
+        
+        Returns
+        -------
+        str
+            The storage format of this array.
+        
+        See Also
+        -------
+        DOK.format : Equivalent :obj:`DOK` array property.
+        GCXS.format : Equivalent :obj:`GCXS` array property.
+        scipy.sparse.coo_matrix.format : The Scipy equivalent property.
+        
+        Examples
+        -------
+        >>> import sparse
+        >>> s = sparse.random((5,5), density=0.2)
+        >>> s.format
+        'coo'
+        """     
+        return 'coo'
 
     @property
     def nnz(self):
