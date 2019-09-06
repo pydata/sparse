@@ -183,7 +183,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         scipy.sparse.csr_matrix.dtype : Scipy equivalent property.
         """
         return self.data.dtype
-    
+
     @property
     def nnz(self):
         """
@@ -225,9 +225,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         >>> s = sparse.random((5,5), density=0.2, format='gcxs')
         >>> s.format
         'gcxs'
-        """     
-        return 'gcxs'
-    
+        """
+        return "gcxs"
+
     @property
     def nbytes(self):
         """
@@ -249,8 +249,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         return nbytes
 
     def __str__(self):
-        return '<GCXS: shape={}, dtype={}, nnz={}, fill_value={}, compressed_axes={}>'.format(
-            self.shape, self.dtype, self.nnz, self.fill_value, self.compressed_axes)
+        return "<GCXS: shape={}, dtype={}, nnz={}, fill_value={}, compressed_axes={}>".format(
+            self.shape, self.dtype, self.nnz, self.fill_value, self.compressed_axes
+        )
 
     __repr__ = __str__
 
