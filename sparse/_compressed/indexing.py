@@ -152,11 +152,8 @@ def getitem(x, key):
         compressed_axes = None
 
     return GCXS(
-        arg,
-        shape=shape,
-        compressed_axes=compressed_axes,
-        fill_value=x.fill_value)
-
+        arg, shape=shape, compressed_axes=compressed_axes, fill_value=x.fill_value
+    )
 
 
 @numba.jit(nopython=True, nogil=True)
