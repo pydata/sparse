@@ -25,7 +25,7 @@ def _from_coo(x, compressed_axes=None):
         if compressed_axes is not None:
             raise ValueError('no axes to compress for 1d array')
         return (
-            x.data, x.coords[0], np.array([])), x.shape, None, None, None, None, None, x.fill_value
+            x.data, x.coords[0], ()), x.shape, None, None, None, None, None, x.fill_value
 
     compressed_axes = normalize_axis(compressed_axes, x.ndim)
     if compressed_axes is None:
@@ -111,7 +111,6 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         else:
             compressed_axes = compressed_shape = axis_order = reordered_shape = axisptr = None
 
-        self.format = 'gcxs'
         self.data, self.indices, self.indptr = arg
         self.shape = shape
         self.compressed_shape = compressed_shape
@@ -157,20 +156,85 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             compressed_axes=compressed_axes)
 
     @property
+    def dtype(self):
+        """
+        The datatype of this array.
+        
+        Returns
+        -------
+        numpy.dtype
+            The datatype of this array.
+            
+        See Also
+        --------
+        numpy.ndarray.dtype : Numpy equivalent property.
+        scipy.sparse.csr_matrix.dtype : Scipy equivalent property.
+        """
+        return self.data.dtype
+    
+    @property
     def nnz(self):
+        """
+        The number of nonzero elements in this array.
+        
+        Returns
+        -------
+        int
+            The number of nonzero elements in this array.
+            
+        See Also
+        --------
+        COO.nnz : Equivalent :obj:`COO` array property.
+        DOK.nnz : Equivalent :obj:`DOK` array property.
+        numpy.count_nonzero : A similar Numpy function.
+        scipy.sparse.csr_matrix.nnz : The Scipy equivalent property.
+        """
         return self.data.shape[0]
 
     @property
+    def format(self):
+        """
+        The storage format of this array.
+        
+        Returns
+        -------
+        str
+            The storage format of this array.
+        
+        See Also
+        -------
+        COO.format : Equivalent :obj:`COO` array property.
+        DOK.format : Equivalent :obj:`DOK` array property.
+        scipy.sparse.coo_matrix.format : The Scipy equivalent property.
+        
+        Examples
+        -------
+        >>> import sparse
+        >>> s = sparse.random((5,5), density=0.2, format='gcxs')
+        >>> s.format
+        'gcxs'
+        """     
+        return 'gcxs'
+    
+    @property
     def nbytes(self):
-        return self.data.nbytes + self.indices.nbytes + self.indptr.nbytes
-
-    @property
-    def density(self):
-        return self.nnz / reduce(mul, self.shape, 1)
-
-    @property
-    def ndim(self):
-        return len(self.shape)
+        """
+        The number of bytes taken up by this object. Note that for small arrays,
+        this may undercount the number of bytes due to the large constant overhead.
+        
+        Returns
+        -------
+        int
+            The approximate bytes of memory taken by this object.
+        
+        See Also
+        --------
+        numpy.ndarray.nbytes : The equivalent Numpy property.
+        """
+        nbytes = self.data.nbytes + self.indices.nbytes
+        if self.indptr != ():
+            nbytes += self.indptr.nbytes
+        return nbytes
 
     def __str__(self):
         return '<GCXS: shape={}, dtype={}, nnz={}, fill_value={}, compressed_axes={}>'.format(
