@@ -292,7 +292,7 @@ def html_table(arr):
                 'nnz', 'Density', 'Read-only', 'No. Bytes',
                 'No. Bytes as dense']
     info = [arr.format, str(arr.dtype), str(arr.shape),
-            str(arr.nnz), str(arr.nnz/np.prod(arr.shape))]
+            str(arr.nnz), str(arr.nnz/arr.size)]
 
     # read-only
     if arr.format == 'dok':
