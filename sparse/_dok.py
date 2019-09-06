@@ -241,7 +241,7 @@ class DOK(SparseArray):
         1
         """
         return len(self.data)
-    
+
     @property
     def format(self):
         """
@@ -264,9 +264,9 @@ class DOK(SparseArray):
         >>> s = sparse.random((5,5), density=0.2, format='dok')
         >>> s.format
         'dok'
-        """     
-        return 'dok'
-    
+        """
+        return "dok"
+
     @property
     def nbytes(self):
         """
