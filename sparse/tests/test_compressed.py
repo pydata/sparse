@@ -23,7 +23,7 @@ from sparse._utils import assert_eq
     ],
 )
 def test_resize(a, b):
-    s = sparse.random(a, density=0.5, format='gcxs')
+    s = sparse.random(a, density=0.5, format="gcxs")
     orig_size = s.size
     x = s.todense()
     x = np.resize(x, b)
@@ -50,7 +50,7 @@ def test_resize(a, b):
     ],
 )
 def test_reshape(a, b):
-    s = sparse.random(a, density=0.5, format='gcxs')
+    s = sparse.random(a, density=0.5, format="gcxs")
     x = s.todense()
 
     assert_eq(x.reshape(b), s.reshape(b))
@@ -58,12 +58,12 @@ def test_reshape(a, b):
 
 def test_reshape_same():
 
-    s = sparse.random((3, 5), density=0.5, format='gcxs')
+    s = sparse.random((3, 5), density=0.5, format="gcxs")
     assert s.reshape(s.shape) is s
 
 
 def test_to_scipy_sparse():
-    s = sparse.random((3, 5), density=0.5, format='gcxs', compressed_axes=(0,))
+    s = sparse.random((3, 5), density=0.5, format="gcxs", compressed_axes=(0,))
     a = s.to_scipy_sparse()
     b = scipy.sparse.csr_matrix(s.todense())
 
@@ -71,7 +71,7 @@ def test_to_scipy_sparse():
 
 
 def test_tocoo():
-    coo = sparse.random((5, 6), density=.5)
+    coo = sparse.random((5, 6), density=0.5)
     b = GCXS.from_coo(coo)
     assert_eq(b.tocoo(), coo)
 
@@ -134,7 +134,7 @@ def test_tocoo():
     ],
 )
 def test_slicing(index):
-    s = sparse.random((2, 3, 4), density=0.5, format='gcxs')
+    s = sparse.random((2, 3, 4), density=0.5, format="gcxs")
     x = s.todense()
     assert_eq(x[index], s[index])
 
@@ -155,7 +155,7 @@ def test_slicing(index):
     ],
 )
 def test_advanced_indexing(index):
-    s = sparse.random((2, 3, 4), density=0.5, format='gcxs')
+    s = sparse.random((2, 3, 4), density=0.5, format="gcxs")
     x = s.todense()
 
     assert_eq(x[index], s[index])
@@ -178,14 +178,14 @@ def test_advanced_indexing(index):
     ],
 )
 def test_slicing_errors(index):
-    s = sparse.random((2, 3, 4), density=0.5, format='gcxs')
+    s = sparse.random((2, 3, 4), density=0.5, format="gcxs")
 
     with pytest.raises(IndexError):
         s[index]
 
 
 def test_change_compressed_axes():
-    coo = sparse.random((3, 4, 5), density=.5)
+    coo = sparse.random((3, 4, 5), density=0.5)
     s = GCXS.from_coo(coo, compressed_axes=(0, 1))
     b = GCXS.from_coo(coo, compressed_axes=(1, 2))
     assert_eq(s, b)
