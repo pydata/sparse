@@ -134,7 +134,6 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         self.axisptr = axisptr
         self.reordered_shape = reordered_shape
         self.fill_value = fill_value
-        self.dtype = self.data.dtype
 
     @classmethod
     def from_numpy(cls, x, compressed_axes=None, fill_value=0):
