@@ -92,7 +92,6 @@ class DOK(SparseArray):
         from ._coo import COO
 
         self.data = dict()
-        self.format = 'dok'
 
         if isinstance(shape, COO):
             ar = DOK.from_coo(shape)
@@ -242,7 +241,32 @@ class DOK(SparseArray):
         1
         """
         return len(self.data)
-
+    
+    @property
+    def format(self):
+        """
+        The storage format of this array.
+        
+        Returns
+        -------
+        str
+            The storage format of this array.
+        
+        See Also
+        -------
+        COO.format : Equivalent :obj:`COO` array property.
+        GCXS.format : Equivalent :obj:`GCXS` array property.
+        scipy.sparse.dok_matrix.format : The Scipy equivalent property.
+        
+        Examples
+        -------
+        >>> import sparse
+        >>> s = sparse.random((5,5), density=0.2, format='dok')
+        >>> s.format
+        'dok'
+        """     
+        return 'dok'
+    
     @property
     def nbytes(self):
         """
