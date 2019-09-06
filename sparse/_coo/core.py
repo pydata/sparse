@@ -556,7 +556,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         True
         """
         return self.data.dtype
-    
+
     @property
     def format(self):
         """
@@ -579,8 +579,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         >>> s = sparse.random((5,5), density=0.2)
         >>> s.format
         'coo'
-        """     
-        return 'coo'
+        """
+        return "coo"
 
     @property
     def nnz(self):
@@ -2265,9 +2265,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             If the format isn't supported.
         """
         from .._compressed import GCXS
-        if format == 'gcxs' or format is GCXS:
+
+        if format == "gcxs" or format is GCXS:
             return GCXS.from_coo(self, compressed_axes=compressed_axes)
-      
+
         elif compressed_axes is not None:
             raise ValueError(
                 "compressed_axes is not supported for {} format".format(format)
