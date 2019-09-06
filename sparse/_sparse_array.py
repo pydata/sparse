@@ -77,7 +77,7 @@ class SparseArray:
         >>> np.count_nonzero(x) == s.nnz
         True
         """
-    
+
     @property
     @abstractmethod
     def format(self):
@@ -96,7 +96,7 @@ class SparseArray:
         >>> s.format
         'coo'
         """
-       
+
     @property
     def ndim(self):
         """
