@@ -175,7 +175,6 @@ def test_change_compressed_axes():
     coo = sparse.random((3, 4, 5), density=.5)
     s = GCXS.from_coo(coo, compressed_axes=(0, 1))
     b = GCXS.from_coo(coo, compressed_axes=(1, 2))
-
+    assert_eq(s, b)
     s.change_compressed_axes((1, 2))
-
     assert_eq(s, b)
