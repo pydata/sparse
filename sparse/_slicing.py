@@ -34,7 +34,7 @@ def normalize_index(idx, shape):
     idx = replace_ellipsis(len(shape), idx)
     n_sliced_dims = 0
     for i in idx:
-        if hasattr(i, 'ndim') and i.ndim >= 1:
+        if hasattr(i, "ndim") and i.ndim >= 1:
             n_sliced_dims += i.ndim
         elif i is None:
             continue
@@ -79,7 +79,9 @@ def replace_ellipsis(n, index):
     else:
         loc = isellipsis[0]
     extra_dimensions = n - (len(index) - sum(i is None for i in index) - 1)
-    return index[:loc] + (slice(None, None, None),) * extra_dimensions + index[loc + 1:]
+    return (
+        index[:loc] + (slice(None, None, None),) * extra_dimensions + index[loc + 1 :]
+    )
 
 
 def check_index(ind, dimension):
@@ -110,20 +112,28 @@ def check_index(ind, dimension):
     # unknown dimension, assumed to be in bounds
     if isinstance(ind, Iterable):
         x = np.asanyarray(ind)
-        if np.issubdtype(x.dtype, np.integer) and \
-                ((x >= dimension) | (x < -dimension)).any():
+        if (
+            np.issubdtype(x.dtype, np.integer)
+            and ((x >= dimension) | (x < -dimension)).any()
+        ):
             raise IndexError("Index out of bounds for dimension {:d}".format(dimension))
         elif x.dtype == bool and len(x) != dimension:
-            raise IndexError("boolean index did not match indexed array; dimension is {:d} "
-                             "but corresponding boolean dimension is {:d}".format(dimension, len(x)))
+            raise IndexError(
+                "boolean index did not match indexed array; dimension is {:d} "
+                "but corresponding boolean dimension is {:d}".format(dimension, len(x))
+            )
     elif isinstance(ind, slice):
         return
     elif not isinstance(ind, Integral):
-        raise IndexError("only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and "
-                         "integer or boolean arrays are valid indices")
+        raise IndexError(
+            "only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and "
+            "integer or boolean arrays are valid indices"
+        )
 
     elif ind >= dimension:
-        raise IndexError("Index is not smaller than dimension {:d} >= {:d}".format(ind, dimension))
+        raise IndexError(
+            "Index is not smaller than dimension {:d} >= {:d}".format(ind, dimension)
+        )
 
     elif ind < -dimension:
         msg = "Negative index is not greater than negative dimension {:d} <= -{:d}"
@@ -151,12 +161,14 @@ def sanitize_index(ind):
     if ind is None:
         return None
     elif isinstance(ind, slice):
-        return slice(_sanitize_index_element(ind.start),
-                     _sanitize_index_element(ind.stop),
-                     _sanitize_index_element(ind.step))
+        return slice(
+            _sanitize_index_element(ind.start),
+            _sanitize_index_element(ind.stop),
+            _sanitize_index_element(ind.step),
+        )
     elif isinstance(ind, Number):
         return _sanitize_index_element(ind)
-    if not hasattr(ind, 'dtype') and len(ind) == 0:
+    if not hasattr(ind, "dtype") and len(ind) == 0:
         ind = np.array([], dtype=np.intp)
     ind = np.asarray(ind)
     if ind.dtype == np.bool_:
@@ -168,8 +180,10 @@ def sanitize_index(ind):
     elif np.issubdtype(ind.dtype, np.integer):
         return ind
     else:
-        raise IndexError("only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and "
-                         "integer or boolean arrays are valid indices")
+        raise IndexError(
+            "only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and "
+            "integer or boolean arrays are valid indices"
+        )
 
 
 def _sanitize_index_element(ind):

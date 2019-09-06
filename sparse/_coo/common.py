@@ -9,10 +9,15 @@ import scipy.sparse
 import numba
 
 from .._sparse_array import SparseArray
-from .._utils import isscalar, normalize_axis, check_zero_fill_value, check_consistent_fill_value
+from .._utils import (
+    isscalar,
+    normalize_axis,
+    check_zero_fill_value,
+    check_consistent_fill_value,
+)
 
 
-def asCOO(x, name='asCOO', check=True):
+def asCOO(x, name="asCOO", check=True):
     """
     Convert the input to :obj:`COO`. Passes through :obj:`COO` objects as-is.
 
@@ -38,7 +43,9 @@ def asCOO(x, name='asCOO', check=True):
     from .core import COO
 
     if check and not isinstance(x, (SparseArray, scipy.sparse.spmatrix)):
-        raise ValueError('Performing this operation would produce a dense result: %s' % name)
+        raise ValueError(
+            "Performing this operation would produce a dense result: %s" % name
+        )
 
     if not isinstance(x, COO):
         x = COO(x)
@@ -186,10 +193,10 @@ def matmul(a, b):
     COO.__matmul__ : Equivalent function for COO objects.
     """
     check_zero_fill_value(a, b)
-    if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
+    if not hasattr(a, "ndim") or not hasattr(b, "ndim"):
         raise TypeError(
-            "Cannot perform dot product on types %s, %s" %
-            (type(a), type(b)))
+            "Cannot perform dot product on types %s, %s" % (type(a), type(b))
+        )
 
     # When b is 2-d, it is equivalent to dot
     if b.ndim <= 2:
@@ -219,7 +226,7 @@ def matmul(a, b):
         b = b[(None,) * (a.ndim - b.ndim)]
     for i, j in zip(a.shape[:-2], b.shape[:-2]):
         if i != 1 and j != 1 and i != j:
-            raise ValueError('shapes of a and b are not broadcastable')
+            raise ValueError("shapes of a and b are not broadcastable")
 
     def _matmul_recurser(a, b):
         if a.ndim == 2:
@@ -233,9 +240,9 @@ def matmul(a, b):
         if all(mask):
             return stack(res)
         else:
-            res = [x.todense() if isinstance(x, SparseArray) else x
-                   for x in res]
+            res = [x.todense() if isinstance(x, SparseArray) else x for x in res]
             return np.stack(res)
+
     return _matmul_recurser(a, b)
 
 
@@ -264,10 +271,10 @@ def dot(a, b):
     COO.dot : Equivalent function for COO objects.
     """
     check_zero_fill_value(a, b)
-    if not hasattr(a, 'ndim') or not hasattr(b, 'ndim'):
+    if not hasattr(a, "ndim") or not hasattr(b, "ndim"):
         raise TypeError(
-            "Cannot perform dot product on types %s, %s" %
-            (type(a), type(b)))
+            "Cannot perform dot product on types %s, %s" % (type(a), type(b))
+        )
 
     if a.ndim == 1 and b.ndim == 1:
         return (a * b).sum()
@@ -282,10 +289,13 @@ def dot(a, b):
 
 def _dot(a, b):
     from .core import COO
+
     out_shape = (a.shape[0], b.shape[1])
     if isinstance(a, COO) and isinstance(b, COO):
         b = b.T
-        coords, data = _dot_coo_coo_type(a.dtype, b.dtype)(a.coords, a.data, b.coords, b.data)
+        coords, data = _dot_coo_coo_type(a.dtype, b.dtype)(
+            a.coords, a.data, b.coords, b.data
+        )
 
         return COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
 
@@ -329,6 +339,7 @@ def kron(a, b):
     """
     from .core import COO
     from .umath import _cartesian_product
+
     check_zero_fill_value(a, b)
 
     a_sparse = isinstance(a, (SparseArray, scipy.sparse.spmatrix))
@@ -337,8 +348,9 @@ def kron(a, b):
     b_ndim = np.ndim(b)
 
     if not (a_sparse or b_sparse):
-        raise ValueError('Performing this operation would produce a dense '
-                         'result: kron')
+        raise ValueError(
+            "Performing this operation would produce a dense " "result: kron"
+        )
 
     if a_ndim == 0 or b_ndim == 0:
         return a * b
@@ -388,13 +400,16 @@ def concatenate(arrays, axis=0):
     numpy.concatenate : NumPy equivalent function
     """
     from .core import COO
+
     check_consistent_fill_value(arrays)
 
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
     axis = normalize_axis(axis, arrays[0].ndim)
-    assert all(x.shape[ax] == arrays[0].shape[ax]
-               for x in arrays
-               for ax in set(range(arrays[0].ndim)) - {axis})
+    assert all(
+        x.shape[ax] == arrays[0].shape[ax]
+        for x in arrays
+        for ax in set(range(arrays[0].ndim)) - {axis}
+    )
     nnz = 0
     dim = sum(x.shape[axis] for x in arrays)
     shape = list(arrays[0].shape)
@@ -406,12 +421,18 @@ def concatenate(arrays, axis=0):
     dim = 0
     for x in arrays:
         if dim:
-            coords[axis, nnz:x.nnz + nnz] += dim
+            coords[axis, nnz : x.nnz + nnz] += dim
         dim += x.shape[axis]
         nnz += x.nnz
 
-    return COO(coords, data, shape=shape, has_duplicates=False,
-               sorted=(axis == 0), fill_value=arrays[0].fill_value)
+    return COO(
+        coords,
+        data,
+        shape=shape,
+        has_duplicates=False,
+        sorted=(axis == 0),
+        fill_value=arrays[0].fill_value,
+    )
 
 
 def stack(arrays, axis=0):
@@ -440,6 +461,7 @@ def stack(arrays, axis=0):
     numpy.stack : NumPy equivalent function
     """
     from .core import COO
+
     check_consistent_fill_value(arrays)
 
     assert len({x.shape for x in arrays}) == 1
@@ -454,7 +476,7 @@ def stack(arrays, axis=0):
     dim = 0
     new = np.empty(shape=(coords.shape[1],), dtype=np.intp)
     for x in arrays:
-        new[nnz:x.nnz + nnz] = dim
+        new[nnz : x.nnz + nnz] = dim
         dim += 1
         nnz += x.nnz
 
@@ -462,8 +484,14 @@ def stack(arrays, axis=0):
     coords.insert(axis, new)
     coords = np.stack(coords, axis=0)
 
-    return COO(coords, data, shape=shape, has_duplicates=False,
-               sorted=(axis == 0), fill_value=arrays[0].fill_value)
+    return COO(
+        coords,
+        data,
+        shape=shape,
+        has_duplicates=False,
+        sorted=(axis == 0),
+        fill_value=arrays[0].fill_value,
+    )
 
 
 def triu(x, k=0):
@@ -493,10 +521,13 @@ def triu(x, k=0):
     numpy.triu : NumPy equivalent function
     """
     from .core import COO
+
     check_zero_fill_value(x)
 
     if not x.ndim >= 2:
-        raise NotImplementedError('sparse.triu is not implemented for scalars or 1-D arrays.')
+        raise NotImplementedError(
+            "sparse.triu is not implemented for scalars or 1-D arrays."
+        )
 
     mask = x.coords[-2] + k <= x.coords[-1]
 
@@ -533,10 +564,13 @@ def tril(x, k=0):
     numpy.tril : NumPy equivalent function
     """
     from .core import COO
+
     check_zero_fill_value(x)
 
     if not x.ndim >= 2:
-        raise NotImplementedError('sparse.tril is not implemented for scalars or 1-D arrays.')
+        raise NotImplementedError(
+            "sparse.tril is not implemented for scalars or 1-D arrays."
+        )
 
     mask = x.coords[-2] + k >= x.coords[-1]
 
@@ -572,7 +606,7 @@ def nansum(x, axis=None, keepdims=False, dtype=None, out=None):
     numpy.nansum : Equivalent Numpy function.
     """
     assert out is None
-    x = asCOO(x, name='nansum')
+    x = asCOO(x, name="nansum")
     return nanreduce(x, np.add, axis=axis, keepdims=keepdims, dtype=dtype)
 
 
@@ -602,7 +636,7 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
     numpy.nanmean : Equivalent Numpy function.
     """
     assert out is None
-    x = asCOO(x, name='nanmean')
+    x = asCOO(x, name="nanmean")
 
     if not np.issubdtype(x.dtype, np.floating):
         return x.mean(axis=axis, keepdims=keepdims, dtype=dtype)
@@ -611,7 +645,7 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
     x2 = where(mask, 0, x)
 
     # Count the number non-nan elements along axis
-    nancount = mask.sum(axis=axis, dtype='i8', keepdims=keepdims)
+    nancount = mask.sum(axis=axis, dtype="i8", keepdims=keepdims)
     if axis is None:
         axis = tuple(range(x.ndim))
     elif not isinstance(axis, tuple):
@@ -624,9 +658,9 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
 
     num = np.sum(x2, axis=axis, dtype=dtype, keepdims=keepdims)
 
-    with np.errstate(invalid='ignore', divide='ignore'):
+    with np.errstate(invalid="ignore", divide="ignore"):
         if num.ndim:
-            return np.true_divide(num, den, casting='unsafe')
+            return np.true_divide(num, den, casting="unsafe")
         return (num / den).astype(dtype)
 
 
@@ -656,10 +690,9 @@ def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
     numpy.nanmax : Equivalent Numpy function.
     """
     assert out is None
-    x = asCOO(x, name='nanmax')
+    x = asCOO(x, name="nanmax")
 
-    ar = x.reduce(np.fmax, axis=axis, keepdims=keepdims,
-                  dtype=dtype)
+    ar = x.reduce(np.fmax, axis=axis, keepdims=keepdims, dtype=dtype)
 
     if (isscalar(ar) and np.isnan(ar)) or np.isnan(ar.data).any():
         warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=2)
@@ -693,10 +726,9 @@ def nanmin(x, axis=None, keepdims=False, dtype=None, out=None):
     numpy.nanmin : Equivalent Numpy function.
     """
     assert out is None
-    x = asCOO(x, name='nanmin')
+    x = asCOO(x, name="nanmin")
 
-    ar = x.reduce(np.fmin, axis=axis, keepdims=keepdims,
-                  dtype=dtype)
+    ar = x.reduce(np.fmin, axis=axis, keepdims=keepdims, dtype=dtype)
 
     if (isscalar(ar) and np.isnan(ar)) or np.isnan(ar.data).any():
         warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=2)
@@ -779,7 +811,7 @@ def where(condition, x=None, y=None):
         return tuple(condition.coords)
 
     if x_given != y_given:
-        raise ValueError('either both or neither of x and y should be given')
+        raise ValueError("either both or neither of x and y should be given")
 
     return elemwise(np.where, condition, x, y)
 
@@ -901,6 +933,7 @@ def roll(a, shift, axis=None):
         Output array, with the same shape as a.
     """
     from .core import COO, as_coo
+
     a = as_coo(a)
 
     # roll flattened array
@@ -919,8 +952,7 @@ def roll(a, shift, axis=None):
             shift = (shift,)
 
         elif np.ndim(shift) > 1:
-            raise ValueError(
-                "'shift' and 'axis' must be integers or 1D sequences.")
+            raise ValueError("'shift' and 'axis' must be integers or 1D sequences.")
 
         # handle broadcasting
         if len(shift) == 1:
@@ -929,8 +961,8 @@ def roll(a, shift, axis=None):
         # check if dimensions are consistent
         if len(axis) != len(shift):
             raise ValueError(
-                "If 'shift' is a 1D sequence, "
-                "'axis' must have equal length.")
+                "If 'shift' is a 1D sequence, " "'axis' must have equal length."
+            )
 
         # shift elements
         coords, data = np.copy(a.coords), np.copy(a.data)
@@ -938,7 +970,13 @@ def roll(a, shift, axis=None):
             coords[ax] += sh
             coords[ax] %= a.shape[ax]
 
-        return COO(coords, data=data, shape=a.shape, has_duplicates=False, fill_value=a.fill_value)
+        return COO(
+            coords,
+            data=data,
+            shape=a.shape,
+            has_duplicates=False,
+            fill_value=a.fill_value,
+        )
 
 
 def eye(N, M=None, k=0, dtype=float):
@@ -998,8 +1036,7 @@ def eye(N, M=None, k=0, dtype=float):
     coords = np.stack([n_coords, m_coords])
     data = np.array(1, dtype=dtype)
 
-    return COO(coords, data=data, shape=(N, M), has_duplicates=False,
-               sorted=True)
+    return COO(coords, data=data, shape=(N, M), has_duplicates=False, sorted=True)
 
 
 def full(shape, fill_value, dtype=None):
@@ -1037,9 +1074,14 @@ def full(shape, fill_value, dtype=None):
         shape = (shape,)
     data = np.empty(0, dtype=dtype)
     coords = np.empty((len(shape), 0), dtype=np.intp)
-    return COO(coords, data=data, shape=shape,
-               fill_value=fill_value, has_duplicates=False,
-               sorted=True)
+    return COO(
+        coords,
+        data=data,
+        shape=shape,
+        fill_value=fill_value,
+        has_duplicates=False,
+        sorted=True,
+    )
 
 
 def full_like(a, fill_value, dtype=None):
@@ -1214,8 +1256,11 @@ def _memoize_dtype(f):
 def _dot_coo_coo_type(dt1, dt2):
     dtr = np.result_type(dt1, dt2)
 
-    @numba.jit(nopython=True, nogil=True,
-               locals={'data_curr': numba.numpy_support.from_dtype(dtr)})
+    @numba.jit(
+        nopython=True,
+        nogil=True,
+        locals={"data_curr": numba.numpy_support.from_dtype(dtr)},
+    )
     def _dot_coo_coo(coords1, data1, coords2, data2):  # pragma: no cover
         """
         Utility function taking in two ``COO`` objects and calculating a "sense"
@@ -1238,12 +1283,18 @@ def _dot_coo_coo_type(dt1, dt2):
             didx2 = 0
             didx1_curr = didx1
 
-            while didx2 < len(data2) and didx1 < len(data1) and coords1[0, didx1] == oidx1:
+            while (
+                didx2 < len(data2) and didx1 < len(data1) and coords1[0, didx1] == oidx1
+            ):
                 oidx2 = coords2[0, didx2]
                 data_curr = 0
 
-                while didx2 < len(data2) and didx1 < len(data1) and \
-                        coords2[0, didx2] == oidx2 and coords1[0, didx1] == oidx1:
+                while (
+                    didx2 < len(data2)
+                    and didx1 < len(data1)
+                    and coords2[0, didx2] == oidx2
+                    and coords1[0, didx1] == oidx1
+                ):
                     if coords1[1, didx1] < coords2[1, didx2]:
                         didx1 += 1
                     elif coords1[1, didx1] > coords2[1, didx2]:
@@ -1370,6 +1421,7 @@ def isposinf(x, out=None):
     numpy.isposinf : The NumPy equivalent
     """
     from .core import elemwise
+
     return elemwise(lambda x, out=None, dtype=None: np.isposinf(x, out=out), x, out=out)
 
 
@@ -1396,6 +1448,7 @@ def isneginf(x, out=None):
     numpy.isneginf : The NumPy equivalent
     """
     from .core import elemwise
+
     return elemwise(lambda x, out=None, dtype=None: np.isneginf(x, out=out), x, out=out)
 
 

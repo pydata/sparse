@@ -90,6 +90,7 @@ class DOK(SparseArray):
 
     def __init__(self, shape, data=None, dtype=None, fill_value=None):
         from ._coo import COO
+
         self.data = dict()
 
         if isinstance(shape, COO):
@@ -112,14 +113,16 @@ class DOK(SparseArray):
         if isinstance(data, dict):
             if not dtype:
                 if not len(data):
-                    self.dtype = np.dtype('float64')
+                    self.dtype = np.dtype("float64")
                 else:
-                    self.dtype = np.result_type(*map(lambda x: np.asarray(x).dtype, data.values()))
+                    self.dtype = np.result_type(
+                        *map(lambda x: np.asarray(x).dtype, data.values())
+                    )
 
             for c, d in data.items():
                 self[c] = d
         else:
-            raise ValueError('data must be a dict.')
+            raise ValueError("data must be a dict.")
 
     def _make_shallow_copy_of(self, other):
         self.dtype = other.dtype
@@ -176,6 +179,7 @@ class DOK(SparseArray):
         <COO: shape=(5, 5), dtype=float64, nnz=4, fill_value=0.0>
         """
         from ._coo import COO
+
         return COO(self)
 
     @classmethod
@@ -291,13 +295,15 @@ class DOK(SparseArray):
         key = normalize_index(key, self.shape)
 
         if not all(isinstance(i, Integral) for i in key):
-            raise NotImplementedError('All indices must be integers'
-                                      ' when getting an item.')
+            raise NotImplementedError(
+                "All indices must be integers" " when getting an item."
+            )
 
         if len(key) != self.ndim:
-            raise NotImplementedError('Can only get single elements. '
-                                      'Expected key of length %d, got %s'
-                                      % (self.ndim, str(key)))
+            raise NotImplementedError(
+                "Can only get single elements. "
+                "Expected key of length %d, got %s" % (self.ndim, str(key))
+            )
 
         key = tuple(int(k) for k in key)
 
@@ -317,10 +323,12 @@ class DOK(SparseArray):
         self._setitem(key_list, value)
 
     def _setitem(self, key_list, value):
-        value_missing_dims = len([ind for ind in key_list if isinstance(ind, slice)]) - value.ndim
+        value_missing_dims = (
+            len([ind for ind in key_list if isinstance(ind, slice)]) - value.ndim
+        )
 
         if value_missing_dims < 0:
-            raise ValueError('setting an array element with a sequence.')
+            raise ValueError("setting an array element with a sequence.")
 
         for i, ind in enumerate(key_list):
             if isinstance(ind, slice):
@@ -343,14 +351,18 @@ class DOK(SparseArray):
                 key_list_temp = key_list[:]
                 for v_idx, ki in enumerate(range(start, stop, step)):
                     key_list_temp[i] = ki
-                    vi = value if value_missing_dims > 0 else \
-                        (value[0] if value.shape[0] == 1 else value[v_idx])
+                    vi = (
+                        value
+                        if value_missing_dims > 0
+                        else (value[0] if value.shape[0] == 1 else value[v_idx])
+                    )
                     self._setitem(key_list_temp, vi)
 
                 return
             elif not isinstance(ind, Integral):
-                raise IndexError('All indices must be slices or integers'
-                                 ' when setting an item.')
+                raise IndexError(
+                    "All indices must be slices or integers" " when setting an item."
+                )
 
         key = tuple(key_list)
         if not equivalent(value, self.fill_value):
@@ -359,7 +371,7 @@ class DOK(SparseArray):
             del self.data[key]
 
     def __str__(self):
-        return '<DOK: shape={!s}, dtype={!s}, nnz={:d}, fill_value={!s}>'.format(
+        return "<DOK: shape={!s}, dtype={!s}, nnz={:d}, fill_value={!s}>".format(
             self.shape, self.dtype, self.nnz, self.fill_value
         )
 
@@ -416,11 +428,14 @@ class DOK(SparseArray):
         NotImplementedError
             If the format isn't supported.
         """
-        if format == 'dok' or format is DOK:
+        if format == "dok" or format is DOK:
             return self
 
         from ._coo import COO
-        if format == 'coo' or format is COO:
-            return COO.from_iter(self.data, shape=self.shape, fill_value=self.fill_value)
 
-        raise NotImplementedError('The given format is not supported.')
+        if format == "coo" or format is COO:
+            return COO.from_iter(
+                self.data, shape=self.shape, fill_value=self.fill_value
+            )
+
+        raise NotImplementedError("The given format is not supported.")
