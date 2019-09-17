@@ -2127,6 +2127,48 @@ def test_prune_coo():
     assert_eq(s1.todense(), s2, check_nnz=False)
 
 
+def test_diagonal():
+
+    a = sparse.random((4, 4), density=0.5)
+
+    assert_eq(sparse.diagonal(a, offset=0), np.diagonal(a.todense(), offset=0))
+    assert_eq(sparse.diagonal(a, offset=1), np.diagonal(a.todense(), offset=1))
+    assert_eq(sparse.diagonal(a, offset=2), np.diagonal(a.todense(), offset=2))
+
+    a = sparse.random((4, 5, 4, 6), density=0.5)
+
+    assert_eq(
+        sparse.diagonal(a, offset=0, axis1=0, axis2=2),
+        np.diagonal(a.todense(), offset=0, axis1=0, axis2=2),
+    )
+
+    assert_eq(
+        sparse.diagonal(a, offset=1, axis1=0, axis2=2),
+        np.diagonal(a.todense(), offset=1, axis1=0, axis2=2),
+    )
+
+    assert_eq(
+        sparse.diagonal(a, offset=2, axis1=0, axis2=2),
+        np.diagonal(a.todense(), offset=2, axis1=0, axis2=2),
+    )
+
+
+def test_diagonalize():
+
+    assert_eq(sparse.diagonalize(np.ones(3)), sparse.eye(3))
+
+    assert_eq(
+        sparse.diagonalize(scipy.sparse.coo_matrix(np.eye(3))),
+        sparse.diagonalize(sparse.eye(3)),
+    )
+
+    # inverse of diagonal
+    b = sparse.random((4, 3, 2), density=0.5)
+    b_diag = sparse.diagonalize(b, axis=1)
+
+    assert_eq(b, sparse.diagonal(b_diag, axis1=1, axis2=3).transpose([0, 2, 1]))
+
+
 RESULT_TYPE_DTYPES = [
     "i1",
     "i2",
