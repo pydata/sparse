@@ -28,6 +28,8 @@ from .common import (
     isposinf,
     isneginf,
     result_type,
+    diagonal,
+    diagonalize,
 )
 
 __all__ = [
@@ -61,4 +63,6 @@ __all__ = [
     "isposinf",
     "isneginf",
     "result_type",
+    "diagonal",
+    "diagonalize",
 ]

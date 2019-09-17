@@ -1215,6 +1215,127 @@ def ones_like(a, dtype=None):
     return ones(a.shape, dtype=(a.dtype if dtype is None else dtype))
 
 
+def diagonal(a, offset=0, axis1=0, axis2=1):
+    """
+    Extract diagonal from a COO array. The equivalent of :obj:`numpy.diagonal`.
+
+    Parameters
+    ----------
+    a: COO
+        The array to perform the operation on.
+    offset: int, optional
+        Offset of the diagonal from the main diagonal. Defaults to main diagonal (0).
+    axis1: int, optional
+        First axis from which the diagonals should be taken.  
+        Defaults to first axis (0).
+    axis2 : int, optional
+        Second axis from which the diagonals should be taken.  
+        Defaults to second axis (1).
+
+    Examples
+    --------
+    >>> import sparse
+    >>> x = sparse.as_coo(np.arange(9).reshape(3,3))
+    >>> sparse.diagonal(x).todense()
+    array([0, 4, 8])
+    >>> sparse.diagonal(x,offset=1).todense()
+    array([1, 5])
+
+    >>> x = sparse.as_coo(np.arange(12).reshape((2,3,2)))
+    >>> x_diag = sparse.diagonal(x, axis1=0, axis2=2)
+    >>> x_diag.shape
+    (3, 2)
+    >>> x_diag.todense()
+    array([[ 0,  7],
+           [ 2,  9],
+           [ 4, 11]])
+
+    Returns
+    -------
+    out: COO
+        The result of the operation.
+
+    Raises
+    ------
+    ValueError
+        If a.shape[axis1] != a.shape[axis2]
+
+    See Also
+    --------
+    :obj:`numpy.diagonal`: NumPy equivalent function
+    """
+    from .core import COO
+
+    if a.shape[axis1] != a.shape[axis2]:
+        raise ValueError("a.shape[axis1] != a.shape[axis2]")
+
+    diag_axes = [
+        axis for axis in range(len(a.shape)) if axis != axis1 and axis != axis2
+    ] + [axis1]
+    diag_shape = [a.shape[axis] for axis in diag_axes]
+    diag_shape[-1] -= abs(offset)
+
+    diag_idx = _diagonal_idx(a.coords, axis1, axis2, offset)
+
+    diag_coords = [a.coords[axis][diag_idx] for axis in diag_axes]
+    diag_data = a.data[diag_idx]
+
+    return COO(diag_coords, diag_data, diag_shape)
+
+
+def diagonalize(a, axis=0):
+    """
+    Diagonalize a COO array. The new dimension is appended at the end.
+
+    .. WARNING:: :obj:`diagonalize` is not :obj:`numpy` compatible as there is no direct :obj:`numpy` equivalent. The API may change in the future.
+
+    Parameters
+    ----------
+    a: Union[COO, np.ndarray, scipy.sparse.spmatrix]
+        The array to diagonalize.    
+    axis: int, optional
+        The axis to diagonalize. Defaults to first axis (0).
+
+    Examples
+    --------
+    >>> import sparse
+    >>> x = sparse.as_coo(np.arange(1,4))
+    >>> sparse.diagonalize(x).todense()
+    array([[1, 0, 0],
+           [0, 2, 0],
+           [0, 0, 3]])
+
+    >>> x = sparse.as_coo(np.arange(24).reshape((2,3,4)))
+    >>> x_diag = sparse.diagonalize(x, axis=1)
+    >>> x_diag.shape
+    (2, 3, 4, 3)
+
+    :obj:`diagonalize` is the inverse of :obj:`diagonal`
+
+    >>> a = sparse.random((3,3,3,3,3), density=0.3)
+    >>> a_diag = sparse.diagonalize(a, axis=2)
+    >>> (sparse.diagonal(a_diag, axis1=2, axis2=5) == a.transpose([0,1,3,4,2])).all()
+    True
+
+    Returns
+    -------
+    out: COO
+        The result of the operation.
+
+    See Also
+    --------
+    :obj:`numpy.diag`: NumPy equivalent for 1D array
+    """
+    from .core import COO, as_coo
+
+    a = as_coo(a)
+
+    diag_shape = a.shape + (a.shape[axis],)
+    diag_coords = np.vstack([a.coords, a.coords[axis]])
+
+    return COO(diag_coords, a.data, diag_shape)
+
+
 def _memoize_dtype(f):
     """
     Memoizes a function taking in NumPy dtypes.
@@ -1470,3 +1591,29 @@ def _as_result_type_arg(x):
         return x.dtype
     # 0-dimensional arrays give different result_type outputs than their dtypes
     return x.todense()
+
+
+@numba.jit(nopython=True, nogil=True)
+def _diagonal_idx(coordlist, axis1, axis2, offset):
+    """
+    Utility function that returns all indices that correspond to a diagonal element.
+
+    Parameters
+    ----------
+    coordlist : list of lists
+        Coordinate indices.
+
+    axis1, axis2 : int
+        The axes of the diagonal.
+
+    offset : int
+        Offset of the diagonal from the main diagonal. Defaults to main diagonal (0).
+
+    """
+    return np.array(
+        [
+            i
+            for i in range(len(coordlist[axis1]))
+            if coordlist[axis1][i] + offset == coordlist[axis2][i]
+        ]
+    )
