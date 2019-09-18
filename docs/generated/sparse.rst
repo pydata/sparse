@@ -29,6 +29,10 @@ API
 
     concatenate
 
+    diagonal
+
+    diagonalize
+
     dot
 
     elemwise
