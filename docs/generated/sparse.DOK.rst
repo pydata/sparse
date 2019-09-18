@@ -18,8 +18,6 @@ DOK
       DOK.nnz
 
       DOK.size
-   
-      DOK.format
 
 
 

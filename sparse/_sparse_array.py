@@ -79,26 +79,6 @@ class SparseArray:
         """
 
     @property
-    @classmethod
-    def format(cls):
-        """
-        The storage format of this array.
-        
-        Returns
-        -------
-        str
-            The storage format of this array.
-        
-        Examples
-        -------
-        >>> import sparse
-        >>> s = sparse.random((5,5), density=0.2)
-        >>> s.format
-        'coo'
-        """
-        return cls.__name__.lower()
-        
-    @property
     def ndim(self):
         """
         The number of dimensions of this array.

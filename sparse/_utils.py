@@ -295,7 +295,7 @@ def html_table(arr):
     table += "<tbody>"
     headings = ["Format", "Data Type", "Shape", "nnz", "Density", "Read-only"]
     info = [
-        arr.format,
+        type(arr).__name__.lower(),
         str(arr.dtype),
         str(arr.shape),
         str(arr.nnz),
@@ -315,7 +315,7 @@ def html_table(arr):
         )
 
     # compressed_axes
-    if arr.format == "gcxs":
+    if type(arr).__name__ == "GCXS":
         headings.append("Compressed Axes")
         info.append(str(arr.compressed_axes))
 

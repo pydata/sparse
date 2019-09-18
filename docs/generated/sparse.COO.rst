@@ -21,7 +21,6 @@ COO
       COO.density
       COO.imag
       COO.real
-      COO.format
 
    .. rubric:: :doc:`Constructing COO objects <../construct>`
    .. autosummary::
