@@ -19,6 +19,7 @@ DOK
 
       DOK.size
    
+      DOK.format
 
 
 

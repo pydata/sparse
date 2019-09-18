@@ -293,7 +293,7 @@ def human_readable_size(size):
 def html_table(arr):
     table = "<table>"
     table += "<tbody>"
-    headings = ["Format", "Data Type", "Shape", "nnz", "Density", "Read-only", "Size"]
+    headings = ["Format", "Data Type", "Shape", "nnz", "Density", "Read-only"]
     info = [
         arr.format,
         str(arr.dtype),
@@ -303,21 +303,16 @@ def html_table(arr):
     ]
 
     # read-only
-    if arr.format == "dok":
-        info.append(str(False))
-    else:
-        info.append(str(True))
+    info.append(str(hasattr(arr, "__setitem__")))
 
-    if arr.nbytes > 2 ** 10:
-        info.append("%s (%s)" % (arr.nbytes, human_readable_size(arr.nbytes)))
-    else:
-        info.append(str(arr.nbytes))
-
-    headings.append("Storage ratio")
-    info.append(
-        "%.1f"
-        % (arr.nbytes / (reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize))
-    )
+    if hasattr(arr, "nbytes"):
+        headings.append("Size")
+        info.append(human_readable_size(arr.nbytes))
+        headings.append("Storage ratio")
+        info.append(
+            "%.1f"
+            % (arr.nbytes / (reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize))
+        )
 
     # compressed_axes
     if arr.format == "gcxs":

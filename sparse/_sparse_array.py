@@ -79,8 +79,8 @@ class SparseArray:
         """
 
     @property
-    @abstractmethod
-    def format(self):
+    @classmethod
+    def format(cls):
         """
         The storage format of this array.
         
@@ -96,7 +96,8 @@ class SparseArray:
         >>> s.format
         'coo'
         """
-
+        return cls.__name__.lower()
+        
     @property
     def ndim(self):
         """
