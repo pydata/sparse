@@ -24,7 +24,7 @@ def _from_coo(x, compressed_axes=None):
         if compressed_axes is not None:
             raise ValueError("no axes to compress for 1d array")
         return (
-            (x.data, x.coords[0], []),
+            (x.data, x.coords[0], ()),
             x.shape,
             None,
             None,
@@ -80,7 +80,7 @@ def _from_coo(x, compressed_axes=None):
     )
 
 
-class GXCS(SparseArray, NDArrayOperatorsMixin):
+class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     __array_priority__ = 12
 
@@ -134,7 +134,6 @@ class GXCS(SparseArray, NDArrayOperatorsMixin):
         self.axisptr = axisptr
         self.reordered_shape = reordered_shape
         self.fill_value = fill_value
-        self.dtype = self.data.dtype
 
     @classmethod
     def from_numpy(cls, x, compressed_axes=None, fill_value=0):
@@ -169,23 +168,63 @@ class GXCS(SparseArray, NDArrayOperatorsMixin):
         )
 
     @property
+    def dtype(self):
+        """
+        The datatype of this array.
+        
+        Returns
+        -------
+        numpy.dtype
+            The datatype of this array.
+            
+        See Also
+        --------
+        numpy.ndarray.dtype : Numpy equivalent property.
+        scipy.sparse.csr_matrix.dtype : Scipy equivalent property.
+        """
+        return self.data.dtype
+
+    @property
     def nnz(self):
+        """
+        The number of nonzero elements in this array.
+        
+        Returns
+        -------
+        int
+            The number of nonzero elements in this array.
+            
+        See Also
+        --------
+        COO.nnz : Equivalent :obj:`COO` array property.
+        DOK.nnz : Equivalent :obj:`DOK` array property.
+        numpy.count_nonzero : A similar Numpy function.
+        scipy.sparse.csr_matrix.nnz : The Scipy equivalent property.
+        """
         return self.data.shape[0]
 
     @property
     def nbytes(self):
-        return self.data.nbytes + self.indices.nbytes + self.indptr.nbytes
-
-    @property
-    def density(self):
-        return self.nnz / reduce(mul, self.shape, 1)
-
-    @property
-    def ndim(self):
-        return len(self.shape)
+        """
+        The number of bytes taken up by this object. Note that for small arrays,
+        this may undercount the number of bytes due to the large constant overhead.
+        
+        Returns
+        -------
+        int
+            The approximate bytes of memory taken by this object.
+        
+        See Also
+        --------
+        numpy.ndarray.nbytes : The equivalent Numpy property.
+        """
+        nbytes = self.data.nbytes + self.indices.nbytes
+        if self.indptr != ():
+            nbytes += self.indptr.nbytes
+        return nbytes
 
     def __str__(self):
-        return "<GXCS: shape={}, dtype={}, nnz={}, fill_value={}, compressed_axes={}>".format(
+        return "<GCXS: shape={}, dtype={}, nnz={}, fill_value={}, compressed_axes={}>".format(
             self.shape, self.dtype, self.nnz, self.fill_value, self.compressed_axes
         )
 
@@ -374,7 +413,7 @@ class GXCS(SparseArray, NDArrayOperatorsMixin):
 
         # there's likely a way to do this without decompressing to COO
         coo = self.tocoo().reshape(shape)
-        return GXCS.from_coo(coo, compressed_axes)
+        return GCXS.from_coo(coo, compressed_axes)
 
     def resize(self, *args, refcheck=True, compressed_axes=None):
         """

@@ -2239,10 +2239,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         NotImplementedError
             If the format isn't supported.
         """
-        from .._compressed import GXCS
+        from .._compressed import GCXS
 
-        if format == "gxcs" or format is GXCS:
-            return GXCS.from_coo(self, compressed_axes=compressed_axes)
+        if format == "gcxs" or format is GCXS:
+            return GCXS.from_coo(self, compressed_axes=compressed_axes)
+
         elif compressed_axes is not None:
             raise ValueError(
                 "compressed_axes is not supported for {} format".format(format)

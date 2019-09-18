@@ -12,11 +12,11 @@ def getitem(x, key):
 
 
     """
-    from .compressed import GXCS
+    from .compressed import GCXS
 
     if x.ndim == 1:
         coo = x.tocoo()[key]
-        return GXCS.from_coo(coo)
+        return GCXS.from_coo(coo)
 
     key = list(normalize_index(key, x.shape))
 
@@ -151,7 +151,7 @@ def getitem(x, key):
     if len(shape) == 1:
         compressed_axes = None
 
-    return GXCS(
+    return GCXS(
         arg, shape=shape, compressed_axes=compressed_axes, fill_value=x.fill_value
     )
 

@@ -1,7 +1,9 @@
 import functools
 from collections.abc import Iterable
 from numbers import Integral
+from functools import reduce
 
+import operator
 import numpy as np
 
 
@@ -142,7 +144,7 @@ def random(
 
     nnz = int(elements * density)
 
-    if format != "gxcs" and compressed_axes is not None:
+    if format != "gcxs" and compressed_axes is not None:
         raise ValueError(
             "compressed_axes is not supported for {} format".format(format)
         )
@@ -269,6 +271,64 @@ def equivalent(x, y):
     # FIXME: Complex floats and np.void with multiple values can't be compared properly.
     # lgtm [py/comparison-of-identical-expressions]
     return (x == y) | ((x != x) & (y != y))
+
+
+# copied from zarr
+# See https://github.com/zarr-developers/zarr-python/blob/master/zarr/util.py
+def human_readable_size(size):
+    if size < 2 ** 10:
+        return "%s" % size
+    elif size < 2 ** 20:
+        return "%.1fK" % (size / float(2 ** 10))
+    elif size < 2 ** 30:
+        return "%.1fM" % (size / float(2 ** 20))
+    elif size < 2 ** 40:
+        return "%.1fG" % (size / float(2 ** 30))
+    elif size < 2 ** 50:
+        return "%.1fT" % (size / float(2 ** 40))
+    else:
+        return "%.1fP" % (size / float(2 ** 50))
+
+
+def html_table(arr):
+    table = "<table>"
+    table += "<tbody>"
+    headings = ["Format", "Data Type", "Shape", "nnz", "Density", "Read-only"]
+    info = [
+        type(arr).__name__.lower(),
+        str(arr.dtype),
+        str(arr.shape),
+        str(arr.nnz),
+        str(arr.nnz / arr.size),
+    ]
+
+    # read-only
+    info.append(str(hasattr(arr, "__setitem__")))
+
+    if hasattr(arr, "nbytes"):
+        headings.append("Size")
+        info.append(human_readable_size(arr.nbytes))
+        headings.append("Storage ratio")
+        info.append(
+            "%.1f"
+            % (arr.nbytes / (reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize))
+        )
+
+    # compressed_axes
+    if type(arr).__name__ == "GCXS":
+        headings.append("Compressed Axes")
+        info.append(str(arr.compressed_axes))
+
+    for h, i in zip(headings, info):
+        table += (
+            "<tr>"
+            '<th style="text-align: left">%s</th>'
+            '<td style="text-align: left">%s</td>'
+            "</tr>" % (h, i)
+        )
+    table += "</tbody>"
+    table += "</table>"
+    return table
 
 
 def check_zero_fill_value(*args):

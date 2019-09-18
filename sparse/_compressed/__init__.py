@@ -1,1 +1,1 @@
-from .compressed import GXCS
+from .compressed import GCXS
