@@ -239,7 +239,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 shape = ()
 
         super().__init__(shape, fill_value=fill_value)
-        self.coords = self.coords.astype(np.intp)
+        self.coords = self.coords.astype(np.intp, copy=False)
 
         if self.shape:
             if len(self.data) != self.coords.shape[1]:
