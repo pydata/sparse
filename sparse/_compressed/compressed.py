@@ -234,8 +234,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def change_compressed_axes(self, new_compressed_axes):
         """
-        changes the compressed axes in-place.
-        right now the space complexity feels a little high
+        changes the compressed axes of an array.
         """
         if self.ndim == 1:
             raise NotImplementedError("no axes to compress for 1d array")
@@ -253,12 +252,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         arg, shape, compressed_shape, compressed_axes, axis_order, reordered_shape, axisptr, fill_value = _from_coo(
             coo, new_compressed_axes
         )
-        self.data, self.indices, self.indptr = arg
-        self.compressed_shape = compressed_shape
-        self.compressed_axes = new_compressed_axes
-        self.axis_order = axis_order
-        self.reordered_shape = reordered_shape
-        self.axisptr = axisptr
+        return GCXS(arg, shape=shape, compressed_axes=compressed_axes, fill_value=fill_value)
 
     def tocoo(self):
         if self.ndim == 1:
