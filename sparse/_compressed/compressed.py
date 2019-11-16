@@ -252,7 +252,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         arg, shape, compressed_shape, compressed_axes, axis_order, reordered_shape, axisptr, fill_value = _from_coo(
             coo, new_compressed_axes
         )
-        return GCXS(arg, shape=shape, compressed_axes=compressed_axes, fill_value=fill_value)
+        return GCXS(
+            arg, shape=shape, compressed_axes=compressed_axes, fill_value=fill_value
+        )
 
     def tocoo(self):
         if self.ndim == 1:

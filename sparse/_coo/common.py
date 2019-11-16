@@ -978,6 +978,7 @@ def roll(a, shift, axis=None):
             fill_value=a.fill_value,
         )
 
+
 def diagonal(a, offset=0, axis1=0, axis2=1):
     """
     Extract diagonal from a COO array. The equivalent of :obj:`numpy.diagonal`.

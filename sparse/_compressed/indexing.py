@@ -75,7 +75,7 @@ def getitem(x, key):
     b = x.indptr[1:].reshape(x.reordered_shape[: x.axisptr])
     starts = a[tuple(reordered_key[: x.axisptr])].flatten()
     ends = b[tuple(reordered_key[: x.axisptr])].flatten()
-    
+
     # prepare for converting to flat indices
     for i, ind in enumerate(reordered_key[: x.axisptr]):
         if isinstance(ind, slice):
@@ -85,8 +85,6 @@ def getitem(x, key):
             reordered_key[i + x.axisptr] = [ind]
         elif isinstance(ind, slice):
             reordered_key[i + x.axisptr] = np.arange(ind.start, ind.stop, ind.step)
-
-    
 
     shape = np.array(shape)
 
