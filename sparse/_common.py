@@ -21,6 +21,7 @@ from ._coo import (
     diagonalize,
 )
 
+
 def stack(arrays, axis=0, compressed_axes=None):
     """
     Stack the input arrays along the given dimension.
@@ -49,12 +50,16 @@ def stack(arrays, axis=0, compressed_axes=None):
     numpy.stack : NumPy equivalent function
     """
     from ._compressed import GCXS
+
     if any(isinstance(arr, GCXS) for arr in arrays):
         from ._compressed import stack as gcxs_stack
+
         return gcxs_stack(arrays, axis, compressed_axes)
     else:
         from ._coo import stack as coo_stack
+
         return coo_stack(arrays, axis)
+
 
 def concatenate(arrays, axis=0, compressed_axes=None):
     """
@@ -84,14 +89,18 @@ def concatenate(arrays, axis=0, compressed_axes=None):
     numpy.concatenate : NumPy equivalent function
     """
     from ._compressed import GCXS
+
     if any(isinstance(arr, GCXS) for arr in arrays):
         from ._compressed import concatenate as gcxs_concat
+
         return gcxs_concat(arrays, axis, compressed_axes)
     else:
         from ._coo import concatenate as coo_concat
+
         return coo_concat(arrays, axis)
 
-def eye(N, M=None, k=0, dtype=float, format='coo', compressed_axes=None):
+
+def eye(N, M=None, k=0, dtype=float, format="coo", compressed_axes=None):
     """Return a 2-D array in the specified format with ones on the diagonal and zeros elsewhere.
 
     Parameters
@@ -152,10 +161,12 @@ def eye(N, M=None, k=0, dtype=float, format='coo', compressed_axes=None):
     coords = np.stack([n_coords, m_coords])
     data = np.array(1, dtype=dtype)
 
-    return COO(coords, data=data, shape=(N, M), has_duplicates=False, sorted=True).asformat(format,compressed_axes=compressed_axes)
+    return COO(
+        coords, data=data, shape=(N, M), has_duplicates=False, sorted=True
+    ).asformat(format, compressed_axes=compressed_axes)
 
 
-def full(shape, fill_value, dtype=None, format='coo', compressed_axes=(0,)):
+def full(shape, fill_value, dtype=None, format="coo", compressed_axes=(0,)):
     """Return a COO array of given shape and type, filled with `fill_value`.
 
     Parameters
@@ -200,10 +211,10 @@ def full(shape, fill_value, dtype=None, format='coo', compressed_axes=(0,)):
         fill_value=fill_value,
         has_duplicates=False,
         sorted=True,
-    ).asformat(format,compressed_axes=compressed_axes)
+    ).asformat(format, compressed_axes=compressed_axes)
 
 
-def full_like(a, fill_value, dtype=None, format='coo', compressed_axes=(0,)):
+def full_like(a, fill_value, dtype=None, format="coo", compressed_axes=(0,)):
     """Return a full array with the same shape and type as a given array.
 
     Parameters
@@ -229,10 +240,12 @@ def full_like(a, fill_value, dtype=None, format='coo', compressed_axes=(0,)):
     array([[9, 9, 9],
            [9, 9, 9]])
     """
-    return full(a.shape, fill_value, dtype=(a.dtype if dtype is None else dtype)).asformat(format,compressed_axes=compressed_axes)
+    return full(
+        a.shape, fill_value, dtype=(a.dtype if dtype is None else dtype)
+    ).asformat(format, compressed_axes=compressed_axes)
 
 
-def zeros(shape, dtype=float, format='coo', compressed_axes=(0,)):
+def zeros(shape, dtype=float, format="coo", compressed_axes=(0,)):
     """Return a COO array of given shape and type, filled with zeros.
 
     Parameters
@@ -261,10 +274,12 @@ def zeros(shape, dtype=float, format='coo', compressed_axes=(0,)):
     array([[0, 0],
            [0, 0]])
     """
-    return full(shape, 0, np.dtype(dtype)).asformat(format,compressed_axes=compressed_axes)
+    return full(shape, 0, np.dtype(dtype)).asformat(
+        format, compressed_axes=compressed_axes
+    )
 
 
-def zeros_like(a, dtype=None, format='coo', compressed_axes=(0,)):
+def zeros_like(a, dtype=None, format="coo", compressed_axes=(0,)):
     """Return a COO array of zeros with the same shape and type as ``a``.
 
     Parameters
@@ -290,10 +305,12 @@ def zeros_like(a, dtype=None, format='coo', compressed_axes=(0,)):
     array([[0, 0, 0],
            [0, 0, 0]])
     """
-    return zeros(a.shape, dtype=(a.dtype if dtype is None else dtype)).asformat(format,compressed_axes=compressed_axes)
+    return zeros(a.shape, dtype=(a.dtype if dtype is None else dtype)).asformat(
+        format, compressed_axes=compressed_axes
+    )
 
 
-def ones(shape, dtype=float, format='coo', compressed_axes=(0,)):
+def ones(shape, dtype=float, format="coo", compressed_axes=(0,)):
     """Return a COO array of given shape and type, filled with ones.
 
     Parameters
@@ -322,10 +339,12 @@ def ones(shape, dtype=float, format='coo', compressed_axes=(0,)):
     array([[1, 1],
            [1, 1]])
     """
-    return full(shape, 1, np.dtype(dtype)).asformat(format,compressed_axes=compressed_axes)
+    return full(shape, 1, np.dtype(dtype)).asformat(
+        format, compressed_axes=compressed_axes
+    )
 
 
-def ones_like(a, dtype=None, format='coo', compressed_axes=(0,)):
+def ones_like(a, dtype=None, format="coo", compressed_axes=(0,)):
     """Return a COO array of ones with the same shape and type as ``a``.
 
     Parameters
@@ -351,4 +370,6 @@ def ones_like(a, dtype=None, format='coo', compressed_axes=(0,)):
     array([[1, 1, 1],
            [1, 1, 1]])
     """
-    return ones(a.shape, dtype=(a.dtype if dtype is None else dtype)).asformat(format,compressed_axes=compressed_axes)
+    return ones(a.shape, dtype=(a.dtype if dtype is None else dtype)).asformat(
+        format, compressed_axes=compressed_axes
+    )
