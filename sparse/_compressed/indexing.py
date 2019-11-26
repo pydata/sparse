@@ -69,19 +69,17 @@ def getitem(x, key):
         count += 1
 
     reordered_key = [Nones_removed[i] for i in x.axis_order]
-    
+
     for i, ind in enumerate(reordered_key):
         if isinstance(ind, Integral):
             reordered_key[i] = [ind]
-        elif isinstance(ind,slice):
+        elif isinstance(ind, slice):
             reordered_key[i] = np.arange(ind.start, ind.stop, ind.step)
-    
 
     shape = np.array(shape)
 
-    rows = convert_to_flat(reordered_key[:x.axisptr], x.reordered_shape[:x.axisptr])
-    cols = convert_to_flat(reordered_key[x.axisptr:], x.reordered_shape[x.axisptr:])
-
+    rows = convert_to_flat(reordered_key[: x.axisptr], x.reordered_shape[: x.axisptr])
+    cols = convert_to_flat(reordered_key[x.axisptr :], x.reordered_shape[x.axisptr :])
 
     starts = x.indptr[:-1][rows]
     ends = x.indptr[1:][rows]

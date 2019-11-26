@@ -303,7 +303,7 @@ def html_table(arr):
     ]
 
     # read-only
-    info.append(str(hasattr(arr, "__setitem__")))
+    info.append(str(not hasattr(arr, "__setitem__")))
 
     if hasattr(arr, "nbytes"):
         headings.append("Size")
