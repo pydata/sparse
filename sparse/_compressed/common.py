@@ -56,7 +56,7 @@ def stack(arrays, axis=0, compressed_axes=None):
 
     check_consistent_fill_value(arrays)
     arrays = [arr if isinstance(arr, GCXS) else GCXS(arr) for arr in arrays]
-    axis = normalize_axis(axis, arrays[0].ndim)
+    axis = normalize_axis(axis, arrays[0].ndim + 1)
     assert all(
         x.shape[ax] == arrays[0].shape[ax]
         for x in arrays

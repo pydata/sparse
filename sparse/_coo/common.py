@@ -329,6 +329,7 @@ def kron(a, b):
 
     Examples
     --------
+    >>> from sparse import eye
     >>> a = eye(3, dtype='i8')
     >>> b = np.array([1, 2, 3], dtype='i8')
     >>> res = kron(a, b)
