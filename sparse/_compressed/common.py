@@ -23,7 +23,7 @@ def concatenate(arrays, axis=0, compressed_axes=None):
         from .._coo.common import concatenate as coo_concat
 
         arrays = [arr.tocoo() for arr in arrays]
-        return GCXS.from_coo(coo_concat(arrays, axis=axis))
+        return coo_concat(arrays, axis=axis)
     # arrays may have different compressed_axes
     # concatenating becomes easy when compressed_axes are the same
     arrays = [arr.change_compressed_axes((axis,)) for arr in arrays]
@@ -68,7 +68,7 @@ def stack(arrays, axis=0, compressed_axes=None):
         from .._coo.common import stack as coo_stack
 
         arrays = [arr.tocoo() for arr in arrays]
-        return GCXS.from_coo(coo_stack(arrays, axis=axis))
+        return coo_stack(arrays, axis=axis)
     # arrays may have different compressed_axes
     # stacking becomes easy when compressed_axes are the same
     ptr_list = []
