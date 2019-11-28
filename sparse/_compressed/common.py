@@ -38,10 +38,10 @@ def concatenate(arrays, axis=0, compressed_axes=None):
     data = np.concatenate([arr.data for arr in arrays])
     ptr_len = arrays[0].indptr.shape[0]
     nnz = arrays[0].nnz
-    for arr in arrays:
+    for i in range(1, len(arrays)):
         indptr[ptr_len:] += nnz
-        nnz = arr.nnz
-        ptr_len += arrays[0].indptr.shape[0] - 1
+        nnz = arrays[i].nnz
+        ptr_len += arrays[i].indptr.shape[0] - 1
     return GCXS(
         (data, indices, indptr),
         shape=tuple(shape),
@@ -87,10 +87,10 @@ def stack(arrays, axis=0, compressed_axes=None):
     data = np.concatenate([arr.data for arr in arrays])
     ptr_len = arrays[0].indptr.shape[0]
     nnz = arrays[0].nnz
-    for arr in arrays:
+    for i in range(1, len(arrays)):
         indptr[ptr_len:] += nnz
-        nnz = arr.nnz
-        ptr_len += arrays[0].indptr.shape[0] - 1
+        nnz = arrays[i].nnz
+        ptr_len += arrays[i].indptr.shape[0] - 1
     return GCXS(
         (data, indices, indptr),
         shape=tuple(shape),
