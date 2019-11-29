@@ -3,11 +3,14 @@ from .._utils import check_consistent_fill_value, normalize_axis
 
 
 def concatenate(arrays, axis=0, compressed_axes=None):
-    
+
     from .compressed import GCXS
 
     check_consistent_fill_value(arrays)
-    arrays = [arr if isinstance(arr, GCXS) else GCXS(arr,compressed_axes=(axis,)) for arr in arrays]
+    arrays = [
+        arr if isinstance(arr, GCXS) else GCXS(arr, compressed_axes=(axis,))
+        for arr in arrays
+    ]
     axis = normalize_axis(axis, arrays[0].ndim)
     dim = sum(x.shape[axis] for x in arrays)
     shape = list(arrays[0].shape)
@@ -55,7 +58,10 @@ def stack(arrays, axis=0, compressed_axes=None):
     from .compressed import GCXS
 
     check_consistent_fill_value(arrays)
-    arrays = [arr if isinstance(arr, GCXS) else GCXS(arr, compressed_axes=(axis,)) for arr in arrays]
+    arrays = [
+        arr if isinstance(arr, GCXS) else GCXS(arr, compressed_axes=(axis,))
+        for arr in arrays
+    ]
     axis = normalize_axis(axis, arrays[0].ndim + 1)
     assert all(
         x.shape[ax] == arrays[0].shape[ax]
