@@ -53,20 +53,16 @@ def stack(arrays, axis=0, compressed_axes=None):
     --------
     numpy.stack : NumPy equivalent function
     """
-    from ._compressed import GCXS
+    from ._coo import COO
 
-    gcxs_arrays = 0
-    for arr in arrays:
-        if isinstance(arr, GCXS):
-            gcxs_arrays += 1
-    if gcxs_arrays > len(arrays) / 2:
-        from ._compressed import stack as gcxs_stack
-
-        return gcxs_stack(arrays, axis, compressed_axes)
-    else:
+    if any(isinstance(arr, COO) for arr in arrays):
         from ._coo import stack as coo_stack
 
         return coo_stack(arrays, axis)
+    else:
+        from ._compressed import stack as gcxs_stack
+
+        return gcxs_stack(arrays, axis, compressed_axes)
 
 
 def concatenate(arrays, axis=0, compressed_axes=None):
@@ -96,20 +92,16 @@ def concatenate(arrays, axis=0, compressed_axes=None):
     --------
     numpy.concatenate : NumPy equivalent function
     """
-    from ._compressed import GCXS
+    from ._coo import COO
 
-    gcxs_arrays = 0
-    for arr in arrays:
-        if isinstance(arr, GCXS):
-            gcxs_arrays += 1
-    if gcxs_arrays > len(arrays) / 2:
-        from ._compressed import concatenate as gcxs_concat
-
-        return gcxs_concat(arrays, axis, compressed_axes)
-    else:
+    if any(isinstance(arr, COO) for arr in arrays):
         from ._coo import concatenate as coo_concat
 
         return coo_concat(arrays, axis)
+    else:
+        from ._compressed import concatenate as gcxs_concat
+
+        return gcxs_concat(arrays, axis, compressed_axes)
 
 
 def eye(N, M=None, k=0, dtype=float, format="coo", compressed_axes=None):
