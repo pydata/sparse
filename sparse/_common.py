@@ -55,7 +55,11 @@ def stack(arrays, axis=0, compressed_axes=None):
     """
     from ._compressed import GCXS
 
-    if any(isinstance(arr, GCXS) for arr in arrays):
+    gcxs_arrays = 0
+    for arr in arrays:
+        if isinstance(arr, GCXS):
+            gcxs_arrays += 1
+    if gcxs_arrays > len(arrays)/2:
         from ._compressed import stack as gcxs_stack
 
         return gcxs_stack(arrays, axis, compressed_axes)
@@ -94,7 +98,11 @@ def concatenate(arrays, axis=0, compressed_axes=None):
     """
     from ._compressed import GCXS
 
-    if any(isinstance(arr, GCXS) for arr in arrays):
+    gcxs_arrays = 0
+    for arr in arrays:
+        if isinstance(arr, GCXS):
+            gcxs_arrays += 1
+    if gcxs_arrays > len(arrays)/2:
         from ._compressed import concatenate as gcxs_concat
 
         return gcxs_concat(arrays, axis, compressed_axes)
