@@ -69,6 +69,12 @@ def test_to_scipy_sparse():
 
     assert_eq(a, b)
 
+    s = sparse.random((3, 5), density=0.5, format="gcxs", compressed_axes=(1,))
+    a = s.to_scipy_sparse()
+    b = scipy.sparse.csc_matrix(s.todense())
+
+    assert_eq(a, b)
+
 
 def test_tocoo():
     coo = sparse.random((5, 6), density=0.5)
@@ -133,8 +139,11 @@ def test_tocoo():
         (slice(0, 5, -1),),
     ],
 )
-def test_slicing(index):
-    s = sparse.random((2, 3, 4), density=0.5, format="gcxs")
+@pytest.mark.parametrize("compressed_axes", [(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)])
+def test_slicing(index, compressed_axes):
+    s = sparse.random(
+        (2, 3, 4), density=0.5, format="gcxs", compressed_axes=compressed_axes
+    )
     x = s.todense()
     assert_eq(x[index], s[index])
 
@@ -154,8 +163,11 @@ def test_slicing(index):
         (1, [2, 0, 1]),
     ],
 )
-def test_advanced_indexing(index):
-    s = sparse.random((2, 3, 4), density=0.5, format="gcxs")
+@pytest.mark.parametrize("compressed_axes", [(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)])
+def test_advanced_indexing(index, compressed_axes):
+    s = sparse.random(
+        (2, 3, 4), density=0.5, format="gcxs", compressed_axes=compressed_axes
+    )
     x = s.todense()
 
     assert_eq(x[index], s[index])
@@ -191,3 +203,59 @@ def test_change_compressed_axes():
     assert_eq(s, b)
     s.change_compressed_axes((1, 2))
     assert_eq(s, b)
+
+
+def test_concatenate():
+    xx = sparse.random((2, 3, 4), density=0.5, format="gcxs")
+    x = xx.todense()
+    yy = sparse.random((5, 3, 4), density=0.5, format="gcxs")
+    y = yy.todense()
+    zz = sparse.random((4, 3, 4), density=0.5, format="gcxs")
+    z = zz.todense()
+
+    assert_eq(
+        np.concatenate([x, y, z], axis=0), sparse.concatenate([xx, yy, zz], axis=0)
+    )
+
+    xx = sparse.random((5, 3, 1), density=0.5, format="gcxs")
+    x = xx.todense()
+    yy = sparse.random((5, 3, 3), density=0.5, format="gcxs")
+    y = yy.todense()
+    zz = sparse.random((5, 3, 2), density=0.5, format="gcxs")
+    z = zz.todense()
+
+    assert_eq(
+        np.concatenate([x, y, z], axis=2), sparse.concatenate([xx, yy, zz], axis=2)
+    )
+
+    assert_eq(
+        np.concatenate([x, y, z], axis=-1), sparse.concatenate([xx, yy, zz], axis=-1)
+    )
+
+
+@pytest.mark.parametrize("axis", [0, 1])
+@pytest.mark.parametrize("func", [sparse.stack, sparse.concatenate])
+def test_concatenate_mixed(func, axis):
+    s = sparse.random((10, 10), density=0.5, format="gcxs")
+    d = s.todense()
+
+    with pytest.raises(ValueError):
+        func([d, s, s], axis=axis)
+
+
+def test_concatenate_noarrays():
+    with pytest.raises(ValueError):
+        sparse.concatenate([])
+
+
+@pytest.mark.parametrize("shape", [(5,), (2, 3, 4), (5, 2)])
+@pytest.mark.parametrize("axis", [0, 1, -1])
+def test_stack(shape, axis):
+    xx = sparse.random(shape, density=0.5, format="gcxs")
+    x = xx.todense()
+    yy = sparse.random(shape, density=0.5, format="gcxs")
+    y = yy.todense()
+    zz = sparse.random(shape, density=0.5, format="gcxs")
+    z = zz.todense()
+
+    assert_eq(np.stack([x, y, z], axis=axis), sparse.stack([xx, yy, zz], axis=axis))

@@ -3,16 +3,15 @@ import numba
 from numba.typed import List
 
 
-def convert_to_flat(inds, shape, axisptr):
+def convert_to_flat(inds, shape):
     inds = [np.array(ind) for ind in inds]
     if any(ind.ndim > 1 for ind in inds):
         raise IndexError("Only one-dimensional iterable indices supported.")
-    uncompressed_inds = inds[axisptr:]
-    cols = np.empty(np.prod([ind.size for ind in uncompressed_inds]), dtype=np.intp)
-    shape_bins = transform_shape(shape[axisptr:])
+    cols = np.empty(np.prod([ind.size for ind in inds]), dtype=np.intp)
+    shape_bins = transform_shape(shape)
     increments = List()
-    for i in range(len(uncompressed_inds)):
-        increments.append((uncompressed_inds[i] * shape_bins[i]).astype(np.int32))
+    for i in range(len(inds)):
+        increments.append((inds[i] * shape_bins[i]).astype(np.int32))
     operations = np.prod([ind.shape[0] for ind in increments[:-1]])
     return compute_flat(increments, cols, operations)
 
