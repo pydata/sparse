@@ -244,8 +244,10 @@ def full_like(a, fill_value, dtype=None, format=None, compressed_axes=None):
     array([[9, 9, 9],
            [9, 9, 9]])
     """
-    if format is None:
+    if format is None and not isinstance(a, np.ndarray):
         format = type(a).__name__.lower()
+    else:
+        format = "coo"
     if hasattr(a, "compressed_axes") and compressed_axes is None:
         compressed_axes = a.compressed_axes
     return full(
@@ -317,8 +319,10 @@ def zeros_like(a, dtype=None, format=None, compressed_axes=None):
     array([[0, 0, 0],
            [0, 0, 0]])
     """
-    if format is None:
+    if format is None and not isinstance(a, np.ndarray):
         format = type(a).__name__.lower()
+    else:
+        format = "coo"
     if hasattr(a, "compressed_axes") and compressed_axes is None:
         compressed_axes = a.compressed_axes
     return zeros(
@@ -389,8 +393,10 @@ def ones_like(a, dtype=None, format=None, compressed_axes=None):
     array([[1, 1, 1],
            [1, 1, 1]])
     """
-    if format is None:
+    if format is None and not isinstance(a, np.ndarray):
         format = type(a).__name__.lower()
+    else:
+        format = "coo"
     if hasattr(a, "compressed_axes") and compressed_axes is None:
         compressed_axes = a.compressed_axes
     return ones(
