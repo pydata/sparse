@@ -41,7 +41,7 @@ def stack(arrays, axis=0, compressed_axes=None):
 
     Returns
     -------
-    COO or GCXS
+    SparseArray
         The output stacked array.
 
     Raises
@@ -80,7 +80,7 @@ def concatenate(arrays, axis=0, compressed_axes=None):
 
     Returns
     -------
-    COO or GCXS
+    SparseArray
         The output concatenated array.
 
     Raises
@@ -126,7 +126,7 @@ def eye(N, M=None, k=0, dtype=float, format="coo", compressed_axes=None):
 
     Returns
     -------
-    I : [COO, GCXS, DOK] array of shape (N, M)
+    I : SparseArray of shape (N, M)
         An array where all elements are equal to zero, except for the `k`-th
         diagonal, whose values are equal to one.
 
@@ -171,7 +171,7 @@ def eye(N, M=None, k=0, dtype=float, format="coo", compressed_axes=None):
 
 
 def full(shape, fill_value, dtype=None, format="coo", compressed_axes=None):
-    """Return a COO array of given shape and type, filled with `fill_value`.
+    """Return a SparseArray of given shape and type, filled with `fill_value`.
 
     Parameters
     ----------
@@ -188,7 +188,7 @@ def full(shape, fill_value, dtype=None, format="coo", compressed_axes=None):
         The axes to compress if returning a GCXS array.
     Returns
     -------
-    out : [COO, GCXS, DOK]
+    out : SparseArray
         Array of `fill_value` with the given shape and dtype.
 
     Examples
@@ -218,7 +218,7 @@ def full(shape, fill_value, dtype=None, format="coo", compressed_axes=None):
     ).asformat(format, compressed_axes=compressed_axes)
 
 
-def full_like(a, fill_value, dtype=None, format="coo", compressed_axes=None):
+def full_like(a, fill_value, dtype=None, format=None, compressed_axes=None):
     """Return a full array with the same shape and type as a given array.
 
     Parameters
@@ -234,7 +234,7 @@ def full_like(a, fill_value, dtype=None, format="coo", compressed_axes=None):
 
     Returns
     -------
-    out : array with the specified format [COO, GCXS, DOK]
+    out : SparseArray
         Array of `fill_value` with the same shape and type as `a`.
 
     Examples
@@ -244,13 +244,16 @@ def full_like(a, fill_value, dtype=None, format="coo", compressed_axes=None):
     array([[9, 9, 9],
            [9, 9, 9]])
     """
+    if format is None: 
+        format = type(a).__name__.lower()
+    if hasattr(a, "compressed_axes") and compressed_axes is None:
+        compressed_axes = a.compressed_axes
     return full(
-        a.shape, fill_value, dtype=(a.dtype if dtype is None else dtype)
-    ).asformat(format, compressed_axes=compressed_axes)
+        a.shape, fill_value, dtype=(a.dtype if dtype is None else dtype), format=format, compressed_axes=compressed_axes)
 
 
 def zeros(shape, dtype=float, format="coo", compressed_axes=None):
-    """Return a COO array of given shape and type, filled with zeros.
+    """Return a SparseArray of given shape and type, filled with zeros.
 
     Parameters
     ----------
@@ -266,7 +269,7 @@ def zeros(shape, dtype=float, format="coo", compressed_axes=None):
 
     Returns
     -------
-    out : array with the specified format [COO, GCXS, DOK]
+    out : SparseArray
         Array of zeros with the given shape and dtype.
 
     Examples
@@ -283,8 +286,8 @@ def zeros(shape, dtype=float, format="coo", compressed_axes=None):
     )
 
 
-def zeros_like(a, dtype=None, format="coo", compressed_axes=None):
-    """Return a COO array of zeros with the same shape and type as ``a``.
+def zeros_like(a, dtype=None, format=None, compressed_axes=None):
+    """Return a SparseArray of zeros with the same shape and type as ``a``.
 
     Parameters
     ----------
@@ -299,7 +302,7 @@ def zeros_like(a, dtype=None, format="coo", compressed_axes=None):
 
     Returns
     -------
-    out : [COO, GCXS, DOK]
+    out : SparseArray
         Array of zeros with the same shape and type as `a`.
 
     Examples
@@ -309,13 +312,15 @@ def zeros_like(a, dtype=None, format="coo", compressed_axes=None):
     array([[0, 0, 0],
            [0, 0, 0]])
     """
-    return zeros(a.shape, dtype=(a.dtype if dtype is None else dtype)).asformat(
-        format, compressed_axes=compressed_axes
-    )
+    if format is None: 
+        format = type(a).__name__.lower()
+    if hasattr(a, "compressed_axes") and compressed_axes is None:
+        compressed_axes = a.compressed_axes
+    return zeros(a.shape, dtype=(a.dtype if dtype is None else dtype), format=format, compressed_axes=compressed_axes)
 
 
 def ones(shape, dtype=float, format="coo", compressed_axes=None):
-    """Return a COO array of given shape and type, filled with ones.
+    """Return a SparseArray of given shape and type, filled with ones.
 
     Parameters
     ----------
@@ -331,7 +336,7 @@ def ones(shape, dtype=float, format="coo", compressed_axes=None):
 
     Returns
     -------
-    out : [COO, GCXS, DOK]
+    out : SparseArray
         Array of ones with the given shape and dtype.
 
     Examples
@@ -348,8 +353,8 @@ def ones(shape, dtype=float, format="coo", compressed_axes=None):
     )
 
 
-def ones_like(a, dtype=None, format="coo", compressed_axes=None):
-    """Return a COO array of ones with the same shape and type as ``a``.
+def ones_like(a, dtype=None, format=None, compressed_axes=None):
+    """Return a SparseArray of ones with the same shape and type as ``a``.
 
     Parameters
     ----------
@@ -364,7 +369,7 @@ def ones_like(a, dtype=None, format="coo", compressed_axes=None):
 
     Returns
     -------
-    out : [COO, GCXS, DOK]
+    out : SparseArray
         Array of ones with the same shape and type as `a`.
 
     Examples
@@ -374,6 +379,8 @@ def ones_like(a, dtype=None, format="coo", compressed_axes=None):
     array([[1, 1, 1],
            [1, 1, 1]])
     """
-    return ones(a.shape, dtype=(a.dtype if dtype is None else dtype)).asformat(
-        format, compressed_axes=compressed_axes
-    )
+    if format is None: 
+        format = type(a).__name__.lower()
+    if hasattr(a, "compressed_axes") and compressed_axes is None:
+        compressed_axes = a.compressed_axes
+    return ones(a.shape, dtype=(a.dtype if dtype is None else dtype), format=format, compressed_axes=compressed_axes)
