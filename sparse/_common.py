@@ -1,5 +1,6 @@
 import numpy as np
 
+from ._utils import check_compressed_axes
 from ._coo import (
     tensordot,
     dot,
@@ -206,6 +207,8 @@ def full(shape, fill_value, dtype=None, format="coo", compressed_axes=None):
         dtype = np.array(fill_value).dtype
     if not isinstance(shape, tuple):
         shape = (shape,)
+    if compressed_axes is not None:
+        check_compressed_axes(shape, compressed_axes)
     data = np.empty(0, dtype=dtype)
     coords = np.empty((len(shape), 0), dtype=np.intp)
     return COO(
@@ -288,6 +291,8 @@ def zeros(shape, dtype=float, format="coo", compressed_axes=None):
     array([[0, 0],
            [0, 0]])
     """
+    if compressed_axes is not None:
+        check_compressed_axes(shape, compressed_axes)
     return full(shape, 0, np.dtype(dtype)).asformat(
         format, compressed_axes=compressed_axes
     )
@@ -362,6 +367,8 @@ def ones(shape, dtype=float, format="coo", compressed_axes=None):
     array([[1, 1],
            [1, 1]])
     """
+    if compressed_axes is not None:
+        check_compressed_axes(shape, compressed_axes)
     return full(shape, 1, np.dtype(dtype)).asformat(
         format, compressed_axes=compressed_axes
     )
