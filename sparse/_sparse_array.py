@@ -229,6 +229,7 @@ class SparseArray:
     def __array_function__(self, func, types, args, kwargs):
         import sparse as module
 
+        sparse_func = None
         try:
             submodules = getattr(func, "__module__", "numpy").split(".")[1:]
             for submodule in submodules:
@@ -242,9 +243,19 @@ class SparseArray:
         try:
             sparse_func = getattr(type(self), func.__name__)
         except AttributeError:
-            return NotImplemented
+            pass
 
-        if not isinstance(sparse_func, Callable):
-            return getattr(self, func.__name__)
+        if (
+            not isinstance(sparse_func, Callable)
+            and len(args) == 1
+            and len(kwargs) == 0
+        ):
+            try:
+                return getattr(self, func.__name__)
+            except AttributeError:
+                pass
+
+        if sparse_func is None:
+            return NotImplemented
 
         return sparse_func(*args, **kwargs)

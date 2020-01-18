@@ -66,3 +66,12 @@ def test_ternary(func, arg_order):
     args = [(x, y)[i] for i in arg_order]
     yy = func(*args)
     assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize("func", [np.shape, np.size, np.ndim])
+def test_property(func):
+    y = sparse.random((50, 50), density=0.25)
+    x = y.todense()
+    xx = func(x)
+    yy = func(y)
+    assert xx == yy
