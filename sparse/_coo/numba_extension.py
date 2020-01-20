@@ -19,6 +19,7 @@ from numba.targets.imputils import impl_ret_borrowed, lower_constant
 from numba.typing.typeof import typeof_impl
 from numba import cgutils, types
 from sparse._utils import _zero_of_dtype
+from contextlib import ExitStack
 
 from . import COO
 
@@ -120,27 +121,30 @@ def lower_constant_COO(context, builder, typ, pyval):
         cgutils.pack_struct(builder, (data, coords, shape, fill_value)),
     )
 
+
 def _unbox_native_field(typ, obj, field_name: str, c):
     ret_ptr = cgutils.alloca_once(c.builder, c.context.get_value_type(typ))
     is_error_ptr = cgutils.alloca_once_value(c.builder, cgutils.false_bit)
     fail_obj = c.context.get_constant_null(typ)
 
-    field_obj = c.pyapi.object_getattr_string(obj, field_name)
-    with c.builder.if_else(cgutils.is_null(c.builder, field_obj), likely=False) as (then, otherwise):
+    with ExitStack() as stack:
+        field_obj = c.pyapi.object_getattr_string(obj, field_name)
+        then, otherwise = stack.enter_context(c.builder.if_else(cgutils.is_null(c.builder, field_obj), likely=False))
         with then:
             c.builder.store(cgutils.true_bit, is_error_ptr)
             c.builder.store(fail_obj, ret_ptr)
+        stack.enter_context(otherwise)
 
-        with otherwise:
-            field_native = c.unbox(typ, field_obj)
-            c.pyapi.decref(field_obj)
-            with c.builder.if_else(field_native.is_error, likely=False) as (then, otherwise):
-                with then:
-                    c.builder.store(cgutils.true_bit, is_error_ptr)
-                    c.builder.store(fail_obj, ret_ptr)
-                with otherwise:
-                    c.builder.store(cgutils.false_bit, is_error_ptr)
-                    c.builder.store(field_native.value, ret_ptr)
+        field_native = c.unbox(typ, field_obj)
+        c.pyapi.decref(field_obj)
+        then, otherwise = stack.enter_context(c.builder.if_else(field_native.is_error, likely=False))
+        with then:
+            c.builder.store(cgutils.true_bit, is_error_ptr)
+            c.builder.store(fail_obj, ret_ptr)
+        stack.enter_context(otherwise)
+
+        c.builder.store(cgutils.false_bit, is_error_ptr)
+        c.builder.store(field_native.value, ret_ptr)
 
     return NativeValue(c.builder.load(ret_ptr), is_error=c.builder.load(is_error_ptr))
 
@@ -151,37 +155,42 @@ def unbox_COO(typ: COOType, obj: COO, c) -> NativeValue:
     is_error_ptr = cgutils.alloca_once_value(c.builder, cgutils.false_bit)
     fail_obj = c.context.get_constant_null(typ)
 
-    data = _unbox_native_field(typ.data_type, obj, "data", c)
-    with c.builder.if_else(data.is_error, likely=False) as (then, otherwise):
+    with ExitStack() as stack:
+        data = _unbox_native_field(typ.data_type, obj, "data", c)
+        then, otherwise = stack.enter_context(c.builder.if_else(data.is_error, likely=False))
         with then:
             c.builder.store(cgutils.true_bit, is_error_ptr)
             c.builder.store(fail_obj, ret_ptr)
-        with otherwise:
-            coords = _unbox_native_field(typ.coords_type, obj, "coords", c)
-            with c.builder.if_else(coords.is_error, likely=False) as (then, otherwise):
-                with then:
-                    c.builder.store(cgutils.true_bit, is_error_ptr)
-                    c.builder.store(fail_obj, ret_ptr)
-                with otherwise:
-                    shape = _unbox_native_field(typ.shape_type, obj, "shape", c)
-                    with c.builder.if_else(shape.is_error, likely=False) as (then, otherwise):
-                        with then:
-                            c.builder.store(cgutils.true_bit, is_error_ptr)
-                            c.builder.store(fail_obj, ret_ptr)
-                        with otherwise:
-                            fill_value = _unbox_native_field(typ.fill_value_type, obj, "fill_value", c)
-                            with c.builder.if_else(fill_value.is_error, likely=False) as (then, otherwise):
-                                with then:
-                                    c.builder.store(cgutils.true_bit, is_error_ptr)
-                                    c.builder.store(fail_obj, ret_ptr)
-                                with otherwise:
-                                    coo = cgutils.create_struct_proxy(typ)(c.context, c.builder)
-                                    coo.coords = coords.value
-                                    coo.data = data.value
-                                    coo.shape = shape.value
-                                    coo.fill_value = fill_value.value
-                                    c.builder.store(cgutils.false_bit, is_error_ptr)
-                                    c.builder.store(coo._getvalue(), ret_ptr)
+        stack.enter_context(otherwise)
+
+        coords = _unbox_native_field(typ.coords_type, obj, "coords", c)
+        then, otherwise = stack.enter_context(c.builder.if_else(coords.is_error, likely=False))
+        with then:
+            c.builder.store(cgutils.true_bit, is_error_ptr)
+            c.builder.store(fail_obj, ret_ptr)
+        stack.enter_context(otherwise)
+
+        shape = _unbox_native_field(typ.shape_type, obj, "shape", c)
+        then, otherwise = stack.enter_context(c.builder.if_else(shape.is_error, likely=False))
+        with then:
+            c.builder.store(cgutils.true_bit, is_error_ptr)
+            c.builder.store(fail_obj, ret_ptr)
+        stack.enter_context(otherwise)
+
+        fill_value = _unbox_native_field(typ.fill_value_type, obj, "fill_value", c)
+        then, otherwise = stack.enter_context(c.builder.if_else(fill_value.is_error, likely=False))
+        with then:
+            c.builder.store(cgutils.true_bit, is_error_ptr)
+            c.builder.store(fail_obj, ret_ptr)
+        stack.enter_context(otherwise)
+
+        coo = cgutils.create_struct_proxy(typ)(c.context, c.builder)
+        coo.coords = coords.value
+        coo.data = data.value
+        coo.shape = shape.value
+        coo.fill_value = fill_value.value
+        c.builder.store(cgutils.false_bit, is_error_ptr)
+        c.builder.store(coo._getvalue(), ret_ptr)
     return NativeValue(c.builder.load(ret_ptr), is_error=c.builder.load(is_error_ptr))
 
 
@@ -190,68 +199,69 @@ def box_COO(typ: COOType, val: "some LLVM thing", c) -> COO:
     ret_ptr = cgutils.alloca_once(c.builder, c.pyapi.pyobj)
     fail_obj = c.pyapi.get_null_object()
 
-    # there's no way to early return here - we have no choice but to nest like crazy...
+    with ExitStack() as stack:
+        coo = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
 
-    coo = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
-
-    data_obj = c.box(typ.data_type, coo.data)
-    with c.builder.if_else(cgutils.is_null(c.builder, data_obj), likely=False) as (then, otherwise):
+        data_obj = c.box(typ.data_type, coo.data)
+        then, otherwise = stack.enter_context(c.builder.if_else(cgutils.is_null(c.builder, data_obj), likely=False))
         with then:
             c.builder.store(fail_obj, ret_ptr)
-        with otherwise:
+        stack.enter_context(otherwise)
+        coords_obj = c.box(typ.coords_type, coo.coords)
 
-            coords_obj = c.box(typ.coords_type, coo.coords)
-            with c.builder.if_else(cgutils.is_null(c.builder, coords_obj), likely=False) as (then, otherwise):
-                with then:
-                    c.pyapi.decref(data_obj)
-                    c.builder.store(fail_obj, ret_ptr)
-                with otherwise:
+        then, otherwise = stack.enter_context(c.builder.if_else(cgutils.is_null(c.builder, coords_obj), likely=False))
+        with then:
+            c.pyapi.decref(data_obj)
+            c.builder.store(fail_obj, ret_ptr)
+        stack.enter_context(otherwise)
 
-                    shape_obj = c.box(typ.shape_type, coo.shape)
-                    with c.builder.if_else(cgutils.is_null(c.builder, shape_obj), likely=False) as (then, otherwise):
-                        with then:
-                            c.pyapi.decref(coords_obj)
-                            c.pyapi.decref(data_obj)
-                            c.builder.store(fail_obj, ret_ptr)
-                        with otherwise:
+        shape_obj = c.box(typ.shape_type, coo.shape)
+        then, otherwise = stack.enter_context(c.builder.if_else(cgutils.is_null(c.builder, shape_obj), likely=False))
+        with then:
+            c.pyapi.decref(coords_obj)
+            c.pyapi.decref(data_obj)
+            c.builder.store(fail_obj, ret_ptr)
+        stack.enter_context(otherwise)
 
-                            fill_value_obj = c.box(typ.fill_value_type, coo.fill_value)
-                            with c.builder.if_else(cgutils.is_null(c.builder, fill_value_obj), likely=False) as (then, otherwise):
-                                with then:
-                                    c.pyapi.decref(shape_obj)
-                                    c.pyapi.decref(coords_obj)
-                                    c.pyapi.decref(data_obj)
-                                    c.builder.store(fail_obj, ret_ptr)
-                                with otherwise:
+        fill_value_obj = c.box(typ.fill_value_type, coo.fill_value)
+        then, otherwise = stack.enter_context(c.builder.if_else(cgutils.is_null(c.builder, fill_value_obj), likely=False))
+        with then:
+            c.pyapi.decref(shape_obj)
+            c.pyapi.decref(coords_obj)
+            c.pyapi.decref(data_obj)
+            c.builder.store(fail_obj, ret_ptr)
+        stack.enter_context(otherwise)
 
-                                    class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(COO))
-                                    with c.builder.if_else(cgutils.is_null(c.builder, class_obj), likely=False) as (then, otherwise):
-                                        with then:
-                                            c.pyapi.decref(shape_obj)
-                                            c.pyapi.decref(coords_obj)
-                                            c.pyapi.decref(data_obj)
-                                            c.pyapi.decref(fill_value_obj)
-                                            c.builder.store(fail_obj, ret_ptr)
-                                        with otherwise:
-                                            args = c.pyapi.tuple_pack([coords_obj, data_obj, shape_obj])
-                                            c.pyapi.decref(shape_obj)
-                                            c.pyapi.decref(coords_obj)
-                                            c.pyapi.decref(data_obj)
-                                            with c.builder.if_else(cgutils.is_null(c.builder, args), likely=False) as (then, otherwise):
-                                                with then:
-                                                    c.pyapi.decref(fill_value_obj)
-                                                    c.pyapi.decref(class_obj)
-                                                    c.builder.store(fail_obj, ret_ptr)
-                                                with otherwise:
+        class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(COO))
+        then, otherwise = stack.enter_context(c.builder.if_else(cgutils.is_null(c.builder, class_obj), likely=False))
+        with then:
+            c.pyapi.decref(shape_obj)
+            c.pyapi.decref(coords_obj)
+            c.pyapi.decref(data_obj)
+            c.pyapi.decref(fill_value_obj)
+            c.builder.store(fail_obj, ret_ptr)
+        stack.enter_context(otherwise)
 
-                                                    kwargs = c.pyapi.dict_pack([("fill_value", fill_value_obj)])
-                                                    c.pyapi.decref(fill_value_obj)
-                                                    with c.builder.if_else(cgutils.is_null(c.builder, kwargs), likely=False) as (then, otherwise):
-                                                        with then:
-                                                            c.pyapi.decref(class_obj)
-                                                            c.builder.store(fail_obj, ret_ptr)
-                                                        with otherwise:
-                                                            c.builder.store(c.pyapi.call(class_obj, args, kwargs), ret_ptr)
+        args = c.pyapi.tuple_pack([coords_obj, data_obj, shape_obj])
+        c.pyapi.decref(shape_obj)
+        c.pyapi.decref(coords_obj)
+        c.pyapi.decref(data_obj)
+        then, otherwise = stack.enter_context(c.builder.if_else(cgutils.is_null(c.builder, args), likely=False))
+        with then:
+            c.pyapi.decref(fill_value_obj)
+            c.pyapi.decref(class_obj)
+            c.builder.store(fail_obj, ret_ptr)
+        stack.enter_context(otherwise)
+
+        kwargs = c.pyapi.dict_pack([("fill_value", fill_value_obj)])
+        c.pyapi.decref(fill_value_obj)
+        then, otherwise = stack.enter_context(c.builder.if_else(cgutils.is_null(c.builder, kwargs), likely=False))
+        with then:
+            c.pyapi.decref(class_obj)
+            c.builder.store(fail_obj, ret_ptr)
+        stack.enter_context(otherwise)
+        c.builder.store(c.pyapi.call(class_obj, args, kwargs), ret_ptr)
+
     return c.builder.load(ret_ptr)
 
 
