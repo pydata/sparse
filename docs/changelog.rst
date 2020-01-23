@@ -1,7 +1,9 @@
 Changelog
 =========
 
-0.9.0 / 2020-01-23
+.. currentmodule:: sparse
+
+0.9.1 / 2020-01-23
 ------------------
 
 * Fixed a bug where indexing with an empty list could lead
