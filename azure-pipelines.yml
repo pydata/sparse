@@ -21,7 +21,7 @@ jobs:
   variables:
     python_version: '3.5'
   pool:
-    vmImage: 'macos-10.13'
+    vmImage: 'macos-10.14'
   steps:
     - template: ci/azure-steps.yml
 - job: Windows

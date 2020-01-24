@@ -386,7 +386,10 @@ class DOK(SparseArray):
 
         if format == "coo" or format is COO:
             return COO.from_iter(
-                self.data, shape=self.shape, fill_value=self.fill_value
+                self.data,
+                shape=self.shape,
+                fill_value=self.fill_value,
+                dtype=self.dtype,
             )
 
         raise NotImplementedError("The given format is not supported.")

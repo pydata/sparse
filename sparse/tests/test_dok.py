@@ -152,3 +152,9 @@ def test_coo_fv_interface():
     assert_eq(s1, s2)
     s3 = sparse.COO(s2)
     assert_eq(s1, s3)
+
+
+def test_empty_dok_dtype():
+    d = sparse.DOK(5, dtype=np.uint8)
+    s = sparse.COO(d)
+    assert s.dtype == d.dtype

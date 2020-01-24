@@ -72,9 +72,7 @@ setup(
         "Tracker": "https://github.com/pydata/sparse/issues",
     },
     entry_points={
-        "numba_extensions": [
-            "init = sparse._numba_extension:_init_extension",
-        ],
+        "numba_extensions": ["init = sparse._numba_extension:_init_extension"]
     },
     python_requires=">=3.5, <4",
 )
