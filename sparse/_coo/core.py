@@ -445,7 +445,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         )
 
     @classmethod
-    def from_iter(cls, x, shape=None, fill_value=None):
+    def from_iter(cls, x, shape=None, fill_value=None, dtype=None):
         """
         Converts an iterable in certain formats to a :obj:`COO` array. See examples
         for details.
@@ -458,6 +458,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             The shape of the array.
         fill_value : scalar
             The fill value for this array.
+        dtype : numpy.dtype
+            The dtype of the input array. Inferred from the input if not given.
 
         Returns
         -------
@@ -511,15 +513,15 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if not x:
             ndim = 0 if shape is None else len(shape)
             coords = np.empty((ndim, 0), dtype=np.uint8)
-            data = np.empty((0,))
+            data = np.empty((0,), dtype=dtype)
             shape = () if shape is None else shape
 
         elif not isinstance(x[0][0], Iterable):
             coords = np.stack(x[1], axis=0)
-            data = np.asarray(x[0])
+            data = np.asarray(x[0], dtype=dtype)
         else:
             coords = np.array([item[0] for item in x]).T
-            data = np.array([item[1] for item in x])
+            data = np.array([item[1] for item in x], dtype=dtype)
 
         if not (
             coords.ndim == 2
