@@ -583,9 +583,24 @@ def test_elemwise_inplace(func):
     assert_eq(x, s)
 
 
-def test_elemwise_mixed():
-    s1 = sparse.random((2, 3, 4), density=0.5)
-    x2 = np.random.rand(4)
+@pytest.mark.parametrize(
+    "shape1, shape2",
+    [
+        ((2, 3, 4), (3, 4)),
+        ((3, 4), (2, 3, 4)),
+        ((3, 1, 4), (3, 2, 4)),
+        ((1, 3, 4), (3, 4)),
+        ((3, 4, 1), (3, 4, 2)),
+        ((1, 5), (5, 1)),
+        ((3, 1), (3, 4)),
+        ((3, 1), (1, 4)),
+        ((1, 4), (3, 4)),
+        ((2, 2, 2), (1, 1, 1)),
+    ],
+)
+def test_elemwise_mixed(shape1, shape2):
+    s1 = sparse.random(shape1, density=0.5)
+    x2 = np.random.rand(*shape2)
 
     x1 = s1.todense()
 
@@ -599,14 +614,6 @@ def test_elemwise_mixed_empty():
     x1 = s1.todense()
 
     assert_eq(s1 * x2, x1 * x2)
-
-
-def test_ndarray_bigger_shape():
-    s1 = sparse.random((2, 3, 4), density=0.5)
-    x2 = np.random.rand(5, 1, 1, 1)
-
-    with pytest.raises(ValueError):
-        s1 * x2
 
 
 def test_elemwise_unsupported():

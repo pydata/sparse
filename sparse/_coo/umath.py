@@ -567,12 +567,6 @@ class _Elemwise:
             *tuple(arg.shape for arg in self.args if isinstance(arg, np.ndarray))
         )
 
-        if full_shape != non_ndarray_shape:
-            raise ValueError(
-                "Please make sure that the broadcast shape of just the sparse arrays is "
-                "the same as the broadcast shape of all the operands."
-            )
-
         self.shape = full_shape
         self.ndarray_shape = ndarray_shape
         self.non_ndarray_shape = non_ndarray_shape
