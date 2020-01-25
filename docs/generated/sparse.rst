@@ -69,6 +69,8 @@ API
 
     ones_like
 
+    outer
+
     random
 
     result_type

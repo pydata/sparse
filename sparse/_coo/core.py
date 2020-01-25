@@ -1659,6 +1659,17 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if out is not None:
             kwargs["dtype"] = out[0].dtype
 
+        if method == "outer":
+            method = "__call__"
+
+            cum_ndim = 0
+            inputs_transformed = []
+            for inp in inputs:
+                inputs_transformed.append(inp[(Ellipsis,) + (None,) * cum_ndim])
+                cum_ndim += inp.ndim
+
+            inputs = tuple(inputs_transformed)
+
         if method == "__call__":
             result = elemwise(ufunc, *inputs, **kwargs)
         elif method == "reduce":
