@@ -2208,3 +2208,14 @@ def test_result_type(t1, t2, func, data):
     assert func(sparse.COO(a), sparse.COO(b)) == expect
     assert func(a.dtype, sparse.COO(b)) == np.result_type(a.dtype, b)
     assert func(sparse.COO(a), b.dtype) == np.result_type(a, b.dtype)
+
+
+@pytest.mark.parametrize("in_shape", [(5, 5), 62, (3, 3, 3)])
+def test_flatten(in_shape):
+    s = sparse.random(in_shape, density=0.5)
+    x = s.todense()
+
+    a = s.flatten()
+    e = x.flatten()
+
+    assert_eq(e, a)

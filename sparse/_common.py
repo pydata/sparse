@@ -412,3 +412,29 @@ def ones_like(a, dtype=None, format=None, compressed_axes=None):
         format=format,
         compressed_axes=compressed_axes,
     )
+
+
+def outer(a, b, out=None):
+    """
+    Return outer product of two sparse arrays.
+
+    Parameters
+    ----------
+    a, b : sparse.SparseArray
+        The input arrays.
+    out : sparse.SparseArray
+        The output array.
+    
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import sparse
+    >>> a = sparse.COO(np.arange(4))
+    >>> o = sparse.outer(a, a)
+    >>> o.todense()
+    array([[0, 0, 0, 0],
+           [0, 1, 2, 3],
+           [0, 2, 4, 6],
+           [0, 3, 6, 9]])
+    """
+    return np.multiply.outer(a, b, out=out)

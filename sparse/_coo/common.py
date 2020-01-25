@@ -1373,7 +1373,6 @@ def _diagonal_idx(coordlist, axis1, axis2, offset):
 
     offset : int
         Offset of the diagonal from the main diagonal. Defaults to main diagonal (0).
-
     """
     return np.array(
         [
