@@ -31,3 +31,19 @@ jobs:
     vmImage: 'vs2017-win2016'
   steps:
     - template: ci/azure-steps.yml
+- job: Docs
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+    - template: ci/azure-docs.yml
+
+trigger:
+  branches:
+    include:
+    - master
+  tags:
+    include:
+    - '*'
+
+pr:
+- master
