@@ -1,4 +1,4 @@
-dask
+dask[array]
 pytest>=3.5
 pytest-black
 pytest-cov
