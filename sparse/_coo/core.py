@@ -284,6 +284,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         self.coords, self.data, self.shape, self.fill_value = state
         self._cache = None
 
+    def __dask_tokenize__(self):
+        "Produce a deterministic, content-based hash for dask."
+        from dask.base import normalize_token
+        return normalize_token(
+            (type(self), self.coords, self.data, self.shape, self.fill_value))
+
     def copy(self, deep=True):
         """Return a copy of the array.
 
