@@ -2121,13 +2121,20 @@ def test_setting_into_numpy_slice():
     assert_eq(actual, expected)
 
 
-def test_failed_densification():
+
+def test_successful_densification():
     s = sparse.random((3, 4, 5), density=0.5)
     with auto_densify():
         x = np.array(s)
 
     assert isinstance(x, np.ndarray)
     assert_eq(s, x)
+
+
+def test_failed_densification():
+    s = sparse.random((3, 4, 5), density=0.5)
+    with pytest.raises(RuntimeError):
+        np.array(s)
 
 
 def test_warn_on_too_dense():
