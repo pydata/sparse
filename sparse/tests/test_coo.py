@@ -2106,6 +2106,21 @@ def auto_densify():
     reload(sparse._settings)
 
 
+def test_setting_into_numpy_slice():
+    actual = np.zeros((5, 5))
+    s = sparse.COO(data=[1, 1], coords=(2, 4), shape=(5,))
+    # This calls b.__array__(dtype('float64')) which means that __array__
+    # must accept a positional argument. If not this will raise, of course,
+    # TypeError: __array__() takes 1 positional argument but 2 were given
+    with auto_densify():
+        actual[:, 0] = s
+
+    # Might as well check the content of the result as well.
+    expected = np.zeros((5, 5))
+    expected[:, 0] = s.todense()
+    assert_eq(actual, expected)
+
+
 def test_failed_densification():
     s = sparse.random((3, 4, 5), density=0.5)
     with auto_densify():
