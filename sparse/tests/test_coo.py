@@ -2120,6 +2120,9 @@ def test_setting_into_numpy_slice():
     expected[:, 0] = s.todense()
     assert_eq(actual, expected)
 
+    # Without densification, setting is unsupported.
+    with pytest.raises(RuntimeError):
+        actual[:, 0] = s
 
 
 def test_successful_densification():
