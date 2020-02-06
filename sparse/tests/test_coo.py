@@ -1,3 +1,4 @@
+import contextlib
 import operator
 import pickle
 import sys
@@ -2092,21 +2093,26 @@ def test_out_dtype():
     )
 
 
-def test_failed_densification():
+@contextlib.contextmanager
+def auto_densify():
+    "For use in tests only! Not threadsafe."
     import os
     from importlib import reload
 
     os.environ["SPARSE_AUTO_DENSIFY"] = "1"
     reload(sparse._settings)
+    yield
+    del os.environ["SPARSE_AUTO_DENSIFY"]
+    reload(sparse._settings)
 
+
+def test_failed_densification():
     s = sparse.random((3, 4, 5), density=0.5)
-    x = np.array(s)
+    with auto_densify():
+        x = np.array(s)
 
     assert isinstance(x, np.ndarray)
     assert_eq(s, x)
-
-    del os.environ["SPARSE_AUTO_DENSIFY"]
-    reload(sparse._settings)
 
 
 def test_warn_on_too_dense():
