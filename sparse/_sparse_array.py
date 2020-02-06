@@ -215,7 +215,7 @@ class SparseArray:
         True
         """
 
-    def __array__(self, **kwargs):
+    def __array__(self, *args, **kwargs):
         from ._settings import AUTO_DENSIFY
 
         if not AUTO_DENSIFY:
@@ -224,7 +224,7 @@ class SparseArray:
                 "To manually densify, use the todense method."
             )
 
-        return np.asarray(self.todense(), **kwargs)
+        return np.asarray(self.todense(), *args, **kwargs)
 
     def __array_function__(self, func, types, args, kwargs):
         import sparse as module

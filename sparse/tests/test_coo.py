@@ -1,3 +1,4 @@
+import contextlib
 import operator
 import pickle
 import sys
@@ -2092,21 +2093,51 @@ def test_out_dtype():
     )
 
 
-def test_failed_densification():
+@contextlib.contextmanager
+def auto_densify():
+    "For use in tests only! Not threadsafe."
     import os
     from importlib import reload
 
     os.environ["SPARSE_AUTO_DENSIFY"] = "1"
     reload(sparse._settings)
+    yield
+    del os.environ["SPARSE_AUTO_DENSIFY"]
+    reload(sparse._settings)
 
+
+def test_setting_into_numpy_slice():
+    actual = np.zeros((5, 5))
+    s = sparse.COO(data=[1, 1], coords=(2, 4), shape=(5,))
+    # This calls s.__array__(dtype('float64')) which means that __array__
+    # must accept a positional argument. If not this will raise, of course,
+    # TypeError: __array__() takes 1 positional argument but 2 were given
+    with auto_densify():
+        actual[:, 0] = s
+
+    # Might as well check the content of the result as well.
+    expected = np.zeros((5, 5))
+    expected[:, 0] = s.todense()
+    assert_eq(actual, expected)
+
+    # Without densification, setting is unsupported.
+    with pytest.raises(RuntimeError):
+        actual[:, 0] = s
+
+
+def test_successful_densification():
     s = sparse.random((3, 4, 5), density=0.5)
-    x = np.array(s)
+    with auto_densify():
+        x = np.array(s)
 
     assert isinstance(x, np.ndarray)
     assert_eq(s, x)
 
-    del os.environ["SPARSE_AUTO_DENSIFY"]
-    reload(sparse._settings)
+
+def test_failed_densification():
+    s = sparse.random((3, 4, 5), density=0.5)
+    with pytest.raises(RuntimeError):
+        np.array(s)
 
 
 def test_warn_on_too_dense():
