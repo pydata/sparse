@@ -2109,7 +2109,7 @@ def auto_densify():
 def test_setting_into_numpy_slice():
     actual = np.zeros((5, 5))
     s = sparse.COO(data=[1, 1], coords=(2, 4), shape=(5,))
-    # This calls b.__array__(dtype('float64')) which means that __array__
+    # This calls s.__array__(dtype('float64')) which means that __array__
     # must accept a positional argument. If not this will raise, of course,
     # TypeError: __array__() takes 1 positional argument but 2 were given
     with auto_densify():
