@@ -438,3 +438,21 @@ def outer(a, b, out=None):
            [0, 3, 6, 9]])
     """
     return np.multiply.outer(a, b, out=out)
+
+
+def asnumpy(a, dtype=None, order=None):
+    """Returns a dense numpy array from an arbitrary source array.
+
+    Args:
+        a: Arbitrary object that can be converted to :class:`numpy.ndarray`.
+        order ({'C', 'F', 'A'}): The desired memory layout of the output
+            array. When ``order`` is 'A', it uses 'F' if ``a`` is
+            fortran-contiguous and 'C' otherwise.
+    Returns:
+        numpy.ndarray: Converted array on the host memory.
+    """
+    from ._sparse_array import SparseArray
+
+    if isinstance(a, SparseArray):
+        a = a.todense()
+    return np.array(a, dtype=dtype, copy=False, order=order)

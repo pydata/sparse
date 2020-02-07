@@ -2257,3 +2257,14 @@ def test_flatten(in_shape):
     e = x.flatten()
 
     assert_eq(e, a)
+
+
+def test_asnumpy():
+    s = sparse.COO(data=[1], coords=[2], shape=(5,))
+    assert_eq(sparse.asnumpy(s), s.todense())
+    assert_eq(
+        sparse.asnumpy(s, dtype=np.float64), np.asarray(s.todense(), dtype=np.float64)
+    )
+    a = np.array([1, 2, 3])
+    # Array passes through with no copying.
+    assert sparse.asnumpy(a) is a
