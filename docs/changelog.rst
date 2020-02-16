@@ -1,6 +1,26 @@
 Changelog
 =========
 
+.. currentmodule:: sparse
+
+0.9.1 / 2020-01-23
+------------------
+
+* Fixed a bug where indexing with an empty list could lead
+  to issues. (:issue:`281`, :pr:`282`)
+* Change code formatter to black. (:pr:`284`)
+* Add the :obj:`diagonal` and :obj:`diagonalize` functions.
+  (:issue:`288`, :pr:`289`, thanks :ghuser:`pettni`)
+* Add HTML repr for notebooks. (:pr:`283`, thanks :ghuser:`daletovar`)
+* Avoid making copy of ``coords`` when making a new :obj:`COO`
+  array.
+* Add stack and concatenate for GCXS. (:issue:`301`, :pr:`303`, thanks
+  :ghuser:`daletovar`).
+* Fix issue where functions dispatching to an attribute access wouldn't
+  work with ``__array_function__``. (:issue:`308`, :pr:`309`).
+* Add partial support for constructing and mirroring :obj:`COO` objects to
+  Numba.
+
 0.8.0 / 2019-08-26
 ------------------
 

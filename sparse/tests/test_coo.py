@@ -1,3 +1,4 @@
+import contextlib
 import operator
 import pickle
 import sys
@@ -583,9 +584,24 @@ def test_elemwise_inplace(func):
     assert_eq(x, s)
 
 
-def test_elemwise_mixed():
-    s1 = sparse.random((2, 3, 4), density=0.5)
-    x2 = np.random.rand(4)
+@pytest.mark.parametrize(
+    "shape1, shape2",
+    [
+        ((2, 3, 4), (3, 4)),
+        ((3, 4), (2, 3, 4)),
+        ((3, 1, 4), (3, 2, 4)),
+        ((1, 3, 4), (3, 4)),
+        ((3, 4, 1), (3, 4, 2)),
+        ((1, 5), (5, 1)),
+        ((3, 1), (3, 4)),
+        ((3, 1), (1, 4)),
+        ((1, 4), (3, 4)),
+        ((2, 2, 2), (1, 1, 1)),
+    ],
+)
+def test_elemwise_mixed(shape1, shape2):
+    s1 = sparse.random(shape1, density=0.5)
+    x2 = np.random.rand(*shape2)
 
     x1 = s1.todense()
 
@@ -599,14 +615,6 @@ def test_elemwise_mixed_empty():
     x1 = s1.todense()
 
     assert_eq(s1 * x2, x1 * x2)
-
-
-def test_ndarray_bigger_shape():
-    s1 = sparse.random((2, 3, 4), density=0.5)
-    x2 = np.random.rand(5, 1, 1, 1)
-
-    with pytest.raises(ValueError):
-        s1 * x2
 
 
 def test_elemwise_unsupported():
@@ -2085,21 +2093,51 @@ def test_out_dtype():
     )
 
 
-def test_failed_densification():
+@contextlib.contextmanager
+def auto_densify():
+    "For use in tests only! Not threadsafe."
     import os
     from importlib import reload
 
     os.environ["SPARSE_AUTO_DENSIFY"] = "1"
     reload(sparse._settings)
+    yield
+    del os.environ["SPARSE_AUTO_DENSIFY"]
+    reload(sparse._settings)
 
+
+def test_setting_into_numpy_slice():
+    actual = np.zeros((5, 5))
+    s = sparse.COO(data=[1, 1], coords=(2, 4), shape=(5,))
+    # This calls s.__array__(dtype('float64')) which means that __array__
+    # must accept a positional argument. If not this will raise, of course,
+    # TypeError: __array__() takes 1 positional argument but 2 were given
+    with auto_densify():
+        actual[:, 0] = s
+
+    # Might as well check the content of the result as well.
+    expected = np.zeros((5, 5))
+    expected[:, 0] = s.todense()
+    assert_eq(actual, expected)
+
+    # Without densification, setting is unsupported.
+    with pytest.raises(RuntimeError):
+        actual[:, 0] = s
+
+
+def test_successful_densification():
     s = sparse.random((3, 4, 5), density=0.5)
-    x = np.array(s)
+    with auto_densify():
+        x = np.array(s)
 
     assert isinstance(x, np.ndarray)
     assert_eq(s, x)
 
-    del os.environ["SPARSE_AUTO_DENSIFY"]
-    reload(sparse._settings)
+
+def test_failed_densification():
+    s = sparse.random((3, 4, 5), density=0.5)
+    with pytest.raises(RuntimeError):
+        np.array(s)
 
 
 def test_warn_on_too_dense():
@@ -2208,3 +2246,25 @@ def test_result_type(t1, t2, func, data):
     assert func(sparse.COO(a), sparse.COO(b)) == expect
     assert func(a.dtype, sparse.COO(b)) == np.result_type(a.dtype, b)
     assert func(sparse.COO(a), b.dtype) == np.result_type(a, b.dtype)
+
+
+@pytest.mark.parametrize("in_shape", [(5, 5), 62, (3, 3, 3)])
+def test_flatten(in_shape):
+    s = sparse.random(in_shape, density=0.5)
+    x = s.todense()
+
+    a = s.flatten()
+    e = x.flatten()
+
+    assert_eq(e, a)
+
+
+def test_asnumpy():
+    s = sparse.COO(data=[1], coords=[2], shape=(5,))
+    assert_eq(sparse.asnumpy(s), s.todense())
+    assert_eq(
+        sparse.asnumpy(s, dtype=np.float64), np.asarray(s.todense(), dtype=np.float64)
+    )
+    a = np.array([1, 2, 3])
+    # Array passes through with no copying.
+    assert sparse.asnumpy(a) is a

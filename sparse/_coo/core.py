@@ -284,6 +284,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         self.coords, self.data, self.shape, self.fill_value = state
         self._cache = None
 
+    def __dask_tokenize__(self):
+        "Produce a deterministic, content-based hash for dask."
+        from dask.base import normalize_token
+
+        return normalize_token(
+            (type(self), self.coords, self.data, self.shape, self.fill_value)
+        )
+
     def copy(self, deep=True):
         """Return a copy of the array.
 
@@ -445,7 +453,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         )
 
     @classmethod
-    def from_iter(cls, x, shape=None, fill_value=None):
+    def from_iter(cls, x, shape=None, fill_value=None, dtype=None):
         """
         Converts an iterable in certain formats to a :obj:`COO` array. See examples
         for details.
@@ -458,6 +466,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             The shape of the array.
         fill_value : scalar
             The fill value for this array.
+        dtype : numpy.dtype
+            The dtype of the input array. Inferred from the input if not given.
 
         Returns
         -------
@@ -511,15 +521,15 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if not x:
             ndim = 0 if shape is None else len(shape)
             coords = np.empty((ndim, 0), dtype=np.uint8)
-            data = np.empty((0,))
+            data = np.empty((0,), dtype=dtype)
             shape = () if shape is None else shape
 
         elif not isinstance(x[0][0], Iterable):
             coords = np.stack(x[1], axis=0)
-            data = np.asarray(x[0])
+            data = np.asarray(x[0], dtype=dtype)
         else:
             coords = np.array([item[0] for item in x]).T
-            data = np.array([item[1] for item in x])
+            data = np.array([item[1] for item in x], dtype=dtype)
 
         if not (
             coords.ndim == 2
@@ -1682,6 +1692,17 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if out is not None:
             kwargs["dtype"] = out[0].dtype
 
+        if method == "outer":
+            method = "__call__"
+
+            cum_ndim = 0
+            inputs_transformed = []
+            for inp in inputs:
+                inputs_transformed.append(inp[(Ellipsis,) + (None,) * cum_ndim])
+                cum_ndim += inp.ndim
+
+            inputs = tuple(inputs_transformed)
+
         if method == "__call__":
             result = elemwise(ufunc, *inputs, **kwargs)
         elif method == "reduce":
@@ -1734,6 +1755,32 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         from .common import linear_loc
 
         return linear_loc(self.coords, self.shape)
+
+    def flatten(self, order="C"):
+        """
+        Returns a new :obj:`COO` array that is a flattened version of this array.
+
+        Returns
+        -------
+        COO
+            The flattened output array.
+
+        Notes
+        -----
+        The :code:`order` parameter is provided just for compatibility with
+        Numpy and isn't actually supported.
+
+        Examples
+        --------
+        >>> s = COO.from_numpy(np.arange(10))
+        >>> s2 = s.reshape((2, 5)).flatten()
+        >>> s2.todense()
+        array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        """
+        if order not in {"C", None}:
+            raise NotImplementedError("The `order` parameter is not" "supported.")
+
+        return self.reshape(-1)
 
     def reshape(self, shape, order="C"):
         """

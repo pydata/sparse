@@ -303,7 +303,7 @@ def html_table(arr):
     ]
 
     # read-only
-    info.append(str(hasattr(arr, "__setitem__")))
+    info.append(str(not hasattr(arr, "__setitem__")))
 
     if hasattr(arr, "nbytes"):
         headings.append("Size")
@@ -329,6 +329,36 @@ def html_table(arr):
     table += "</tbody>"
     table += "</table>"
     return table
+
+
+def check_compressed_axes(ndim, compressed_axes):
+    """
+    Checks if the given compressed_axes are compatible with the shape of the array.
+
+    Parameters
+    ----------
+    shape : int
+    compressed_axes : Iterable
+
+    Raises
+    ------
+    ValueError
+        If the compressed_axes are incompatible with the number of dimensions     
+    """
+    if compressed_axes is None:
+        pass
+    if isinstance(ndim, Iterable):
+        ndim = len(ndim)
+    if not isinstance(compressed_axes, Iterable):
+        raise ValueError("compressed_axes must be an iterable")
+    if len(compressed_axes) == ndim:
+        raise ValueError("cannot compress all axes")
+    if not np.array_equal(list(set(compressed_axes)), compressed_axes):
+        raise ValueError("axes must be sorted without repeats")
+    if not all(isinstance(a, Integral) for a in compressed_axes):
+        raise ValueError("axes must be represented with integers")
+    if min(compressed_axes) < 0 or max(compressed_axes) >= ndim:
+        raise ValueError("axis out of range")
 
 
 def check_zero_fill_value(*args):

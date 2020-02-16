@@ -21,7 +21,7 @@ jobs:
   variables:
     python_version: '3.5'
   pool:
-    vmImage: 'macos-10.13'
+    vmImage: 'macos-10.14'
   steps:
     - template: ci/azure-steps.yml
 - job: Windows
@@ -31,3 +31,19 @@ jobs:
     vmImage: 'vs2017-win2016'
   steps:
     - template: ci/azure-steps.yml
+- job: Docs
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+    - template: ci/azure-docs.yml
+
+trigger:
+  branches:
+    include:
+    - master
+  tags:
+    include:
+    - '*'
+
+pr:
+- master

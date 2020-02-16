@@ -1,0 +1,17 @@
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: "3.7"
+    architecture: "x64"
+
+- script: |
+    pip install -e .[docs]
+  displayName: Install package
+
+- script: sphinx-build -W -b html docs/ _build/html
+  displayName: Build documentation
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    artifactName: 'Documentation'
+    targetPath: '$(System.DefaultWorkingDirectory)/_build/html'

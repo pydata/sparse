@@ -1,8 +1,9 @@
-from ._coo import *
+from ._coo import COO
 from ._dok import DOK
 from ._sparse_array import SparseArray
 from ._utils import random
 from ._io import save_npz, load_npz
+from ._common import *
 
 from ._version import get_versions
 
