@@ -91,5 +91,6 @@ This library is licensed under BSD-3
    roadmap
    contributing
    changelog
+   conduct
 
 .. _scipy.sparse: https://docs.scipy.org/doc/scipy/reference/sparse.html
