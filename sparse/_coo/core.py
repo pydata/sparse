@@ -2186,6 +2186,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
             arguments.
         """
+        # this matches numpy's behavior
+        if self.dtype == dtype and copy == False:
+            return self
         return self.__array_ufunc__(
             np.ndarray.astype, "__call__", self, dtype=dtype, copy=copy
         )
