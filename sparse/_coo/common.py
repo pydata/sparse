@@ -54,14 +54,14 @@ def asCOO(x, name="asCOO", check=True):
 
 
 def linear_loc(coords, shape):
-    out = np.zeros(coords.shape[1], dtype=np.intp)
-    tmp = np.zeros(coords.shape[1], dtype=np.intp)
-    strides = int(1)
-    for i, d in enumerate(shape[::-1]):
-        np.multiply(coords[-(i + 1), :], strides, out=tmp)
-        np.add(tmp, out, out=out)
-        strides *= d
-    return out
+    if shape == () and len(coords) == 0:
+        # `np.ravel_multi_index` is not aware of arrays, so cannot produce a
+        # sensible result here (https://github.com/numpy/numpy/issues/15690).
+        # Since `coords` is an array and not a sequence, we know the correct
+        # dimensions.
+        return np.zeros(coords.shape[1:], dtype=np.intp)
+    else:
+        return np.ravel_multi_index(coords, shape)
 
 
 def tensordot(a, b, axes=2):
