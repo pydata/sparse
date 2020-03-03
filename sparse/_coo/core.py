@@ -2187,7 +2187,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             arguments.
         """
         # this matches numpy's behavior
-        if self.dtype == dtype and copy == False:
+        if self.dtype == dtype and not copy:
             return self
         return self.__array_ufunc__(
             np.ndarray.astype, "__call__", self, dtype=dtype, copy=copy
