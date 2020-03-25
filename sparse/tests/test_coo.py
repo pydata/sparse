@@ -344,8 +344,8 @@ def test_tensordot_empty():
 
 
 def test_tensordot_valueerror():
-    x1 = np.array(1)
-    x2 = np.array(1)
+    x1 = sparse.COO(np.array(1))
+    x2 = sparse.COO(np.array(1))
 
     with pytest.raises(ValueError):
         x1 @ x2
