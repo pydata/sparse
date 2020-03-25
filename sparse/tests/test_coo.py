@@ -343,6 +343,14 @@ def test_tensordot_empty():
     assert_eq(np.tensordot(x1, x2), sparse.tensordot(s1, s2))
 
 
+def test_tensordot_valueerror():
+    x1 = np.array(1)
+    x2 = np.array(1)
+
+    with pytest.raises(ValueError):
+        x1 @ x2
+
+
 @pytest.mark.parametrize(
     "a_shape, b_shape",
     [

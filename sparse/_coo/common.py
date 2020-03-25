@@ -124,6 +124,9 @@ def tensordot(a, b, axes=2):
     bs = b.shape
     ndb = b.ndim
     equal = True
+    if nda == 0 or ndb == 0:
+        pos = 0 if nda == 0 else 1
+        raise ValueError("Input %s operand does not have enough dimensions" % pos)
     if na != nb:
         equal = False
     else:
