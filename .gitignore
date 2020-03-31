@@ -69,6 +69,7 @@ target/
 # IDE
 .idea/
 .vscode/
+default.profraw
 
 # Sandbox
 sandbox.py

@@ -1145,7 +1145,7 @@ def _dot_coo_coo_type(dt1, dt2):
     @numba.jit(
         nopython=True,
         nogil=True,
-        locals={"data_curr": numba.numpy_support.from_dtype(dtr)},
+        locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
     )
     def _dot_coo_coo(coords1, data1, coords2, data2):  # pragma: no cover
         """
