@@ -1,32 +1,32 @@
 jobs:
 - job: Linux
   variables:
-    python_version: '3.5'
+    python_version: '3.6'
   pool:
     vmImage: 'ubuntu-16.04'
   steps:
     - template: ci/azure-steps.yml
   strategy:
     matrix:
+        Python38:
+          python_version: '3.8'
         Python37:
           python_version: '3.7'
         Python36:
           python_version: '3.6'
-        Python35:
-          python_version: '3.5'
         ArrayFunction:
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: '1'
           NUMPY_VERSION: '==1.16.2'
 - job: MacOS
   variables:
-    python_version: '3.5'
+    python_version: '3.6'
   pool:
     vmImage: 'macos-10.14'
   steps:
     - template: ci/azure-steps.yml
 - job: Windows
   variables:
-    python_version: '3.5'
+    python_version: '3.6'
   pool:
     vmImage: 'vs2017-win2016'
   steps:

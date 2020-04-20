@@ -59,9 +59,9 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3 :: Only",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
@@ -74,5 +74,5 @@ setup(
     entry_points={
         "numba_extensions": ["init = sparse._numba_extension:_init_extension"]
     },
-    python_requires=">=3.5, <4",
+    python_requires=">=3.6, <4",
 )
