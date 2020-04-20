@@ -95,6 +95,7 @@ pygments_style = "sphinx"
 todo_include_todos = False
 
 autosummary_generate = True
+autosummary_generate_overwrite = False
 
 # -- Options for HTML output ----------------------------------------------
 

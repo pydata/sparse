@@ -14,9 +14,9 @@ from numba.extending import (
     make_attribute_wrapper,
     type_callable,
 )
-from numba.targets.imputils import impl_ret_borrowed, lower_constant, lower_builtin
-from numba.typing.typeof import typeof_impl
-from numba import cgutils, types
+from numba.core.imputils import impl_ret_borrowed, lower_constant, lower_builtin
+from numba.core.typing.typeof import typeof_impl
+from numba.core import cgutils, types
 from sparse._utils import _zero_of_dtype
 import contextlib
 
@@ -83,8 +83,8 @@ def type_COO(context):
     # TODO: accept a fill_value kwarg
     def typer(coords, data, shape):
         return COOType(
-            coords_dtype=numba.numpy_support.as_dtype(coords.dtype),
-            data_dtype=numba.numpy_support.as_dtype(data.dtype),
+            coords_dtype=numba.np.numpy_support.as_dtype(coords.dtype),
+            data_dtype=numba.np.numpy_support.as_dtype(data.dtype),
             ndim=len(shape),
         )
 
