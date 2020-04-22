@@ -2,6 +2,7 @@ import numpy as np
 
 from ._utils import check_compressed_axes
 from ._coo import (
+    clip,
     tensordot,
     dot,
     matmul,
