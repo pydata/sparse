@@ -2133,39 +2133,16 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     round_ = round
 
     def clip(self, min=None, max=None, out=None):
-        """Clip (limit) the values in the array.
+        """
+        Clip (limit) the values in the array.
 
         Return an array whose values are limited to ``[min, max]``. One of min
         or max must be given.
 
-        Parameters
-        ----------
-        min : scalar or array_like or `None`
-            Minimum value. If `None`, clipping is not performed on lower
-            interval edge.
-        max : scalar or array_like or `None`
-            Maximum value. If `None`, clipping is not performed on upper
-            interval edge.
-        out : COO, optional
-            If provided, the results will be placed in this array. It may be
-            the input array for in-place clipping. `out` must be of the right
-            shape to hold the output. Its type is preserved.
-
-        Returns
-        -------
-        clipped_array : COO
-            An array with the elements of `self`, but where values < `min` are
-            replaced with `min`, and those > `max` with `max`.
-
-        Examples
+        See Also
         --------
-        >>> x = COO.from_numpy([0, 0, 0, 1, 2, 3])
-        >>> x.clip(min=1).todense()  # doctest: +NORMALIZE_WHITESPACE
-        array([1, 1, 1, 1, 2, 3])
-        >>> x.clip(max=1).todense()  # doctest: +NORMALIZE_WHITESPACE
-        array([0, 0, 0, 1, 1, 1])
-        >>> x.clip(min=1, max=2).todense() # doctest: +NORMALIZE_WHITESPACE
-        array([1, 1, 1, 1, 2, 2])
+        sparse.clip : For full documentation and more details.
+        numpy.clip : Equivalent NumPy function.
         """
         if min is None and max is None:
             raise ValueError("One of max or min must be given.")

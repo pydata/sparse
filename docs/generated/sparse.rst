@@ -29,6 +29,8 @@ API
 
     concatenate
 
+    clip
+
     diagonal
 
     diagonalize
