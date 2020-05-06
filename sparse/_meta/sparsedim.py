@@ -1,16 +1,25 @@
 from abc import abstractmethod, ABC
 from functools import lru_cache, reduce
 import numba as nb
+from numba.extending import typeof_impl
 from collections import namedtuple
 from typing import Sequence, List, Tuple
 
 __all__ = ["SparseDim"]
 
-jit = nb.jit(nopython=True, nogil=True, inline="always")
+jit = nb.jit(nopython=True, nogil=True)
 
 
 class SparseDim(ABC):
     properties: Sequence[str]
+
+    def __init_subclass__(cls, **kwargs):
+        if ABC in cls.__bases__:
+            return
+
+        @typeof_impl.register(cls)
+        def typeof_cls(val: SparseDim, c):
+            return nb.typeof(val.v)
 
     @classmethod
     @lru_cache
@@ -48,10 +57,35 @@ class SparseDim(ABC):
         pass
 
     def __hash__(self):
-        return hash(type(self))
+        return hash(
+            (
+                type(self),
+                self.full,
+                self.ordered,
+                self.unique,
+                self.branchless,
+                self.compact,
+            )
+        )
 
     def __eq__(self, other):
-        return type(self) == type(other)
+        if not isinstance(other, SparseDim):
+            return False
+        return (
+            type(self),
+            self.full,
+            self.ordered,
+            self.unique,
+            self.branchless,
+            self.compact,
+        ) == (
+            type(other),
+            other.full,
+            other.ordered,
+            other.unique,
+            other.branchless,
+            other.compact,
+        )
 
     def __str__(self):
         return type(self).__name__
@@ -80,13 +114,13 @@ class PositionIterable(SparseDim, ABC):
         pass
 
 
-class HasLocate(SparseDim, ABC):
+class Locate(SparseDim, ABC):
     @abstractmethod
     def locate(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         pass
 
 
-class HasInlineAssemly(SparseDim, ABC):
+class InlineAssemly(SparseDim, ABC):
     @abstractmethod
     def size(self, szkm1: int) -> int:
         pass
@@ -104,7 +138,7 @@ class HasInlineAssemly(SparseDim, ABC):
         pass
 
 
-class HasAppendAssembly(SparseDim, ABC):
+class AppendAssembly(SparseDim, ABC):
     @abstractmethod
     def append_coord(self, pk: int, ik: int) -> None:
         pass
@@ -122,7 +156,7 @@ class HasAppendAssembly(SparseDim, ABC):
         pass
 
 
-class Dense(HasLocate, ValueIterable, HasInlineAssemly):
+class Dense(Locate, ValueIterable, InlineAssemly):
     properties: Sequence[str] = ("N",)
 
     def __init__(self, *, N: int, ordered: bool = True, unique: bool = True):
@@ -226,7 +260,7 @@ class Range(ValueIterable):
         return pkm1 * self.N + i[-1], True
 
 
-class Compressed(PositionIterable, HasAppendAssembly):
+class Compressed(PositionIterable, AppendAssembly):
     properties: Sequence[str] = ("pos", "crd")
 
     def __init__(
@@ -274,16 +308,16 @@ class Compressed(PositionIterable, HasAppendAssembly):
 
     @jit
     def append_coord(self, pk: int, ik: int) -> None:
-        self.crd[pk] = ik
+        self.crd.append(ik)
 
     @jit
     def append_edges(self, pkm1: int, pkbegin: int, pkend: int) -> None:
-        self.pos[pkm1 + 1] = pkend - pkbegin
+        self.pos.append(pkend - pkbegin)
 
     @jit
     def append_init(self, szkm1: int, szk: int) -> None:
-        for pkm1 in range(szkm1 + 1):
-            self.pos[pkm1] = 0
+        for _ in range(szkm1 + 1):
+            self.pos.append(0)
 
     @jit
     def append_finalize(self, szkm1: int, szk: int) -> None:
@@ -293,10 +327,17 @@ class Compressed(PositionIterable, HasAppendAssembly):
             self.pos[pkm1] = cumsum
 
 
-class Singleton(PositionIterable, HasAppendAssembly):
+class Singleton(PositionIterable, AppendAssembly):
     properties: Sequence[str] = ("crd",)
 
-    def __init__(self, *, crd: List[int], full: bool = True, ordered: bool = True, unique: bool = True):
+    def __init__(
+        self,
+        *,
+        crd: List[int],
+        full: bool = True,
+        ordered: bool = True,
+        unique: bool = True
+    ):
         self.crd: List[int] = crd
         self._full: bool = full
         self._ordered: bool = ordered
@@ -332,7 +373,7 @@ class Singleton(PositionIterable, HasAppendAssembly):
 
     @jit
     def append_coord(self, pk: int, ik: int) -> None:
-        self.crd[pk] = ik
+        self.crd.append(ik)
 
     @jit
     def append_edges(self, pkm1: int, pkbegin: int, pkend: int) -> None:
@@ -384,10 +425,12 @@ class Offset(PositionIterable):
         return i[-1] + self.offset[i[-2]], True
 
 
-class Hashed(HasLocate, PositionIterable, HasInlineAssemly):
+class Hashed(Locate, PositionIterable, InlineAssemly):
     properties: Sequence[str] = ("W", "crd")
 
-    def __init__(self, *, W: int, crd: List[int], full: bool = True, unique: bool = True):
+    def __init__(
+        self, *, W: int, crd: List[int], full: bool = True, unique: bool = True
+    ):
         self.W: int = W
         self.crd: List[int] = crd
         self._full: bool = full
