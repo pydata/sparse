@@ -1265,8 +1265,6 @@ def test_gt():
         (1, 1, 1, Ellipsis),
         (Ellipsis, 1, None),
         # With multi-axis advanced indexing
-        ([0, 1],) * 2,
-        ([0, 1],) * 3,
         # Pathological - Slices larger than array
         (slice(None, 1000)),
         (slice(None), slice(None, 1000)),
