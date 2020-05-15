@@ -101,10 +101,11 @@ def getitem(x, index):
             if ind.step < 0:
                 sorted = False
         # Add the index and shape for the advanced index.
-        elif isinstance(ind, np.ndarray) and not adv_idx_added:
-            shape.append(adv_idx.length)
-            coords.append(adv_idx.idx)
-            adv_idx_added = True
+        elif isinstance(ind, np.ndarray):
+            if not adv_idx_added:
+                shape.append(adv_idx.length)
+                coords.append(adv_idx.idx)
+                adv_idx_added = True
             i += 1
         # Add a dimension for None.
         elif ind is None:
@@ -146,10 +147,13 @@ def _mask(coords, indices, shape):
         if len(adv_idx) != 1:
 
             # Ensure if multiple advanced indices are passed, all are of the same length
+            # Also check each advanced index to ensure each is only a one-dimensional iterable
             adv_ix_len = len(adv_idx[0])
             for ai in adv_idx:
                 if len(ai) != adv_ix_len:
                     raise IndexError("shape mismatch: indexing arrays could not be broadcast together. Ensure all indexing arrays are of the same length.")
+                if ai.ndim != 1:
+                    raise IndexError("Only one-dimensional iterable indices supported.")
 
             mask, aidxs = _compute_multi_axis_multi_mask(coords, _ind_ar_from_indices(indices), np.array(adv_idx,dtype=np.intp), np.array(adv_idx_pos,dtype=np.intp))
             return mask, _AdvIdxInfo(aidxs, adv_idx_pos, adv_ix_len)
@@ -330,9 +334,9 @@ def _compute_multi_axis_multi_mask(coords, indices, adv_idx, adv_idx_pos):  # pr
                 full_idx[ix] = indices[ixx]
                 ixx += 1
 
-    for i, aidx in enumerate(adv_idx[0]):
+    for i in range(len(adv_idx[0])):
         for ii in range(n_adv_idx):
-            full_idx[adv_idx_pos[ii]] = [aidx, aidx + 1, 1]
+            full_idx[adv_idx_pos[ii]] = [adv_idx[ii][i], adv_idx[ii][i] + 1, 1]
 
         partial_mask, is_slice = _compute_mask(coords, full_idx)
         if is_slice:
