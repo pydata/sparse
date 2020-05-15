@@ -1551,7 +1551,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         <COO: shape=(4, 3, 2), dtype=float64, nnz=24, fill_value=0.0>
         """
         # Normalize all axis1, axis2 to positive values
-        axis1, axis2 = normalize_axis((axis1, axis2), self.ndim)  # checks if axis1,2 are in range + raises ValueError
+        axis1, axis2 = normalize_axis(
+            (axis1, axis2), self.ndim
+        )  # checks if axis1,2 are in range + raises ValueError
         axes = list(range(self.ndim))
         axes[axis1], axes[axis2] = axes[axis2], axes[axis1]
         return self.transpose(axes)
