@@ -1283,6 +1283,10 @@ def test_gt():
         (1, Ellipsis, None),
         (1, 1, 1, Ellipsis),
         (Ellipsis, 1, None),
+        # With multi-axis advanced indexing
+        ([0, 1],) * 2,
+        ([0, 1], [0, 2]),
+        ([0, 0, 0], [0, 1, 2], [1, 2, 1]),
         # Pathological - Slices larger than array
         (slice(None, 1000)),
         (slice(None), slice(None, 1000)),
@@ -1355,7 +1359,6 @@ def test_custom_dtype_slicing():
         0.5,
         [0.5],
         {"potato": "kartoffel"},
-        ([0, 1],) * 2,
         ([[0, 1]],),
     ],
 )
