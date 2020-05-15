@@ -214,6 +214,25 @@ def test_transpose_error(axis):
         x.transpose(axis)
 
 
+@pytest.mark.parametrize("axis1", [-3, -2, -1, 0, 1, 2])
+@pytest.mark.parametrize("axis2", [-3, -2, -1, 0, 1, 2])
+def test_swapaxes(axis1, axis2):
+    x = sparse.random((2, 3, 4), density=0.25)
+    y = x.todense()
+    xx = x.swapaxes(axis1, axis2)
+    yy = y.swapaxes(axis1, axis2)
+    assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize("axis1", [-4, 3])
+@pytest.mark.parametrize("axis2", [-4, 3, 0])
+def test_swapaxes_error(axis1, axis2):
+    x = sparse.random((2, 3, 4), density=0.25)
+
+    with pytest.raises(ValueError):
+        x.swapaxes(axis1, axis2)
+
+
 @pytest.mark.parametrize(
     "a,b",
     [
