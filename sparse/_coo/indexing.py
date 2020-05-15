@@ -151,11 +151,18 @@ def _mask(coords, indices, shape):
             adv_ix_len = len(adv_idx[0])
             for ai in adv_idx:
                 if len(ai) != adv_ix_len:
-                    raise IndexError("shape mismatch: indexing arrays could not be broadcast together. Ensure all indexing arrays are of the same length.")
+                    raise IndexError(
+                        "shape mismatch: indexing arrays could not be broadcast together. Ensure all indexing arrays are of the same length."
+                    )
                 if ai.ndim != 1:
                     raise IndexError("Only one-dimensional iterable indices supported.")
 
-            mask, aidxs = _compute_multi_axis_multi_mask(coords, _ind_ar_from_indices(indices), np.array(adv_idx,dtype=np.intp), np.array(adv_idx_pos,dtype=np.intp))
+            mask, aidxs = _compute_multi_axis_multi_mask(
+                coords,
+                _ind_ar_from_indices(indices),
+                np.array(adv_idx, dtype=np.intp),
+                np.array(adv_idx_pos, dtype=np.intp),
+            )
             return mask, _AdvIdxInfo(aidxs, adv_idx_pos, adv_ix_len)
 
         else:
@@ -290,10 +297,10 @@ def _separate_adv_indices(indices):
     return new_idx, adv_idx, adv_idx_pos
 
 
-
-
 @numba.jit(nopython=True, nogil=True)
-def _compute_multi_axis_multi_mask(coords, indices, adv_idx, adv_idx_pos):  # pragma: no cover
+def _compute_multi_axis_multi_mask(
+    coords, indices, adv_idx, adv_idx_pos
+):  # pragma: no cover
     """
     Computes a mask with the advanced index, and also returns the advanced index
     dimension.
@@ -383,7 +390,6 @@ def _compute_multi_mask(coords, indices, adv_idx, adv_idx_pos):  # pragma: no co
     full_idx[:adv_idx_pos] = indices[:adv_idx_pos]
     full_idx[adv_idx_pos + 1 :] = indices[adv_idx_pos:]
 
-
     for i, aidx in enumerate(adv_idx):
         full_idx[adv_idx_pos] = [aidx, aidx + 1, 1]
         partial_mask, is_slice = _compute_mask(coords, full_idx)
@@ -464,8 +470,6 @@ def _compute_mask(coords, indices):  # pragma: no cover
     n_matches = np.intp(coords.shape[1])
 
     i = 0
-    #print('COORD SHAPE: {}'.format(coords.shape))
-    #print('IXS SHAPE: {}'.format(indices.shape))
     while i < len(indices):
         # Guesstimate whether working with pairs is more efficient or
         # working with the mask directly.
