@@ -1529,6 +1529,33 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         """
         return self.transpose(tuple(range(self.ndim))[::-1])
 
+    def swapaxes(self, axis1, axis2):
+        """ Returns array that has axes axis1 and axis2 swapped.
+
+        Parameters
+        ----------
+        axis1 : int
+            first axis to swap
+        axis2: int
+            second axis to swap
+
+        Returns
+        -------
+        COO
+            The new array with the axes axis1 and axis2 swapped.
+
+        Examples
+        --------
+        >>> x = COO.from_numpy(np.ones((2, 3, 4)))
+        >>> x.swapaxes(0, 2)
+        <COO: shape=(4, 3, 2), dtype=float64, nnz=24, fill_value=0.0>
+        """
+        # Normalize all axis1, axis2 to positive values
+        axis1, axis2 = normalize_axis((axis1, axis2), self.ndim)  # checks if axis1,2 are in range + raises ValueError
+        axes = list(range(self.ndim))
+        axes[axis1], axes[axis2] = axes[axis2], axes[axis1]
+        return self.transpose(axes)
+
     @property
     def real(self):
         """The real part of the array.
