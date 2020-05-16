@@ -1672,11 +1672,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
             cum_ndim = 0
             inputs_transformed = []
-            for inp in inputs:
+            for inp in reversed(inputs):
                 inputs_transformed.append(inp[(Ellipsis,) + (None,) * cum_ndim])
                 cum_ndim += inp.ndim
 
-            inputs = tuple(inputs_transformed)
+            inputs = tuple(reversed(inputs_transformed))
 
         if method == "__call__":
             result = elemwise(ufunc, *inputs, **kwargs)

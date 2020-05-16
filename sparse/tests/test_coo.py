@@ -2276,3 +2276,16 @@ def test_asnumpy():
     a = np.array([1, 2, 3])
     # Array passes through with no copying.
     assert sparse.asnumpy(a) is a
+
+
+@pytest.mark.parametrize("shape1", [(2,), (2, 3), (2, 3, 4)])
+@pytest.mark.parametrize("shape2", [(2,), (2, 3), (2, 3, 4)])
+def test_outer(shape1, shape2):
+    s1 = sparse.random(shape1, density=0.5)
+    s2 = sparse.random(shape2, density=0.5)
+
+    x1 = s1.todense()
+    x2 = s2.todense()
+
+    assert_eq(sparse.outer(s1, s2), np.outer(x1, x2))
+    assert_eq(np.multiply.outer(s1, s2), np.multiply.outer(x1, x2))

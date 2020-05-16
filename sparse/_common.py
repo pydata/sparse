@@ -437,7 +437,13 @@ def outer(a, b, out=None):
            [0, 2, 4, 6],
            [0, 3, 6, 9]])
     """
-    return np.multiply.outer(a, b, out=out)
+    from sparse import SparseArray, COO
+
+    if isinstance(a, SparseArray):
+        a = COO(a)
+    if isinstance(b, SparseArray):
+        b = COO(b)
+    return np.multiply.outer(a.flatten(), b.flatten(), out=out)
 
 
 def asnumpy(a, dtype=None, order=None):
