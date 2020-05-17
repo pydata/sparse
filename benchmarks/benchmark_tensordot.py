@@ -15,4 +15,4 @@ class TensordotSuite:
         sparse.tensordot(self.n, self.s, axes=([0, 1], [0, 2]))
 
     def time_sparse(self):
-        sparse.tensordot(self.n, self.s, axes=([0, 1], [0, 2]), returntype="sparse")
+        sparse.tensordot(self.n, self.s, axes=([0, 1], [0, 2]), return_type=sparse.COO)

@@ -64,7 +64,7 @@ def linear_loc(coords, shape):
         return np.ravel_multi_index(coords, shape)
 
 
-def tensordot(a, b, axes=2, returntype="auto"):
+def tensordot(a, b, axes=2, return_type=None):
     """
     Perform the equivalent of :obj:`numpy.tensordot`.
 
@@ -74,7 +74,7 @@ def tensordot(a, b, axes=2, returntype="auto"):
         The arrays to perform the :code:`tensordot` operation on.
     axes : tuple[Union[int, tuple[int], Union[int, tuple[int]], optional
         The axes to match when performing the sum.
-    returntype : {"auto", "dense", "sparse"}, optional
+    return_type : {None, COO, np.ndarray}, optional
         Type of returned array.
 
 
@@ -171,7 +171,7 @@ def tensordot(a, b, axes=2, returntype="auto"):
 
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)
-    res = _dot(at, bt, returntype)
+    res = _dot(at, bt, return_type)
     return res.reshape(olda + oldb)
 
 
@@ -293,12 +293,12 @@ def dot(a, b):
     return tensordot(a, b, axes=(a_axis, b_axis))
 
 
-def _dot(a, b, returntype="auto"):
+def _dot(a, b, return_type=None):
     from .core import COO
 
     out_shape = (a.shape[0], b.shape[1])
     if isinstance(a, COO) and isinstance(b, COO):
-        # todo: if returntype == "dense": ...
+        # todo: if return_type == np.ndarray: ...
         b = b.T
         coords, data = _dot_coo_coo_type(a.dtype, b.dtype)(
             a.coords, a.data, b.coords, b.data
@@ -307,14 +307,14 @@ def _dot(a, b, returntype="auto"):
         return COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
 
     if isinstance(a, COO) and isinstance(b, np.ndarray):
-        # todo: if returntype == "sparse": ...
+        # todo: if return_type == COO: ...
         b = b.view(type=np.ndarray).T
         return _dot_coo_ndarray_type(a.dtype, b.dtype)(a.coords, a.data, b, out_shape)
 
     if isinstance(a, np.ndarray) and isinstance(b, COO):
         b = b.T
         a = a.view(type=np.ndarray)
-        if returntype == "sparse":
+        if return_type == COO:
             coords, data, dtype = _dot_ndarray_coo_type_sparse(a.dtype, b.dtype)(
                 a, b.coords, b.data, out_shape
             )
