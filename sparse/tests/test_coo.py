@@ -356,6 +356,8 @@ def test_tensordot(a_shape, b_shape, axes):
         np.tensordot(a, b, axes), sparse.tensordot(a, sb, axes, returntype="sparse")
     )
 
+    assert isinstance(sparse.tensordot(a, sb, axes, returntype="sparse"), COO)
+
 
 def test_tensordot_empty():
     x1 = np.empty((0, 0, 0))

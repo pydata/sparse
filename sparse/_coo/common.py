@@ -74,6 +74,9 @@ def tensordot(a, b, axes=2, returntype="auto"):
         The arrays to perform the :code:`tensordot` operation on.
     axes : tuple[Union[int, tuple[int], Union[int, tuple[int]], optional
         The axes to match when performing the sum.
+    returntype : {"auto", "dense", "sparse"}, optional
+        Type of returned array.
+
 
     Returns
     -------
@@ -295,6 +298,7 @@ def _dot(a, b, returntype="auto"):
 
     out_shape = (a.shape[0], b.shape[1])
     if isinstance(a, COO) and isinstance(b, COO):
+        # todo: if returntype == "dense": ...
         b = b.T
         coords, data = _dot_coo_coo_type(a.dtype, b.dtype)(
             a.coords, a.data, b.coords, b.data
@@ -303,6 +307,7 @@ def _dot(a, b, returntype="auto"):
         return COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
 
     if isinstance(a, COO) and isinstance(b, np.ndarray):
+        # todo: if returntype == "sparse": ...
         b = b.view(type=np.ndarray).T
         return _dot_coo_ndarray_type(a.dtype, b.dtype)(a.coords, a.data, b, out_shape)
 
@@ -1324,6 +1329,7 @@ def _dot_ndarray_coo_type_sparse(dt1, dt2):
                 oidx2 = coords2[0, didx2]
                 out_coords.append([oidx1, oidx2])
                 out_data.append(array1[oidx1, coords2[1, didx2]] * data2[didx2])
+                # attention: data can be 0.0
 
         return out_coords, out_data, dtr
 
