@@ -352,9 +352,7 @@ def test_tensordot(a_shape, b_shape, axes):
 
     # assert isinstance(sparse.tensordot(a, sb, axes), COO)
 
-    assert_eq(
-        np.tensordot(a, b, axes), sparse.tensordot(a, sb, axes, return_type=COO)
-    )
+    assert_eq(np.tensordot(a, b, axes), sparse.tensordot(a, sb, axes, return_type=COO))
 
     assert isinstance(sparse.tensordot(a, sb, axes, return_type=COO), COO)
 

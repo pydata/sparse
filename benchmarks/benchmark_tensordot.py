@@ -6,6 +6,7 @@ class TensordotSuite:
     """
     Performance comparison for returntype="sparse".
     """
+
     def setup(self):
         np.random.seed(0)
         self.n = np.random.random((100, 100))
