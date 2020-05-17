@@ -64,7 +64,7 @@ def linear_loc(coords, shape):
         return np.ravel_multi_index(coords, shape)
 
 
-def tensordot(a, b, axes=2):
+def tensordot(a, b, axes=2, returntype="auto"):
     """
     Perform the equivalent of :obj:`numpy.tensordot`.
 
@@ -168,7 +168,7 @@ def tensordot(a, b, axes=2):
 
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)
-    res = _dot(at, bt)
+    res = _dot(at, bt, returntype)
     return res.reshape(olda + oldb)
 
 
@@ -290,7 +290,7 @@ def dot(a, b):
     return tensordot(a, b, axes=(a_axis, b_axis))
 
 
-def _dot(a, b):
+def _dot(a, b, returntype="auto"):
     from .core import COO
 
     out_shape = (a.shape[0], b.shape[1])
@@ -309,6 +309,13 @@ def _dot(a, b):
     if isinstance(a, np.ndarray) and isinstance(b, COO):
         b = b.T
         a = a.view(type=np.ndarray)
+        if returntype == "sparse":
+            coords, data, dtype = _dot_ndarray_coo_type_sparse(a.dtype, b.dtype)(
+                a, b.coords, b.data, out_shape
+            )
+            coords = np.array(coords).T
+            data = np.array(data, dtype=dtype)
+            return COO(coords, data, shape=out_shape)
         return _dot_ndarray_coo_type(a.dtype, b.dtype)(a, b.coords, b.data, out_shape)
 
 
@@ -1283,6 +1290,43 @@ def _dot_ndarray_coo_type(dt1, dt2):
                 out[oidx1, oidx2] += array1[oidx1, coords2[1, didx2]] * data2[didx2]
 
         return out
+
+    return _dot_ndarray_coo
+
+
+@_memoize_dtype
+def _dot_ndarray_coo_type_sparse(dt1, dt2):
+    dtr = np.result_type(dt1, dt2)
+
+    @numba.jit(nopython=True, nogil=True)
+    def _dot_ndarray_coo(array1, coords2, data2, out_shape):  # pragma: no cover
+        """
+        Utility function taking in two one ``ndarray`` and one ``COO`` and
+        calculating a "sense" of their dot product. Acually computes ``x1 @ s2.T``.
+
+        Parameters
+        ----------
+        array1 : np.ndarray
+            The input array ``x1``.
+
+        data2, coords2 : np.ndarray
+            The data and coordinates of ``s2``.
+
+        out_shape : Tuple[int]
+            The output shape.
+        """
+        out_data = []
+        out_coords = []
+
+        for oidx1 in range(out_shape[0]):
+            for didx2 in range(len(data2)):
+                oidx2 = coords2[0, didx2]
+                val = array1[oidx1, coords2[1, didx2]]
+                if val != 0.0:
+                    out_coords.append([oidx1, oidx2])
+                    out_data.append(val * data2[didx2])
+
+        return out_coords, out_data, dtr
 
     return _dot_ndarray_coo
 
