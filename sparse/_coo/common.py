@@ -315,7 +315,7 @@ def _dot(a, b, returntype="auto"):
             )
             coords = np.array(coords).T
             data = np.array(data, dtype=dtype)
-            return COO(coords, data, shape=out_shape)
+            return COO(coords, data, shape=out_shape, prune=True)
         return _dot_ndarray_coo_type(a.dtype, b.dtype)(a, b.coords, b.data, out_shape)
 
 
@@ -1321,10 +1321,8 @@ def _dot_ndarray_coo_type_sparse(dt1, dt2):
         for oidx1 in range(out_shape[0]):
             for didx2 in range(len(data2)):
                 oidx2 = coords2[0, didx2]
-                val = array1[oidx1, coords2[1, didx2]]
-                if val != 0.0:
-                    out_coords.append([oidx1, oidx2])
-                    out_data.append(val * data2[didx2])
+                out_coords.append([oidx1, oidx2])
+                out_data.append(array1[oidx1, coords2[1, didx2]] * data2[didx2])
 
         return out_coords, out_data, dtr
 
