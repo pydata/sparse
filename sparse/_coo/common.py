@@ -314,13 +314,13 @@ def _dot(a, b, return_type=None):
     if isinstance(a, np.ndarray) and isinstance(b, COO):
         b = b.T
         a = a.view(type=np.ndarray)
+
         if return_type == COO:
-            coords, data, dtype = _dot_ndarray_coo_type_sparse(a.dtype, b.dtype)(
+            coords, data = _dot_ndarray_coo_type_sparse(a.dtype, b.dtype)(
                 a, b.coords, b.data, out_shape
             )
-            coords = np.array(coords).T
-            data = np.array(data, dtype=dtype)
-            return COO(coords, data, shape=out_shape, prune=True)
+            return COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
+
         return _dot_ndarray_coo_type(a.dtype, b.dtype)(a, b.coords, b.data, out_shape)
 
 
@@ -1324,14 +1324,28 @@ def _dot_ndarray_coo_type_sparse(dt1, dt2):
         out_data = []
         out_coords = []
 
-        for oidx1 in range(out_shape[0]):
-            for didx2 in range(len(data2)):
-                oidx2 = coords2[0, didx2]
-                out_coords.append([oidx1, oidx2])
-                out_data.append(array1[oidx1, coords2[1, didx2]] * data2[didx2])
-                # attention: data can be 0.0
+        # coords2.shape = (2, len(data2))
+        # coords2[0, :] = columns, sorted
+        # coords2[1, :] = rows
 
-        return out_coords, out_data, dtr
+        for oidx1 in range(out_shape[0]):
+            data_curr = 0.0
+            current_col = 0
+            for didx2 in range(len(data2)):
+                if coords2[0, didx2] != current_col:
+                    if data_curr != 0.0:
+                        out_data.append(data_curr)
+                        out_coords.append([oidx1, current_col])
+                        data_curr = 0.0
+                    current_col = coords2[0, didx2]
+
+                data_curr += array1[oidx1, coords2[1, didx2]] * data2[didx2]
+
+            if data_curr != 0.0:
+                out_data.append(data_curr)
+                out_coords.append([oidx1, current_col])
+
+        return np.array(out_coords).T, np.array(out_data, dtype=dtr)
 
     return _dot_ndarray_coo
 
