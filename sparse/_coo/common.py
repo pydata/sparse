@@ -1271,7 +1271,9 @@ def _dot_coo_ndarray_type(dt1, dt2):
 def _dot_ndarray_coo_type(dt1, dt2):
     dtr = np.result_type(dt1, dt2)
 
-    @numba.jit(nopython=True, nogil=True)
+    @numba.jit(
+        nopython=True, nogil=True,
+    )
     def _dot_ndarray_coo(array1, coords2, data2, out_shape):  # pragma: no cover
         """
         Utility function taking in two one ``ndarray`` and one ``COO`` and
@@ -1304,7 +1306,11 @@ def _dot_ndarray_coo_type(dt1, dt2):
 def _dot_ndarray_coo_type_sparse(dt1, dt2):
     dtr = np.result_type(dt1, dt2)
 
-    @numba.jit(nopython=True, nogil=True)
+    @numba.jit(
+        nopython=True,
+        nogil=True,
+        locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
+    )
     def _dot_ndarray_coo(array1, coords2, data2, out_shape):  # pragma: no cover
         """
         Utility function taking in two one ``ndarray`` and one ``COO`` and
@@ -1329,23 +1335,26 @@ def _dot_ndarray_coo_type_sparse(dt1, dt2):
         # coords2[1, :] = rows
 
         for oidx1 in range(out_shape[0]):
-            data_curr = 0.0
+            data_curr = 0
             current_col = 0
             for didx2 in range(len(data2)):
                 if coords2[0, didx2] != current_col:
-                    if data_curr != 0.0:
+                    if data_curr != 0:
                         out_data.append(data_curr)
                         out_coords.append([oidx1, current_col])
-                        data_curr = 0.0
+                        data_curr = 0
                     current_col = coords2[0, didx2]
 
                 data_curr += array1[oidx1, coords2[1, didx2]] * data2[didx2]
 
-            if data_curr != 0.0:
+            if data_curr != 0:
                 out_data.append(data_curr)
                 out_coords.append([oidx1, current_col])
 
-        return np.array(out_coords).T, np.array(out_data, dtype=dtr)
+        if len(out_data) == 0:
+            return np.empty((2, 0), dtype=np.intp), np.empty((0,), dtype=dtr)
+
+        return np.array(out_coords).T, np.array(out_data)
 
     return _dot_ndarray_coo
 
