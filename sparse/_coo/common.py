@@ -1320,7 +1320,7 @@ def _dot_coo_ndarray_type_sparse(dt1, dt2):
             while oidx2 < out_shape[1]:
                 cur_didx1 = didx1
                 data_curr = 0
-                while coords1[0, cur_didx1] == current_row:
+                while cur_didx1 < len(data1) and coords1[0, cur_didx1] == current_row:
                     data_curr += data1[cur_didx1] * array2[oidx2, coords1[1, cur_didx1]]
                     cur_didx1 += 1
                 if data_curr != 0:
