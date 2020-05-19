@@ -342,19 +342,34 @@ def test_tensordot(a_shape, b_shape, axes):
     a = sa.todense()
     b = sb.todense()
 
-    assert_eq(np.tensordot(a, b, axes), sparse.tensordot(sa, sb, axes))
+    a_b = np.tensordot(a, b, axes)
 
-    assert_eq(np.tensordot(a, b, axes), sparse.tensordot(sa, b, axes))
+    # tests for return_type=None
+    sa_sb = sparse.tensordot(sa, sb, axes)
+    sa_b = sparse.tensordot(sa, b, axes)
+    a_sb = sparse.tensordot(a, sb, axes)
 
-    # assert isinstance(sparse.tensordot(sa, b, axes), COO)
+    assert_eq(a_b, sa_sb)
+    assert_eq(a_b, sa_b)
+    assert_eq(a_b, a_sb)
+    assert isinstance(sa_sb, COO)
+    assert isinstance(sa_b, np.ndarray)
+    assert isinstance(a_sb, np.ndarray)
 
-    assert_eq(np.tensordot(a, b, axes), sparse.tensordot(a, sb, axes))
+    # tests for return_type=COO
+    sa_b = sparse.tensordot(sa, b, axes, return_type=COO)
+    a_sb = sparse.tensordot(a, sb, axes, return_type=COO)
 
-    # assert isinstance(sparse.tensordot(a, sb, axes), COO)
+    assert_eq(a_b, sa_b)
+    assert_eq(a_b, a_sb)
+    assert isinstance(sa_b, COO)
+    assert isinstance(a_sb, COO)
 
-    assert_eq(np.tensordot(a, b, axes), sparse.tensordot(a, sb, axes, return_type=COO))
+    # tests for return_type=np.ndarray
+    sa_sb = sparse.tensordot(sa, sb, axes, return_type=np.ndarray)
 
-    assert isinstance(sparse.tensordot(a, sb, axes, return_type=COO), COO)
+    assert_eq(a_b, sa_sb)
+    assert isinstance(sa_sb, np.ndarray)
 
 
 def test_tensordot_empty():

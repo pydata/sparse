@@ -298,17 +298,27 @@ def _dot(a, b, return_type=None):
 
     out_shape = (a.shape[0], b.shape[1])
     if isinstance(a, COO) and isinstance(b, COO):
-        # todo: if return_type == np.ndarray: ...
         b = b.T
         coords, data = _dot_coo_coo_type(a.dtype, b.dtype)(
             a.coords, a.data, b.coords, b.data
         )
 
+        if return_type == np.ndarray:
+            return COO(
+                coords, data, shape=out_shape, has_duplicates=False, sorted=True
+            ).todense()
+
         return COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
 
     if isinstance(a, COO) and isinstance(b, np.ndarray):
-        # todo: if return_type == COO: ...
         b = b.view(type=np.ndarray).T
+
+        if return_type == COO:
+            coords, data = _dot_coo_ndarray_type_sparse(a.dtype, b.dtype)(
+                a.coords, a.data, b, out_shape
+            )
+            return COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
+
         return _dot_coo_ndarray_type(a.dtype, b.dtype)(a.coords, a.data, b, out_shape)
 
     if isinstance(a, np.ndarray) and isinstance(b, COO):
@@ -1263,6 +1273,66 @@ def _dot_coo_ndarray_type(dt1, dt2):
                     didx1 += 1
 
         return out
+
+    return _dot_coo_ndarray
+
+
+@_memoize_dtype
+def _dot_coo_ndarray_type_sparse(dt1, dt2):
+    dtr = np.result_type(dt1, dt2)
+
+    @numba.jit(
+        nopython=True,
+        nogil=True,
+        locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
+    )
+    def _dot_coo_ndarray(coords1, data1, array2, out_shape):  # pragma: no cover
+        """
+        Utility function taking in one `COO` and one ``ndarray`` and
+        calculating a "sense" of their dot product. Acually computes
+        ``s1 @ x2.T``.
+
+        Parameters
+        ----------
+        data1, coords1 : np.ndarray
+            The data and coordinates of ``s1``.
+
+        array2 : np.ndarray
+            The second input array ``x2``.
+
+        out_shape : Tuple[int]
+            The output shape.
+        """
+
+        out_data = []
+        out_coords = []
+
+        # coords1.shape = (2, len(data1))
+        # coords1[0, :] = rows, sorted
+        # coords1[1, :] = columns
+
+        didx1 = 0
+        while didx1 < len(data1):
+            current_row = coords1[0, didx1]
+
+            cur_didx1 = didx1
+            oidx2 = 0
+            while oidx2 < out_shape[1]:
+                cur_didx1 = didx1
+                data_curr = 0
+                while coords1[0, cur_didx1] == current_row:
+                    data_curr += data1[cur_didx1] * array2[oidx2, coords1[1, cur_didx1]]
+                    cur_didx1 += 1
+                if data_curr != 0:
+                    out_data.append(data_curr)
+                    out_coords.append((current_row, oidx2))
+                oidx2 += 1
+            didx1 = cur_didx1
+
+        if len(out_data) == 0:
+            return np.empty((2, 0), dtype=np.intp), np.empty((0,), dtype=dtr)
+
+        return np.array(out_coords).T, np.array(out_data)
 
     return _dot_coo_ndarray
 
