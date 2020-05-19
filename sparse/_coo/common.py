@@ -64,7 +64,7 @@ def linear_loc(coords, shape):
         return np.ravel_multi_index(coords, shape)
 
 
-def tensordot(a, b, axes=2, return_type=None):
+def tensordot(a, b, axes=2, *, return_type=None):
     """
     Perform the equivalent of :obj:`numpy.tensordot`.
 
