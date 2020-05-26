@@ -66,6 +66,15 @@ PyData/Sparse aims to build containers and elementary operations on them, such a
 reductions and so on. We plan on modifying the current graph theoretic subroutines in ``scipy.sparse.csgraph``
 to support PyData/Sparse arrays. The same applies for linear algebra and ``scipy.sparse.linalg``.
 
+CuPy integration for GPU-acceleration
+-------------------------------------
+
+CuPy is a project that implements a large portion of NumPy’s ndarray interface on GPUs. We plan to integrate
+with CuPy so that it’s possible to accelerate sparse arrays on GPUs.
+
+Completed Tasks
+===============
+
 Dask Integration for High Scalability
 -------------------------------------
 
@@ -73,8 +82,11 @@ Dask is a project that takes ndarray style containers and then allows them to sc
 clusters. We plan on tighter integration and cooperation with the Dask team to ensure the highest amount of
 Dask functionality works with sparse arrays.
 
-CuPy integration for GPU-acceleration
--------------------------------------
+Currently, integration with Dask is supported via array protocols.  When more of the NumPy API (e.g. array
+creation functions) becomes available through array protocols, it will be automatically be supported by Dask.
 
-CuPy is a project that implements a large portion of NumPy’s ndarray interface on GPUs. We plan to integrate
-with CuPy so that it’s possible to accelerate sparse arrays on GPUs.
+(Partial) SciPy Integration
+---------------------------
+
+Support for ``scipy.sparse.linalg`` has been completed. We hope to add support for ``scipy.sparse.csgraph``
+in the future.
