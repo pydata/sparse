@@ -222,7 +222,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         self.coords = np.asarray(coords)
 
         if self.coords.ndim == 1:
-            self.coords = self.coords[None, :]
+            if self.coords.size == 0 and shape is not None:
+                self.coords = self.coords.reshape((len(shape), len(data)))
+            else:
+                self.coords = self.coords[None, :]
 
         if self.data.ndim == 0:
             self.data = np.broadcast_to(self.data, self.coords.shape[1])
