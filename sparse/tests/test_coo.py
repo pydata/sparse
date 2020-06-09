@@ -2330,3 +2330,11 @@ def test_outer(shape1, shape2):
 
     assert_eq(sparse.outer(s1, s2), np.outer(x1, x2))
     assert_eq(np.multiply.outer(s1, s2), np.multiply.outer(x1, x2))
+
+
+def test_scalar_list_init():
+    a = sparse.COO([], [], ())
+    b = sparse.COO([], [1], ())
+
+    assert a.todense() == 0
+    assert b.todense() == 1
