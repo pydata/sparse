@@ -68,13 +68,11 @@ class DenseType(Locate, ValueIterable, InlineAssembly):
         self.N_type: int = N_type
         self._ordered: bool = bool(ordered)
         self._unique: bool = bool(unique)
-        name = f"Dense<{N_type}>"
+        name = f"Dense<{N_type, ordered, unique}>"
         super().__init__(name)
 
     # Type is mutable
     mutable = True
-    # Wether the type is reflected at the python <-> nopython modes
-    reflected = True
 
     @property
     def key(self):
@@ -105,8 +103,6 @@ class CompressedType(SparseDimType):
 
     # Type is mutable
     mutable = True
-    # Wether the type is reflected at the python <-> nopython modes
-    reflected = True
 
     def __init__(
         self,
@@ -176,7 +172,7 @@ class CompressedModel(models.StructModel):
 
 
 @extending.type_callable(Dense)
-def type_interval(context):
+def type_dense(context):
     def typer(N, ordered, unique):
         return DenseType(N_type=N, ordered=ordered, unique=unique)
 
@@ -193,6 +189,16 @@ def sparse_dense_constructor(context, builder, sig, args):
 
 extending.make_attribute_wrapper(DenseType, "N", "N")
 
+
+@extending.typeof_impl.register(Dense)
+def typeof_index(val, c):
+    # N_type = extending.typeof_impl(val.N, c)
+    N_type = types.int64
+    ordered = val.ordered
+    unique = val.unique
+    return DenseType(N_type=N_type, ordered=ordered, unique=unique)
+
+
 @extending.box(DenseType)
 def box_dense(typ: DenseType, val, c):
     """
@@ -201,15 +207,35 @@ def box_dense(typ: DenseType, val, c):
     i1 = ir.IntType(1)
     
     dense = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
+
     N_obj = c.pyapi.long_from_long(dense.N)
     unique_obj = c.pyapi.bool_from_bool(i1(typ.unique))
     ordered_obj = c.pyapi.bool_from_bool(i1(typ.ordered))
     class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(Dense))
-    kwds = c.pyapi.dict_pack({'N': N_obj, 'unique': unique_obj, 'ordered': ordered_obj}.items())
-    res = c.pyapi.call(class_obj, None, kwds)
+
+    kwds = c.pyapi.dict_pack({
+        'N': N_obj, 'unique': unique_obj, 'ordered': ordered_obj}.items())
+    empty_tuple = c.pyapi.tuple_new(0)
+
+    res = c.pyapi.call(class_obj, empty_tuple, kwds)
+
     c.pyapi.decref(N_obj)
     c.pyapi.decref(class_obj)
     c.pyapi.decref(unique_obj)
     c.pyapi.decref(ordered_obj)
+    c.pyapi.decref(empty_tuple)
     c.pyapi.decref(kwds)
     return res
+
+
+@extending.unbox(DenseType)
+def unbox_interval(typ, obj, c):
+    """
+    Convert a Dense object to a native dense structure.
+    """
+    N_obj = c.pyapi.object_getattr_string(obj, "N")
+    dense = cgutils.create_struct_proxy(typ)(c.context, c.builder)
+    dense.N = c.pyapi.long_as_longlong(N_obj)
+    c.pyapi.decref(N_obj)
+    is_error = cgutils.is_not_null(c.builder, c.pyapi.err_occurred())
+    return extending.NativeValue(dense._getvalue(), is_error=is_error)
