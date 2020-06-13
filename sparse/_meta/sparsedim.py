@@ -2,6 +2,7 @@ from abc import abstractmethod, ABC
 from functools import lru_cache, reduce
 import numba as nb
 from numba.extending import typeof_impl
+from numba.core import types, extending
 from collections import namedtuple
 from typing import Sequence, List, Tuple
 
@@ -94,6 +95,83 @@ class SparseDim(ABC):
         return repr(self.v)
 
 
+class SparseDimType(types.Type):
+    @property
+    @abstractmethod
+    def full(self) -> bool:
+        pass
+
+    @property
+    @abstractmethod
+    def ordered(self) -> bool:
+        pass
+
+    @property
+    @abstractmethod
+    def unique(self) -> bool:
+        pass
+
+    @property
+    @abstractmethod
+    def branchless(self) -> bool:
+        pass
+
+    @property
+    @abstractmethod
+    def compact(self) -> bool:
+        pass
+
+
+@extending.overload_attribute(SparseDimType, "full")
+def impl_full(S):
+    full = S.full
+
+    def impl(S):
+        return full
+
+    return impl
+
+
+@extending.overload_attribute(SparseDimType, "ordered")
+def impl_ordered(S):
+    ordered = S.ordered
+
+    def impl(S):
+        return ordered
+
+    return impl
+
+
+@extending.overload_attribute(SparseDimType, "unique")
+def impl_unique(S):
+    unique = S.unique
+
+    def impl(S):
+        return unique
+
+    return impl
+
+
+@extending.overload_attribute(SparseDimType, "branchless")
+def impl_branchless(S):
+    branchless = S.branchless
+
+    def impl(S):
+        return branchless
+
+    return impl
+
+
+@extending.overload_attribute(SparseDimType, "compact")
+def impl_compact(S):
+    compact = S.compact
+
+    def impl(S):
+        return compact
+
+    return impl
+
+
 class ValueIterable(SparseDim, ABC):
     @abstractmethod
     def coord_bounds(self, i: Tuple[int, ...]) -> Tuple[int, int]:
@@ -102,6 +180,12 @@ class ValueIterable(SparseDim, ABC):
     @abstractmethod
     def coord_access(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         pass
+
+
+class ValueIterableType(SparseDimType):
+    @property
+    def support_value_iterable(self) -> "ValueIterable":
+        return self
 
 
 class PositionIterable(SparseDim, ABC):
@@ -114,13 +198,21 @@ class PositionIterable(SparseDim, ABC):
         pass
 
 
+class PositionIterableType(SparseDimType):
+    pass
+
+
 class Locate(SparseDim, ABC):
     @abstractmethod
     def locate(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         pass
 
 
-class InlineAssemly(SparseDim, ABC):
+class LocateType(SparseDimType):
+    pass
+
+
+class InlineAssembly(SparseDim, ABC):
     @abstractmethod
     def size(self, szkm1: int) -> int:
         pass
@@ -136,6 +228,10 @@ class InlineAssemly(SparseDim, ABC):
     @abstractmethod
     def insert_finalize(self, szkm1: int, szk: int) -> None:
         pass
+
+
+class InlineAssemblyType(SparseDimType):
+    pass
 
 
 class AppendAssembly(SparseDim, ABC):
@@ -156,63 +252,13 @@ class AppendAssembly(SparseDim, ABC):
         pass
 
 
-class Dense(Locate, ValueIterable, InlineAssemly):
-    properties: Sequence[str] = ("N",)
-
-    def __init__(self, *, N: int, ordered: bool = True, unique: bool = True):
-        self.N: int = N
-        self._ordered: bool = ordered
-        self._unique: bool = unique
-
+class AppendAssemblyType(SparseDimType):
     @property
-    def full(self) -> bool:
-        return True
-
-    @property
-    def ordered(self) -> bool:
-        return self._ordered
-
-    @property
-    def unique(self) -> bool:
-        return self._unique
-
-    @property
-    def branchless(self) -> bool:
-        return False
-
-    @property
-    def compact(self) -> bool:
-        return True
-
-    @jit
-    def locate(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
-        return pkm1 * self.N + i[-1], True
-
-    @jit
-    def coord_bounds(self, i: Tuple[int, ...]) -> Tuple[int, int]:
-        return 0, self.N
-
-    @jit
-    def coord_access(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
-        return pkm1 * self.N + i[-1], True
-
-    @jit
-    def size(self, szkm1: int) -> int:
-        return szkm1 * self.N
-
-    @jit
-    def insert_coord(self, pk: int, ik: int) -> None:
-        pass
-
-    @jit
-    def insert_init(self, szkm1: int, szk: int) -> None:
-        pass
-
-    @jit
-    def insert_finalize(self, szkm1: int, szk: int) -> None:
-        pass
+    def support_append(self) -> "ValueIterable":
+        return self
 
 
+# XXX: Move classes below to its own file
 class Range(ValueIterable):
     properties: Sequence[str] = ("pos", "crd")
 
@@ -258,73 +304,6 @@ class Range(ValueIterable):
     @jit
     def coord_access(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         return pkm1 * self.N + i[-1], True
-
-
-class Compressed(PositionIterable, AppendAssembly):
-    properties: Sequence[str] = ("pos", "crd")
-
-    def __init__(
-        self,
-        *,
-        pos: List[int],
-        crd: List[int],
-        full: bool = True,
-        ordered: bool = True,
-        unique: bool = True
-    ):
-        self.pos: List[int] = pos
-        self.crd: List[int] = crd
-        self._full: bool = full
-        self._ordered: bool = ordered
-        self._unique: bool = unique
-
-    @property
-    def full(self) -> bool:
-        return self._full
-
-    @property
-    def ordered(self) -> bool:
-        return self._ordered
-
-    @property
-    def unique(self) -> bool:
-        return self._unique
-
-    @property
-    def branchless(self) -> bool:
-        return False
-
-    @property
-    def compact(self) -> bool:
-        return True
-
-    @jit
-    def pos_bounds(self, pkm1: int) -> Tuple[int, int]:
-        return self.pos[pkm1], self.pos[pkm1] + 1
-
-    @jit
-    def pos_access(self, pk: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
-        return self.crd[pk], True
-
-    @jit
-    def append_coord(self, pk: int, ik: int) -> None:
-        self.crd.append(ik)
-
-    @jit
-    def append_edges(self, pkm1: int, pkbegin: int, pkend: int) -> None:
-        self.pos.append(pkend - pkbegin)
-
-    @jit
-    def append_init(self, szkm1: int, szk: int) -> None:
-        for _ in range(szkm1 + 1):
-            self.pos.append(0)
-
-    @jit
-    def append_finalize(self, szkm1: int, szk: int) -> None:
-        cumsum: int = self.pos[0]
-        for pkm1 in range(1, szkm1 + 1):
-            cumsum += self.pos[pkm1]
-            self.pos[pkm1] = cumsum
 
 
 class Singleton(PositionIterable, AppendAssembly):
@@ -425,7 +404,7 @@ class Offset(PositionIterable):
         return i[-1] + self.offset[i[-2]], True
 
 
-class Hashed(Locate, PositionIterable, InlineAssemly):
+class Hashed(Locate, PositionIterable, InlineAssembly):
     properties: Sequence[str] = ("W", "crd")
 
     def __init__(
