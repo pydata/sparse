@@ -1,64 +1,68 @@
 from abc import abstractmethod
 
-from llvmlite import ir
-from numba import njit
+import numba as nb
 from numba.core import types, cgutils, extending
 from numba.core.datamodel import registry, models
-from .sparsedim import Dense, Compressed
+from llvmlite import ir
+from .sparsedim import Locate, ValueIterable, InlineAssembly
+from .sparsedim import LocateType, ValueIterableType, InlineAssemblyType
+from typing import Sequence, List, Tuple
 
 
-class SparseDimType(types.Type):
+jit = nb.jit(nopython=True, nogil=True)
+
+
+class Dense(Locate, ValueIterable, InlineAssembly):
+    properties: Sequence[str] = ("N",)
+
+    def __init__(self, *, N: int, ordered: bool = True, unique: bool = True):
+        self.N: int = N
+        self._ordered: bool = ordered
+        self._unique: bool = unique
+
     @property
-    @abstractmethod
     def full(self) -> bool:
-        pass
+        return True
 
     @property
-    @abstractmethod
     def ordered(self) -> bool:
-        pass
+        return self._ordered
 
     @property
-    @abstractmethod
     def unique(self) -> bool:
-        pass
+        return self._unique
 
     @property
-    @abstractmethod
     def branchless(self) -> bool:
-        pass
+        return False
 
     @property
-    @abstractmethod
     def compact(self) -> bool:
+        return True
+
+    def locate(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
+        return pkm1 * self.N + i[-1], True
+
+    def coord_bounds(self, i: Tuple[int, ...]) -> Tuple[int, int]:
+        return 0, self.N
+
+    def coord_access(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
+        return pkm1 * self.N + i[-1], True
+
+    def size(self, szkm1: int) -> int:
+        return szkm1 * self.N
+
+    def insert_coord(self, pk: int, ik: int) -> None:
+        pass
+
+    def insert_init(self, szkm1: int, szk: int) -> None:
+        pass
+
+    def insert_finalize(self, szkm1: int, szk: int) -> None:
         pass
 
 
-class Locate(SparseDimType):
-    pass
-
-
-class ValueIterable(SparseDimType):
-    @property
-    def support_value_iterable(self) -> "ValueIterable":
-        return self
-
-
-class InlineAssembly(SparseDimType):
-    pass
-
-
-class PositionIterable(SparseDimType):
-    pass
-
-
-class AppendAssembly(SparseDimType):
-    @property
-    def support_append(self) -> "ValueIterable":
-        return self
-
-
-class DenseType(Locate, ValueIterable, InlineAssembly):
+class DenseType(LocateType, ValueIterableType, InlineAssemblyType):
     def __init__(
         self, *, N_type: types.Integer, ordered: bool = True, unique: bool = True
     ):
@@ -99,74 +103,11 @@ class DenseType(Locate, ValueIterable, InlineAssembly):
         return True
 
 
-class CompressedType(SparseDimType):
-
-    # Type is mutable
-    mutable = True
-
-    def __init__(
-        self,
-        *,
-        full: bool,
-        ordered: bool,
-        unique: bool,
-        pos_type: types.Integer,
-        crd_type: types.Integer,
-    ):
-        if not isinstance(pos_type, types.Integer):
-            raise TypeError("pos_type must be a numba.types.Integer.")
-
-        if not isinstance(crd_type, types.Integer):
-            raise TypeError("crd_type must be a numba.types.Integer.")
-
-        self.full: bool = bool(full)
-        self.ordered: bool = bool(ordered)
-        self.unique: bool = bool(unique)
-        self.pos_type: types.Integer = pos_type
-        self.crd_type: types.Integer = crd_type
-        name: str = f"Compressed<{pos_type}, {crd_type}>"
-        super().__init__(name)
-
-    @property
-    def key(self):
-        return (self.full, self.ordered, self.unique, self.pos_type, self.crd_type)
-
-    @property
-    def full(self) -> bool:
-        return self._full
-
-    @property
-    def ordered(self) -> bool:
-        return self._ordered
-
-    @property
-    def unique(self) -> bool:
-        return self._unique
-
-    @property
-    def branchless(self) -> bool:
-        return False
-
-    @property
-    def compact(self) -> bool:
-        return True
-
-
 @registry.register_default(DenseType)
 class DenseModel(models.StructModel):
     def __init__(self, dmm, fe_type: DenseType):
         members = [
             ("N", fe_type.N_type),
-        ]
-        super().__init__(dmm, fe_type, members)
-
-
-@registry.register_default(CompressedType)
-class CompressedModel(models.StructModel):
-    def __init__(self, dmm, fe_type: CompressedType):
-        members = [
-            ("pos", types.ListType[fe_type.pos_type]),
-            ("crd", types.ListType[fe_type.crd_type]),
         ]
         super().__init__(dmm, fe_type, members)
 
@@ -190,9 +131,43 @@ def sparse_dense_constructor(context, builder, sig, args):
 extending.make_attribute_wrapper(DenseType, "N", "N")
 
 
+@extending.overload_method(DenseType, "locate")
+def impl_dense_locate(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
+    return Dense.locate
+
+
+@extending.overload_method(DenseType, "coord_bounds")
+def impl_dense_coord_bounds(self, i: Tuple[int, ...]) -> Tuple[int, int]:
+    return Dense.coord_bounds
+
+
+@extending.overload_method(DenseType, "coord_access")
+def impl_dense_coord_access(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
+    return Dense.coord_access
+
+
+@extending.overload_method(DenseType, "size")
+def impl_dense_size(self, szkm1: int) -> int:
+    return Dense.size
+
+
+@extending.overload_method(DenseType, "insert_coord")
+def impl_dense_insert_coord(self, pk: int, ik: int) -> None:
+    return Dense.insert_coord
+
+
+@extending.overload_method(DenseType, "insert_init")
+def impl_dense_insert_init(self, szkm1: int, szk: int) -> None:
+    return Dense.insert_init
+
+
+@extending.overload_method(DenseType, "insert_finalize")
+def impl_dense_insert_finalize(self, szkm1: int, szk: int) -> None:
+    return Dense.insert_finalize
+
+
 @extending.typeof_impl.register(Dense)
 def typeof_index(val, c):
-    # N_type = extending.typeof_impl(val.N, c)
     N_type = types.int64
     ordered = val.ordered
     unique = val.unique
@@ -205,7 +180,7 @@ def box_dense(typ: DenseType, val, c):
     Convert a native dense structure to a Dense object.
     """
     i1 = ir.IntType(1)
-    
+
     dense = cgutils.create_struct_proxy(typ)(c.context, c.builder, value=val)
 
     N_obj = c.pyapi.long_from_long(dense.N)
@@ -213,8 +188,9 @@ def box_dense(typ: DenseType, val, c):
     ordered_obj = c.pyapi.bool_from_bool(i1(typ.ordered))
     class_obj = c.pyapi.unserialize(c.pyapi.serialize_object(Dense))
 
-    kwds = c.pyapi.dict_pack({
-        'N': N_obj, 'unique': unique_obj, 'ordered': ordered_obj}.items())
+    kwds = c.pyapi.dict_pack(
+        {"N": N_obj, "unique": unique_obj, "ordered": ordered_obj}.items()
+    )
     empty_tuple = c.pyapi.tuple_new(0)
 
     res = c.pyapi.call(class_obj, empty_tuple, kwds)
