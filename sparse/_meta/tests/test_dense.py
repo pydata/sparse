@@ -1,9 +1,17 @@
 import itertools
 
+import pytest
+import hypothesis
+from hypothesis import strategies
+
 from numba import njit
 from sparse._meta.dense_level import Dense
+import functools
 
-import pytest
+
+@functools.lru_cache(None)
+def njit_cached(f):
+    return njit(f)
 
 
 def apply_decorators(decorators):
@@ -16,12 +24,10 @@ def apply_decorators(decorators):
     return inner
 
 
-parametrize_dense = apply_decorators(
-    [
-        pytest.mark.parametrize("N", [3, 4, 5]),
-        pytest.mark.parametrize("unique", [True, False]),
-        pytest.mark.parametrize("ordered", [True, False]),
-    ]
+size_strategy = strategies.integers(min_value=0, max_value=10)
+
+dense_strategy = strategies.builds(
+    Dense, N=size_strategy, unique=strategies.booleans(), ordered=strategies.booleans(),
 )
 
 
@@ -41,40 +47,38 @@ def coord_bounds(d: Dense):
     return d.coord_bounds(0)
 
 
-@parametrize_dense
-def test_roundtrip(N, ordered, unique):
+@hypothesis.given(d=dense_strategy)
+@hypothesis.settings(deadline=None)
+def test_roundtrip(d):
     """
     This tests if boxing/unboxing works as expected
     """
-    d = Dense(N=N, unique=unique, ordered=ordered)
 
     pyfunc = round_trip
-    cfunc = njit(pyfunc)
+    cfunc = njit_cached(pyfunc)
 
     d2 = round_trip(d)
     assert d2 == d
-    assert d2.N == N
+    assert d2.N == d.N
 
 
-@parametrize_dense
-def test_attribute_access(N, ordered, unique):
-    d = Dense(N=N, unique=unique, ordered=ordered)
-
+@hypothesis.given(d=dense_strategy)
+@hypothesis.settings(deadline=None)
+def test_attribute_access(d):
     pyfunc = attr_access
-    cfunc = njit(attr_access)
-    assert pyfunc(d) == cfunc(d), d
+    cfunc = njit_cached(attr_access)
+    assert pyfunc(d) == cfunc(d)
 
 
 def coord_bounds(d: Dense):
     return d.coord_bounds(0)
 
 
-@parametrize_dense
-def test_locate(N, ordered, unique):
-    d = Dense(N=N, unique=unique, ordered=ordered)
-
+@hypothesis.given(d=dense_strategy)
+@hypothesis.settings(deadline=None)
+def test_locate(d):
     pyfunc = locate
-    cfunc = njit(locate)
+    cfunc = njit_cached(locate)
     for pkm1, i in itertools.product(range(2), repeat=2):
         assert pyfunc(d, pkm1, (i,)) == cfunc(d, pkm1, (i,))
 
@@ -82,16 +86,13 @@ def test_locate(N, ordered, unique):
 def size(d: Dense, szkm1: int):
     return d.size(szkm1)
 
-njit_size = njit(size)
 
-@parametrize_dense
-def test_size(N, ordered, unique):
-    d = Dense(N=N, unique=unique, ordered=ordered)
-
+@hypothesis.given(d=dense_strategy, i=size_strategy)
+@hypothesis.settings(deadline=None)
+def test_size(d, i):
     pyfunc = size
-    cfunc = njit_size
-    for i in range(2):
-        assert pyfunc(d, i) == cfunc(d, i)
+    cfunc = njit_cached(size)
+    assert pyfunc(d, i) == cfunc(d, i)
 
 
 def insert_init(d, szkm1: int, szk: int):
@@ -107,21 +108,21 @@ def insert_finalize(d, szkm1: int, szk: int):
 
 
 @pytest.mark.parametrize("func", [insert_init, insert_coord, insert_finalize])
-@parametrize_dense
-def test_func(func, N, ordered, unique):
-    d = Dense(N=N, unique=unique, ordered=ordered)
+@hypothesis.given(d=dense_strategy)
+@hypothesis.settings(deadline=None)
+def test_func(d, func):
     pyfunc = func
-    cfunc = njit(func)
+    cfunc = njit_cached(func)
 
     for i, j in itertools.product(range(2), repeat=2):
         assert pyfunc(d, i, j) == cfunc(d, i, j)
 
 
 @pytest.mark.parametrize("func", [coord_bounds])
-@parametrize_dense
-def test_func2(func, N, ordered, unique):
-    d = Dense(N=N, unique=unique, ordered=ordered)
+@hypothesis.given(d=dense_strategy)
+@hypothesis.settings(deadline=None)
+def test_func2(func, d):
     pyfunc = func
-    cfunc = njit(func)
+    cfunc = njit_cached(func)
 
     assert pyfunc(d) == cfunc(d)
