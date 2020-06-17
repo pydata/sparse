@@ -205,7 +205,7 @@ def box_dense(typ: DenseType, val, c):
 
 
 @extending.unbox(DenseType)
-def unbox_interval(typ, obj, c):
+def unbox_dense(typ, obj, c):
     """
     Convert a Dense object to a native dense structure.
     """

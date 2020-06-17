@@ -8,20 +8,7 @@ from numba import njit
 from sparse._meta.dense_level import Dense
 import functools
 
-
-@functools.lru_cache(None)
-def njit_cached(f):
-    return njit(f)
-
-
-def apply_decorators(decorators):
-    def inner(f):
-        for d in reversed(decorators):
-            f = d(f)
-
-        return f
-
-    return inner
+from .utils import njit_cached
 
 
 size_strategy = strategies.integers(min_value=0, max_value=10)
