@@ -47,7 +47,7 @@ class Compressed(PositionIterable, AppendAssembly):
         return True
 
     def pos_bounds(self, pkm1: int) -> Tuple[int, int]:
-        return self.pos[pkm1], self.pos[pkm1] + 1
+        return self.pos[pkm1], self.pos[pkm1 + 1]
 
     def pos_access(self, pk: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         return self.crd[pk], True
@@ -56,7 +56,7 @@ class Compressed(PositionIterable, AppendAssembly):
         self.crd.append(ik)
 
     def append_edges(self, pkm1: int, pkbegin: int, pkend: int) -> None:
-        self.pos[pkm1] = pkend - pkbegin
+        self.pos[pkm1 + 1] = pkend - pkbegin
 
     def append_init(self, szkm1: int, szk: int) -> None:
         for _ in range(szkm1 + 1):

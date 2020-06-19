@@ -71,7 +71,7 @@ def test_roundtrip(c):
     """
     This tests if boxing/unboxing works as expected
     """
-    
+
     pyfunc = round_trip
     cfunc = njit_cached(pyfunc)
 
