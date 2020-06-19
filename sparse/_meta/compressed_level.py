@@ -56,7 +56,7 @@ class Compressed(PositionIterable, AppendAssembly):
         self.crd.append(ik)
 
     def append_edges(self, pkm1: int, pkbegin: int, pkend: int) -> None:
-        self.pos.append(pkend - pkbegin)
+        self.pos[pkm1] = pkend - pkbegin
 
     def append_init(self, szkm1: int, szk: int) -> None:
         for _ in range(szkm1 + 1):

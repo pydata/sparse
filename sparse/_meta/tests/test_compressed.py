@@ -66,19 +66,19 @@ def coord_bounds(d: Compressed):
 
 
 @hypothesis.given(c=compressed_strategy())
-@hypothesis.settings(deadline=None)
+@hypothesis.settings(deadline=None, max_examples=100)
 def test_roundtrip(c):
     """
     This tests if boxing/unboxing works as expected
     """
-
+    
     pyfunc = round_trip
     cfunc = njit_cached(pyfunc)
 
-    c2 = round_trip(c)
-    assert c2 == c
-    assert c2.pos == c.pos
-    assert c2.crd == c.crd
+    c2 = cfunc(c)
+    assert c == c2
+    assert c.pos == c2.pos
+    assert c.crd == c2.crd
 
 
 @hypothesis.given(c=compressed_strategy())
@@ -115,42 +115,35 @@ def test_pos_access(c):
         assert pyfunc(c, i) == cfunc(c, i)
 
 
-# @hypothesis.given(d=dense_strategy, i=size_strategy)
-# @hypothesis.settings(deadline=None)
-# def test_size(d, i):
-#     pyfunc = size
-#     cfunc = njit_cached(size)
-#     assert pyfunc(d, i) == cfunc(d, i)
+def make_copy(c: Compressed) -> Compressed:
+    return Compressed(
+        pos=c.pos.copy(),
+        crd=c.crd.copy(),
+        full=c.full,
+        ordered=c.ordered,
+        unique=c.unique,
+    )
 
 
-# def insert_init(d, szkm1: int, szk: int):
-#     return d.insert_init(szkm1, szk)
+def append(c: Compressed) -> None:
+    pkbegin = 0
+    c.append_init(3, 9)
+    for pkm1 in range(3):
+        pkend = pkbegin
+        for jj in range(3):
+            pkend += 1
+            c.append_coord(pkend, jj)
+        c.append_edges(pkm1, pkbegin, pkend)
+        pkbegin = pkend
+    c.append_finalize(3, 9)
 
 
-# def insert_coord(d, pk: int, ik: int):
-#     return d.insert_coord(pk, ik)
+@hypothesis.given(c=compressed_strategy())
+@hypothesis.settings(deadline=None)
+def test_append(c):
+    c2 = make_copy(c)
+    pyfunc = append
+    cfunc = njit_cached(append)
 
-
-# def insert_finalize(d, szkm1: int, szk: int):
-#     return d.insert_finalize(szkm1, szk)
-
-
-# @pytest.mark.parametrize("func", [insert_init, insert_coord, insert_finalize])
-# @hypothesis.given(d=dense_strategy)
-# @hypothesis.settings(deadline=None)
-# def test_func(d, func):
-#     pyfunc = func
-#     cfunc = njit_cached(func)
-
-#     for i, j in itertools.product(range(2), repeat=2):
-#         assert pyfunc(d, i, j) == cfunc(d, i, j)
-
-
-# @pytest.mark.parametrize("func", [coord_bounds])
-# @hypothesis.given(d=dense_strategy)
-# @hypothesis.settings(deadline=None)
-# def test_func2(func, d):
-#     pyfunc = func
-#     cfunc = njit_cached(func)
-
-#     assert pyfunc(d) == cfunc(d)
+    assert pyfunc(c) == cfunc(c2)
+    assert c.crd == c2.crd
