@@ -54,6 +54,8 @@ API
     load_npz
 
     matmul
+    
+    moveaxis
 
     nanmax
 
