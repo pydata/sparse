@@ -77,7 +77,6 @@ COO
       COO.resize
       COO.transpose
       COO.swapaxes
-      COO.moveaxis
       COO.nonzero
 
    .. rubric:: Utility functions
