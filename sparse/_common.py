@@ -1,6 +1,8 @@
 import numpy as np
+from collections.abc import Iterable
+from sparse import COO
 
-from ._utils import check_compressed_axes
+from ._utils import check_compressed_axes, normalize_axis
 from ._coo import (
     clip,
     tensordot,
@@ -463,3 +465,56 @@ def asnumpy(a, dtype=None, order=None):
     if isinstance(a, SparseArray):
         a = a.todense()
     return np.array(a, dtype=dtype, copy=False, order=order)
+
+
+# this code was taken from numpy.moveaxis
+# (cf. numpy/core/numeric.py, lines 1340-1409, v1.18.4)
+# https://github.com/numpy/numpy/blob/v1.18.4/numpy/core/numeric.py#L1340-L1409
+def moveaxis(a, source, destination):
+    """
+    Move axes of an array to new positions.
+
+    Other axes remain in their original order.
+
+    Parameters
+    ----------
+    a : COO
+        The array whose axes should be reordered.
+    source : int or List[int]
+        Original positions of the axes to move. These must be unique.
+    destination : int or List[int]
+        Destination positions for each of the original axes. These must also be unique.
+
+    Returns
+    -------
+    COO
+        Array with moved axes.
+
+    Examples
+    --------
+    >>> x = COO.from_numpy(np.ones((2, 3, 4, 5)))
+    >>> x = moveaxis(x, (0, 1), (2, 3))
+    <COO: shape=(4, 5, 2, 3), dtype=float64, nnz=120, fill_value=0.0>
+    """
+
+    if not isinstance(source, Iterable):
+        source = (source,)
+    if not isinstance(destination, Iterable):
+        destination = (destination,)
+
+    source = normalize_axis(source, a.ndim)
+    destination = normalize_axis(destination, a.ndim)
+
+    if len(source) != len(destination):
+        raise ValueError(
+            "`source` and `destination` arguments must have "
+            "the same number of elements"
+        )
+
+    order = [n for n in range(a.ndim) if n not in source]
+
+    for dest, src in sorted(zip(destination, source)):
+        order.insert(dest, src)
+
+    result = a.transpose(order)
+    return result

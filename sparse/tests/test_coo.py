@@ -249,7 +249,7 @@ def test_swapaxes_error(axis1, axis2):
 def test_moveaxis(source, destination):
     x = sparse.random((2, 3, 4, 5), density=0.25)
     y = x.todense()
-    xx = x.moveaxis(source, destination)
+    xx = sparse.moveaxis(x, source, destination)
     yy = np.moveaxis(y, source, destination)
     assert_eq(xx, yy)
 
@@ -261,7 +261,7 @@ def test_moveaxis_error(source, destination):
     x = sparse.random((2, 3, 4), density=0.25)
 
     with pytest.raises(ValueError):
-        x.moveaxis(source, destination)
+        sparse.moveaxis(x, source, destination)
 
 
 @pytest.mark.parametrize(

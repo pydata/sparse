@@ -1561,53 +1561,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         axes[axis1], axes[axis2] = axes[axis2], axes[axis1]
         return self.transpose(axes)
 
-    def moveaxis(self, source, destination):
-        """
-        Move axes of an array to new positions.
-
-        Other axes remain in their original order.
-
-        Parameters
-        ----------
-        source : int or List[int]
-            Original positions of the axes to move. These must be unique.
-        destination : int or List[int]
-            Destination positions for each of the original axes. These must also be unique.
-
-        Returns
-        -------
-        COO
-            Array with moved axes.
-
-        Examples
-        --------
-        >>> x = COO.from_numpy(np.ones((2, 3, 4, 5)))
-        >>> x.moveaxis((0, 1), (2, 3))
-        <COO: shape=(4, 5, 2, 3), dtype=float64, nnz=120, fill_value=0.0>
-        """
-
-        if not isinstance(source, Iterable):
-            source = (source,)
-        if not isinstance(destination, Iterable):
-            destination = (destination,)
-
-        source = normalize_axis(source, self.ndim)
-        destination = normalize_axis(destination, self.ndim)
-
-        if len(source) != len(destination):
-            raise ValueError(
-                "`source` and `destination` arguments must have "
-                "the same number of elements"
-            )
-
-        order = [n for n in range(self.ndim) if n not in source]
-
-        for dest, src in sorted(zip(destination, source)):
-            order.insert(dest, src)
-
-        result = self.transpose(order)
-        return result
-
     @property
     def real(self):
         """The real part of the array.
