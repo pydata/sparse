@@ -492,8 +492,10 @@ def moveaxis(a, source, destination):
 
     Examples
     --------
-    >>> x = COO.from_numpy(np.ones((2, 3, 4, 5)))
-    >>> x = moveaxis(x, (0, 1), (2, 3))
+    >>> import numpy as np
+    >>> import sparse
+    >>> x = sparse.COO.from_numpy(np.ones((2, 3, 4, 5)))
+    >>> sparse.moveaxis(x, (0, 1), (2, 3))
     <COO: shape=(4, 5, 2, 3), dtype=float64, nnz=120, fill_value=0.0>
     """
 
