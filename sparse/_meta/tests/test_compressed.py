@@ -26,7 +26,7 @@ def typed_int64_list(l, sort=False):
 
 
 @strategies.composite
-def compressed_strategy(draw):
+def compressed_strategy_generator(draw):
     pos = typed_int64_list(
         draw(strategies.lists(size_strategy, min_size=1, max_size=10)), sort=True
     )
@@ -49,6 +49,9 @@ def compressed_strategy(draw):
     return Compressed(pos=pos, crd=crd, full=full, ordered=ordered, unique=unique)
 
 
+compressed_strategy = compressed_strategy_generator()
+
+
 def round_trip(x: Compressed) -> Compressed:
     return x
 
@@ -65,7 +68,7 @@ def coord_bounds(d: Compressed):
     return d.coord_bounds(0)
 
 
-@hypothesis.given(c=compressed_strategy())
+@hypothesis.given(c=compressed_strategy)
 @hypothesis.settings(deadline=None, max_examples=100)
 def test_roundtrip(c):
     """
@@ -81,7 +84,7 @@ def test_roundtrip(c):
     assert c.crd == c2.crd
 
 
-@hypothesis.given(c=compressed_strategy())
+@hypothesis.given(c=compressed_strategy)
 @hypothesis.settings(deadline=None)
 def test_attribute_access(c):
     pyfunc = attr_access
@@ -93,7 +96,7 @@ def pos_bounds(c: Compressed, pkm1: int):
     return c.pos_bounds(pkm1)
 
 
-@hypothesis.given(c=compressed_strategy())
+@hypothesis.given(c=compressed_strategy)
 @hypothesis.settings(deadline=None)
 def test_pos_bounds(c):
     pyfunc = pos_bounds
@@ -106,7 +109,7 @@ def pos_access(c: Compressed, pk: int):
     return c.pos_access(pk, 0)
 
 
-@hypothesis.given(c=compressed_strategy())
+@hypothesis.given(c=compressed_strategy)
 @hypothesis.settings(deadline=None)
 def test_pos_access(c):
     pyfunc = pos_access
@@ -138,7 +141,7 @@ def append(c: Compressed) -> None:
     c.append_finalize(3, 9)
 
 
-@hypothesis.given(c=compressed_strategy())
+@hypothesis.given(c=compressed_strategy)
 @hypothesis.settings(deadline=None)
 def test_append(c):
     c2 = make_copy(c)
