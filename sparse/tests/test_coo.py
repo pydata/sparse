@@ -214,6 +214,56 @@ def test_transpose_error(axis):
         x.transpose(axis)
 
 
+@pytest.mark.parametrize("axis1", [-3, -2, -1, 0, 1, 2])
+@pytest.mark.parametrize("axis2", [-3, -2, -1, 0, 1, 2])
+def test_swapaxes(axis1, axis2):
+    x = sparse.random((2, 3, 4), density=0.25)
+    y = x.todense()
+    xx = x.swapaxes(axis1, axis2)
+    yy = y.swapaxes(axis1, axis2)
+    assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize("axis1", [-4, 3])
+@pytest.mark.parametrize("axis2", [-4, 3, 0])
+def test_swapaxes_error(axis1, axis2):
+    x = sparse.random((2, 3, 4), density=0.25)
+
+    with pytest.raises(ValueError):
+        x.swapaxes(axis1, axis2)
+
+
+@pytest.mark.parametrize(
+    "source, destination",
+    [
+        [0, 1],
+        [2, 1],
+        [-2, 1],
+        [-2, -3],
+        [(0, 1), (2, 3)],
+        [(-1, 0), (0, 1)],
+        [(0, 1, 2), (2, 1, 0)],
+        [(0, 1, 2), (-2, -3, -1)],
+    ],
+)
+def test_moveaxis(source, destination):
+    x = sparse.random((2, 3, 4, 5), density=0.25)
+    y = x.todense()
+    xx = sparse.moveaxis(x, source, destination)
+    yy = np.moveaxis(y, source, destination)
+    assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize(
+    "source, destination", [[0, -4], [(0, 5), (1, 2)], [(0, 1, 2), (2, 1)]]
+)
+def test_moveaxis_error(source, destination):
+    x = sparse.random((2, 3, 4), density=0.25)
+
+    with pytest.raises(ValueError):
+        sparse.moveaxis(x, source, destination)
+
+
 @pytest.mark.parametrize(
     "a,b",
     [
@@ -323,15 +373,34 @@ def test_tensordot(a_shape, b_shape, axes):
     a = sa.todense()
     b = sb.todense()
 
-    assert_eq(np.tensordot(a, b, axes), sparse.tensordot(sa, sb, axes))
+    a_b = np.tensordot(a, b, axes)
 
-    assert_eq(np.tensordot(a, b, axes), sparse.tensordot(sa, b, axes))
+    # tests for return_type=None
+    sa_sb = sparse.tensordot(sa, sb, axes)
+    sa_b = sparse.tensordot(sa, b, axes)
+    a_sb = sparse.tensordot(a, sb, axes)
 
-    # assert isinstance(sparse.tensordot(sa, b, axes), COO)
+    assert_eq(a_b, sa_sb)
+    assert_eq(a_b, sa_b)
+    assert_eq(a_b, a_sb)
+    assert isinstance(sa_sb, COO)
+    assert isinstance(sa_b, np.ndarray)
+    assert isinstance(a_sb, np.ndarray)
 
-    assert_eq(np.tensordot(a, b, axes), sparse.tensordot(a, sb, axes))
+    # tests for return_type=COO
+    sa_b = sparse.tensordot(sa, b, axes, return_type=COO)
+    a_sb = sparse.tensordot(a, sb, axes, return_type=COO)
 
-    # assert isinstance(sparse.tensordot(a, sb, axes), COO)
+    assert_eq(a_b, sa_b)
+    assert_eq(a_b, a_sb)
+    assert isinstance(sa_b, COO)
+    assert isinstance(a_sb, COO)
+
+    # tests for return_type=np.ndarray
+    sa_sb = sparse.tensordot(sa, sb, axes, return_type=np.ndarray)
+
+    assert_eq(a_b, sa_sb)
+    assert isinstance(sa_sb, np.ndarray)
 
 
 def test_tensordot_empty():
@@ -1264,6 +1333,10 @@ def test_gt():
         (1, Ellipsis, None),
         (1, 1, 1, Ellipsis),
         (Ellipsis, 1, None),
+        # With multi-axis advanced indexing
+        ([0, 1],) * 2,
+        ([0, 1], [0, 2]),
+        ([0, 0, 0], [0, 1, 2], [1, 2, 1]),
         # Pathological - Slices larger than array
         (slice(None, 1000)),
         (slice(None), slice(None, 1000)),
@@ -1336,7 +1409,6 @@ def test_custom_dtype_slicing():
         0.5,
         [0.5],
         {"potato": "kartoffel"},
-        ([0, 1],) * 2,
         ([[0, 1]],),
     ],
 )
@@ -2276,3 +2348,24 @@ def test_asnumpy():
     a = np.array([1, 2, 3])
     # Array passes through with no copying.
     assert sparse.asnumpy(a) is a
+
+
+@pytest.mark.parametrize("shape1", [(2,), (2, 3), (2, 3, 4)])
+@pytest.mark.parametrize("shape2", [(2,), (2, 3), (2, 3, 4)])
+def test_outer(shape1, shape2):
+    s1 = sparse.random(shape1, density=0.5)
+    s2 = sparse.random(shape2, density=0.5)
+
+    x1 = s1.todense()
+    x2 = s2.todense()
+
+    assert_eq(sparse.outer(s1, s2), np.outer(x1, x2))
+    assert_eq(np.multiply.outer(s1, s2), np.multiply.outer(x1, x2))
+
+
+def test_scalar_list_init():
+    a = sparse.COO([], [], ())
+    b = sparse.COO([], [1], ())
+
+    assert a.todense() == 0
+    assert b.todense() == 1

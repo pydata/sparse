@@ -76,6 +76,7 @@ COO
       COO.reshape
       COO.resize
       COO.transpose
+      COO.swapaxes
       COO.nonzero
 
    .. rubric:: Utility functions
