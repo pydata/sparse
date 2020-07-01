@@ -23,7 +23,6 @@ class SparseDim(ABC):
             return nb.typeof(val.v)
 
     @classmethod
-    @lru_cache
     def named_tuple(cls) -> namedtuple:
         return namedtuple(type(cls).__name__, cls.properties)
 

@@ -10,18 +10,14 @@ class Access(object):
     def __init__(self, idxs, *, ndim, is_output=False):
         if not isinstance(ndim, numbers.Integral):
             raise ValueError("ndim must be an int")
-        if not isinstance(idxs, cabc.Mapping):
-            raise ValueError("idxs must be a Mapping")
-        if not set(idxs.values()) == set(range(len(idxs))):
-            raise ValueError("idxs must have values spanning the entire range of axes")
-        for idx in idxs.keys():
+        for idx in idxs:
             if not isinstance(idx, numbers.Integral):
                 raise ValueError("idxs must be a sequence of int")
 
             if not (0 <= idx < ndim):
                 raise ValueError("axis out of range")
 
-        self._idxs = dict(idxs)
+        self._idxs = tuple(idxs)
         self._ndim = int(ndim)
         self._is_output = is_output
 
@@ -46,7 +42,7 @@ class Access(object):
         if ndim_diff < 0:
             raise ValueError("Cannot make access smaller")
 
-        idxs = {k + ndim_diff: v for k, v in self.idxs.items()}
+        idxs = [k + ndim_diff for k in self.idxs]
         return Access(idxs, ndim=ndim, is_output=self.is_output)
 
     def transpose(self, axes=None) -> "Access":
@@ -57,7 +53,7 @@ class Access(object):
         if not set(axes) == set(range(self.ndim)):
             raise ValueError("axes don't match array")
 
-        idxs = {axes[k]: v for k, v in self.idxs.items()}
+        idxs = [axes[k] for k in self.idxs]
         return Access(idxs, ndim=self.ndim, is_output=self.is_output)
 
     @classmethod
@@ -82,11 +78,7 @@ class Access(object):
             idxs.append(idx)
             idx += 1
 
-        return Access(
-            {k: v for v, k in enumerate(idxs)},
-            ndim=ndim + num_additonal_dims,
-            is_output=is_output,
-        )
+        return Access(idxs, ndim=ndim + num_additonal_dims, is_output=is_output,)
 
     def __add__(self, other):
         return IterationGraph(self, other)
