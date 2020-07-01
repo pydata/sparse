@@ -222,7 +222,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         self.coords = np.asarray(coords)
 
         if self.coords.ndim == 1:
-            self.coords = self.coords[None, :]
+            if self.coords.size == 0 and shape is not None:
+                self.coords = self.coords.reshape((len(shape), len(data)))
+            else:
+                self.coords = self.coords[None, :]
 
         if self.data.ndim == 0:
             self.data = np.broadcast_to(self.data, self.coords.shape[1])
@@ -1529,6 +1532,35 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         """
         return self.transpose(tuple(range(self.ndim))[::-1])
 
+    def swapaxes(self, axis1, axis2):
+        """ Returns array that has axes axis1 and axis2 swapped.
+
+        Parameters
+        ----------
+        axis1 : int
+            first axis to swap
+        axis2: int
+            second axis to swap
+
+        Returns
+        -------
+        COO
+            The new array with the axes axis1 and axis2 swapped.
+
+        Examples
+        --------
+        >>> x = COO.from_numpy(np.ones((2, 3, 4)))
+        >>> x.swapaxes(0, 2)
+        <COO: shape=(4, 3, 2), dtype=float64, nnz=24, fill_value=0.0>
+        """
+        # Normalize all axis1, axis2 to positive values
+        axis1, axis2 = normalize_axis(
+            (axis1, axis2), self.ndim
+        )  # checks if axis1,2 are in range + raises ValueError
+        axes = list(range(self.ndim))
+        axes[axis1], axes[axis2] = axes[axis2], axes[axis1]
+        return self.transpose(axes)
+
     @property
     def real(self):
         """The real part of the array.
@@ -1672,11 +1704,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
             cum_ndim = 0
             inputs_transformed = []
-            for inp in inputs:
+            for inp in reversed(inputs):
                 inputs_transformed.append(inp[(Ellipsis,) + (None,) * cum_ndim])
                 cum_ndim += inp.ndim
 
-            inputs = tuple(inputs_transformed)
+            inputs = tuple(reversed(inputs_transformed))
 
         if method == "__call__":
             result = elemwise(ufunc, *inputs, **kwargs)
@@ -2133,39 +2165,16 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     round_ = round
 
     def clip(self, min=None, max=None, out=None):
-        """Clip (limit) the values in the array.
+        """
+        Clip (limit) the values in the array.
 
         Return an array whose values are limited to ``[min, max]``. One of min
         or max must be given.
 
-        Parameters
-        ----------
-        min : scalar or array_like or `None`
-            Minimum value. If `None`, clipping is not performed on lower
-            interval edge.
-        max : scalar or array_like or `None`
-            Maximum value. If `None`, clipping is not performed on upper
-            interval edge.
-        out : COO, optional
-            If provided, the results will be placed in this array. It may be
-            the input array for in-place clipping. `out` must be of the right
-            shape to hold the output. Its type is preserved.
-
-        Returns
-        -------
-        clipped_array : COO
-            An array with the elements of `self`, but where values < `min` are
-            replaced with `min`, and those > `max` with `max`.
-
-        Examples
+        See Also
         --------
-        >>> x = COO.from_numpy([0, 0, 0, 1, 2, 3])
-        >>> x.clip(min=1).todense()  # doctest: +NORMALIZE_WHITESPACE
-        array([1, 1, 1, 1, 2, 3])
-        >>> x.clip(max=1).todense()  # doctest: +NORMALIZE_WHITESPACE
-        array([0, 0, 0, 1, 1, 1])
-        >>> x.clip(min=1, max=2).todense() # doctest: +NORMALIZE_WHITESPACE
-        array([1, 1, 1, 1, 2, 2])
+        sparse.clip : For full documentation and more details.
+        numpy.clip : Equivalent NumPy function.
         """
         if min is None and max is None:
             raise ValueError("One of max or min must be given.")

@@ -64,7 +64,7 @@ def linear_loc(coords, shape):
         return np.ravel_multi_index(coords, shape)
 
 
-def tensordot(a, b, axes=2):
+def tensordot(a, b, axes=2, *, return_type=None):
     """
     Perform the equivalent of :obj:`numpy.tensordot`.
 
@@ -74,6 +74,9 @@ def tensordot(a, b, axes=2):
         The arrays to perform the :code:`tensordot` operation on.
     axes : tuple[Union[int, tuple[int], Union[int, tuple[int]], optional
         The axes to match when performing the sum.
+    return_type : {None, COO, np.ndarray}, optional
+        Type of returned array.
+
 
     Returns
     -------
@@ -168,7 +171,7 @@ def tensordot(a, b, axes=2):
 
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)
-    res = _dot(at, bt)
+    res = _dot(at, bt, return_type)
     return res.reshape(olda + oldb)
 
 
@@ -290,7 +293,7 @@ def dot(a, b):
     return tensordot(a, b, axes=(a_axis, b_axis))
 
 
-def _dot(a, b):
+def _dot(a, b, return_type=None):
     from .core import COO
 
     out_shape = (a.shape[0], b.shape[1])
@@ -300,15 +303,34 @@ def _dot(a, b):
             a.coords, a.data, b.coords, b.data
         )
 
+        if return_type == np.ndarray:
+            return COO(
+                coords, data, shape=out_shape, has_duplicates=False, sorted=True
+            ).todense()
+
         return COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
 
     if isinstance(a, COO) and isinstance(b, np.ndarray):
         b = b.view(type=np.ndarray).T
+
+        if return_type == COO:
+            coords, data = _dot_coo_ndarray_type_sparse(a.dtype, b.dtype)(
+                a.coords, a.data, b, out_shape
+            )
+            return COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
+
         return _dot_coo_ndarray_type(a.dtype, b.dtype)(a.coords, a.data, b, out_shape)
 
     if isinstance(a, np.ndarray) and isinstance(b, COO):
         b = b.T
         a = a.view(type=np.ndarray)
+
+        if return_type == COO:
+            coords, data = _dot_ndarray_coo_type_sparse(a.dtype, b.dtype)(
+                a, b.coords, b.data, out_shape
+            )
+            return COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
+
         return _dot_ndarray_coo_type(a.dtype, b.dtype)(a, b.coords, b.data, out_shape)
 
 
@@ -1166,44 +1188,45 @@ def _dot_coo_coo_type(dt1, dt2):
         coords_out = []
         data_out = []
         didx1 = 0
+        data1_end = len(data1)
+        data2_end = len(data2)
 
-        while didx1 < len(data1):
+        while didx1 < data1_end:
             oidx1 = coords1[0, didx1]
             didx2 = 0
             didx1_curr = didx1
 
             while (
-                didx2 < len(data2) and didx1 < len(data1) and coords1[0, didx1] == oidx1
+                didx2 < data2_end and didx1 < data1_end and coords1[0, didx1] == oidx1
             ):
                 oidx2 = coords2[0, didx2]
                 data_curr = 0
 
                 while (
-                    didx2 < len(data2)
-                    and didx1 < len(data1)
+                    didx2 < data2_end
+                    and didx1 < data1_end
                     and coords2[0, didx2] == oidx2
                     and coords1[0, didx1] == oidx1
                 ):
-                    if coords1[1, didx1] < coords2[1, didx2]:
-                        didx1 += 1
-                    elif coords1[1, didx1] > coords2[1, didx2]:
-                        didx2 += 1
-                    else:
+                    c1 = coords1[1, didx1]
+                    c2 = coords2[1, didx2]
+                    k = min(c1, c2)
+                    if c1 == k and c2 == k:
                         data_curr += data1[didx1] * data2[didx2]
-                        didx1 += 1
-                        didx2 += 1
+                    didx1 += c1 == k
+                    didx2 += c2 == k
 
-                while didx2 < len(data2) and coords2[0, didx2] == oidx2:
+                while didx2 < data2_end and coords2[0, didx2] == oidx2:
                     didx2 += 1
 
-                if didx2 < len(data2):
+                if didx2 < data2_end:
                     didx1 = didx1_curr
 
                 if data_curr != 0:
                     coords_out.append((oidx1, oidx2))
                     data_out.append(data_curr)
 
-            while didx1 < len(data1) and coords1[0, didx1] == oidx1:
+            while didx1 < data1_end and coords1[0, didx1] == oidx1:
                 didx1 += 1
 
         if len(data_out) == 0:
@@ -1255,10 +1278,72 @@ def _dot_coo_ndarray_type(dt1, dt2):
 
 
 @_memoize_dtype
+def _dot_coo_ndarray_type_sparse(dt1, dt2):
+    dtr = np.result_type(dt1, dt2)
+
+    @numba.jit(
+        nopython=True,
+        nogil=True,
+        locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
+    )
+    def _dot_coo_ndarray(coords1, data1, array2, out_shape):  # pragma: no cover
+        """
+        Utility function taking in one `COO` and one ``ndarray`` and
+        calculating a "sense" of their dot product. Acually computes
+        ``s1 @ x2.T``.
+
+        Parameters
+        ----------
+        data1, coords1 : np.ndarray
+            The data and coordinates of ``s1``.
+
+        array2 : np.ndarray
+            The second input array ``x2``.
+
+        out_shape : Tuple[int]
+            The output shape.
+        """
+
+        out_data = []
+        out_coords = []
+
+        # coords1.shape = (2, len(data1))
+        # coords1[0, :] = rows, sorted
+        # coords1[1, :] = columns
+
+        didx1 = 0
+        while didx1 < len(data1):
+            current_row = coords1[0, didx1]
+
+            cur_didx1 = didx1
+            oidx2 = 0
+            while oidx2 < out_shape[1]:
+                cur_didx1 = didx1
+                data_curr = 0
+                while cur_didx1 < len(data1) and coords1[0, cur_didx1] == current_row:
+                    data_curr += data1[cur_didx1] * array2[oidx2, coords1[1, cur_didx1]]
+                    cur_didx1 += 1
+                if data_curr != 0:
+                    out_data.append(data_curr)
+                    out_coords.append((current_row, oidx2))
+                oidx2 += 1
+            didx1 = cur_didx1
+
+        if len(out_data) == 0:
+            return np.empty((2, 0), dtype=np.intp), np.empty((0,), dtype=dtr)
+
+        return np.array(out_coords).T, np.array(out_data)
+
+    return _dot_coo_ndarray
+
+
+@_memoize_dtype
 def _dot_ndarray_coo_type(dt1, dt2):
     dtr = np.result_type(dt1, dt2)
 
-    @numba.jit(nopython=True, nogil=True)
+    @numba.jit(
+        nopython=True, nogil=True,
+    )
     def _dot_ndarray_coo(array1, coords2, data2, out_shape):  # pragma: no cover
         """
         Utility function taking in two one ``ndarray`` and one ``COO`` and
@@ -1283,6 +1368,63 @@ def _dot_ndarray_coo_type(dt1, dt2):
                 out[oidx1, oidx2] += array1[oidx1, coords2[1, didx2]] * data2[didx2]
 
         return out
+
+    return _dot_ndarray_coo
+
+
+@_memoize_dtype
+def _dot_ndarray_coo_type_sparse(dt1, dt2):
+    dtr = np.result_type(dt1, dt2)
+
+    @numba.jit(
+        nopython=True,
+        nogil=True,
+        locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
+    )
+    def _dot_ndarray_coo(array1, coords2, data2, out_shape):  # pragma: no cover
+        """
+        Utility function taking in two one ``ndarray`` and one ``COO`` and
+        calculating a "sense" of their dot product. Acually computes ``x1 @ s2.T``.
+
+        Parameters
+        ----------
+        array1 : np.ndarray
+            The input array ``x1``.
+
+        data2, coords2 : np.ndarray
+            The data and coordinates of ``s2``.
+
+        out_shape : Tuple[int]
+            The output shape.
+        """
+        out_data = []
+        out_coords = []
+
+        # coords2.shape = (2, len(data2))
+        # coords2[0, :] = columns, sorted
+        # coords2[1, :] = rows
+
+        for oidx1 in range(out_shape[0]):
+            data_curr = 0
+            current_col = 0
+            for didx2 in range(len(data2)):
+                if coords2[0, didx2] != current_col:
+                    if data_curr != 0:
+                        out_data.append(data_curr)
+                        out_coords.append([oidx1, current_col])
+                        data_curr = 0
+                    current_col = coords2[0, didx2]
+
+                data_curr += array1[oidx1, coords2[1, didx2]] * data2[didx2]
+
+            if data_curr != 0:
+                out_data.append(data_curr)
+                out_coords.append([oidx1, current_col])
+
+        if len(out_data) == 0:
+            return np.empty((2, 0), dtype=np.intp), np.empty((0,), dtype=dtr)
+
+        return np.array(out_coords).T, np.array(out_data)
 
     return _dot_ndarray_coo
 
@@ -1384,3 +1526,49 @@ def _diagonal_idx(coordlist, axis1, axis2, offset):
             if coordlist[axis1][i] + offset == coordlist[axis2][i]
         ]
     )
+
+
+def clip(a, a_min=None, a_max=None, out=None):
+    """
+    Clip (limit) the values in the array.
+
+    Return an array whose values are limited to ``[min, max]``. One of min
+    or max must be given.
+
+    Parameters
+    ----------
+    a: 
+    a_min : scalar or `SparseArray` or `None`
+        Minimum value. If `None`, clipping is not performed on lower
+        interval edge.
+    a_max : scalar or `SparseArray` or `None`
+        Maximum value. If `None`, clipping is not performed on upper
+        interval edge.
+    out : SparseArray, optional
+        If provided, the results will be placed in this array. It may be
+        the input array for in-place clipping. `out` must be of the right
+        shape to hold the output. Its type is preserved.
+
+    Returns
+    -------
+    clipped_array : SparseArray
+        An array with the elements of `self`, but where values < `min` are
+        replaced with `min`, and those > `max` with `max`.
+
+    Examples
+    --------
+    >>> import sparse
+    >>> x = sparse.COO.from_numpy([0, 0, 0, 1, 2, 3])
+    >>> sparse.clip(x, a_min=1).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([1, 1, 1, 1, 2, 3])
+    >>> sparse.clip(x, a_max=1).todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([0, 0, 0, 1, 1, 1])
+    >>> sparse.clip(x, a_min=1, a_max=2).todense() # doctest: +NORMALIZE_WHITESPACE
+    array([1, 1, 1, 1, 2, 2])
+
+    See also
+    --------
+    numpy.clip : Equivalent NumPy function
+    """
+    a = asCOO(a, name="clip")
+    return a.clip(a_min, a_max)

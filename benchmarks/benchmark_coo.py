@@ -3,6 +3,18 @@ import numpy as np
 import sparse
 
 
+class MatrixMultiplySuite:
+    def setup(self):
+        np.random.seed(0)
+        self.x = sparse.random((100, 100), density=0.01)
+        self.y = sparse.random((100, 100), density=0.01)
+
+        self.x @ self.y  # Numba compilation
+
+    def time_matmul(self):
+        self.x @ self.y
+
+
 class ElemwiseSuite:
     def setup(self):
         np.random.seed(0)

@@ -29,6 +29,8 @@ API
 
     concatenate
 
+    clip
+
     diagonal
 
     diagonalize
@@ -52,6 +54,8 @@ API
     load_npz
 
     matmul
+    
+    moveaxis
 
     nanmax
 

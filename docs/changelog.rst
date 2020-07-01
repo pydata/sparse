@@ -3,6 +3,29 @@ Changelog
 
 .. currentmodule:: sparse
 
+0.10.0 / 2020-05-13
+-------------------
+
+* Fixed a bug where converting an empty DOK array to COO leads
+  to an incorrect dtype. (:issue:`314`, :pr:`315`)
+* Change code formatter to black. (:pr:`284`)
+* Add :obj:`COO.flatten` and :obj:`sparse.outer`. (:issue:`316`, :pr:`317`).
+* Remove broadcasting restriction between sparse arrays and dense arrays.
+  (:issue:`306`, :pr:`318`)
+* Implement deterministic dask tokenization. (:issue:`300`, :pr:`320`, thanks
+  :ghuser:`danielballan`)
+* Improve testing around densification (:pr:`321`, thanks
+  :ghuser:`danielballan`)
+* Simplify Numba extension. (:pr:`324`, thanks :ghuser:`eric-wieser`).
+* Respect ``copy=False`` in ``astype`` (:pr:`328`, thanks :ghuser:`eric-wieser`).
+* Replace linear_loc with ravel_multi_index, which is 3x faster. (:pr:`330`,
+  thanks :ghuser:`eric-wieser`).
+* Add error msg to tensordot operation when ``ndim==0`` (:issue:`332`,
+  :pr:`333`, thanks :ghuser:`guilhermeleobas`).
+* Maintainence fixes for Sphinx 3.0 and Numba 0.49, and dropping support for
+  Python 3.5. (:pr:`337`).
+* Fixed signature for :obj:`numpy.clip`.
+
 0.9.1 / 2020-01-23
 ------------------
 

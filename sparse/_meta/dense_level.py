@@ -1,12 +1,10 @@
-from abc import abstractmethod
-
 import numba as nb
 from numba.core import types, cgutils, extending
 from numba.core.datamodel import registry, models
 from llvmlite import ir
 from .sparsedim import Locate, ValueIterable, InlineAssembly
 from .sparsedim import LocateType, ValueIterableType, InlineAssemblyType
-from typing import Sequence, List, Tuple
+from typing import Sequence, Tuple
 
 
 jit = nb.jit(nopython=True, nogil=True)
@@ -69,7 +67,7 @@ class DenseType(LocateType, ValueIterableType, InlineAssemblyType):
         if not isinstance(N_type, types.Integer):
             raise TypeError("N_type must be a numba.types.Integer.")
 
-        self.N_type: int = N_type
+        self.N_type: types.Integer = N_type
         self._ordered: bool = bool(ordered)
         self._unique: bool = bool(unique)
         name = f"Dense<{N_type, ordered, unique}>"
