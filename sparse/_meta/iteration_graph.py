@@ -7,7 +7,7 @@ from .._utils import normalize_axis
 
 
 class Access(object):
-    def __init__(self, idxs, *, ndim, is_output=False):
+    def __init__(self, idxs, *, ndim):
         if not isinstance(ndim, numbers.Integral):
             raise ValueError("ndim must be an int")
         for idx in idxs:
@@ -17,9 +17,8 @@ class Access(object):
             if not (0 <= idx < ndim):
                 raise ValueError("axis out of range")
 
-        self._idxs = tuple(idxs)
-        self._ndim = int(ndim)
-        self._is_output = is_output
+        self._idxs = tuple(operator.index(i) for i in idxs)
+        self._ndim = operator.index(ndim)
 
     @property
     def ndim(self) -> int:
@@ -30,12 +29,8 @@ class Access(object):
         return len(self.idxs)
 
     @property
-    def idxs(self) -> typing.Mapping[int, int]:
+    def idxs(self) -> typing.List[int]:
         return self._idxs
-
-    @property
-    def is_output(self) -> bool:
-        return self._is_output
 
     def broadcast(self, ndim) -> "Access":
         ndim_diff = ndim - self.ndim
@@ -43,7 +38,7 @@ class Access(object):
             raise ValueError("Cannot make access smaller")
 
         idxs = [k + ndim_diff for k in self.idxs]
-        return Access(idxs, ndim=ndim, is_output=self.is_output)
+        return Access(idxs, ndim=ndim)
 
     def transpose(self, axes=None) -> "Access":
         if axes is None:
@@ -54,7 +49,7 @@ class Access(object):
             raise ValueError("axes don't match array")
 
         idxs = [axes[k] for k in self.idxs]
-        return Access(idxs, ndim=self.ndim, is_output=self.is_output)
+        return Access(idxs, ndim=self.ndim)
 
     @classmethod
     def from_numpy_notation(cls, key: typing.Tuple, *, ndim, is_output=False):
@@ -78,28 +73,32 @@ class Access(object):
             idxs.append(idx)
             idx += 1
 
-        return Access(idxs, ndim=ndim + num_additonal_dims, is_output=is_output,)
-
-    def __add__(self, other):
-        return IterationGraph(self, other)
-
-    def __sub__(self, other):
-        return IterationGraph(self, other)
-
-    def __mul__(self, other):
-        return IterationGraph(self, other)
-
-    def __div__(self, other):
-        return IterationGraph(self, other)
-
-    def __iter__(self):
-        yield from self._idxs
+        return Access(idxs, ndim=ndim + num_additonal_dims)
 
     def __getitem__(self, i):
-        return self._idxs[i]
+        """
+        >>> a = Access((0, 1), ndim=2)
+        >>> a[:, None, :, None]
+        Access((0, 3), ndim=4)
+        >>> a[None]
+        Access((1, 2), ndim=3)
+        >>> a[()]
+        Access((0, 1), ndim=2)
+        >>> a[:]
+        Access((0, 1), ndim=2)
+        >>> a[:, :]
+        Access((0, 1), ndim=2)
+        >>> a[None, None, :]
+        Access((2, 3), ndim=4)
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def from_ndim(cls, ndim):
+        return Access(range(ndim), ndim=ndim)
 
     def __str__(self):
-        return f"Access({self.idxs}, ndim={self.ndim}, is_output={self.is_output})"
+        return f"Access({self.idxs}, ndim={self.ndim})"
 
     __repr__ = __str__
 
@@ -107,11 +106,7 @@ class Access(object):
         if not isinstance(other, Access):
             return NotImplemented
 
-        return (
-            self.idxs == other.idxs
-            and self.ndim == other.ndim
-            and self.is_output == other.is_output
-        )
+        return self.idxs == other.idxs and self.ndim == other.ndim
 
     def pairwise(self):
         ret = {(-1, self.idxs[0])}
@@ -133,15 +128,24 @@ class IterationGraph(object):
             else:
                 raise ValueError(arg)
 
-        self._broadcast()
+        if len(args) != 0:
+            self._broadcast()
 
     def _broadcast(self):
         ndim_max = max(a.ndim for a in self._args)
         self._args = [a.broadcast(ndim_max) for a in self._args]
 
     @property
+    def ndim(self) -> int:
+        return self.args[0].ndim if len(self.args) else 0
+
+    @property
     def args(self):
         return self._args
+
+    def __getitem__(self, k):
+        args = [arg[k] for arg in self.args]
+        return IterationGraph(*args)
 
     def has_cycle(self):
         raise NotImplementedError()
