@@ -329,7 +329,7 @@ def zeros_like(a, dtype=None, format=None, compressed_axes=None):
     """
     if format is None and not isinstance(a, np.ndarray):
         format = type(a).__name__.lower()
-    else:
+    elif format is None:
         format = "coo"
     if hasattr(a, "compressed_axes") and compressed_axes is None:
         compressed_axes = a.compressed_axes

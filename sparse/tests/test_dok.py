@@ -158,3 +158,11 @@ def test_empty_dok_dtype():
     d = sparse.DOK(5, dtype=np.uint8)
     s = sparse.COO(d)
     assert s.dtype == d.dtype
+
+
+def test_zeros_like():
+    s = sparse.random((2, 3, 4), density=0.5)
+    s2 = sparse.zeros_like(s, format="dok")
+    assert s.shape == s2.shape
+    assert s.dtype == s2.dtype
+    assert isinstance(s2, sparse.DOK)
