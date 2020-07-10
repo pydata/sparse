@@ -4,11 +4,11 @@ import numba as nb
 from numba.extending import typeof_impl
 from numba.core import types, extending
 from collections import namedtuple
-from typing import Sequence, List, Tuple
+from typing import Sequence, List, Tuple, Iterator
 
 __all__ = ["SparseDim"]
 
-jit = nb.jit(nopython=True, nogil=True)
+# jit = nb.jit(nopython=True, nogil=True)
 
 
 class SparseDim(ABC):
@@ -173,7 +173,7 @@ def impl_compact(S):
 
 class ValueIterable(SparseDim, ABC):
     @abstractmethod
-    def coord_bounds(self, i: Tuple[int, ...]) -> Tuple[int, int]:
+    def coord_iter(self, i: Tuple[int, ...]) -> Iterator[int]:
         pass
 
     @abstractmethod
@@ -189,7 +189,7 @@ class ValueIterableType(SparseDimType):
 
 class PositionIterable(SparseDim, ABC):
     @abstractmethod
-    def pos_bounds(self, pkm1: int) -> Tuple[int, int]:
+    def pos_iter(self, pkm1: int) -> Iterator[int]:
         pass
 
     @abstractmethod
@@ -296,11 +296,11 @@ class Range(ValueIterable):
     def compact(self) -> bool:
         return False
 
-    @jit
-    def coord_bounds(self, i: Tuple[int, ...]) -> Tuple[int, int]:
-        return max(0, -self.offset[i[-1]]), min(self.N, self.M - self.offset[i[-1]])
+    def coord_iter(self, i: Tuple[int, ...]) -> Iterator[int]:
+        return iter(
+            range(max(0, -self.offset[i[-1]]), min(self.N, self.M - self.offset[i[-1]]))
+        )
 
-    @jit
     def coord_access(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         return pkm1 * self.N + i[-1], True
 
@@ -341,27 +341,21 @@ class Singleton(PositionIterable, AppendAssembly):
     def compact(self) -> bool:
         return True
 
-    @jit
-    def pos_bounds(self, pkm1: int) -> Tuple[int, int]:
-        return pkm1, pkm1 + 1
+    def pos_bounds(self, pkm1: int) -> Iterator[int]:
+        return iter(range(pkm1, pkm1 + 1))
 
-    @jit
     def pos_access(self, pk: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         return self.crd[pk], True
 
-    @jit
     def append_coord(self, pk: int, ik: int) -> None:
         self.crd.append(ik)
 
-    @jit
     def append_edges(self, pkm1: int, pkbegin: int, pkend: int) -> None:
         pass
 
-    @jit
     def append_init(self, szkm1: int, szk: int) -> None:
         pass
 
-    @jit
     def append_finalize(self, szkm1: int, szk: int) -> None:
         pass
 
@@ -394,78 +388,8 @@ class Offset(PositionIterable):
     def compact(self) -> bool:
         return False
 
-    @jit
-    def pos_bounds(self, pkm1: int) -> Tuple[int, int]:
-        return pkm1, pkm1 + 1
+    def pos_bounds(self, pkm1: int) -> Iterator[int]:
+        return iter(range(pkm1, pkm1 + 1))
 
-    @jit
     def pos_access(self, pk: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         return i[-1] + self.offset[i[-2]], True
-
-
-class Hashed(Locate, PositionIterable, InlineAssembly):
-    properties: Sequence[str] = ("W", "crd")
-
-    def __init__(
-        self, *, W: int, crd: List[int], full: bool = True, unique: bool = True
-    ):
-        self.W: int = W
-        self.crd: List[int] = crd
-        self._full: bool = full
-        self._unique: bool = unique
-
-    @property
-    def full(self) -> bool:
-        return self._full
-
-    @property
-    def ordered(self) -> bool:
-        return False
-
-    @property
-    def unique(self) -> bool:
-        return self._unique
-
-    @property
-    def branchless(self) -> bool:
-        return False
-
-    @property
-    def compact(self) -> bool:
-        return False
-
-    @jit
-    def locate(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
-        pk: int = i[-1] % self.W + pkm1 * self.W
-        if self.crd[pk] != i[-1] and self.crd[pk] != -1:
-            end: int = pk
-            pk = (pk + 1) % self.W + pkm1 * self.W
-            while self.crd[pk] != i[-1] and self.crd[pk] != -1 and pk != end:
-                pk = (pk + 1) % self.W + pkm1 * self.W
-
-        return pk, self.crd[pk] == i[-1]
-
-    @jit
-    def pos_bounds(self, pkm1: int) -> Tuple[int, int]:
-        return pkm1 * self.W, (pkm1 + 1) * self.W
-
-    @jit
-    def pos_access(self, pk: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
-        return self.crd[pk], self.crd[pk] != -1
-
-    @jit
-    def size(self, szkm1: int) -> int:
-        return szkm1 * self.W
-
-    @jit
-    def insert_coord(self, pk: int, ik: int) -> None:
-        self.crd[pk] = ik
-
-    @jit
-    def insert_init(self, szkm1: int, szk: int) -> None:
-        for pk in range(szk):
-            self.crd[pk] = -1
-
-    @jit
-    def insert_finalize(self, szkm1: int, szk: int) -> None:
-        pass

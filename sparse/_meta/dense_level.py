@@ -4,10 +4,7 @@ from numba.core.datamodel import registry, models
 from llvmlite import ir
 from .sparsedim import Locate, ValueIterable, InlineAssembly
 from .sparsedim import LocateType, ValueIterableType, InlineAssemblyType
-from typing import Sequence, Tuple
-
-
-jit = nb.jit(nopython=True, nogil=True)
+from typing import Sequence, Tuple, Iterator
 
 
 class Dense(Locate, ValueIterable, InlineAssembly):
@@ -41,8 +38,8 @@ class Dense(Locate, ValueIterable, InlineAssembly):
     def locate(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         return pkm1 * self.N + i[-1], True
 
-    def coord_bounds(self, i: Tuple[int, ...]) -> Tuple[int, int]:
-        return 0, self.N
+    def coord_iter(self, i: Tuple[int, ...]) -> Iterator[int]:
+        return iter(range(self.N))
 
     def coord_access(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         return pkm1 * self.N + i[-1], True
@@ -134,9 +131,9 @@ def impl_dense_locate(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
     return Dense.locate
 
 
-@extending.overload_method(DenseType, "coord_bounds")
+@extending.overload_method(DenseType, "coord_iter")
 def impl_dense_coord_bounds(self, i: Tuple[int, ...]) -> Tuple[int, int]:
-    return Dense.coord_bounds
+    return Dense.coord_iter
 
 
 @extending.overload_method(DenseType, "coord_access")
