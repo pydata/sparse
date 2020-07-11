@@ -557,7 +557,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             )
 
         compressed_axes = [(self.compressed_axes[0] + 1) % 2]
-        shape = list(reversed(self.shape))
+        shape = self.shape[::-1]
         return GCXS(
             (self.data, self.indices, self.indptr),
             shape=shape,
