@@ -179,7 +179,7 @@ def _c_ordering(
         c_linear[i] = ravel_multi_index(current_coords, shape)
 
 
-def _transpose(x, shape, axes, compressed_axes):
+def _transpose(x, shape, axes, compressed_axes, transpose=False):
     """an algorithm for reshaping, resizing, changing compressed axes, and transposing"""
 
     check_compressed_axes(shape, compressed_axes)
@@ -210,13 +210,14 @@ def _transpose(x, shape, axes, compressed_axes):
         np.asarray(x.shape),
         np.asarray(x.reordered_shape),
         sorted_axis_order,
-        axes,
+        np.asarray(axes),
         np.asarray(shape),
-        new_axis_order,
+        np.asarray(new_axis_order),
         new_reordered_shape,
         new_linear,
         new_coords,
         new_compressed_shape,
+        transpose,
     )
 
     order = np.argsort(new_linear, kind="mergesort")
@@ -275,23 +276,27 @@ def _convert_coords(
     new_linear,
     new_coords,
     new_compressed_shape,
+    transpose,
 ):  # pragma: no cover
 
-    for i, n in enumerate(linear):
-        # c ordering
-        current_coords = unravel_index(n, reordered_shape)[sorted_axis_order]
-
-        # transpose
-        current_coords_t = current_coords[axes]
-
-        # linearize
-        c_current = ravel_multi_index(current_coords_t, old_shape)
-
-        # compress
-        c_compressed = unravel_index(c_current, shape)
-        c_compressed = c_compressed[new_axis_order]
-
-        new_linear[i] = ravel_multi_index(c_compressed, new_reordered_shape)
-
-        # reshape
-        new_coords[:, i] = unravel_index(new_linear[i], new_compressed_shape)
+    if transpose == True:
+        for i, n in enumerate(linear):
+            # c ordering
+            current_coords = unravel_index(n, reordered_shape)[sorted_axis_order]
+            # transpose
+            current_coords_t = current_coords[axes][new_axis_order]
+            new_linear[i] = ravel_multi_index(current_coords_t, new_reordered_shape)
+            # reshape
+            new_coords[:, i] = unravel_index(new_linear[i], new_compressed_shape)
+    else:
+        for i, n in enumerate(linear):
+            # c ordering
+            current_coords = unravel_index(n, reordered_shape)[sorted_axis_order]
+            # linearize
+            c_current = ravel_multi_index(current_coords, old_shape)
+            # compress
+            c_compressed = unravel_index(c_current, shape)
+            c_compressed = c_compressed[new_axis_order]
+            new_linear[i] = ravel_multi_index(c_compressed, new_reordered_shape)
+            # reshape
+            new_coords[:, i] = unravel_index(new_linear[i], new_compressed_shape)

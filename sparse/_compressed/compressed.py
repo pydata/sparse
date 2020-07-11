@@ -493,7 +493,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         self.shape = shape
         self.compressed_axes = compressed_axes
 
-    def transpose(self, axes, compressed_axes=None):
+    def transpose(self, axes=None, compressed_axes=None):
         """
         Returns a new array which has the order of the axes switched.
 
@@ -540,7 +540,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         if compressed_axes is None:
             compressed_axes = (np.argmin(shape),)
-        arg = _transpose(self, shape, axes, compressed_axes)
+        arg = _transpose(self, shape, axes, compressed_axes, transpose=True)
         return GCXS(
             arg,
             shape=shape,
