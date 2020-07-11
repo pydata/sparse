@@ -346,7 +346,7 @@ def check_compressed_axes(ndim, compressed_axes):
         If the compressed_axes are incompatible with the number of dimensions     
     """
     if compressed_axes is None:
-        pass
+        return
     if isinstance(ndim, Iterable):
         ndim = len(ndim)
     if not isinstance(compressed_axes, Iterable):
