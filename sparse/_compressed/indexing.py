@@ -4,12 +4,13 @@ from numbers import Integral
 from itertools import zip_longest
 from collections.abc import Iterable
 from .._slicing import normalize_index
-from .convert import convert_to_flat, uncompress_dimension
+from .convert import convert_to_flat, uncompress_dimension, is_sorted
 
 
 def getitem(x, key):
     """
-
+    GCXS arrays are stored by transposing and reshaping them into csr matrices. For indexing, we
+    first 
 
     """
     from .compressed import GCXS
@@ -28,29 +29,21 @@ def getitem(x, key):
         return x
 
     # return a single element
-    if all(isinstance(k, int) for k in key):  # indexing for a single element
-        key = np.array(key)[x.axis_order]  # reordering the input
-        ind = np.ravel_multi_index(key, x.reordered_shape)
-        row, col = np.unravel_index(ind, x.compressed_shape)
-        current_row = x.indices[x.indptr[row] : x.indptr[row + 1]]
-        item = np.searchsorted(current_row, col)
-        if not (item >= current_row.size or current_row[item] != col):
-            item += x.indptr[row]
-            return x.data[item]
-        return x.fill_value
+    if all(isinstance(k, int) for k in key):
+        return get_single_element(x, key)
 
     shape = []
     compressed_inds = np.zeros(len(x.shape), dtype=np.bool)
     uncompressed_inds = np.zeros(len(x.shape), dtype=np.bool)
+
+    # which axes will be compressed in the resulting array
     shape_key = np.zeros(len(x.shape), dtype=np.intp)
 
+    # remove Nones from key, evaluate them at the end
     Nones_removed = [k for k in key if k is not None]
     count = 0
     for i, ind in enumerate(Nones_removed):
         if isinstance(ind, Integral):
-            continue
-        elif ind is None:
-            # handle the None cases at the end
             continue
         elif isinstance(ind, slice):
             shape_key[i] = count
@@ -68,8 +61,22 @@ def getitem(x, key):
                 uncompressed_inds[i] = True
         count += 1
 
+    # reorder the key according to the axis_order of the array
     reordered_key = [Nones_removed[i] for i in x.axis_order]
 
+    # if all slices have a positive step and all
+    # iterables are sorted without repeats, we can
+    # use the quicker slicing algorithm
+    pos_slice = True
+    for ind in reordered_key[x.axisptr :]:
+        if isinstance(ind, slice):
+            if ind.step < 0:
+                pos_slice = False
+        elif isinstance(ind, Iterable):
+            if not is_sorted(ind):
+                pos_slice = False
+
+    # convert all ints and slices to iterables before flattening
     for i, ind in enumerate(reordered_key):
         if isinstance(ind, Integral):
             reordered_key[i] = [ind]
@@ -78,10 +85,15 @@ def getitem(x, key):
 
     shape = np.array(shape)
 
+    # convert all indices of compressed axes to a single array index
+    # this tells us which 'rows' of the underlying csr matrix to iterate through
     rows = convert_to_flat(reordered_key[: x.axisptr], x.reordered_shape[: x.axisptr])
+
+    # convert all indices of uncompressed axes to a single array index
+    # this tells us which 'columns' of the underlying csr matrix to iterate through
     cols = convert_to_flat(reordered_key[x.axisptr :], x.reordered_shape[x.axisptr :])
 
-    starts = x.indptr[:-1][rows]
+    starts = x.indptr[:-1][rows]  # find the start and end of each of the rows
     ends = x.indptr[1:][rows]
     if np.any(compressed_inds):
         compressed_axes = shape_key[compressed_inds]
@@ -91,7 +103,8 @@ def getitem(x, key):
         else:
             row_size = np.prod(shape[compressed_axes])
 
-    else:  # only uncompressed axes
+    # if only indexing through uncompressed axes
+    else:
         compressed_axes = (0,)  # defaults to 0
         row_size = 1  # this doesn't matter
 
@@ -101,7 +114,10 @@ def getitem(x, key):
 
     indptr = np.empty(row_size + 1, dtype=np.intp)
     indptr[0] = 0
-    arg = get_array_selection(x.data, x.indices, indptr, starts, ends, cols)
+    if pos_slice:
+        arg = get_slicing_selection(x.data, x.indices, indptr, starts, ends, cols)
+    else:
+        arg = get_array_selection(x.data, x.indices, indptr, starts, ends, cols)
 
     data, indices, indptr = arg
     size = np.prod(shape[1:])
@@ -119,7 +135,6 @@ def getitem(x, key):
                 np.bincount(uncompressed // size, minlength=shape[0]), out=indptr[1:]
             )
     if not np.any(compressed_inds):
-
         if len(shape) == 1:
             indptr = None
         else:
@@ -131,6 +146,7 @@ def getitem(x, key):
 
     arg = (data, indices, indptr)
 
+    # if there were Nones in the key, we insert them back here
     compressed_axes = np.array(compressed_axes)
     shape = shape.tolist()
     for i in range(len(key)):
@@ -150,14 +166,78 @@ def getitem(x, key):
 
 
 @numba.jit(nopython=True, nogil=True)
+def get_slicing_selection(
+    arr_data, arr_indices, indptr, starts, ends, col
+):  # pragma: no cover
+    """
+    When the requested elements come in a strictly ascending order, as is the
+    case with acsending slices, we can iteratively reduce the search space, 
+    leading to better performance. We loop through the starts and ends, each time
+    evaluating whether to use a linear filtering procedure or a binary-search-based
+    method. 
+    """
+    indices = []
+    ind_list = []
+    for i, (start, end) in enumerate(zip(starts, ends)):
+        inds = []
+        current_row = arr_indices[start:end]
+        if current_row.size < col.size:  # linear filtering
+            count = 0
+            col_count = 0
+            nnz = 0
+            while col_count < col.size and count < current_row.size:
+                if current_row[-1] < col[col_count] or current_row[count] > col[-1]:
+                    break
+                if current_row[count] == col[col_count]:
+                    nnz += 1
+                    ind_list.append(count + start)
+                    indices.append(col_count)
+                    count += 1
+                    col_count += 1
+                elif current_row[count] < col[col_count]:
+                    count += 1
+                else:
+                    col_count += 1
+            indptr[i + 1] = indptr[i] + nnz
+        else:  # binary searches
+            prev = 0
+            size = 0
+            col_count = 0
+            while col_count < col.size:
+                while (
+                    col[col_count] < current_row[size] and col_count < col.size
+                ):  # skip needless searches
+                    col_count += 1
+                if col_count >= col.size:  # check again because of previous loop
+                    break
+                if current_row[-1] < col[col_count] or current_row[size] > col[-1]:
+                    break
+                s = np.searchsorted(current_row[size:], col[col_count])
+                size += s
+                s += prev
+                if not (s >= current_row.size or current_row[s] != col[col_count]):
+                    s += start
+                    inds.append(s)
+                    indices.append(col_count)
+                    size += 1
+                prev = size
+                col_count += 1
+            ind_list.extend(inds)
+            indptr[i + 1] = indptr[i] + len(inds)
+    ind_list = np.array(ind_list, dtype=np.int64)
+    indices = np.array(indices)
+    data = arr_data[ind_list]
+    return (data, indices, indptr)
+
+
+@numba.jit(nopython=True, nogil=True)
 def get_array_selection(
     arr_data, arr_indices, indptr, starts, ends, col
 ):  # pragma: no cover
     """
     This is a very general algorithm to be used when more optimized methods don't apply.
     It performs a binary search for each of the requested elements.
-    Consequently it roughly scales by O(n log nnz per row) where n is the number of requested elements and
-    nnz per row is the number of nonzero elements in that row.
+    Consequently it roughly scales by O(n log avg(nnz)).
     """
     indices = []
     ind_list = []
@@ -179,3 +259,15 @@ def get_array_selection(
     indices = np.array(indices)
     data = arr_data[ind_list]
     return (data, indices, indptr)
+
+
+def get_single_element(x, key):
+    key = np.array(key)[x.axis_order]  # reordering the input
+    ind = np.ravel_multi_index(key, x.reordered_shape)
+    row, col = np.unravel_index(ind, x.compressed_shape)
+    current_row = x.indices[x.indptr[row] : x.indptr[row + 1]]
+    item = np.searchsorted(current_row, col)
+    if not (item >= current_row.size or current_row[item] != col):
+        item += x.indptr[row]
+        return x.data[item]
+    return x.fill_value
