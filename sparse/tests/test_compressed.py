@@ -61,22 +61,24 @@ def test_reshape_same():
     s = sparse.random((3, 5), density=0.5, format="gcxs")
     assert s.reshape(s.shape) is s
 
+
 @pytest.mark.parametrize(
     "a,b",
     [
-        [(3, 4, 5), (2,1,0)],
+        [(3, 4, 5), (2, 1, 0)],
         [(12,), None],
-        [(9,10), (1,0)],
-        [(4, 3, 5), (1,0,2)],
-        [(5, 4, 3), (0,2,1)],
-        [(3, 4, 5, 6), (0,2,1,3)],
+        [(9, 10), (1, 0)],
+        [(4, 3, 5), (1, 0, 2)],
+        [(5, 4, 3), (0, 2, 1)],
+        [(3, 4, 5, 6), (0, 2, 1, 3)],
     ],
 )
-def test_tranpose(a,b):
+def test_tranpose(a, b):
     s = sparse.random(a, density=0.5, format="gcxs")
     x = s.todense()
 
     assert_eq(x.transpose(b), s.transpose(b))
+
 
 def test_to_scipy_sparse():
     s = sparse.random((3, 5), density=0.5, format="gcxs", compressed_axes=(0,))

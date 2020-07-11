@@ -189,7 +189,13 @@ def _transpose(x, shape, axes, compressed_axes, transpose=False):
     sorted_axis_order = np.argsort(x.axis_order)
     if len(shape) == 1:
         c_linear = np.empty(x.nnz, dtype=np.intp)
-        _c_ordering(linear, c_linear, x.reordered_shape, sorted_axis_order, x.shape)
+        _c_ordering(
+            linear,
+            c_linear,
+            np.asarray(x.reordered_shape),
+            np.asarray(sorted_axis_order),
+            np.asarray(x.shape),
+        )
         order = np.argsort(c_linear, kind="mergesort")
         data = x.data[order]
         indices = c_linear[order]
