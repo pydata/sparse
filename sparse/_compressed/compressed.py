@@ -290,8 +290,14 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         COO.todense : Equivalent :obj:`COO` array method.
         scipy.sparse.coo_matrix.todense : Equivalent Scipy method.
         """
-        if self.compressed_axes == ():
-            return np.full(self.shape, self.fill_value, self.dtype)
+        if self.compressed_axes is None:
+            out = np.full(self.shape, self.fill_value, self.dtype)
+            if self.indices != ():
+                out[self.indices] = self.data
+            else:
+                if len(self.data) != 0:
+                    out[self.indices] = self.data
+            return out
         return self.tocoo().todense()
 
     def todok(self):
