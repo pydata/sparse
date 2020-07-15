@@ -156,7 +156,11 @@ def _resize(x, shape, compressed_axes):
     c_linear = np.empty(x.nnz, dtype=np.intp)
 
     _c_ordering(
-        linear, c_linear, np.asarray(x._reordered_shape), np.asarray(sorted_axis_order), np.asarray(x.shape)
+        linear,
+        c_linear,
+        np.asarray(x._reordered_shape),
+        np.asarray(sorted_axis_order),
+        np.asarray(x.shape),
     )
 
     order = np.argsort(c_linear, kind="mergesort")
