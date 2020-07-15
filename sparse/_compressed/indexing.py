@@ -62,13 +62,13 @@ def getitem(x, key):
         count += 1
 
     # reorder the key according to the axis_order of the array
-    reordered_key = [Nones_removed[i] for i in x.axis_order]
+    reordered_key = [Nones_removed[i] for i in x._axis_order]
 
     # if all slices have a positive step and all
     # iterables are sorted without repeats, we can
     # use the quicker slicing algorithm
     pos_slice = True
-    for ind in reordered_key[x.axisptr :]:
+    for ind in reordered_key[x._axisptr :]:
         if isinstance(ind, slice):
             if ind.step < 0:
                 pos_slice = False
@@ -87,11 +87,15 @@ def getitem(x, key):
 
     # convert all indices of compressed axes to a single array index
     # this tells us which 'rows' of the underlying csr matrix to iterate through
-    rows = convert_to_flat(reordered_key[: x.axisptr], x.reordered_shape[: x.axisptr])
+    rows = convert_to_flat(
+        reordered_key[: x._axisptr], x._reordered_shape[: x._axisptr]
+    )
 
     # convert all indices of uncompressed axes to a single array index
     # this tells us which 'columns' of the underlying csr matrix to iterate through
-    cols = convert_to_flat(reordered_key[x.axisptr :], x.reordered_shape[x.axisptr :])
+    cols = convert_to_flat(
+        reordered_key[x._axisptr :], x._reordered_shape[x._axisptr :]
+    )
 
     starts = x.indptr[:-1][rows]  # find the start and end of each of the rows
     ends = x.indptr[1:][rows]
@@ -262,9 +266,9 @@ def get_array_selection(
 
 
 def get_single_element(x, key):
-    key = np.array(key)[x.axis_order]  # reordering the input
-    ind = np.ravel_multi_index(key, x.reordered_shape)
-    row, col = np.unravel_index(ind, x.compressed_shape)
+    key = np.array(key)[x._axis_order]  # reordering the input
+    ind = np.ravel_multi_index(key, x._reordered_shape)
+    row, col = np.unravel_index(ind, x._compressed_shape)
     current_row = x.indices[x.indptr[row] : x.indptr[row + 1]]
     item = np.searchsorted(current_row, col)
     if not (item >= current_row.size or current_row[item] != col):

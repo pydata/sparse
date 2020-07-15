@@ -12,7 +12,7 @@ def convert_to_flat(inds, shape):
     if any(ind.ndim > 1 for ind in inds):
         raise IndexError("Only one-dimensional iterable indices supported.")
     cols = np.empty(np.prod([ind.size for ind in inds]), dtype=np.intp)
-    shape_bins = transform_shape(shape)
+    shape_bins = transform_shape(np.asarray(shape))
     increments = List()
     for i in range(len(inds)):
         increments.append((inds[i] * shape_bins[i]).astype(np.int32))
@@ -151,12 +151,12 @@ def _resize(x, shape, compressed_axes):
         return _1d_reshape(out, shape, compressed_axes)
     uncompressed = uncompress_dimension(x.indptr)
     coords = np.stack((uncompressed, x.indices))
-    linear = linear_loc(coords, x.compressed_shape)
-    sorted_axis_order = np.argsort(x.axis_order)
+    linear = linear_loc(coords, x._compressed_shape)
+    sorted_axis_order = np.argsort(x._axis_order)
     c_linear = np.empty(x.nnz, dtype=np.intp)
 
     _c_ordering(
-        linear, c_linear, x.reordered_shape, sorted_axis_order, np.asarray(x.shape)
+        linear, c_linear, x._reordered_shape, sorted_axis_order, np.asarray(x.shape)
     )
 
     order = np.argsort(c_linear, kind="mergesort")
@@ -185,14 +185,14 @@ def _transpose(x, shape, axes, compressed_axes, transpose=False):
     check_compressed_axes(shape, compressed_axes)
     uncompressed = uncompress_dimension(x.indptr)
     coords = np.stack((uncompressed, x.indices))
-    linear = linear_loc(coords, x.compressed_shape)
-    sorted_axis_order = np.argsort(x.axis_order)
+    linear = linear_loc(coords, x._compressed_shape)
+    sorted_axis_order = np.argsort(x._axis_order)
     if len(shape) == 1:
         c_linear = np.empty(x.nnz, dtype=np.intp)
         _c_ordering(
             linear,
             c_linear,
-            np.asarray(x.reordered_shape),
+            np.asarray(x._reordered_shape),
             np.asarray(sorted_axis_order),
             np.asarray(x.shape),
         )
@@ -214,7 +214,7 @@ def _transpose(x, shape, axes, compressed_axes, transpose=False):
     _convert_coords(
         linear,
         np.asarray(x.shape),
-        np.asarray(x.reordered_shape),
+        np.asarray(x._reordered_shape),
         sorted_axis_order,
         np.asarray(axes),
         np.asarray(shape),
