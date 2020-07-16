@@ -77,23 +77,24 @@ def is_sorted(arr):  # pragma: no cover
     return True
 
 
-def _1d_reshape(x, shape, compressed_axes):
-    @numba.jit(nopython=True, nogil=True)
-    def _linearize(
-        x_indices,
-        shape,
-        new_axis_order,
-        new_reordered_shape,
-        new_compressed_shape,
-        new_linear,
-        new_coords,
-    ):  # pragma: no cover
-        for i, n in enumerate(x_indices):
-            current = unravel_index(n, shape)
-            current_t = current[new_axis_order]
-            new_linear[i] = ravel_multi_index(current_t, new_reordered_shape)
-            new_coords[:, i] = unravel_index(new_linear[i], new_compressed_shape)
+@numba.jit(nopython=True, nogil=True)
+def _linearize(
+    x_indices,
+    shape,
+    new_axis_order,
+    new_reordered_shape,
+    new_compressed_shape,
+    new_linear,
+    new_coords,
+):  # pragma: no cover
+    for i, n in enumerate(x_indices):
+        current = unravel_index(n, shape)
+        current_t = current[new_axis_order]
+        new_linear[i] = ravel_multi_index(current_t, new_reordered_shape)
+        new_coords[:, i] = unravel_index(new_linear[i], new_compressed_shape)
 
+
+def _1d_reshape(x, shape, compressed_axes):
     check_compressed_axes(shape, compressed_axes)
 
     new_size = np.prod(shape)
