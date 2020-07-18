@@ -5,9 +5,25 @@ from numba import typed
 
 from sparse._meta.compressed_level import Compressed
 from sparse._meta.dense_level import Dense
+from sparse._meta.format import Format, Tensor, LazyTensor
 
 from typing import Tuple, List
 import collections
+
+
+def test_csr_csr_mul():
+    @njit
+    def mul_csr_csr():
+        pass
+
+    shape = (100, 300)
+    d1 = Dense(N=shape[0])
+    c1 = Compressed(pos=[], crd=[])
+    d2 = Dense(N=shape[0])
+    coords = [(5, 3), (5, 1), (2, 3), (6, 4), (6, 0)]
+    data = [1.0, 2.0, 3.0, 4.0, 5.0]
+
+    # B = Tensor(shape=(10, 5), dims=csr)
 
 
 @njit
@@ -21,6 +37,7 @@ def mul_sparse_dense_1d(
 ):
     out.append_init(1, 100)
     pos_iter = c.pos_iter(0)
+    pbeginc = 0
     for p_c1 in pos_iter:
         i_c1, found_c1 = c.pos_access(p_c1, ())
         p_d1, found_d1 = d.locate(0, (i_c1,))
@@ -29,7 +46,8 @@ def mul_sparse_dense_1d(
             data_c = c_data[p_c1]
             data_d = d_data[p_d1]
             data_out.append(data_c * data_d)
-    out.append_edges(0, pbegin1c, pend1c)
+    pendc = p_c1 + 1
+    out.append_edges(0, pbeginc, pendc)
     out.append_finalize(1, 100)
 
 
@@ -60,11 +78,12 @@ def test_sparse_dense_mul_1d():
 
 def insert_coords(levels: Tuple[Dense, Compressed], coords: List[Tuple[int, int]]):
     d, c = levels
-    coords.sort()
     mapped = map_coords(coords)
-    d.insert_init(1, 10)
-    c.append_init(10, 70)
+    sz0 = 1
+    sz1 = d.size(sz0)  # 10
+    d.insert_init(1, sz1)
     p1 = 0
+    c.append_init(sz1, p1)
     for i in mapped.items():
         i0 = i[0]
         p0, f0 = d.coord_access(0, (i0,))
@@ -74,8 +93,8 @@ def insert_coords(levels: Tuple[Dense, Compressed], coords: List[Tuple[int, int]
             c.append_coord(p1, i1)
             p1 += 1
         c.append_edges(p0, p1begin, p1)
-    d.insert_finalize(1, 10)
-    c.append_finalize(10, 70)
+    d.insert_finalize(1, sz1)
+    c.append_finalize(sz1, p1)
 
 
 def iter_coords(levels: Tuple[Dense, Compressed]):
@@ -89,44 +108,7 @@ def iter_coords(levels: Tuple[Dense, Compressed]):
                 i1, f1 = c.pos_access(p1, (i0,))
                 if f1:
                     l[-1][1].append(i1)
-
     return l
-
-
-def make_dense(a, shape):
-    out = np.zeros(shape, dtype=np.bool_)
-    if not isinstance(a, tuple):
-        out[a] = True
-        return out
-
-    for tup in a:
-        for i in tup[1]:
-            a[i] = make_dense(a[tup[1]])
-
-    return out
-
-
-def coords_from_bool_array(arr):
-    l = []
-    for i, arr_i in enumerate(arr):
-        if np.ndim(arr_i) == 0:
-            return i
-        if np.any(arr_i):
-            l.append((i, coords_from_bool_array(arr_i)))
-    return l
-
-
-def bool_array_from_coords(l, shape, out=None):
-    if out is None:
-        out = np.zeros(shape, dtype=np.bool_)
-
-    if not isinstance(l, list):
-        out[()] = True
-
-    for i, l_i in l:
-        bool_array_from_coords(l_i, shape[1:], out=out[i])
-
-    return out
 
 
 def map_coords(coords):
@@ -139,25 +121,20 @@ def map_coords(coords):
 
 
 def test_insert_csr():
-    # shape: (10, 7)
-    arr = np.zeros((10, 7), dtype=np.bool_)
+    def flatten(ret):
+        got = []
+        for (u, l) in ret:
+            for v in l:
+                got.append((u, v))
+        return got
+
+    # shape = (10, 7)
     coords = [(5, 3), (5, 1), (2, 3), (6, 4), (6, 0)]
+    coords.sort()
     d = Dense(N=10)
     c = Compressed(pos=[], crd=[])
     levels = (d, c)
 
     insert_coords(levels, coords)
-    expected = [
-        (0, []),
-        (1, []),
-        (2, [3]),
-        (3, []),
-        (4, []),
-        (5, [1, 3]),
-        (6, [0, 4]),
-        (7, []),
-        (8, []),
-        (9, []),
-    ]
-    got = iter_coords(levels)
-    assert expected == got
+    got = flatten(iter_coords(levels))
+    assert coords == got

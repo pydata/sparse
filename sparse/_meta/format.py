@@ -1,10 +1,14 @@
 import typing
 from abc import abstractmethod, ABC
 
+from collections import defaultdict
+
 import numpy as np
 import dask
 import dask.base
 
+from .dense_level import Dense
+from .compressed_level import Compressed
 from .iteration_graph import IterationGraph, Access
 from .sparsedim import SparseDim
 import uuid
@@ -67,11 +71,13 @@ class TensorBase(ABC, np.lib.mixins.NDArrayOperatorsMixin):
 
 
 class Tensor(TensorBase):
-    def __init__(self, *, shape: typing.Tuple[int, ...], dims: Format):
-        assert len(shape) == len(dims)
+    def __init__(self, *, shape: typing.Tuple[int, ...], fmt: Format):
+        assert len(shape) == len(fmt)
         self._shape = shape
-        self._dims = dims
+        self._fmt = fmt
         self._key = f"Tensor-f{uuid.uuid4()}"
+        self._data = []
+        self._levels = [None] * len(shape)
 
     @property
     def ndim(self) -> int:
@@ -82,17 +88,128 @@ class Tensor(TensorBase):
         return self._shape
 
     @property
-    def dims(self) -> Format:
-        return self._dims
+    def fmt(self) -> Format:
+        return self._fmt
 
     @property
     def access(self):
         return Access.from_ndim(self.ndim)
 
+    @property
+    def data(self):
+        return self._data
+
+    @property
+    def levels(self):
+        return self._levels
+
+    def group_coords(self, *, coords, idx):
+        """
+        group coordinates of a given index based on previous ones
+
+        >>> c = [(0, 0, 0), (0, 0, 1), (0, 2, 1), (2, 0, 1), 
+                 (2, 2, 0), (2, 2, 1), (2, 3, 0), (2, 3, 1)]
+
+        >>> group_coords(coords=c, idx=0)
+        {(): [0, 0, 0, 2, 2, 2, 2, 2]}
+
+        >>> group_coords(coords=c, idx=1)
+        {(0,): [0, 0, 2], (2,): [0, 2, 2, 3, 3]}
+
+        >>> group_coords(coords=c, idx=2)
+        {(0, 0): [0, 1],
+         (0, 2): [1],
+         (2, 0): [1],
+         (2, 2): [0, 1],
+         (2, 3): [0, 1]}
+        """
+        d = defaultdict(set)
+        for i, c in enumerate(coords):
+            prev = tuple(c[:idx]) if idx != 0 else (0,)
+            curr = c[idx]
+            d[prev].add(curr)
+        return d
+
+    def insert_data(self, *, coords, data):
+        # coords = [(i1, i2, ..., iN)]
+        # data = [x1, x2, ..., xN]
+        self._data = data
+        # The size of the zero level is 1 (unary level)
+        self._init_level(idx=0, coords=coords, szkm1=1)
+
+    def _store_level(self, *, level, idx):
+        self._levels[idx] = level
+
+    def _init_level(self, *, idx, coords, szkm1=None):
+        if idx >= self.ndim:
+            return None
+
+        assert szkm1 is not None
+
+        level = self._fmt.levels[idx]
+        if level == Dense:
+            fn = self._init_dense_level
+        elif level == Compressed:
+            fn = self._init_compressed_level
+        else:
+            raise NotImplementedError(level)
+
+        return fn(idx=idx, coords=coords, szkm1=szkm1)
+
+    def _init_dense_level(self, *, idx, coords, szkm1=None):
+        assert szkm1 is not None
+
+        N = self.shape[idx]
+        d = Dense(N=N)
+        self._store_level(level=d, idx=idx)
+
+        szk = d.size(szkm1)
+        d.insert_init(szkm1, szk)
+
+        # init next levels
+        self._init_level(idx=idx + 1, coords=coords, szkm1=szk)
+
+        d.insert_finalize(0, szk)
+
+    def _init_compressed_level(self, *, idx, coords, szkm1=None):
+        assert szkm1 is not None
+
+        c = Compressed(pos=[], crd=[])
+        self._store_level(level=c, idx=idx)
+
+        group = self.group_coords(coords=coords, idx=idx)
+        # Count the number of elements in each key of group
+        # the size of a compressed level is the number of elements
+        # that will be inserted in the crd array
+        szk = 0
+        for k in group.keys():
+            szk += len(group[k])
+
+        c.append_init(szkm1, szk)
+
+        pk = 0
+        for k in group.keys():
+            pbegink = pk
+            pkm1 = k[-1]
+            print(k, c.pos)
+
+            for v in group[k]:
+                c.append_coord(pk, v)
+
+            pk += len(group[k])
+            pendk = pk
+
+            c.append_edges(pkm1, pbegink, pendk)
+
+        # init next levels
+        self._init_level(idx=idx + 1, coords=coords, szkm1=szk)
+
+        c.append_finalize(szkm1, szk)
+
     def __str__(self):
         s = ""
-        s += f"{self.dims.name}"
-        z = zip(self.shape, self.dims.levels)
+        s += f"{self.fmt.name}"
+        z = zip(self.shape, self.fmt.levels)
         s += "(" + ", ".join(f"{level.__name__}[{dim}]" for dim, level in z) + ")"
         return s
 

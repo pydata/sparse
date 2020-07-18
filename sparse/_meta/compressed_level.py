@@ -46,8 +46,11 @@ class Compressed(PositionIterable, AppendAssembly):
     def compact(self) -> bool:
         return True
 
+    def pos_bounds(self, pkm1: int) -> Iterator[int]:
+        return (self.pos[pkm1], self.pos[pkm1 + 1])
+
     def pos_iter(self, pkm1: int) -> Iterator[int]:
-        return iter(range(self.pos[pkm1], self.pos[pkm1 + 1]))
+        return range(self.pos[pkm1], self.pos[pkm1 + 1])
 
     def pos_access(self, pk: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         return self.crd[pk], True
@@ -67,6 +70,9 @@ class Compressed(PositionIterable, AppendAssembly):
         for pkm1 in range(1, szkm1 + 1):
             cumsum += self.pos[pkm1]
             self.pos[pkm1] = cumsum
+
+    def size(self) -> int:
+        return len(self.crd)
 
 
 class CompressedType(PositionIterableType, AppendAssemblyType):
@@ -172,8 +178,13 @@ extending.make_attribute_wrapper(CompressedType, "pos", "pos")
 extending.make_attribute_wrapper(CompressedType, "crd", "crd")
 
 
-@extending.overload_method(CompressedType, "pos_iter")
+@extending.overload_method(CompressedType, "pos_bounds")
 def impl_pos_bounds(self, pkm1: int) -> Tuple[int, int]:
+    return Compressed.pos_bounds
+
+
+@extending.overload_method(CompressedType, "pos_iter")
+def impl_pos_iter(self, pkm1: int) -> Tuple[int, int]:
     return Compressed.pos_iter
 
 

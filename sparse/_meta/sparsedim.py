@@ -8,8 +8,6 @@ from typing import Sequence, List, Tuple, Iterator
 
 __all__ = ["SparseDim"]
 
-# jit = nb.jit(nopython=True, nogil=True)
-
 
 class SparseDim(ABC):
     properties: Sequence[str]
