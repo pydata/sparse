@@ -77,7 +77,7 @@ class Tensor(TensorBase):
         self._fmt = fmt
         self._key = f"Tensor-f{uuid.uuid4()}"
         self._data = []
-        self._levels = [None] * len(shape)
+        self._levels = []
 
     @property
     def ndim(self) -> int:
@@ -134,48 +134,35 @@ class Tensor(TensorBase):
         # coords = [(i1, i2, ..., iN)]
         # data = [x1, x2, ..., xN]
         self._data = data
-        # The size of the zero level is 1 (unary level)
-        self._init_level(idx=0, coords=coords, szkm1=1)
 
-    def _store_level(self, *, level, idx):
-        self._levels[idx] = level
+        # size of the previous level
+        szkm1 = 1
+        parent = None
+        for idx, level in enumerate(self._fmt.levels):
+            if level == Dense:
+                fn = self._init_dense_level
+            elif level == Compressed:
+                fn = self._init_compressed_level
+            else:
+                raise NotImplementedError(level)
 
-    def _init_level(self, *, idx, coords, szkm1=None):
-        if idx >= self.ndim:
-            return None
+            parent, szkm1 = fn(coords=coords, idx=idx, parent=parent, szkm1=szkm1)
+            self._levels.append(parent)
 
-        assert szkm1 is not None
-
-        level = self._fmt.levels[idx]
-        if level == Dense:
-            fn = self._init_dense_level
-        elif level == Compressed:
-            fn = self._init_compressed_level
-        else:
-            raise NotImplementedError(level)
-
-        return fn(idx=idx, coords=coords, szkm1=szkm1)
-
-    def _init_dense_level(self, *, idx, coords, szkm1=None):
+    def _init_dense_level(self, *, idx, coords, parent=None, szkm1=None):
         assert szkm1 is not None
 
         N = self.shape[idx]
         d = Dense(N=N)
-        self._store_level(level=d, idx=idx)
-
         szk = d.size(szkm1)
         d.insert_init(szkm1, szk)
-
-        # init next levels
-        self._init_level(idx=idx + 1, coords=coords, szkm1=szk)
-
         d.insert_finalize(0, szk)
+        return d, szk
 
-    def _init_compressed_level(self, *, idx, coords, szkm1=None):
+    def _init_compressed_level(self, *, idx, coords, parent=None, szkm1=None):
         assert szkm1 is not None
 
         c = Compressed(pos=[], crd=[])
-        self._store_level(level=c, idx=idx)
 
         group = self.group_coords(coords=coords, idx=idx)
         # Count the number of elements in each key of group
@@ -188,23 +175,20 @@ class Tensor(TensorBase):
         c.append_init(szkm1, szk)
 
         pk = 0
-        for k in group.keys():
+        for pkm1, k in enumerate(group.keys()):
             pbegink = pk
-            pkm1 = k[-1]
-            print(k, c.pos)
-
             for v in group[k]:
                 c.append_coord(pk, v)
 
             pk += len(group[k])
             pendk = pk
 
+            if isinstance(parent, Dense):
+                pkm1 = k[-1]
             c.append_edges(pkm1, pbegink, pendk)
 
-        # init next levels
-        self._init_level(idx=idx + 1, coords=coords, szkm1=szk)
-
         c.append_finalize(szkm1, szk)
+        return c, szk
 
     def __str__(self):
         s = ""
