@@ -4,7 +4,7 @@ from numba.core.datamodel import registry, models
 from llvmlite import ir
 from .sparsedim import Locate, ValueIterable, InlineAssembly
 from .sparsedim import LocateType, ValueIterableType, InlineAssemblyType
-from typing import Sequence, Tuple, Iterator
+from typing import Sequence, Tuple, Iterable
 
 
 class Dense(Locate, ValueIterable, InlineAssembly):
@@ -38,11 +38,11 @@ class Dense(Locate, ValueIterable, InlineAssembly):
     def locate(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         return pkm1 * self.N + i[-1], True
 
-    def coord_bounds(self, i: Tuple[int, ...]) -> Iterator[int]:
+    def coord_bounds(self, i: Tuple[int, ...]) -> Tuple[int, int]:
         return (0, self.N)
 
-    def coord_iter(self, i: Tuple[int, ...]) -> Iterator[int]:
-        return iter(range(self.N))
+    def coord_iter(self, i: Tuple[int, ...]) -> Iterable[int]:
+        return range(self.N)
 
     def coord_access(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         return pkm1 * self.N + i[-1], True

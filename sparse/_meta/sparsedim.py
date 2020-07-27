@@ -4,7 +4,7 @@ import numba as nb
 from numba.extending import typeof_impl
 from numba.core import types, extending
 from collections import namedtuple
-from typing import Sequence, List, Tuple, Iterator
+from typing import Sequence, List, Tuple, Iterable
 
 __all__ = ["SparseDim"]
 
@@ -171,12 +171,18 @@ def impl_compact(S):
 
 class ValueIterable(SparseDim, ABC):
     @abstractmethod
-    def coord_iter(self, i: Tuple[int, ...]) -> Iterator[int]:
+    def coord_iter(self, i: Tuple[int, ...]) -> Iterable[int]:
         pass
 
     @abstractmethod
     def coord_access(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         pass
+
+    def iterate(self, pkm1, i):
+        for ik in self.coord_iter(i):
+            pk, found = self.coord_access(pkm1, i + (ik,))
+            if found:
+                yield pk, ik
 
 
 class ValueIterableType(SparseDimType):
@@ -187,12 +193,18 @@ class ValueIterableType(SparseDimType):
 
 class PositionIterable(SparseDim, ABC):
     @abstractmethod
-    def pos_iter(self, pkm1: int) -> Iterator[int]:
+    def pos_iter(self, pkm1: int) -> Iterable[int]:
         pass
 
     @abstractmethod
     def pos_access(self, pk: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         pass
+
+    def iterate(self, pkm1, i):
+        for pk in self.pos_iter(pkm1):
+            ik, found = self.pos_access(pk, i)
+            if found:
+                yield pk, ik
 
 
 class PositionIterableType(SparseDimType):
@@ -294,9 +306,8 @@ class Range(ValueIterable):
     def compact(self) -> bool:
         return False
 
-    def coord_iter(self, i: Tuple[int, ...]) -> Iterator[int]:
-        return iter(
-            range(max(0, -self.offset[i[-1]]), min(self.N, self.M - self.offset[i[-1]]))
+    def coord_iter(self, i: Tuple[int, ...]) -> Iterable[int]:
+        return range(max(0, -self.offset[i[-1]]), min(self.N, self.M - self.offset[i[-1]])
         )
 
     def coord_access(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
@@ -339,8 +350,8 @@ class Singleton(PositionIterable, AppendAssembly):
     def compact(self) -> bool:
         return True
 
-    def pos_bounds(self, pkm1: int) -> Iterator[int]:
-        return iter(range(pkm1, pkm1 + 1))
+    def pos_bounds(self, pkm1: int) -> Iterable[int]:
+        return range(pkm1, pkm1 + 1)
 
     def pos_access(self, pk: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         return self.crd[pk], True
@@ -386,8 +397,8 @@ class Offset(PositionIterable):
     def compact(self) -> bool:
         return False
 
-    def pos_bounds(self, pkm1: int) -> Iterator[int]:
-        return iter(range(pkm1, pkm1 + 1))
+    def pos_bounds(self, pkm1: int) -> Iterable[int]:
+        return range(pkm1, pkm1 + 1)
 
     def pos_access(self, pk: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         return i[-1] + self.offset[i[-2]], True

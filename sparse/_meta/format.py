@@ -10,7 +10,7 @@ import dask.base
 from .dense_level import Dense
 from .compressed_level import Compressed
 from .iteration_graph import IterationGraph, Access
-from .sparsedim import SparseDim
+from .sparsedim import SparseDim, InlineAssembly, AppendAssembly
 import uuid
 
 
@@ -111,10 +111,10 @@ class Tensor(TensorBase):
                  (2, 2, 0), (2, 2, 1), (2, 3, 0), (2, 3, 1)]
 
         >>> group_coords(coords=c, idx=0)
-        {(): [0, 0, 0, 2, 2, 2, 2, 2]}
+        {(): [0, 2]}
 
         >>> group_coords(coords=c, idx=1)
-        {(0,): [0, 0, 2], (2,): [0, 2, 2, 3, 3]}
+        {(0,): [0, 2], (2,): [0, 2, 3]}
 
         >>> group_coords(coords=c, idx=2)
         {(0, 0): [0, 1],
@@ -128,7 +128,10 @@ class Tensor(TensorBase):
             prev = tuple(c[:idx]) if idx != 0 else (0,)
             curr = c[idx]
             d[prev].add(curr)
-        return d
+        ret = {}
+        for k, v in d.items():
+            ret[k] = list(sorted(v))
+        return ret
 
     def insert_data(self, *, coords, data):
         # coords = [(i1, i2, ..., iN)]
@@ -140,11 +143,14 @@ class Tensor(TensorBase):
         parent = None
         for idx, level in enumerate(self._fmt.levels):
             if level == Dense:
-                fn = self._init_dense_level
+                fn = lambda: Dense(N=self.shape[idx])
             elif level == Compressed:
-                fn = self._init_compressed_level
+                fn = lambda: Compressed(pos=[], crd=[])
             else:
                 raise NotImplementedError(level)
+
+            level = fn()
+            if isinstance(level,)
 
             parent, szkm1 = fn(coords=coords, idx=idx, parent=parent, szkm1=szkm1)
             self._levels.append(parent)
@@ -159,11 +165,30 @@ class Tensor(TensorBase):
         d.insert_finalize(0, szk)
         return d, szk
 
+    def iterate(self, levels):
+        if len(levels) == n:
+            return 0, ()
+        for p0, i0 in levels[0].iterate():
+            for p, i in self.iterate(levels[1:]):
+                yield p, i0 + (i,) 
+
     def _init_compressed_level(self, *, idx, coords, parent=None, szkm1=None):
         assert szkm1 is not None
 
-        c = Compressed(pos=[], crd=[])
+        # Algo 1
+        # for pk, ik in parent.iterate(pkm1, (i0, i1, ..., ikm1)):
+        #     level.append/insert_coord
+        # level.append/insert_edges
 
+        # for k, level in enumerate(levels):
+        #     init level
+        #     for (levels[:k] if k >= 2 else ()).iterate():
+        #         algo 1 for level
+
+        #     finl level
+
+
+        c = Compressed(pos=[], crd=[])
         group = self.group_coords(coords=coords, idx=idx)
         # Count the number of elements in each key of group
         # the size of a compressed level is the number of elements
@@ -171,21 +196,33 @@ class Tensor(TensorBase):
         szk = 0
         for k in group.keys():
             szk += len(group[k])
-
+        
         c.append_init(szkm1, szk)
 
-        pk = 0
-        for pkm1, k in enumerate(group.keys()):
-            pbegink = pk
-            for v in group[k]:
-                c.append_coord(pk, v)
+        # if we are at the top level
+        if parent is None:
+            pk = 0
+            for i in group.keys():
+                pbegink = pk
+                for v in group[i]:
+                    c.append_coord(pk, v)
 
-            pk += len(group[k])
-            pendk = pk
-
-            if isinstance(parent, Dense):
-                pkm1 = k[-1]
+                pk += len(group[i])
+                pendk = pk
             c.append_edges(pkm1, pbegink, pendk)
+        else:
+            for i in group.keys():
+                for pkm1, ikm1 in parent.iterate(pkm2, i):
+                    pbegink = pk
+                    for v in group[i]:
+                        c.append_coord(pk, v)
+
+                    pk += len(group[i])
+                    pendk = pk
+
+                    # if isinstance(parent, Dense):
+                    #     pkm1 = i[-1]
+                    c.append_edges(pkm1, pbegink, pendk)
 
         c.append_finalize(szkm1, szk)
         return c, szk
