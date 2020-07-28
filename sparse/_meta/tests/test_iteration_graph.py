@@ -1,8 +1,5 @@
 import pytest
 
-from sparse._meta.iteration_graph import Access, IterationGraph
-from sparse._meta.format import Format, Tensor
-
 S = slice(None)
 N = None
 

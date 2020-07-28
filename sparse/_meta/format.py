@@ -9,7 +9,6 @@ import dask.base
 
 from .dense_level import Dense
 from .compressed_level import Compressed
-from .iteration_graph import IterationGraph, Access
 from .sparsedim import SparseDim, InlineAssembly, AppendAssembly
 import uuid
 

@@ -1,6 +1,5 @@
 import operator
 import typing
-import collections.abc as cabc
 import numbers
 
 from .._utils import normalize_axis

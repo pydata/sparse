@@ -1,5 +1,3 @@
-import pytest
-
 from sparse._meta.dense_level import Dense
 from sparse._meta.compressed_level import Compressed
 from sparse._meta.format import Format, Tensor

@@ -1,4 +1,3 @@
-import numba as nb
 from numba.core import types, cgutils, extending
 from numba.core.datamodel import registry, models
 from llvmlite import ir

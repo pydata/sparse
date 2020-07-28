@@ -1,29 +1,9 @@
-import numpy as np
-
 from numba import njit, types
 from numba import typed
 
 from sparse._meta.compressed_level import Compressed
 from sparse._meta.dense_level import Dense
-from sparse._meta.format import Format, Tensor, LazyTensor
-
 from typing import Tuple, List
-import collections
-
-
-def test_csr_csr_mul():
-    @njit
-    def mul_csr_csr():
-        pass
-
-    shape = (100, 300)
-    d1 = Dense(N=shape[0])
-    c1 = Compressed(pos=[], crd=[])
-    d2 = Dense(N=shape[0])
-    coords = [(5, 3), (5, 1), (2, 3), (6, 4), (6, 0)]
-    data = [1.0, 2.0, 3.0, 4.0, 5.0]
-
-    # B = Tensor(shape=(10, 5), dims=csr)
 
 
 @njit

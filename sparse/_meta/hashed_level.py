@@ -1,7 +1,5 @@
-import numba as nb
-from numba.core import types, cgutils, extending
+from numba.core import types, extending
 from numba.core.datamodel import registry, models
-from llvmlite import ir
 from .sparsedim import Locate, PositionIterable, InlineAssembly
 from .sparsedim import LocateType, PositionIterableType, InlineAssemblyType
 from typing import Sequence, Tuple, List, Dict, Iterable, Callable
@@ -137,7 +135,7 @@ def type_hashed(context):
         key = types.int64
         value = types.int64
         breakpoint()
-        return HashedType(W, key, value, full, unique)
+        return HashedType(W=W, key=key, value=value, full=full, unique=unique)
 
     return typer
 
