@@ -79,6 +79,7 @@ def test_csf_insert():
     assert t._levels[2].pos == [0, 2, 3, 4, 6, 8]
     assert t._levels[2].crd == [0, 1, 1, 1, 0, 1, 0, 1]
 
+
 def test_cdc_insert():
 
     t = Tensor(shape=shape_3d, fmt=cdc)
@@ -90,5 +91,5 @@ def test_cdc_insert():
     # assert t._levels[1].pos == [0, 2, 5]
     # assert t._levels[1].crd == [0, 2, 0, 2, 3]
 
-    assert t._levels[2].pos == [0, 2, 3, 4, 6, 8]
+    assert t._levels[2].pos == [0, 2, 2, 3, 3, 4, 4, 6, 8]
     assert t._levels[2].crd == [0, 1, 1, 1, 0, 1, 0, 1]

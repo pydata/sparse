@@ -125,7 +125,7 @@ class Tensor(TensorBase):
         """
         d = defaultdict(set)
         for i, c in enumerate(coords):
-            prev = tuple(c[:idx]) if idx != 0 else (0,)
+            prev = tuple(c[:idx])
             curr = c[idx]
             d[prev].add(curr)
         ret = {}
@@ -140,92 +140,55 @@ class Tensor(TensorBase):
 
         # size of the previous level
         szkm1 = 1
-        parent = None
-        for idx, level in enumerate(self._fmt.levels):
+        for k, level in enumerate(self._fmt.levels):
             if level == Dense:
-                fn = lambda: Dense(N=self.shape[idx])
+                fn = lambda: Dense(N=self.shape[k])
             elif level == Compressed:
                 fn = lambda: Compressed(pos=[], crd=[])
             else:
                 raise NotImplementedError(level)
 
             level = fn()
-            if isinstance(level,)
+            group = self.group_coords(coords=coords, idx=k)
+            if isinstance(level, InlineAssembly):
+                szk = level.size(szkm1)
+                level.insert_init(szkm1, szk)
+                for pkm1, ikm1 in self._iterate(self._levels):
+                    if ikm1 not in group:
+                        continue
+                    g = group[ikm1]
+                    for pk, ik in enumerate(g):
+                        level.insert_coord(pk, ik)
+                level.insert_finalize(szkm1, szk)
+            elif isinstance(level, AppendAssembly):
+                szk = 0
+                level.append_init(szkm1, szk)
+                pkbegin = 0
+                for pkm1, ikm1 in self._iterate(self._levels):
+                    if ikm1 not in group:
+                        continue
+                    g = group[ikm1]
+                    for pk, ik in enumerate(g):
+                        level.append_coord(pk, ik)
+                        szk += 1
+                    pkend = szk
+                    level.append_edges(pkm1, pkbegin, pkend)
+                    pkbegin = pkend
+                level.append_finalize(szkm1, szk)
+            else:
+                raise NotImplementedError(level)
 
-            parent, szkm1 = fn(coords=coords, idx=idx, parent=parent, szkm1=szkm1)
-            self._levels.append(parent)
+            szkm1 = szk
+            self._levels.append(level)
 
-    def _init_dense_level(self, *, idx, coords, parent=None, szkm1=None):
-        assert szkm1 is not None
-
-        N = self.shape[idx]
-        d = Dense(N=N)
-        szk = d.size(szkm1)
-        d.insert_init(szkm1, szk)
-        d.insert_finalize(0, szk)
-        return d, szk
-
-    def iterate(self, levels):
-        if len(levels) == n:
-            return 0, ()
-        for p0, i0 in levels[0].iterate():
-            for p, i in self.iterate(levels[1:]):
-                yield p, i0 + (i,) 
-
-    def _init_compressed_level(self, *, idx, coords, parent=None, szkm1=None):
-        assert szkm1 is not None
-
-        # Algo 1
-        # for pk, ik in parent.iterate(pkm1, (i0, i1, ..., ikm1)):
-        #     level.append/insert_coord
-        # level.append/insert_edges
-
-        # for k, level in enumerate(levels):
-        #     init level
-        #     for (levels[:k] if k >= 2 else ()).iterate():
-        #         algo 1 for level
-
-        #     finl level
-
-
-        c = Compressed(pos=[], crd=[])
-        group = self.group_coords(coords=coords, idx=idx)
-        # Count the number of elements in each key of group
-        # the size of a compressed level is the number of elements
-        # that will be inserted in the crd array
-        szk = 0
-        for k in group.keys():
-            szk += len(group[k])
-        
-        c.append_init(szkm1, szk)
-
-        # if we are at the top level
-        if parent is None:
-            pk = 0
-            for i in group.keys():
-                pbegink = pk
-                for v in group[i]:
-                    c.append_coord(pk, v)
-
-                pk += len(group[i])
-                pendk = pk
-            c.append_edges(pkm1, pbegink, pendk)
-        else:
-            for i in group.keys():
-                for pkm1, ikm1 in parent.iterate(pkm2, i):
-                    pbegink = pk
-                    for v in group[i]:
-                        c.append_coord(pk, v)
-
-                    pk += len(group[i])
-                    pendk = pk
-
-                    # if isinstance(parent, Dense):
-                    #     pkm1 = i[-1]
-                    c.append_edges(pkm1, pbegink, pendk)
-
-        c.append_finalize(szkm1, szk)
-        return c, szk
+    @staticmethod
+    def _iterate(levels, pkm1=0, i=()):
+        if len(levels) == 0:
+            yield pkm1, i
+            return
+        for pk, ikm1 in levels[0].iterate(pkm1, i):
+            for p, ik in Tensor._iterate(levels[1:], pk, i + (ikm1,)):
+                yield p, ik
 
     def __str__(self):
         s = ""

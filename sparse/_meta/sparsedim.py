@@ -307,7 +307,8 @@ class Range(ValueIterable):
         return False
 
     def coord_iter(self, i: Tuple[int, ...]) -> Iterable[int]:
-        return range(max(0, -self.offset[i[-1]]), min(self.N, self.M - self.offset[i[-1]])
+        return range(
+            max(0, -self.offset[i[-1]]), min(self.N, self.M - self.offset[i[-1]])
         )
 
     def coord_access(self, pkm1: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
