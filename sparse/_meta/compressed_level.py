@@ -5,7 +5,7 @@ from numba.core import types, cgutils, extending
 from numba.core.datamodel import registry, models
 from .sparsedim import PositionIterable, AppendAssembly
 from .sparsedim import PositionIterableType, AppendAssemblyType
-from typing import Sequence, List, Tuple, Iterator
+from typing import Sequence, List, Tuple, Iterable, Callable
 
 
 class Compressed(PositionIterable, AppendAssembly):
@@ -46,10 +46,10 @@ class Compressed(PositionIterable, AppendAssembly):
     def compact(self) -> bool:
         return True
 
-    def pos_bounds(self, pkm1: int) -> Iterator[int]:
+    def pos_bounds(self, pkm1: int) -> Tuple[int, int]:
         return (self.pos[pkm1], self.pos[pkm1 + 1])
 
-    def pos_iter(self, pkm1: int) -> Iterator[int]:
+    def pos_iter(self, pkm1: int) -> Iterable[int]:
         return range(self.pos[pkm1], self.pos[pkm1 + 1])
 
     def pos_access(self, pk: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
@@ -194,22 +194,22 @@ def impl_pos_access(self, pk: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
 
 
 @extending.overload_method(CompressedType, "append_coord")
-def impl_append_coord(self, pk: int, ik: int) -> None:
+def impl_append_coord(self, pk: int, ik: int) -> Callable:
     return Compressed.append_coord
 
 
 @extending.overload_method(CompressedType, "append_edges")
-def impl_append_edges(self, pkm1: int, pkbegin: int, pkend: int) -> None:
+def impl_append_edges(self, pkm1: int, pkbegin: int, pkend: int) -> Callable:
     return Compressed.append_edges
 
 
 @extending.overload_method(CompressedType, "append_init")
-def impl_append_init(self, szkm1: int, szk: int) -> None:
+def impl_append_init(self, szkm1: int, szk: int) -> Callable:
     return Compressed.append_init
 
 
 @extending.overload_method(CompressedType, "append_finalize")
-def impl_append_finalize(self, szkm1: int, szk: int) -> None:
+def impl_append_finalize(self, szkm1: int, szk: int) -> Callable:
     return Compressed.append_finalize
 
 

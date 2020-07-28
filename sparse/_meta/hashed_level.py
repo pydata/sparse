@@ -4,7 +4,7 @@ from numba.core.datamodel import registry, models
 from llvmlite import ir
 from .sparsedim import Locate, PositionIterable, InlineAssembly
 from .sparsedim import LocateType, PositionIterableType, InlineAssemblyType
-from typing import Sequence, Tuple, List, Dict, Iterator
+from typing import Sequence, Tuple, List, Dict, Iterable, Callable
 
 
 class Hashed(Locate, PositionIterable, InlineAssembly):
@@ -48,8 +48,8 @@ class Hashed(Locate, PositionIterable, InlineAssembly):
         d = self.crd[pkm1]
         return pk, pk in d
 
-    def pos_iter(self, pkm1: int) -> Iterator[int]:
-        return iter(self.crd[pkm1].keys())
+    def pos_iter(self, pkm1: int) -> Iterable[int]:
+        return self.crd[pkm1].keys()
 
     def pos_access(self, pk: int, i: Tuple[int, ...]) -> Tuple[int, bool]:
         d = self.crd[pkm1]
@@ -171,17 +171,17 @@ def impl_hashed_size(self, szkm1: int) -> int:
 
 
 @extending.overload_method(HashedType, "insert_coord")
-def impl_hashed_insert_coord(self, pk: int, ik: int) -> None:
+def impl_hashed_insert_coord(self, pk: int, ik: int) -> Callable:
     return Hashed.insert_coord
 
 
 @extending.overload_method(HashedType, "insert_init")
-def impl_hashed_insert_init(self, szkm1: int, szk: int) -> None:
+def impl_hashed_insert_init(self, szkm1: int, szk: int) -> Callable:
     return Hashed.insert_init
 
 
 @extending.overload_method(HashedType, "insert_finalize")
-def impl_hashed_insert_finalize(self, szkm1: int, szk: int) -> None:
+def impl_hashed_insert_finalize(self, szkm1: int, szk: int) -> Callable:
     return Hashed.insert_finalize
 
 
