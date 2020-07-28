@@ -134,8 +134,7 @@ def type_hashed(context):
         # return HashedType here
         key = types.int64
         value = types.int64
-        breakpoint()
-        return HashedType(W=W, key=key, value=value, full=full, unique=unique)
+        return HashedType(W_type=W, crd_key_type=key, crd_value_type=value, full=full, unique=unique)
 
     return typer
 
