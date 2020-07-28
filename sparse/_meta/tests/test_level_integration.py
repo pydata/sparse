@@ -3,7 +3,7 @@ from numba import typed
 
 from sparse._meta.compressed_level import Compressed
 from sparse._meta.dense_level import Dense
-from typing import Tuple, List
+from typing import Tuple
 
 
 @njit
