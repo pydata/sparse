@@ -230,6 +230,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if self.data.ndim == 0:
             self.data = np.broadcast_to(self.data, self.coords.shape[1])
 
+        if self.data.ndim != 1:
+            raise ValueError("data must be a scalar or 1-dimensional.")
+
         if shape and not self.coords.size:
             self.coords = np.zeros(
                 (len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.uint64

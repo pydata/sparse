@@ -2369,3 +2369,9 @@ def test_scalar_list_init():
 
     assert a.todense() == 0
     assert b.todense() == 1
+
+
+def test_raise_on_nd_data():
+    s1 = sparse.random((2, 3, 4), density=0.5)
+    with pytest.raises(ValueError):
+        sparse.COO(s1.coords, s1.data[:, None], shape=(2, 3, 4))
