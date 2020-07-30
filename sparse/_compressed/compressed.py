@@ -7,6 +7,7 @@ import scipy.sparse as ss
 
 from .._sparse_array import SparseArray
 from .._coo.common import linear_loc
+from .._common import dot
 from .._utils import normalize_axis, check_zero_fill_value, check_compressed_axes
 from .._coo.core import COO
 from .convert import uncompress_dimension, _transpose, _1d_reshape
@@ -42,11 +43,15 @@ def _from_coo(x, compressed_axes=None):
     compressed_shape = (row_size, col_size)
     shape = x.shape
 
-    x = x.transpose(axis_order)
-    linear = linear_loc(x.coords, reordered_shape)
+    # transpose axes, linearize, reshape, and compress
+    linear = linear_loc(x.coords[axis_order], reordered_shape)
     order = np.argsort(linear)
-    # linearizing twice is unnecessary, fix needed
-    coords = x.reshape((compressed_shape)).coords
+    linear = linear[order]
+    coords = np.empty((2, x.nnz), dtype=np.intp)
+    strides = 1
+    for i, d in enumerate(compressed_shape[::-1]):
+        coords[-(i + 1), :] = (linear // strides) % d
+        strides *= d
     indptr = np.empty(row_size + 1, dtype=np.intp)
     indptr[0] = 0
     np.cumsum(np.bincount(coords[0], minlength=row_size), out=indptr[1:])
@@ -56,6 +61,44 @@ def _from_coo(x, compressed_axes=None):
 
 
 class GCXS(SparseArray, NDArrayOperatorsMixin):
+    """
+    A sparse multidimensional array.
+
+    This is stored in GCXS format, a generalization of the GCRS/GCCS formats 
+    from 'Efficient storage scheme for n-dimensional sparse array: GCRS/GCCS':
+    https://ieeexplore.ieee.org/document/7237032. GCXS generalizes the csr/csc
+    sparse matrix formats. For arrays with ndim == 2, GCXS is the same csr/csc.
+    For arrays with ndim >2, any combination of axes can be compressed, 
+    significantly reducing storage. 
+
+
+    Parameters
+    ----------
+    arg : tuple (data, indices, indptr)
+        A tuple of arrays holding the data, indices, and 
+        index pointers for the nonzero values of the array.
+    shape : tuple[int] (COO.ndim,)
+        The shape of the array.
+    compressed_axes : Iterable[int]
+        The axes to compress.
+    fill_value: scalar, optional
+        The fill value for this array.
+
+    Attributes
+    ----------
+    data : numpy.ndarray (nnz,)
+        An array holding the nonzero values corresponding to :obj:`GCXS.indices`.
+    indices : numpy.ndarray (nnz,)
+        An array holding the coordinates of every nonzero element along uncompressed dimensions.
+    indptr : numpy.ndarray
+        An array holding the cumulative sums of the nonzeros along the compressed dimensions. 
+    shape : tuple[int] (ndim,)
+        The dimensions of this array.
+
+    See Also
+    --------
+    DOK : A mostly write-only sparse array.
+    """
 
     __array_priority__ = 12
 
@@ -78,8 +121,14 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             compressed_axes = None
 
         self.data, self.indices, self.indptr = arg
+
+        if self.data.ndim != 1:
+            raise ValueError("data must be a scalar or 1-dimensional.")
+
         self.shape = shape
-        self.compressed_axes = compressed_axes
+        self.compressed_axes = (
+            tuple(compressed_axes) if isinstance(compressed_axes, Iterable) else None
+        )
         self.fill_value = fill_value
 
     @classmethod
@@ -193,7 +242,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     @property
     def T(self):
-        return self.tranpose()
+        return self.transpose()
 
     def __str__(self):
         return "<GCXS: shape={}, dtype={}, nnz={}, fill_value={}, compressed_axes={}>".format(
@@ -221,6 +270,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             normalize_axis(new_compressed_axes[i], self.ndim)
             for i in range(len(new_compressed_axes))
         )
+
+        if new_compressed_axes == self.compressed_axes:
+            return self
 
         if len(new_compressed_axes) >= len(self.shape):
             raise ValueError("cannot compress all axes")
@@ -292,11 +344,11 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         """
         if self.compressed_axes is None:
             out = np.full(self.shape, self.fill_value, self.dtype)
-            if self.indices != ():
+            if len(self.indices) != 0:
                 out[self.indices] = self.data
             else:
                 if len(self.data) != 0:
-                    out[self.indices] = self.data
+                    out[()] = self.data[0]
             return out
         return self.tocoo().todense()
 
@@ -360,7 +412,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             return self.todok()
         elif format == "gcxs":
             if compressed_axes is None:
-                compressed_axes = self.compressed_axess
+                compressed_axes = self.compressed_axes
             return self.change_compressed_axes(compressed_axes)
 
         raise NotImplementedError("The given format is not supported.")
@@ -396,6 +448,25 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
                 "Operation would require converting " "large sparse array to dense"
             )
 
+    def flatten(self, order="C"):
+        """
+        Returns a new :obj:`GCXS` array that is a flattened version of this array.
+
+        Returns
+        -------
+        GCXS
+            The flattened output array.
+
+        Notes
+        -----
+        The :code:`order` parameter is provided just for compatibility with
+        Numpy and isn't actually supported.
+        """
+        if order not in {"C", None}:
+            raise NotImplementedError("The `order` parameter is not" "supported.")
+
+        return self.reshape(-1)
+
     def reshape(self, shape, order="C", compressed_axes=None):
         """
         Returns a new :obj:`GCXS` array that is a reshaped version of this array.
@@ -420,7 +491,10 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         Numpy and isn't actually supported.
 
         """
-
+        if isinstance(shape, Iterable):
+            shape = tuple(shape)
+        else:
+            shape = (shape,)
         if order not in {"C", None}:
             raise NotImplementedError("The 'order' parameter is not supported")
         if any(d == -1 for d in shape):
@@ -430,6 +504,13 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         if self.shape == shape:
             return self
 
+        if self.size != reduce(mul, shape, 1):
+            raise ValueError(
+                "cannot reshape array of size {} into shape {}".format(self.size, shape)
+            )
+        if len(shape) == 0:
+            return self.tocoo().reshape(shape).asformat("gcxs")
+
         if compressed_axes is None:
             if len(shape) == self.ndim:
                 compressed_axes = self.compressed_axes
@@ -438,18 +519,13 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             else:
                 compressed_axes = (np.argmin(shape),)
 
-        if self.size != reduce(mul, shape, 1):
-            raise ValueError(
-                "cannot reshape array of size {} into shape {}".format(self.size, shape)
-            )
-
         if self.ndim == 1:
             arg = _1d_reshape(self, shape, compressed_axes)
         else:
             arg = _transpose(self, shape, np.arange(self.ndim), compressed_axes)
         return GCXS(
             arg,
-            shape=shape,
+            shape=tuple(shape),
             compressed_axes=compressed_axes,
             fill_value=self.fill_value,
         )
@@ -555,6 +631,20 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         )
 
     def _2d_transpose(self):
+        """
+        A function for performing constant-time transposes on 2d GCXS arrays.
+        
+        Returns
+        -------
+        GCXS
+            The new transposed array with the opposite compressed axes as the input.
+
+        See Also
+        --------
+        scipy.sparse.csr_matrix.tocsc : Scipy equivalent function.
+        scipy.sparse.csc_matrix.tocsr : Scipy equivalent function.
+        numpy.ndarray.transpose : Numpy equivalent function.
+        """
         if self.ndim != 2:
             raise ValueError(
                 "cannot perform 2d transpose on array with dimension {}".format(
@@ -570,3 +660,31 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             compressed_axes=compressed_axes,
             fill_value=self.fill_value,
         )
+
+    def dot(self, other):
+        """
+        Performs the equivalent of :code:`x.dot(y)` for :obj:`GCXS`.
+
+        Parameters
+        ----------
+        other : Union[GCXS, COO, numpy.ndarray, scipy.sparse.spmatrix]
+            The second operand of the dot product operation.
+
+        Returns
+        -------
+        {GCXS, numpy.ndarray}
+            The result of the dot product. If the result turns out to be dense,
+            then a dense array is returned, otherwise, a sparse array.
+
+        Raises
+        ------
+        ValueError
+            If all arguments don't have zero fill-values.
+
+        See Also
+        --------
+        dot : Equivalent function for two arguments.
+        :obj:`numpy.dot` : Numpy equivalent function.
+        scipy.sparse.csr_matrix.dot : Scipy equivalent function.
+        """
+        return dot(self, other)
