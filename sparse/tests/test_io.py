@@ -11,8 +11,9 @@ from sparse._utils import assert_eq
 
 
 @pytest.mark.parametrize("compression", [True, False])
-def test_save_load_npz_file(compression):
-    x = sparse.random((2, 3, 4, 5), density=0.25)
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+def test_save_load_npz_file(compression, format):
+    x = sparse.random((2, 3, 4, 5), density=0.25, format=format)
     y = x.todense()
 
     dir_name = tempfile.mkdtemp()

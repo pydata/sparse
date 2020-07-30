@@ -1,6 +1,7 @@
 import numpy as np
 
 from ._coo.core import COO
+from ._compressed import GCXS
 
 
 def save_npz(filename, matrix, compressed=True):
@@ -49,10 +50,16 @@ def save_npz(filename, matrix, compressed=True):
 
     nodes = {
         "data": matrix.data,
-        "coords": matrix.coords,
         "shape": matrix.shape,
         "fill_value": matrix.fill_value,
     }
+
+    if type(matrix) == COO:
+        nodes["coords"] = matrix.coords
+    elif type(matrix) == GCXS:
+        nodes["indices"] = matrix.indices
+        nodes["indptr"] = matrix.indptr
+        nodes["compressed_axes"] = matrix.compressed_axes
 
     if compressed:
         np.savez_compressed(filename, **nodes)
@@ -104,6 +111,19 @@ def load_npz(filename):
                 has_duplicates=False,
                 fill_value=fill_value,
             )
+        except:
+            pass
+        try:
+            data = fp["data"]
+            indices = fp["indices"]
+            indptr = fp["indptr"]
+            comp_axes = fp["compressed_axes"]
+            shape = tuple(fp["shape"])
+            fill_value = fp["fill_value"][()]
+            return GCXS((data, indices, indptr), 
+                shape=shape, 
+                fill_value=fill_value,
+                compressed_axes=comp_axes)
         except KeyError:
             raise RuntimeError(
                 "The file {!s} does not contain a valid sparse matrix".format(filename)
