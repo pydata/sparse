@@ -10,7 +10,7 @@ import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 import numba
 
-from .common import dot, matmul
+from .._common import dot, matmul
 from .indexing import getitem
 from .umath import elemwise, broadcast_to
 from .._sparse_array import SparseArray
@@ -569,56 +569,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         True
         """
         return self.data.dtype
-    
-    @property
-    def format(self):
-        """
-        The storage format of this array.
-        
-        Returns
-        -------
-        str
-            The storage format of this array.
-        
-        See Also
-        -------
-        DOK.format : Equivalent :obj:`DOK` array property.
-        GCXS.format : Equivalent :obj:`GCXS` array property.
-        scipy.sparse.coo_matrix.format : The Scipy equivalent property.
-        
-        Examples
-        -------
-        >>> import sparse
-        >>> s = sparse.random((5,5), density=0.2)
-        >>> s.format
-        'coo'
-        """     
-        return 'coo'
-
-    @property
-    def format(self):
-        """
-        The storage format of this array.
-        
-        Returns
-        -------
-        str
-            The storage format of this array.
-        
-        See Also
-        -------
-        DOK.format : Equivalent :obj:`DOK` array property.
-        GCXS.format : Equivalent :obj:`GCXS` array property.
-        scipy.sparse.coo_matrix.format : The Scipy equivalent property.
-        
-        Examples
-        -------
-        >>> import sparse
-        >>> s = sparse.random((5,5), density=0.2)
-        >>> s.format
-        'coo'
-        """
-        return "coo"
 
     @property
     def nnz(self):
@@ -1886,7 +1836,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             return self
 
         if self.size != reduce(operator.mul, shape, 1):
-            raise ValueError('cannot reshape array of size {} into shape {}'.format(self.size, shape))
+            raise ValueError(
+                "cannot reshape array of size {} into shape {}".format(self.size, shape)
+            )
 
         if self.size != reduce(operator.mul, shape, 1):
             raise ValueError(
@@ -2354,15 +2306,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             If the format isn't supported.
         """
         from .._compressed import GCXS
-<<<<<<< HEAD
 
         if format == "gcxs" or format is GCXS:
             return GCXS.from_coo(self, compressed_axes=compressed_axes)
 
-=======
-        if format == 'gcxs' or format is GCXS:
-            return GCXS.from_coo(self, compressed_axes=compressed_axes)
->>>>>>> change gxcs with gcxs
         elif compressed_axes is not None:
             raise ValueError(
                 "compressed_axes is not supported for {} format".format(format)

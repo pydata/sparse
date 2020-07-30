@@ -1,4 +1,4 @@
-from ._coo import COO
+from ._coo import COO, as_coo
 from ._dok import DOK
 from ._sparse_array import SparseArray
 from ._utils import random
