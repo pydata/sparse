@@ -7,7 +7,7 @@ import scipy.sparse as ss
 
 from .._sparse_array import SparseArray
 from .._coo.common import linear_loc
-from .._common import dot
+from .._common import dot, matmul
 from .._utils import normalize_axis, check_zero_fill_value, check_compressed_axes
 from .._coo.core import COO
 from .convert import uncompress_dimension, _transpose, _1d_reshape
@@ -688,3 +688,15 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         scipy.sparse.csr_matrix.dot : Scipy equivalent function.
         """
         return dot(self, other)
+
+    def __matmul__(self, other):
+        try:
+            return matmul(self, other)
+        except NotImplementedError:
+            return NotImplemented
+
+    def __rmatmul__(self, other):
+        try:
+            return matmul(other, self)
+        except NotImplementedError:
+            return NotImplemented
