@@ -120,10 +120,12 @@ def load_npz(filename):
             comp_axes = fp["compressed_axes"]
             shape = tuple(fp["shape"])
             fill_value = fp["fill_value"][()]
-            return GCXS((data, indices, indptr), 
-                shape=shape, 
+            return GCXS(
+                (data, indices, indptr),
+                shape=shape,
                 fill_value=fill_value,
-                compressed_axes=comp_axes)
+                compressed_axes=comp_axes,
+            )
         except KeyError:
             raise RuntimeError(
                 "The file {!s} does not contain a valid sparse matrix".format(filename)

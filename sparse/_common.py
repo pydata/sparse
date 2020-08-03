@@ -277,59 +277,31 @@ def _dot(a, b, return_type=None):
         isinstance(arr, GCXS) for arr in [a, b]
     ):
         a = a.asformat("gcxs")
-        b = b.asformat("gcxs")
+        b = b.asformat("gcxs", compressed_axes=a.compressed_axes)
 
     if isinstance(a, GCXS) and isinstance(b, GCXS):
-        if a.compressed_axes == (0,):
-            compressed_axes = (0,)
-            if b.compressed_axes == (0,):
-                data, indices, indptr = _dot_csr_csr_type(a.dtype, b.dtype)(
-                    out_shape, a.data, b.data, a.indices, b.indices, a.indptr, b.indptr
-                )
-            else:
-                data, indices, indptr = _dot_csr_csc_type(a.dtype, b.dtype)(
-                    out_shape, a.data, b.data, a.indices, b.indices, a.indptr, b.indptr
-                )
-        elif a.compressed_axes == (1,):
-            if b.compressed_axes == (0,):
-                # convert the smaller matrix
-                if a.size >= b.size:
-                    compressed_axes = (0,)
-                    a = a.change_compressed_axes((0,))
-                    data, indices, indptr = _dot_csr_csr_type(a.dtype, b.dtype)(
-                        out_shape,
-                        a.data,
-                        b.data,
-                        a.indices,
-                        b.indices,
-                        a.indptr,
-                        b.indptr,
-                    )
-                else:
-                    compressed_axes = (1,)
-                    b = b.change_compressed_axes((1,))
-                    data, indices, indptr = _dot_csr_csr_type(b.dtype, a.dtype)(
-                        out_shape[::-1],
-                        b.data,
-                        a.data,
-                        b.indices,
-                        a.indices,
-                        b.indptr,
-                        a.indptr,
-                    )
-            else:
-                # a @ b = (b.T @ a.T).T
-                compressed_axes = (1,)
-                data, indices, indptr = _dot_csr_csr_type(b.dtype, a.dtype)(
-                    out_shape[::-1],
-                    b.data,
-                    a.data,
-                    b.indices,
-                    a.indices,
-                    b.indptr,
-                    a.indptr,
-                )
+        if a.nbytes > b.nbytes:
+            b = b.change_compressed_axes(a.compressed_axes)
+        else:
+            a = a.change_compressed_axes(b.compressed_axes)
 
+        if a.compressed_axes == (0,):  # csr @ csr
+            compressed_axes = (0,)
+            data, indices, indptr = _dot_csr_csr_type(a.dtype, b.dtype)(
+                out_shape, a.data, b.data, a.indices, b.indices, a.indptr, b.indptr
+            )
+        elif a.compressed_axes == (1,):  # csc @ csc
+            # a @ b = (b.T @ a.T).T
+            compressed_axes = (1,)
+            data, indices, indptr = _dot_csr_csr_type(b.dtype, a.dtype)(
+                out_shape[::-1],
+                b.data,
+                a.data,
+                b.indices,
+                a.indices,
+                b.indptr,
+                a.indptr,
+            )
         out = GCXS(
             (data, indices, indptr), shape=out_shape, compressed_axes=compressed_axes
         )
@@ -340,7 +312,7 @@ def _dot(a, b, return_type=None):
         return out
 
     if isinstance(a, GCXS) and isinstance(b, np.ndarray):
-        if a.compressed_axes == (0,):
+        if a.compressed_axes == (0,):  # csr @ ndarray
             if return_type is None or return_type == np.ndarray:
                 return _dot_csr_ndarray_type(a.dtype, b.dtype)(
                     out_shape, a.data, a.indices, a.indptr, b
@@ -352,7 +324,7 @@ def _dot(a, b, return_type=None):
             if return_type == COO:
                 return out.tocoo()
             return out
-        if return_type is None or return_type == np.ndarray:
+        if return_type is None or return_type == np.ndarray:  # csc @ ndarray
             return _dot_csc_ndarray_type(a.dtype, b.dtype)(
                 a.shape, b.shape, a.data, a.indices, a.indptr, b
             )
@@ -363,9 +335,7 @@ def _dot(a, b, return_type=None):
         out = GCXS(
             (data, indices, indptr), shape=out_shape, compressed_axes=compressed_axes
         )
-        if return_type == np.ndarray:
-            return out.todense()
-        elif return_type == COO:
+        if return_type == COO:
             return out.tocoo()
         return out
 
@@ -488,46 +458,6 @@ def _memoize_dtype(f):
 
 
 @numba.jit(nopython=True, nogil=True)
-def _csr_csc_count_nnz(out_shape, indptr, a_indices, b_indices, a_indptr, b_indptr):
-    """
-    A function for computing the number of nonzero values in the resulting
-    array from multiplying an array with compressed rows with an array
-    with compressed columns: (a @ b).nnz.
-
-    Parameters
-        ----------
-        out_shape : tuple
-            The shape of the output array.
-
-        indptr : ndarray
-            The empty index pointer array for the output.
-
-        a_indices, a_indptr : np.ndarray
-            The indices and index pointer array of ``a``.
-
-        b_data, b_indices, b_indptr : np.ndarray
-            The indices and index pointer array of ``b``.
-    """
-    nnz = 0
-    for i in range(out_shape[0]):
-        cur_row = a_indices[a_indptr[i] : a_indptr[i + 1]]
-        for j in range(out_shape[1]):
-            cur_col = b_indices[b_indptr[j] : b_indptr[j + 1]]
-            a_next = 0
-            b_next = 0
-            while a_next < cur_row.size and b_next < cur_col.size:
-                if cur_row[a_next] < cur_col[b_next]:
-                    a_next += 1
-                elif cur_row[a_next] > cur_col[b_next]:
-                    b_next += 1
-                else:
-                    nnz += 1
-                    break
-        indptr[i + 1] = nnz
-    return nnz
-
-
-@numba.jit(nopython=True, nogil=True)
 def _csr_csr_count_nnz(out_shape, a_indices, b_indices, a_indptr, b_indptr):
     """
     A function for computing the number of nonzero values in the resulting
@@ -628,71 +558,6 @@ def _csc_ndarray_count_nnz(a_shape, b_shape, indptr, a_indices, a_indptr, b):
         nnz += col_nnz
         indptr[i + 1] = nnz
     return nnz
-
-
-@_memoize_dtype
-def _dot_csr_csc_type(dt1, dt2):
-    dtr = np.result_type(dt1, dt2)
-
-    @numba.jit(
-        nopython=True,
-        nogil=True,
-        locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
-    )
-    def _dot_csr_csc(
-        out_shape, a_data, b_data, a_indices, b_indices, a_indptr, b_indptr
-    ):
-        """
-        Utility function taking in two ``GCXS`` objects and calculating 
-        their dot product: a @ b for a with compressed rows and b
-        with compressed columns.
-
-        Parameters
-        ----------
-        out_shape : tuple
-            The shape of the output array.
-
-        a_data, a_indices, a_indptr : np.ndarray
-            The data, indices, and index pointer arrays of ``a``.
-
-        b_data, b_indices, b_indptr : np.ndarray
-            The data, indices, and index pointer arrays of ``b``.
-        """
-        indptr = np.empty(out_shape[0] + 1, dtype=np.intp)
-        indptr[0] = 0
-
-        # calculate nnz before multiplying so we can use static arrays
-        nnz = _csr_csc_count_nnz(
-            out_shape, indptr, a_indices, b_indices, a_indptr, b_indptr
-        )
-        indices = np.empty(nnz, dtype=np.intp)
-        data = np.empty(nnz)
-        next_val = 0
-        for i in range(out_shape[0]):
-            cur_row = a_indices[a_indptr[i] : a_indptr[i + 1]]
-            cur_a_data = a_data[a_indptr[i] : a_indptr[i + 1]]
-            for j in range(out_shape[1]):
-                cur_col = b_indices[b_indptr[j] : b_indptr[j + 1]]
-                cur_b_data = b_data[b_indptr[j] : b_indptr[j + 1]]
-                a_cur = 0
-                b_cur = 0
-                cur_val = 0
-                while a_cur < cur_row.size and b_cur < cur_col.size:
-                    if cur_row[a_cur] < cur_col[b_cur]:
-                        a_cur += 1
-                    elif cur_row[a_cur] > cur_col[b_cur]:
-                        b_cur += 1
-                    else:
-                        cur_val += cur_a_data[a_cur] * cur_b_data[b_cur]
-                        a_cur += 1
-                        b_cur += 1
-                if cur_val != 0:
-                    indices[next_val] = j
-                    data[next_val] = cur_val
-                    next_val += 1
-        return data, indices, indptr
-
-    return _dot_csr_csc
 
 
 @_memoize_dtype
