@@ -165,7 +165,6 @@ def getitem(x, key):
         compressed_axes = None
 
     return GCXS(
-<<<<<<< HEAD
         arg, shape=shape, compressed_axes=compressed_axes, fill_value=x.fill_value
     )
 
@@ -233,12 +232,6 @@ def get_slicing_selection(
     indices = np.array(indices)
     data = arr_data[ind_list]
     return (data, indices, indptr)
-=======
-        arg,
-        shape=shape,
-        compressed_axes=compressed_axes,
-        fill_value=x.fill_value)
->>>>>>> change gxcs with gcxs
 
 
 @numba.jit(nopython=True, nogil=True)
