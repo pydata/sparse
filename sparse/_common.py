@@ -402,6 +402,7 @@ def _dot(a, b, return_type=None):
         out = COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
         if return_type == GCXS:
             return out.asformat("gcxs")
+        return out
 
     if isinstance(a, np.ndarray) and isinstance(b, COO):
         b = b.T

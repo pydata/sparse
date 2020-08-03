@@ -4,6 +4,7 @@ import scipy.sparse
 import scipy.stats
 
 import sparse
+from sparse._compressed import GCXS
 from sparse import COO
 from sparse._utils import assert_eq
 
