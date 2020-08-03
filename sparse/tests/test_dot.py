@@ -5,7 +5,7 @@ import scipy.stats
 
 import sparse
 from sparse import COO
-from .._utils import assert_eq
+from sparse._utils import assert_eq
 
 @pytest.mark.parametrize(
     "a_shape,b_shape,axes",
