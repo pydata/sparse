@@ -598,7 +598,7 @@ def _dot_csr_csr_type(dt1, dt2):
         indptr = np.empty(n_row + 1, dtype=np.intp)
         indptr[0] = 0
         indices = np.empty(nnz, dtype=np.intp)
-        data = np.empty(nnz)
+        data = np.empty(nnz, dtype=dtr)
         next_ = np.full(n_col, -1)
         sums = np.zeros(n_col)
         nnz = 0
@@ -670,7 +670,7 @@ def _dot_csr_ndarray_type(dt1, dt2):
         out_shape : Tuple[int]
             The shape of the output array.
         """
-        out = np.empty(out_shape)
+        out = np.empty(out_shape, dtype=dtr)
         for i in range(out_shape[0]):
             for j in range(out_shape[1]):
                 val = 0
@@ -714,7 +714,7 @@ def _dot_csr_ndarray_type_sparse(dt1, dt2):
         indptr[0] = 0
         nnz = _csr_ndarray_count_nnz(out_shape, indptr, a_indices, a_indptr, b)
         indices = np.empty(nnz, dtype=np.intp)
-        data = np.empty(nnz, dtype=a_data.dtype)
+        data = np.empty(nnz, dtype=dtr)
         current = 0
         for i in range(out_shape[0]):
             for j in range(out_shape[1]):
@@ -764,7 +764,7 @@ def _dot_csc_ndarray_type_sparse(dt1, dt2):
         indptr = np.empty(b_shape[1] + 1, dtype=np.intp)
         nnz = _csc_ndarray_count_nnz(a_shape, b_shape, indptr, a_indices, a_indptr, b)
         indices = np.empty(nnz, dtype=np.intp)
-        data = np.empty(nnz, dtype=a_data.dtype)
+        data = np.empty(nnz, dtype=dtr)
         sums = np.zeros(a_shape[0])
         mask = np.full(a_shape[0], -1)
         nnz = 0
@@ -829,7 +829,7 @@ def _dot_csc_ndarray_type(dt1, dt2):
         a_shape, b_shape : Tuple[int]
             The shapes of the input arrays.
         """
-        out = np.zeros((a_shape[0], b_shape[1]))
+        out = np.zeros((a_shape[0], b_shape[1]), dtype=dtr)
         for j in range(b_shape[1]):
             for i in range(b_shape[0]):
                 for k in range(a_indptr[i], a_indptr[i + 1]):
@@ -864,7 +864,7 @@ def _dot_ndarray_csc_type(dt1, dt2):
         out_shape : Tuple[int]
             The shape of the output array.
         """
-        out = np.empty(out_shape)
+        out = np.empty(out_shape, dtype=dtr)
         for i in range(out_shape[0]):
             for j in range(out_shape[1]):
                 total = 0

@@ -3,6 +3,7 @@ import pytest
 import scipy.sparse
 import scipy.stats
 
+import operator
 import sparse
 from sparse._compressed import GCXS
 from sparse import COO
