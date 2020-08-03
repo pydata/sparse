@@ -118,9 +118,9 @@ def test_tensordot_valueerror():
     "a_comp_axes, b_comp_axes", [([0], [0]), ([0], [1]), ([1], [0]), ([1], [1])]
 )
 def test_matmul(a_shape, b_shape, a_format, b_format, a_comp_axes, b_comp_axes):
-    if a_format == "coo":
+    if a_format == "coo" or len(a_shape) == 1:
         a_comp_axes = None
-    if b_format == "coo":
+    if b_format == "coo" or len(b_shape) == 1:
         b_comp_axes = None
     sa = sparse.random(
         a_shape, density=0.5, format=a_format, compressed_axes=a_comp_axes
@@ -177,9 +177,9 @@ def test_matmul_errors():
     "a_comp_axes, b_comp_axes", [([0], [0]), ([0], [1]), ([1], [0]), ([1], [1])]
 )
 def test_dot(a_shape, b_shape, a_format, b_format, a_comp_axes, b_comp_axes):
-    if a_format == "coo":
+    if a_format == "coo" or len(a_shape) == 1:
         a_comp_axes = None
-    if b_format == "coo":
+    if b_format == "coo" or len(b_shape) == 1:
         b_comp_axes = None
     sa = sparse.random(
         a_shape, density=0.5, format=a_format, compressed_axes=a_comp_axes
