@@ -911,7 +911,7 @@ def _dot_coo_coo_type(dt1, dt2):
             out_shape, a_coords[1], b_coords[1], a_indptr, b_indptr
         )
         coords = np.empty((2, nnz), dtype=np.intp)
-        data = np.empty(nnz)
+        data = np.empty(nnz, dtype=dtr)
         next_ = np.full(n_col, -1)
         sums = np.zeros(n_col)
         nnz = 0

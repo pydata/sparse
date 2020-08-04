@@ -9,6 +9,7 @@ from sparse._compressed import GCXS
 from sparse import COO
 from sparse._utils import assert_eq
 
+
 @pytest.mark.parametrize(
     "a_shape,b_shape,axes",
     [
