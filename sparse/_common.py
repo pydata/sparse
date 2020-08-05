@@ -768,7 +768,6 @@ def _dot_csc_ndarray_type_sparse(dt1, dt2):
         sums = np.zeros(a_shape[0])
         mask = np.full(a_shape[0], -1)
         nnz = 0
-        current = 0
         for i in range(b_shape[1]):
             head = -2
             length = 0
