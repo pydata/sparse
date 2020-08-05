@@ -1840,11 +1840,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 "cannot reshape array of size {} into shape {}".format(self.size, shape)
             )
 
-        if self.size != reduce(operator.mul, shape, 1):
-            raise ValueError(
-                "cannot reshape array of size {} into shape {}".format(self.size, shape)
-            )
-
         if self._cache is not None:
             for sh, value in self._cache["reshape"]:
                 if sh == shape:
@@ -1895,8 +1890,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         if any(d < 0 for d in shape):
             raise ValueError("negative dimensions not allowed")
-
-        new_size = reduce(operator.mul, shape, 1)
 
         new_size = reduce(operator.mul, shape, 1)
 
