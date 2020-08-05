@@ -459,7 +459,9 @@ def _memoize_dtype(f):
 
 
 @numba.jit(nopython=True, nogil=True)
-def _csr_csr_count_nnz(out_shape, a_indices, b_indices, a_indptr, b_indptr):
+def _csr_csr_count_nnz(
+    out_shape, a_indices, b_indices, a_indptr, b_indptr
+):  # pragma: no cover
     """
     A function for computing the number of nonzero values in the resulting
     array from multiplying an array with compressed rows with an array
@@ -494,7 +496,9 @@ def _csr_csr_count_nnz(out_shape, a_indices, b_indices, a_indptr, b_indptr):
 
 
 @numba.jit(nopython=True, nogil=True)
-def _csr_ndarray_count_nnz(out_shape, indptr, a_indices, a_indptr, b):
+def _csr_ndarray_count_nnz(
+    out_shape, indptr, a_indices, a_indptr, b
+):  # pragma: no cover
     """
     A function for computing the number of nonzero values in the resulting
     array from multiplying an array with compressed rows with a dense
@@ -527,7 +531,9 @@ def _csr_ndarray_count_nnz(out_shape, indptr, a_indices, a_indptr, b):
 
 
 @numba.jit(nopython=True, nogil=True)
-def _csc_ndarray_count_nnz(a_shape, b_shape, indptr, a_indices, a_indptr, b):
+def _csc_ndarray_count_nnz(
+    a_shape, b_shape, indptr, a_indices, a_indptr, b
+):  # pragma: no cover
     """
     A function for computing the number of nonzero values in the resulting
     array from multiplying an array with compressed columns with a dense
@@ -572,7 +578,7 @@ def _dot_csr_csr_type(dt1, dt2):
     )
     def _dot_csr_csr(
         out_shape, a_data, b_data, a_indices, b_indices, a_indptr, b_indptr
-    ):
+    ):  # pragma: no cover
         """
         Utility function taking in two ``GCXS`` objects and calculating 
         their dot product: a @ b for a and b with compressed rows.
@@ -653,7 +659,7 @@ def _dot_csr_ndarray_type(dt1, dt2):
         nogil=True,
         locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
     )
-    def _dot_csr_ndarray(out_shape, a_data, a_indices, a_indptr, b):
+    def _dot_csr_ndarray(out_shape, a_data, a_indices, a_indptr, b):  # pragma: no cover
         """
         Utility function taking in one `GCXS` and one ``ndarray`` and
         calculating their dot product: a @ b for a with compressed rows.
@@ -693,7 +699,9 @@ def _dot_csr_ndarray_type_sparse(dt1, dt2):
         nogil=True,
         locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
     )
-    def _dot_csr_ndarray_sparse(out_shape, a_data, a_indices, a_indptr, b):
+    def _dot_csr_ndarray_sparse(
+        out_shape, a_data, a_indices, a_indptr, b
+    ):  # pragma: no cover
         """
         Utility function taking in one `GCXS` and one ``ndarray`` and
         calculating their dot product: a @ b for a with compressed rows.
@@ -744,7 +752,9 @@ def _dot_csc_ndarray_type_sparse(dt1, dt2):
         nogil=True,
         locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
     )
-    def _dot_csc_ndarray_sparse(a_shape, b_shape, a_data, a_indices, a_indptr, b):
+    def _dot_csc_ndarray_sparse(
+        a_shape, b_shape, a_data, a_indices, a_indptr, b
+    ):  # pragma: no cover
         """
         Utility function taking in one `GCXS` and one ``ndarray`` and
         calculating their dot product: a @ b for a with compressed columns.
@@ -811,7 +821,9 @@ def _dot_csc_ndarray_type(dt1, dt2):
         nogil=True,
         locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
     )
-    def _dot_csc_ndarray(a_shape, b_shape, a_data, a_indices, a_indptr, b):
+    def _dot_csc_ndarray(
+        a_shape, b_shape, a_data, a_indices, a_indptr, b
+    ):  # pragma: no cover
         """
         Utility function taking in one `GCXS` and one ``ndarray`` and
         calculating their dot product: a @ b for a with compressed columns.
@@ -847,7 +859,7 @@ def _dot_ndarray_csc_type(dt1, dt2):
         nogil=True,
         locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
     )
-    def _dot_ndarray_csc(out_shape, b_data, b_indices, b_indptr, a):
+    def _dot_ndarray_csc(out_shape, b_data, b_indices, b_indptr, a):  # pragma: no cover
         """
         Utility function taking in one `ndarray` and one ``GCXS`` and
         calculating their dot product: a @ b for b with compressed columns.
@@ -884,7 +896,9 @@ def _dot_coo_coo_type(dt1, dt2):
         nogil=True,
         locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
     )
-    def _dot_coo_coo(out_shape, a_coords, b_coords, a_data, b_data, a_indptr, b_indptr):
+    def _dot_coo_coo(
+        out_shape, a_coords, b_coords, a_data, b_data, a_indptr, b_indptr
+    ):  # pragma: no cover
         """
         Utility function taking in two ``COO`` objects and calculating 
         their dot product: a @ b.
