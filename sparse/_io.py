@@ -111,7 +111,7 @@ def load_npz(filename):
                 has_duplicates=False,
                 fill_value=fill_value,
             )
-        except:
+        except KeyError:
             pass
         try:
             data = fp["data"]
