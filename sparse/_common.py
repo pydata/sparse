@@ -29,6 +29,7 @@ from ._coo.common import (
     diagonal,
     diagonalize,
     asCOO,
+    linear_loc
 )
 
 
@@ -270,7 +271,22 @@ def dot(a, b):
 def _dot(a, b, return_type=None):
     from ._coo import COO
     from ._compressed import GCXS
+    from ._compressed.convert import uncompress_dimension
     from ._sparse_array import SparseArray
+
+    def sort_indices(data, indices, indptr, shape):
+        """
+        Several of the dot algorithms produce indices that
+        are out of order. So we have to do a sort of indices
+        and data. 
+        """
+        coords = np.empty((2, indices.shape[0]), dtype=np.intp)
+        coords[0,:] = uncompress_dimension(indptr)
+        coords[1,:] = indices
+        linear = linear_loc(coords, shape)
+        order = np.argsort(linear, kind='mergesort')
+        indices = indices[order]
+        data = data[order]
 
     out_shape = (a.shape[0], b.shape[1])
     if all(isinstance(arr, SparseArray) for arr in [a, b]) and any(
@@ -290,6 +306,7 @@ def _dot(a, b, return_type=None):
             data, indices, indptr = _dot_csr_csr_type(a.dtype, b.dtype)(
                 out_shape, a.data, b.data, a.indices, b.indices, a.indptr, b.indptr
             )
+            sort_indices(data, indices, indptr, out_shape)
         elif a.compressed_axes == (1,):  # csc @ csc
             # a @ b = (b.T @ a.T).T
             compressed_axes = (1,)
@@ -302,6 +319,7 @@ def _dot(a, b, return_type=None):
                 b.indptr,
                 a.indptr,
             )
+            sort_indices(data, indices, indptr, out_shape[::-1])
         out = GCXS(
             (data, indices, indptr), shape=out_shape, compressed_axes=compressed_axes
         )
@@ -331,6 +349,7 @@ def _dot(a, b, return_type=None):
         data, indices, indptr = _dot_csc_ndarray_type_sparse(a.dtype, b.dtype)(
             a.shape, b.shape, a.data, a.indices, a.indptr, b
         )
+        sort_indices(data, indices, indptr, out_shape[::-1])
         compressed_axes = (1,)
         out = GCXS(
             (data, indices, indptr), shape=out_shape, compressed_axes=compressed_axes
@@ -381,13 +400,13 @@ def _dot(a, b, return_type=None):
         coords, data = _dot_coo_coo_type(a.dtype, b.dtype)(
             out_shape, a.coords, b.coords, a.data, b.data, a_indptr, b_indptr
         )
-        out = COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
+        out = COO(coords, data, shape=out_shape, has_duplicates=False, sorted=False)
 
         if return_type == np.ndarray:
             return out.todense()
         elif return_type == GCXS:
             return out.asformat("gcxs")
-        return COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
+        return out
 
     if isinstance(a, COO) and isinstance(b, np.ndarray):
         b = b.view(type=np.ndarray).T
@@ -639,12 +658,6 @@ def _dot_csr_csr_type(dt1, dt2):
                 sums[temp] = 0
 
             indptr[i + 1] = nnz
-            # ensure sorted indices
-            order = np.argsort(indices[indptr[i] : indptr[i + 1]])
-            data[indptr[i] : indptr[i + 1]] = data[indptr[i] : indptr[i + 1]][order]
-            indices[indptr[i] : indptr[i + 1]] = indices[indptr[i] : indptr[i + 1]][
-                order
-            ]
         return data, indices, indptr
 
     return _dot_csr_csr
@@ -804,9 +817,6 @@ def _dot_csc_ndarray_type_sparse(dt1, dt2):
 
                 mask[temp] = -1
                 sums[temp] = 0
-            order = np.argsort(indices[start:nnz])
-            indices[start:nnz] = indices[start:nnz][order]
-            data[start:nnz] = data[start:nnz][order]
         return data, indices, indptr
 
     return _dot_csc_ndarray_sparse
@@ -960,10 +970,6 @@ def _dot_coo_coo_type(dt1, dt2):
                 next_[temp] = -1
                 sums[temp] = 0
 
-            # ensure sorted coords
-            order = np.argsort(coords[1, start:nnz])
-            data[start:nnz] = data[start:nnz][order]
-            coords[1, start:nnz] = coords[1, start:nnz][order]
         return coords, data
 
     return _dot_coo_coo
