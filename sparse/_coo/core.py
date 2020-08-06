@@ -2187,7 +2187,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             np.clip, "__call__", self, a_min=min, a_max=max, out=out
         )
 
-    def astype(self, dtype, copy=True):
+    def astype(self, dtype, casting="unsafe", copy=True):
         """
         Copy of the array, cast to a specified type.
 
@@ -2202,7 +2202,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if self.dtype == dtype and not copy:
             return self
         return self.__array_ufunc__(
-            np.ndarray.astype, "__call__", self, dtype=dtype, copy=copy
+            np.ndarray.astype, "__call__", self, dtype=dtype, copy=copy, casting=casting
         )
 
     def maybe_densify(self, max_size=1000, min_density=0.25):

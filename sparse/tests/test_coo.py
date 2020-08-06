@@ -2375,3 +2375,9 @@ def test_raise_on_nd_data():
     s1 = sparse.random((2, 3, 4), density=0.5)
     with pytest.raises(ValueError):
         sparse.COO(s1.coords, s1.data[:, None], shape=(2, 3, 4))
+
+
+def test_astype_casting():
+    s1 = sparse.random((2, 3, 4), density=0.5)
+    with pytest.raises(TypeError):
+        s1.astype(dtype=np.int64, casting="safe")
