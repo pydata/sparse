@@ -197,6 +197,7 @@ def test_dot(a_shape, b_shape, a_format, b_format, a_comp_axes, b_comp_axes):
     assert_eq(sparse.dot(sa, b), sparse.dot(a, sb))
     assert_eq(np.dot(a, b), sparse.dot(sa, sb))
 
+
 @pytest.mark.parametrize(
     "a_dense, b_dense, o_type",
     [

@@ -19,6 +19,7 @@ def test_save_load_npz_file(tmp_path, compression, format):
     assert_eq(x, z)
     assert_eq(y, z.todense())
 
+
 def test_load_wrong_format_exception(tmp_path):
     x = np.array([1, 2, 3])
 

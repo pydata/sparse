@@ -29,7 +29,7 @@ from ._coo.common import (
     diagonal,
     diagonalize,
     asCOO,
-    linear_loc
+    linear_loc,
 )
 
 
@@ -281,10 +281,10 @@ def _dot(a, b, return_type=None):
         and data. 
         """
         coords = np.empty((2, indices.shape[0]), dtype=np.intp)
-        coords[0,:] = uncompress_dimension(indptr)
-        coords[1,:] = indices
+        coords[0, :] = uncompress_dimension(indptr)
+        coords[1, :] = indices
         linear = linear_loc(coords, shape)
-        order = np.argsort(linear, kind='mergesort')
+        order = np.argsort(linear, kind="mergesort")
         indices = indices[order]
         data = data[order]
 
