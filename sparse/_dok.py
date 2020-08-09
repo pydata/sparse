@@ -242,6 +242,55 @@ class DOK(SparseArray):
         """
         return len(self.data)
 
+    @property
+    def format(self):
+        """
+        The storage format of this array.
+        
+        Returns
+        -------
+        str
+            The storage format of this array.
+        
+        See Also
+        -------
+        COO.format : Equivalent :obj:`COO` array property.
+        GCXS.format : Equivalent :obj:`GCXS` array property.
+        scipy.sparse.dok_matrix.format : The Scipy equivalent property.
+        
+        Examples
+        -------
+        >>> import sparse
+        >>> s = sparse.random((5,5), density=0.2, format='dok')
+        >>> s.format
+        'dok'
+        """
+        return "dok"
+
+    @property
+    def nbytes(self):
+        """
+        The number of bytes taken up by this object. Note that for small arrays,
+        this may undercount the number of bytes due to the large constant overhead.
+
+        Returns
+        -------
+        int
+            The approximate bytes of memory taken by this object.
+
+        See Also
+        --------
+        numpy.ndarray.nbytes : The equivalent Numpy property.
+
+        Examples
+        --------
+        >>> import sparse
+        >>> x = sparse.random((100,100),density=.1,format='dok')
+        >>> x.nbytes
+        8000
+        """
+        return self.nnz * self.dtype.itemsize
+
     def __getitem__(self, key):
         key = normalize_index(key, self.shape)
 

@@ -1,12 +1,14 @@
 import numpy as np
 
 from ._coo.core import COO
+from ._compressed import GCXS
 
 
 def save_npz(filename, matrix, compressed=True):
     """ Save a sparse matrix to disk in numpy's ``.npz`` format.
     Note: This is not binary compatible with scipy's ``save_npz()``.
-    Will save a file that can only be opend with this package's ``load_npz()``.
+    This binary format is not currently stable. Will save a file 
+    that can only be opend with this package's ``load_npz()``.
 
     Parameters
     ----------
@@ -15,7 +17,7 @@ def save_npz(filename, matrix, compressed=True):
         where the data will be saved. If file is a string or a Path, the
         ``.npz`` extension will be appended to the file name if it is not
         already there
-    matrix : COO
+    matrix : SparseArray
         The matrix to save to disk
     compressed : bool
         Whether to save in compressed or uncompressed mode
@@ -49,10 +51,16 @@ def save_npz(filename, matrix, compressed=True):
 
     nodes = {
         "data": matrix.data,
-        "coords": matrix.coords,
         "shape": matrix.shape,
         "fill_value": matrix.fill_value,
     }
+
+    if type(matrix) == COO:
+        nodes["coords"] = matrix.coords
+    elif type(matrix) == GCXS:
+        nodes["indices"] = matrix.indices
+        nodes["indptr"] = matrix.indptr
+        nodes["compressed_axes"] = matrix.compressed_axes
 
     if compressed:
         np.savez_compressed(filename, **nodes)
@@ -63,7 +71,8 @@ def save_npz(filename, matrix, compressed=True):
 def load_npz(filename):
     """ Load a sparse matrix in numpy's ``.npz`` format from disk.
     Note: This is not binary compatible with scipy's ``save_npz()``
-    output. Will only load files saved by this package.
+    output. This binary format is not currently stable.
+    Will only load files saved by this package.
 
     Parameters
     ----------
@@ -73,8 +82,8 @@ def load_npz(filename):
 
     Returns
     -------
-    COO
-        The sparse matrix at path ``filename``
+    SparseArray
+        The sparse matrix at path ``filename``. 
 
     Example
     --------
@@ -103,6 +112,21 @@ def load_npz(filename):
                 sorted=True,
                 has_duplicates=False,
                 fill_value=fill_value,
+            )
+        except KeyError:
+            pass
+        try:
+            data = fp["data"]
+            indices = fp["indices"]
+            indptr = fp["indptr"]
+            comp_axes = fp["compressed_axes"]
+            shape = tuple(fp["shape"])
+            fill_value = fp["fill_value"][()]
+            return GCXS(
+                (data, indices, indptr),
+                shape=shape,
+                fill_value=fill_value,
+                compressed_axes=comp_axes,
             )
         except KeyError:
             raise RuntimeError(

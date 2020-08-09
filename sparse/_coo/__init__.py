@@ -1,9 +1,6 @@
 from .core import COO, as_coo
 from .umath import elemwise
 from .common import (
-    tensordot,
-    dot,
-    matmul,
     concatenate,
     clip,
     stack,
@@ -30,9 +27,6 @@ __all__ = [
     "COO",
     "as_coo",
     "elemwise",
-    "tensordot",
-    "dot",
-    "matmul",
     "concatenate",
     "clip",
     "stack",
