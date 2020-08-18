@@ -212,9 +212,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         --------
         numpy.ndarray.nbytes : The equivalent Numpy property.
         """
-        nbytes = self.data.nbytes + self.indices.nbytes
-        if self.indptr != ():
-            nbytes += self.indptr.nbytes
+        nbytes = self.data.nbytes + self.indices.nbytes + self.indptr.nbytes
         return nbytes
 
     @property
