@@ -3,6 +3,16 @@ Changelog
 
 .. currentmodule:: sparse
 
+0.11.0 / 2020-08-18
+-------------------
+
+* Improve the performance of :obj:`sparse.dot`. (:issue:`331`, :pr:`389`, thanks :ghuser:`daletovar`)
+* Added the :obj:`COO.swapaxes` method. (:pr:`344`, thanks :ghuser:`lueckem`)
+* Added multi-axis 1-D indexing support. (:pr:`343`, thanks :ghuser:`mikeymezher`)
+* Fix :obj:`outer` for arrays that weren't one-dimensional. (:issue:`346`, :pr:`347`)
+* Add ``casting`` kwarg to :obj:`COO.astype`. (:issue:`391`, :pr:`392`)
+* Fix for :obj:`COO` constructor accepting invalid inputs. (:issue:`385`, :pr:`386`)
+
 0.10.0 / 2020-05-13
 -------------------
 
