@@ -7,6 +7,128 @@ from sparse._compressed import GCXS
 from sparse._utils import assert_eq
 
 
+@pytest.fixture(scope="module", params=["f8", "f4", "i8", "i4"])
+def random_sparse(request):
+    dtype = request.param
+    if np.issubdtype(dtype, np.integer):
+
+        def data_rvs(n):
+            return np.random.randint(-1000, 1000, n)
+
+    else:
+        data_rvs = None
+    return sparse.random(
+        (20, 30, 40), density=0.25, format="gcxs", data_rvs=data_rvs
+    ).astype(dtype)
+
+
+@pytest.fixture(scope="module", params=["f8", "f4", "i8", "i4"])
+def random_sparse_small(request):
+    dtype = request.param
+    if np.issubdtype(dtype, np.integer):
+
+        def data_rvs(n):
+            return np.random.randint(-10, 10, n)
+
+    else:
+        data_rvs = None
+    return sparse.random(
+        (20, 30, 40), density=0.25, format="gcxs", data_rvs=data_rvs
+    ).astype(dtype)
+
+
+@pytest.mark.parametrize(
+    "reduction, kwargs",
+    [
+        ("sum", {}),
+        ("sum", {"dtype": np.float32}),
+        ("prod", {}),
+        ("max", {}),
+        ("min", {}),
+    ],
+)
+@pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2), -3, (1, -1)])
+@pytest.mark.parametrize("keepdims", [True, False])
+def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
+    x = random_sparse
+    y = x.todense()
+    xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
+    yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
+    assert_eq(xx, yy)
+
+
+@pytest.mark.xfail(
+    reason=("Setting output dtype=float16 produces results " "inconsistent with numpy")
+)
+@pytest.mark.filterwarnings("ignore:overflow")
+@pytest.mark.parametrize(
+    "reduction, kwargs", [("sum", {"dtype": np.float16})],
+)
+@pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2)])
+def test_reductions_float16(random_sparse, reduction, kwargs, axis):
+    x = random_sparse
+    y = x.todense()
+    xx = getattr(x, reduction)(axis=axis, **kwargs)
+    yy = getattr(y, reduction)(axis=axis, **kwargs)
+    assert_eq(xx, yy, atol=1e-2)
+
+
+@pytest.mark.parametrize("reduction,kwargs", [("any", {}), ("all", {})])
+@pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2), -3, (1, -1)])
+@pytest.mark.parametrize("keepdims", [True, False])
+def test_reductions_bool(random_sparse, reduction, kwargs, axis, keepdims):
+    y = np.zeros((2, 3, 4), dtype=bool)
+    y[0] = True
+    y[1, 1, 1] = True
+    x = sparse.COO.from_numpy(y)
+    xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
+    yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
+    assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize(
+    "reduction,kwargs",
+    [
+        (np.max, {}),
+        (np.sum, {}),
+        (np.sum, {"dtype": np.float32}),
+        (np.prod, {}),
+        (np.min, {}),
+    ],
+)
+@pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2), -1, (0, -1)])
+@pytest.mark.parametrize("keepdims", [True, False])
+def test_ufunc_reductions(random_sparse, reduction, kwargs, axis, keepdims):
+    x = random_sparse
+    y = x.todense()
+    xx = reduction(x, axis=axis, keepdims=keepdims, **kwargs)
+    yy = reduction(y, axis=axis, keepdims=keepdims, **kwargs)
+    assert_eq(xx, yy)
+    # If not a scalar/1 element array, must be a sparse array
+    if xx.size > 1:
+        assert isinstance(xx, GCXS)
+
+
+@pytest.mark.parametrize(
+    "reduction,kwargs",
+    [
+        (np.max, {}),
+        (np.sum, {"axis": 0}),
+        (np.prod, {"keepdims": True}),
+        (np.minimum.reduce, {"axis": 0}),
+    ],
+)
+def test_ufunc_reductions_kwargs(reduction, kwargs):
+    x = sparse.random((2, 3, 4), density=0.5, format="gcxs")
+    y = x.todense()
+    xx = reduction(x, **kwargs)
+    yy = reduction(y, **kwargs)
+    assert_eq(xx, yy)
+    # If not a scalar/1 element array, must be a sparse array
+    if xx.size > 1:
+        assert isinstance(xx, GCXS)
+
+
 @pytest.mark.parametrize(
     "a,b",
     [
