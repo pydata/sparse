@@ -5,13 +5,14 @@ from functools import reduce
 from collections.abc import Iterable
 import scipy.sparse as ss
 
-from .._sparse_array import SparseArray
+from .._sparse_array import SparseArray, _reduce_super_ufunc
 from .._coo.common import linear_loc
 from .._common import dot, matmul
 from .._utils import (
     normalize_axis,
     check_zero_fill_value,
     check_compressed_axes,
+    equivalent,
 )
 from .._coo.core import COO
 from .convert import uncompress_dimension, _transpose, _1d_reshape
@@ -256,6 +257,106 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     __repr__ = __str__
 
     __getitem__ = getitem
+
+    def reduce(self, method, axis=(0,), keepdims=False, **kwargs):
+        """
+        Performs a reduction operation on this array.
+
+        Parameters
+        ----------
+        method : numpy.ufunc
+            The method to use for performing the reduction.
+        axis : Union[int, Iterable[int]], optional
+            The axes along which to perform the reduction. Uses all axes by default.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+        kwargs : dict
+            Any extra arguments to pass to the reduction operation.
+
+        Returns
+        -------
+        GCXS
+            The result of the reduction operation.
+
+        Raises
+        ------
+        ValueError
+            If reducing an all-zero axis would produce a nonzero result.
+
+        See Also
+        --------
+        numpy.ufunc.reduce : A similar Numpy method.
+        COO.reduce : Equivalent operation on COO arrays.
+        """
+        axis = normalize_axis(axis, self.ndim)
+        zero_reduce_result = method.reduce([self.fill_value, self.fill_value], **kwargs)
+        reduce_super_ufunc = None
+
+        if not equivalent(zero_reduce_result, self.fill_value):
+            reduce_super_ufunc = _reduce_super_ufunc.get(method, None)
+
+            if reduce_super_ufunc is None:
+                raise ValueError(
+                    "Performing this reduction operation would produce "
+                    "a dense result: %s" % str(method)
+                )
+
+        if axis is None:
+            x = self.flatten().tocoo()
+            out = x.reduce(method, axis=None, keepdims=keepdims, **kwargs)
+            if keepdims:
+                return out.reshape(np.ones(self.ndim, dtype=np.intp))
+            return out
+
+        if not isinstance(axis, tuple):
+            axis = (axis,)
+
+        r = np.arange(self.ndim, dtype=np.intp)
+        compressed_axes = [a for a in r if a not in set(axis)]
+        x = self.change_compressed_axes(compressed_axes)
+        idx = np.diff(x.indptr) != 0
+        indptr = x.indptr[:-1][idx]
+        indices = (np.arange(x._compressed_shape[0], dtype=np.intp))[idx]
+        data = method.reduceat(x.data, indptr, **kwargs)
+        counts = x.indptr[1:][idx] - x.indptr[:-1][idx]
+        result_fill_value = self.fill_value
+
+        if reduce_super_ufunc is None:
+            missing_counts = counts != x._compressed_shape[1]
+            data[missing_counts] = method(
+                data[missing_counts], self.fill_value, **kwargs
+            )
+        else:
+            data = method(
+                data,
+                reduce_super_ufunc(self.fill_value, x._compressed_shape[1] - counts),
+            ).astype(data.dtype)
+            result_fill_value = reduce_super_ufunc(
+                self.fill_value, x._compressed_shape[1]
+            )
+
+        # prune data
+        mask = ~equivalent(data, result_fill_value)
+        data = data[mask]
+        indices = indices[mask]
+        out = GCXS(
+            (data, indices, []),
+            shape=(x._compressed_shape[0],),
+            fill_value=result_fill_value,
+            compressed_axes=None,
+        )
+        out = out.reshape(tuple(self.shape[d] for d in compressed_axes))
+
+        if keepdims:
+            shape = list(self.shape)
+            for ax in axis:
+                shape[ax] = 1
+            out = out.reshape(shape)
+
+        if out.ndim == 0:
+            return out[()]
+
+        return out
 
     def change_compressed_axes(self, new_compressed_axes):
         """

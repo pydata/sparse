@@ -118,8 +118,9 @@ def test_ufunc_reductions(random_sparse, reduction, kwargs, axis, keepdims):
         (np.minimum.reduce, {"axis": 0}),
     ],
 )
-def test_ufunc_reductions_kwargs(reduction, kwargs):
-    x = sparse.random((2, 3, 4), density=0.5, format="gcxs")
+@pytest.mark.parametrize("fill_value", [0, 1.0, -1, -2.2, 5.0])
+def test_ufunc_reductions_kwargs(reduction, kwargs, fill_value):
+    x = sparse.random((2, 3, 4), density=0.5, format="gcxs", fill_value=fill_value)
     y = x.todense()
     xx = reduction(x, **kwargs)
     yy = reduction(y, **kwargs)
