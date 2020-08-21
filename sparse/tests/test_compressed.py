@@ -400,3 +400,14 @@ def test_stack(shape, axis):
     z = zz.todense()
 
     assert_eq(np.stack([x, y, z], axis=axis), sparse.stack([xx, yy, zz], axis=axis))
+
+
+@pytest.mark.parametrize("in_shape", [(5, 5), 62, (3, 3, 3)])
+def test_flatten(in_shape):
+    s = sparse.random(in_shape, format="gcxs", density=0.5)
+    x = s.todense()
+
+    a = s.flatten()
+    e = x.flatten()
+
+    assert_eq(e, a)
