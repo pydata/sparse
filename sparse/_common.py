@@ -400,7 +400,14 @@ def _dot(a, b, return_type=None):
         coords, data = _dot_coo_coo_type(a.dtype, b.dtype)(
             out_shape, a.coords, b.coords, a.data, b.data, a_indptr, b_indptr
         )
-        out = COO(coords, data, shape=out_shape, has_duplicates=False, sorted=False)
+        out = COO(
+            coords,
+            data,
+            shape=out_shape,
+            has_duplicates=False,
+            sorted=False,
+            prune=True,
+        )
 
         if return_type == np.ndarray:
             return out.todense()
@@ -942,6 +949,7 @@ def _dot_coo_coo_type(dt1, dt2):
         for i in range(n_row):
             head = -2
             length = 0
+            next_[:] = -1
             for j, av in zip(
                 a_coords[1, a_indptr[i] : a_indptr[i + 1]],
                 a_data[a_indptr[i] : a_indptr[i + 1]],
@@ -958,7 +966,7 @@ def _dot_coo_coo_type(dt1, dt2):
 
             start = nnz
             for _ in range(length):
-                if sums[head] != 0:
+                if next_[head] != -1:
                     coords[0, nnz] = i
                     coords[1, nnz] = head
                     data[nnz] = sums[head]
