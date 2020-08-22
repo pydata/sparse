@@ -240,3 +240,12 @@ def test_dot_nocoercion():
         # Operations with naive collection (list)
         assert_eq(operator.matmul(la, b), operator.matmul(la, sb))
         assert_eq(operator.matmul(a, lb), operator.matmul(sa, lb))
+
+
+def test_small_values():
+    s1 = sparse.COO(coords=[[0, 10]], data=[3.6e-100, 7.2e-009], shape=(20,))
+    s2 = sparse.COO(coords=[[0, 0], [4, 28]], data=[3.8e-25, 4.5e-225], shape=(20, 50))
+
+    x1, x2 = s1.todense(), s2.todense()
+
+    assert_eq(x1 @ x2, s1 @ s2)
