@@ -660,86 +660,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     __repr__ = __str__
 
-    def reduce(self, method, axis=(0,), keepdims=False, **kwargs):
-        """
-        Performs a reduction operation on this array.
-
-        Parameters
-        ----------
-        method : numpy.ufunc
-            The method to use for performing the reduction.
-        axis : Union[int, Iterable[int]], optional
-            The axes along which to perform the reduction. Uses all axes by default.
-        keepdims : bool, optional
-            Whether or not to keep the dimensions of the original array.
-        kwargs : dict
-            Any extra arguments to pass to the reduction operation.
-
-        Returns
-        -------
-        COO
-            The result of the reduction operation.
-
-        Raises
-        ------
-        ValueError
-            If reducing an all-zero axis would produce a nonzero result.
-
-        See Also
-        --------
-        numpy.ufunc.reduce : A similar Numpy method.
-        GCXS.reduce : Equivalent operation on GCXS arrays.
-
-        Examples
-        --------
-        You can use the :obj:`COO.reduce` method to apply a reduction operation to
-        any Numpy :code:`ufunc`.
-
-        >>> from sparse import COO
-        >>> x = np.ones((5, 5), dtype=np.int)
-        >>> s = COO.from_numpy(x)
-        >>> s2 = s.reduce(np.add, axis=1)
-        >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
-        array([5, 5, 5, 5, 5])
-
-        You can also use the :code:`keepdims` argument to keep the dimensions after the
-        reduction.
-
-        >>> s3 = s.reduce(np.add, axis=1, keepdims=True)
-        >>> s3.shape
-        (5, 1)
-
-        You can also pass in any keyword argument that :obj:`numpy.ufunc.reduce` supports.
-        For example, :code:`dtype`. Note that :code:`out` isn't supported.
-
-        >>> s4 = s.reduce(np.add, axis=1, dtype=np.float16)
-        >>> s4.dtype
-        dtype('float16')
-
-        By default, this reduces the array by only the first axis.
-
-        >>> s.reduce(np.add)
-        <COO: shape=(5,), dtype=int64, nnz=5, fill_value=0>
-        """
-        axis = normalize_axis(axis, self.ndim)
-        zero_reduce_result = method.reduce([self.fill_value, self.fill_value], **kwargs)
-        reduce_super_ufunc = None
-
-        if not equivalent(zero_reduce_result, self.fill_value):
-            reduce_super_ufunc = _reduce_super_ufunc.get(method, None)
-
-            if reduce_super_ufunc is None:
-                raise ValueError(
-                    "Performing this reduction operation would produce "
-                    "a dense result: %s" % str(method)
-                )
-
-        if axis is None:
+    def _reduce_calc(self, method, axis, keepdims=False, **kwargs):
+        if axis[0] is None:
             axis = tuple(range(self.ndim))
-
-        if not isinstance(axis, tuple):
-            axis = (axis,)
-
         axis = tuple(a if a >= 0 else a + self.ndim for a in axis)
         neg_axis = tuple(ax for ax in range(self.ndim) if ax not in set(axis))
         a = self.transpose(neg_axis + axis)
@@ -750,19 +673,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             )
         )
         data, inv_idx, counts = _grouped_reduce(a.data, a.coords[0], method, **kwargs)
-        result_fill_value = self.fill_value
+        n_cols = a.shape[1]
+        arr_attrs = (a, neg_axis, inv_idx)
+        return (data, counts, axis, n_cols, arr_attrs)
 
-        if reduce_super_ufunc is None:
-            missing_counts = counts != a.shape[1]
-            data[missing_counts] = method(
-                data[missing_counts], self.fill_value, **kwargs
-            )
-        else:
-            data = method(
-                data, reduce_super_ufunc(self.fill_value, a.shape[1] - counts),
-            ).astype(data.dtype)
-            result_fill_value = reduce_super_ufunc(self.fill_value, a.shape[1])
-
+    def _reduce_return(self, data, arr_attrs, result_fill_value):
+        a, neg_axis, inv_idx = arr_attrs
         coords = a.coords[0:1, inv_idx]
         out = COO(
             coords,
@@ -773,18 +689,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             prune=True,
             fill_value=result_fill_value,
         )
-        out = out.reshape(tuple(self.shape[d] for d in neg_axis))
 
-        if keepdims:
-            shape = list(self.shape)
-            for ax in axis:
-                shape[ax] = 1
-            out = out.reshape(shape)
-
-        if out.ndim == 0:
-            return out[()]
-
-        return out
+        return out.reshape(tuple(self.shape[d] for d in neg_axis))
 
     def mean(self, axis=None, keepdims=False, dtype=None, out=None):
         """

@@ -340,6 +340,51 @@ class SparseArray:
         COO.reduce : This method implemented on COO arrays.
         GCXS.reduce : This method implemented on GCXS arrays.
         """
+        axis = normalize_axis(axis, self.ndim)
+        zero_reduce_result = method.reduce([self.fill_value, self.fill_value], **kwargs)
+        reduce_super_ufunc = None
+
+        if not equivalent(zero_reduce_result, self.fill_value):
+            reduce_super_ufunc = _reduce_super_ufunc.get(method, None)
+
+            if reduce_super_ufunc is None:
+                raise ValueError(
+                    "Performing this reduction operation would produce "
+                    "a dense result: %s" % str(method)
+                )
+
+        if not isinstance(axis, tuple):
+            axis = (axis,)
+
+        out = self._reduce_calc(method, axis, keepdims, **kwargs)
+        if len(out) == 1:
+            return out[0]
+        data, counts, axis, n_cols, arr_attrs = out
+        result_fill_value = self.fill_value
+        if reduce_super_ufunc is None:
+            missing_counts = counts != n_cols
+            data[missing_counts] = method(
+                data[missing_counts], self.fill_value, **kwargs
+            )
+        else:
+            data = method(
+                data, reduce_super_ufunc(self.fill_value, n_cols - counts),
+            ).astype(data.dtype)
+            result_fill_value = reduce_super_ufunc(self.fill_value, n_cols)
+
+        out = self._reduce_return(data, arr_attrs, result_fill_value)
+
+        if keepdims:
+            shape = list(self.shape)
+            for ax in axis:
+                shape[ax] = 1
+            out = out.reshape(shape)
+
+        if out.ndim == 0:
+            return out[()]
+
+        return out
+
         raise NotImplementedError
 
     def sum(self, axis=None, keepdims=False, dtype=None, out=None):
