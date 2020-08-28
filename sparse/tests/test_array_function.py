@@ -45,8 +45,7 @@ def test_binary(func, arg_order):
 
 
 def test_stack():
-    """stack(), by design, does not allow for mixed type inputs
-    """
+    """stack(), by design, does not allow for mixed type inputs"""
     y = sparse.random((50, 50), density=0.25)
     x = y.todense()
     xx = np.stack([x, x])

@@ -5,9 +5,9 @@ from ._compressed import GCXS
 
 
 def save_npz(filename, matrix, compressed=True):
-    """ Save a sparse matrix to disk in numpy's ``.npz`` format.
+    """Save a sparse matrix to disk in numpy's ``.npz`` format.
     Note: This is not binary compatible with scipy's ``save_npz()``.
-    This binary format is not currently stable. Will save a file 
+    This binary format is not currently stable. Will save a file
     that can only be opend with this package's ``load_npz()``.
 
     Parameters
@@ -69,7 +69,7 @@ def save_npz(filename, matrix, compressed=True):
 
 
 def load_npz(filename):
-    """ Load a sparse matrix in numpy's ``.npz`` format from disk.
+    """Load a sparse matrix in numpy's ``.npz`` format from disk.
     Note: This is not binary compatible with scipy's ``save_npz()``
     output. This binary format is not currently stable.
     Will only load files saved by this package.
@@ -83,7 +83,7 @@ def load_npz(filename):
     Returns
     -------
     SparseArray
-        The sparse matrix at path ``filename``. 
+        The sparse matrix at path ``filename``.
 
     Example
     --------

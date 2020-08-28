@@ -312,7 +312,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         super().__init__(other.shape, fill_value=other.fill_value)
 
     def enable_caching(self):
-        """ Enable caching of reshape, transpose, and tocsr/csc operations
+        """Enable caching of reshape, transpose, and tocsr/csc operations
 
         This enables efficient iterative workflows that make heavy use of
         csr/csc operations, such as tensordot.  This maintains a cache of
@@ -1071,7 +1071,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         return self.transpose(tuple(range(self.ndim))[::-1])
 
     def swapaxes(self, axis1, axis2):
-        """ Returns array that has axes axis1 and axis2 swapped.
+        """Returns array that has axes axis1 and axis2 swapped.
 
         Parameters
         ----------

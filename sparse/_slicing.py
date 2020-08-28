@@ -9,7 +9,7 @@ import numpy as np
 
 
 def normalize_index(idx, shape):
-    """ Normalize slicing indexes
+    """Normalize slicing indexes
     1.  Replaces ellipses with many full slices
     2.  Adds full slices to end of index
     3.  Checks bounding conditions
@@ -64,7 +64,7 @@ def normalize_index(idx, shape):
 
 
 def replace_ellipsis(n, index):
-    """ Replace ... with slices, :, : ,:
+    """Replace ... with slices, :, : ,:
     >>> replace_ellipsis(4, (3, Ellipsis, 2))
     (3, slice(None, None, None), slice(None, None, None), 2)
     >>> replace_ellipsis(2, (Ellipsis, None))
@@ -85,7 +85,7 @@ def replace_ellipsis(n, index):
 
 
 def check_index(ind, dimension):
-    """ Check validity of index for a given dimension
+    """Check validity of index for a given dimension
     Examples
     --------
     >>> check_index(3, 5)
@@ -141,7 +141,7 @@ def check_index(ind, dimension):
 
 
 def sanitize_index(ind):
-    """ Sanitize the elements for indexing along one axis
+    """Sanitize the elements for indexing along one axis
     >>> sanitize_index([2, 3, 5])
     array([2, 3, 5])
     >>> sanitize_index([True, False, True, False])
@@ -195,7 +195,7 @@ def _sanitize_index_element(ind):
 
 
 def posify_index(shape, ind):
-    """ Flip negative indices around to positive ones
+    """Flip negative indices around to positive ones
     >>> posify_index(10, 3)
     3
     >>> posify_index(10, -3)

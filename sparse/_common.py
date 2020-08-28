@@ -278,7 +278,7 @@ def _dot(a, b, return_type=None):
         """
         Several of the dot algorithms produce indices that
         are out of order. So we have to do a sort of indices
-        and data. 
+        and data.
         """
         coords = np.empty((2, indices.shape[0]), dtype=np.intp)
         coords[0, :] = uncompress_dimension(indptr)
@@ -599,7 +599,7 @@ def _dot_csr_csr_type(dt1, dt2):
         out_shape, a_data, b_data, a_indices, b_indices, a_indptr, b_indptr
     ):  # pragma: no cover
         """
-        Utility function taking in two ``GCXS`` objects and calculating 
+        Utility function taking in two ``GCXS`` objects and calculating
         their dot product: a @ b for a and b with compressed rows.
 
         Parameters
@@ -910,7 +910,7 @@ def _dot_coo_coo_type(dt1, dt2):
         out_shape, a_coords, b_coords, a_data, b_data, a_indptr, b_indptr
     ):  # pragma: no cover
         """
-        Utility function taking in two ``COO`` objects and calculating 
+        Utility function taking in two ``COO`` objects and calculating
         their dot product: a @ b.
 
         Parameters
@@ -1562,7 +1562,7 @@ def outer(a, b, out=None):
         The input arrays.
     out : sparse.SparseArray
         The output array.
-    
+
     Examples
     --------
     >>> import numpy as np
