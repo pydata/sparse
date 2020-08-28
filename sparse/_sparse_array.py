@@ -356,10 +356,8 @@ class SparseArray:
         if not isinstance(axis, tuple):
             axis = (axis,)
 
-        try:
-            out = self._reduce_calc(method, axis, keepdims, **kwargs)
-        except:
-            raise NotImplementedError
+        out = self._reduce_calc(method, axis, keepdims, **kwargs)
+
         if len(out) == 1:
             return out[0]
         data, counts, axis, n_cols, arr_attrs = out
@@ -371,14 +369,13 @@ class SparseArray:
             )
         else:
             data = method(
-                data, reduce_super_ufunc(self.fill_value, n_cols - counts),
+                data,
+                reduce_super_ufunc(self.fill_value, n_cols - counts),
             ).astype(data.dtype)
             result_fill_value = reduce_super_ufunc(self.fill_value, n_cols)
 
-        try:
-            out = self._reduce_return(data, arr_attrs, result_fill_value)
-        except:
-            raise NotImplementedError
+        out = self._reduce_return(data, arr_attrs, result_fill_value)
+
         if keepdims:
             shape = list(self.shape)
             for ax in axis:
@@ -389,6 +386,12 @@ class SparseArray:
             return out[()]
 
         return out
+
+    def _reduce_calc(self, method, axis, keepdims, **kwargs):
+        raise NotImplementedError
+
+    def _reduce_return(self, data, arr_attrs, result_fill_value):
+        raise NotImplementedError
 
     def sum(self, axis=None, keepdims=False, dtype=None, out=None):
         """
