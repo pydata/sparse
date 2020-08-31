@@ -85,7 +85,7 @@ def random(
     compressed_axes=None,
     fill_value=None,
 ):
-    """ Generate a random sparse multidimensional array
+    """Generate a random sparse multidimensional array
 
     Parameters
     ----------
@@ -343,7 +343,7 @@ def check_compressed_axes(ndim, compressed_axes):
     Raises
     ------
     ValueError
-        If the compressed_axes are incompatible with the number of dimensions     
+        If the compressed_axes are incompatible with the number of dimensions
     """
     if compressed_axes is None:
         return

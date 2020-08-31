@@ -246,18 +246,18 @@ class DOK(SparseArray):
     def format(self):
         """
         The storage format of this array.
-        
+
         Returns
         -------
         str
             The storage format of this array.
-        
+
         See Also
         -------
         COO.format : Equivalent :obj:`COO` array property.
         GCXS.format : Equivalent :obj:`GCXS` array property.
         scipy.sparse.dok_matrix.format : The Scipy equivalent property.
-        
+
         Examples
         -------
         >>> import sparse

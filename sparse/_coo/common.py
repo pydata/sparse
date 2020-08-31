@@ -745,10 +745,10 @@ def diagonal(a, offset=0, axis1=0, axis2=1):
     offset: int, optional
         Offset of the diagonal from the main diagonal. Defaults to main diagonal (0).
     axis1: int, optional
-        First axis from which the diagonals should be taken.  
+        First axis from which the diagonals should be taken.
         Defaults to first axis (0).
     axis2 : int, optional
-        Second axis from which the diagonals should be taken.  
+        Second axis from which the diagonals should be taken.
         Defaults to second axis (1).
 
     Examples
@@ -811,7 +811,7 @@ def diagonalize(a, axis=0):
     Parameters
     ----------
     a: Union[COO, np.ndarray, scipy.sparse.spmatrix]
-        The array to diagonalize.    
+        The array to diagonalize.
     axis: int, optional
         The axis to diagonalize. Defaults to first axis (0).
 
@@ -963,7 +963,7 @@ def clip(a, a_min=None, a_max=None, out=None):
 
     Parameters
     ----------
-    a: 
+    a:
     a_min : scalar or `SparseArray` or `None`
         Minimum value. If `None`, clipping is not performed on lower
         interval edge.
