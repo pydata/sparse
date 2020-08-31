@@ -3,6 +3,11 @@ Changelog
 
 .. currentmodule:: sparse
 
+0.11.1 / 2020-08-31
+-------------------
+
+* Fix :obj:`ValueError` on :obj:`sparse.dot` with extremely small values. (:issue:`398`, :pr:`399`)
+
 0.11.0 / 2020-08-18
 -------------------
 
