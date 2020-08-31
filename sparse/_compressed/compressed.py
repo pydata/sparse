@@ -64,18 +64,18 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     """
     A sparse multidimensional array.
 
-    This is stored in GCXS format, a generalization of the GCRS/GCCS formats 
+    This is stored in GCXS format, a generalization of the GCRS/GCCS formats
     from 'Efficient storage scheme for n-dimensional sparse array: GCRS/GCCS':
     https://ieeexplore.ieee.org/document/7237032. GCXS generalizes the csr/csc
     sparse matrix formats. For arrays with ndim == 2, GCXS is the same csr/csc.
-    For arrays with ndim >2, any combination of axes can be compressed, 
-    significantly reducing storage. 
+    For arrays with ndim >2, any combination of axes can be compressed,
+    significantly reducing storage.
 
 
     Parameters
     ----------
     arg : tuple (data, indices, indptr)
-        A tuple of arrays holding the data, indices, and 
+        A tuple of arrays holding the data, indices, and
         index pointers for the nonzero values of the array.
     shape : tuple[int] (COO.ndim,)
         The shape of the array.
@@ -91,7 +91,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     indices : numpy.ndarray (nnz,)
         An array holding the coordinates of every nonzero element along uncompressed dimensions.
     indptr : numpy.ndarray
-        An array holding the cumulative sums of the nonzeros along the compressed dimensions. 
+        An array holding the cumulative sums of the nonzeros along the compressed dimensions.
     shape : tuple[int] (ndim,)
         The dimensions of this array.
 
@@ -165,12 +165,12 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     def dtype(self):
         """
         The datatype of this array.
-        
+
         Returns
         -------
         numpy.dtype
             The datatype of this array.
-            
+
         See Also
         --------
         numpy.ndarray.dtype : Numpy equivalent property.
@@ -182,12 +182,12 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     def nnz(self):
         """
         The number of nonzero elements in this array.
-        
+
         Returns
         -------
         int
             The number of nonzero elements in this array.
-            
+
         See Also
         --------
         COO.nnz : Equivalent :obj:`COO` array property.
@@ -202,12 +202,12 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         """
         The number of bytes taken up by this object. Note that for small arrays,
         this may undercount the number of bytes due to the large constant overhead.
-        
+
         Returns
         -------
         int
             The approximate bytes of memory taken by this object.
-        
+
         See Also
         --------
         numpy.ndarray.nbytes : The equivalent Numpy property.
@@ -253,7 +253,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def change_compressed_axes(self, new_compressed_axes):
         """
-        Returns a new array with specified compressed axes. This operation is similar to converting 
+        Returns a new array with specified compressed axes. This operation is similar to converting
         a scipy.sparse.csc_matrix to a scipy.sparse.csr_matrix.
 
         Returns
@@ -288,7 +288,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def tocoo(self):
         """
-        Convert this :obj:`GCXS` array to a :obj:`COO`. 
+        Convert this :obj:`GCXS` array to a :obj:`COO`.
 
         Returns
         -------
@@ -631,7 +631,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     def _2d_transpose(self):
         """
         A function for performing constant-time transposes on 2d GCXS arrays.
-        
+
         Returns
         -------
         GCXS

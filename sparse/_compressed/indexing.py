@@ -10,7 +10,7 @@ from .convert import convert_to_flat, uncompress_dimension, is_sorted
 def getitem(x, key):
     """
     GCXS arrays are stored by transposing and reshaping them into csr matrices. For indexing, we
-    first 
+    first
 
     """
     from .compressed import GCXS
@@ -175,10 +175,10 @@ def get_slicing_selection(
 ):  # pragma: no cover
     """
     When the requested elements come in a strictly ascending order, as is the
-    case with acsending slices, we can iteratively reduce the search space, 
+    case with acsending slices, we can iteratively reduce the search space,
     leading to better performance. We loop through the starts and ends, each time
     evaluating whether to use a linear filtering procedure or a binary-search-based
-    method. 
+    method.
     """
     indices = []
     ind_list = []
