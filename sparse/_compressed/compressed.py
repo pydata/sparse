@@ -1,14 +1,19 @@
 import numpy as np
+import operator
 from numpy.lib.mixins import NDArrayOperatorsMixin
 from functools import reduce
-from operator import mul
 from collections.abc import Iterable
 import scipy.sparse as ss
 
-from .._sparse_array import SparseArray
+from .._sparse_array import SparseArray, _reduce_super_ufunc
 from .._coo.common import linear_loc
 from .._common import dot, matmul
-from .._utils import normalize_axis, check_zero_fill_value, check_compressed_axes
+from .._utils import (
+    normalize_axis,
+    check_zero_fill_value,
+    check_compressed_axes,
+    equivalent,
+)
 from .._coo.core import COO
 from .convert import uncompress_dimension, _transpose, _1d_reshape
 from .indexing import getitem
@@ -250,6 +255,41 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     __repr__ = __str__
 
     __getitem__ = getitem
+
+    def _reduce_calc(self, method, axis, keepdims=False, **kwargs):
+
+        if axis[0] is None:
+            x = self.flatten().tocoo()
+            out = x.reduce(method, axis=None, keepdims=keepdims, **kwargs)
+            if keepdims:
+                return (out.reshape(np.ones(self.ndim, dtype=np.intp)),)
+            return (out,)
+
+        r = np.arange(self.ndim, dtype=np.intp)
+        compressed_axes = [a for a in r if a not in set(axis)]
+        x = self.change_compressed_axes(compressed_axes)
+        idx = np.diff(x.indptr) != 0
+        indptr = x.indptr[:-1][idx]
+        indices = (np.arange(x._compressed_shape[0], dtype=np.intp))[idx]
+        data = method.reduceat(x.data, indptr, **kwargs)
+        counts = x.indptr[1:][idx] - x.indptr[:-1][idx]
+        arr_attrs = (x, compressed_axes, indices)
+        n_cols = x._compressed_shape[1]
+        return (data, counts, axis, n_cols, arr_attrs)
+
+    def _reduce_return(self, data, arr_attrs, result_fill_value):
+        x, compressed_axes, indices = arr_attrs
+        # prune data
+        mask = ~equivalent(data, result_fill_value)
+        data = data[mask]
+        indices = indices[mask]
+        out = GCXS(
+            (data, indices, []),
+            shape=(x._compressed_shape[0],),
+            fill_value=result_fill_value,
+            compressed_axes=None,
+        )
+        return out.reshape(tuple(self.shape[d] for d in compressed_axes))
 
     def change_compressed_axes(self, new_compressed_axes):
         """
@@ -502,7 +542,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         if self.shape == shape:
             return self
 
-        if self.size != reduce(mul, shape, 1):
+        if self.size != reduce(operator.mul, shape, 1):
             raise ValueError(
                 "cannot reshape array of size {} into shape {}".format(self.size, shape)
             )
@@ -698,3 +738,28 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             return matmul(other, self)
         except NotImplementedError:
             return NotImplemented
+
+    def astype(self, dtype, casting="unsafe", copy=True):
+        """
+        Copy of the array, cast to a specified type.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.astype : SciPy sparse equivalent function
+        numpy.ndarray.astype : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
+        """
+        if self.dtype == dtype and not copy:
+            return self
+        # temporary solution
+        return GCXS(
+            (
+                np.array(self.data, copy=copy).astype(dtype),
+                np.array(self.indices, copy=copy),
+                np.array(self.indptr, copy=copy),
+            ),
+            shape=self.shape,
+            compressed_axes=self.compressed_axes,
+            fill_value=self.fill_value,
+        )
