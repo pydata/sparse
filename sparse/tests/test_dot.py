@@ -242,10 +242,39 @@ def test_dot_nocoercion():
         assert_eq(operator.matmul(a, lb), operator.matmul(sa, lb))
 
 
-def test_small_values():
-    s1 = sparse.COO(coords=[[0, 10]], data=[3.6e-100, 7.2e-009], shape=(20,))
-    s2 = sparse.COO(coords=[[0, 0], [4, 28]], data=[3.8e-25, 4.5e-225], shape=(20, 50))
+dot_formats = [
+    lambda x: x.asformat("coo"),
+    lambda x: x.asformat("coo"),
+    lambda x: x.todense(),
+]
 
-    x1, x2 = s1.todense(), s2.todense()
+
+@pytest.mark.parametrize("format1", dot_formats)
+@pytest.mark.parametrize("format2", dot_formats)
+def test_small_values(format1, format2):
+    s1 = format1(sparse.COO(coords=[[0, 10]], data=[3.6e-100, 7.2e-009], shape=(20,)))
+    s2 = format2(
+        sparse.COO(coords=[[0, 0], [4, 28]], data=[3.8e-25, 4.5e-225], shape=(20, 50))
+    )
+
+    dense_convertor = lambda x: x.todense() if isinstance(x, sparse.SparseArray) else x
+    x1, x2 = dense_convertor(s1), dense_convertor(s2)
+
+    assert_eq(x1 @ x2, s1 @ s2)
+
+
+dot_dtypes = [np.complex64, np.complex128]
+
+
+@pytest.mark.parametrize("dtype1", dot_dtypes)
+@pytest.mark.parametrize("dtype2", dot_dtypes)
+@pytest.mark.parametrize("format1", dot_formats)
+@pytest.mark.parametrize("format2", dot_formats)
+def test_complex(dtype1, dtype2, format1, format2):
+    s1 = format1(sparse.random((20,), density=0.5).astype(dtype1))
+    s2 = format2(sparse.random((20,), density=0.5).astype(dtype2))
+
+    dense_convertor = lambda x: x.todense() if isinstance(x, sparse.SparseArray) else x
+    x1, x2 = dense_convertor(s1), dense_convertor(s2)
 
     assert_eq(x1 @ x2, s1 @ s2)
