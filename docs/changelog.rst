@@ -3,6 +3,11 @@ Changelog
 
 .. currentmodule:: sparse
 
+0.11.1 / 2020-09-04
+-------------------
+
+* Fix :obj:`TypingError` on :obj:`sparse.dot` with complex dtypes. (:issue:`403`, :pr:`404`)
+
 0.11.1 / 2020-08-31
 -------------------
 
