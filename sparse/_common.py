@@ -632,12 +632,13 @@ def _dot_csr_csr_type(dt1, dt2):
         indices = np.empty(nnz, dtype=np.intp)
         data = np.empty(nnz, dtype=dtr)
         next_ = np.full(n_col, -1)
-        sums = np.zeros(n_col)
+        sums = np.zeros(n_col, dtype=dtr)
         nnz = 0
 
         for i in range(n_row):
             head = -2
             length = 0
+            next_[:] = -1
             for j, av in zip(
                 a_indices[a_indptr[i] : a_indptr[i + 1]],
                 a_data[a_indptr[i] : a_indptr[i + 1]],
@@ -653,7 +654,7 @@ def _dot_csr_csr_type(dt1, dt2):
                         length += 1
 
             for _ in range(length):
-                if sums[head] != 0:
+                if next_[head] != -1:
                     indices[nnz] = head
                     data[nnz] = sums[head]
                     nnz += 1
@@ -943,7 +944,7 @@ def _dot_coo_coo_type(dt1, dt2):
         coords = np.empty((2, nnz), dtype=np.intp)
         data = np.empty(nnz, dtype=dtr)
         next_ = np.full(n_col, -1)
-        sums = np.zeros(n_col)
+        sums = np.zeros(n_col, dtype=dtr)
         nnz = 0
 
         for i in range(n_row):
