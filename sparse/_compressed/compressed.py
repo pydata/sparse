@@ -107,7 +107,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     __array_priority__ = 12
 
-    def __init__(self, arg, shape=None, compressed_axes=None, fill_value=0):
+    def __init__(
+        self, arg, shape=None, compressed_axes=None, prune=False, fill_value=0
+    ):
 
         if isinstance(arg, np.ndarray):
             (arg, shape, compressed_axes, fill_value) = _from_coo(
@@ -135,6 +137,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             tuple(compressed_axes) if isinstance(compressed_axes, Iterable) else None
         )
         self.fill_value = fill_value
+
+        if prune:
+            self._prune()
 
     @classmethod
     def from_numpy(cls, x, compressed_axes=None, fill_value=0):
@@ -763,3 +768,31 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             compressed_axes=self.compressed_axes,
             fill_value=self.fill_value,
         )
+
+    def _prune(self):
+        """
+        Prunes data so that if any fill-values are present, they are removed
+        from both indices and data.
+
+        Examples
+        --------
+        >>> coords = np.array([[0, 1, 2, 3]])
+        >>> data = np.array([1, 0, 1, 2])
+        >>> s = COO(coords, data).asformat('gcxs')
+        >>> s._prune()
+        >>> s.nnz
+        3
+        """
+        mask = ~equivalent(self.data, self.fill_value)
+        self.data = self.data[mask]
+        if len(self.indptr):
+            coords = np.stack((uncompress_dimension(self.indptr), self.indices))
+            coords = coords[mask]
+            self.indices = coords[1]
+            row_size = self._compressed_shape[0]
+            indptr = np.empty(row_size, dtype=np.intp)
+            indptr[0] = 0
+            np.cumsum(np.bincount(coords[0], minlength=row_size), out=indptr[1:])
+            self.indptr = indptr
+        else:
+            self.indices = self.indices[mask]
