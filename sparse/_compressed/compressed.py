@@ -787,10 +787,10 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         self.data = self.data[mask]
         if len(self.indptr):
             coords = np.stack((uncompress_dimension(self.indptr), self.indices))
-            coords = coords[mask]
+            coords = coords[:, mask]
             self.indices = coords[1]
             row_size = self._compressed_shape[0]
-            indptr = np.empty(row_size, dtype=np.intp)
+            indptr = np.empty(row_size + 1, dtype=np.intp)
             indptr[0] = 0
             np.cumsum(np.bincount(coords[0], minlength=row_size), out=indptr[1:])
             self.indptr = indptr

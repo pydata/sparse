@@ -274,20 +274,6 @@ def _dot(a, b, return_type=None):
     from ._compressed.convert import uncompress_dimension
     from ._sparse_array import SparseArray
 
-    def sort_indices(data, indices, indptr, shape):
-        """
-        Several of the dot algorithms produce indices that
-        are out of order. So we have to do a sort of indices
-        and data.
-        """
-        coords = np.empty((2, indices.shape[0]), dtype=np.intp)
-        coords[0, :] = uncompress_dimension(indptr)
-        coords[1, :] = indices
-        linear = linear_loc(coords, shape)
-        order = np.argsort(linear, kind="mergesort")
-        indices = indices[order]
-        data = data[order]
-
     out_shape = (a.shape[0], b.shape[1])
     if all(isinstance(arr, SparseArray) for arr in [a, b]) and any(
         isinstance(arr, GCXS) for arr in [a, b]
@@ -306,7 +292,6 @@ def _dot(a, b, return_type=None):
             data, indices, indptr = _dot_csr_csr_type(a.dtype, b.dtype)(
                 out_shape, a.data, b.data, a.indices, b.indices, a.indptr, b.indptr
             )
-            sort_indices(data, indices, indptr, out_shape)
         elif a.compressed_axes == (1,):  # csc @ csc
             # a @ b = (b.T @ a.T).T
             compressed_axes = (1,)
@@ -319,9 +304,11 @@ def _dot(a, b, return_type=None):
                 b.indptr,
                 a.indptr,
             )
-            sort_indices(data, indices, indptr, out_shape[::-1])
         out = GCXS(
-            (data, indices, indptr), shape=out_shape, compressed_axes=compressed_axes
+            (data, indices, indptr),
+            shape=out_shape,
+            compressed_axes=compressed_axes,
+            prune=True,
         )
         if return_type == np.ndarray:
             return out.todense()
@@ -338,7 +325,12 @@ def _dot(a, b, return_type=None):
             data, indices, indptr = _dot_csr_ndarray_type_sparse(a.dtype, b.dtype)(
                 out_shape, a.data, a.indices, a.indptr, b
             )
-            out = GCXS((data, indices, indptr), shape=out_shape, compressed_axes=(0,))
+            out = GCXS(
+                (data, indices, indptr),
+                shape=out_shape,
+                compressed_axes=(0,),
+                prune=True,
+            )
             if return_type == COO:
                 return out.tocoo()
             return out
@@ -349,10 +341,12 @@ def _dot(a, b, return_type=None):
         data, indices, indptr = _dot_csc_ndarray_type_sparse(a.dtype, b.dtype)(
             a.shape, b.shape, a.data, a.indices, a.indptr, b
         )
-        sort_indices(data, indices, indptr, out_shape[::-1])
         compressed_axes = (1,)
         out = GCXS(
-            (data, indices, indptr), shape=out_shape, compressed_axes=compressed_axes
+            (data, indices, indptr),
+            shape=out_shape,
+            compressed_axes=compressed_axes,
+            prune=True,
         )
         if return_type == COO:
             return out.tocoo()
@@ -370,7 +364,12 @@ def _dot(a, b, return_type=None):
             data, indices, indptr = _dot_csc_ndarray_type_sparse(bt.dtype, at.dtype)(
                 bt.shape, at.shape, bt.data, b.indices, b.indptr, at
             )
-            out = GCXS((data, indices, indptr), shape=out_shape, compressed_axes=(0,))
+            out = GCXS(
+                (data, indices, indptr),
+                shape=out_shape,
+                compressed_axes=(0,),
+                prune=True,
+            )
             if return_type == COO:
                 return out.tocoo()
             return out
@@ -383,7 +382,9 @@ def _dot(a, b, return_type=None):
         data, indices, indptr = _dot_csr_ndarray_type_sparse(bt.dtype, at.dtype)(
             out_shape[::-1], bt.data, bt.indices, bt.indptr, at
         )
-        out = GCXS((data, indices, indptr), shape=out_shape, compressed_axes=(1,))
+        out = GCXS(
+            (data, indices, indptr), shape=out_shape, compressed_axes=(1,), prune=True
+        )
         if return_type == COO:
             return out.tocoo()
         return out
@@ -441,7 +442,9 @@ def _dot(a, b, return_type=None):
         coords, data = _dot_ndarray_coo_type_sparse(a.dtype, b.dtype)(
             a, b.coords, b.data, out_shape
         )
-        out = COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
+        out = COO(
+            coords, data, shape=out_shape, has_duplicates=False, sorted=True, prune=True
+        )
         if return_type == GCXS:
             return out.asformat("gcxs")
         return out
@@ -593,9 +596,13 @@ def _csc_ndarray_count_nnz(
     return nnz
 
 
+def _dot_dtype(dt1, dt2):
+    return (np.zeros((), dtype=dt1) * np.zeros((), dtype=dt1)).dtype
+
+
 @_memoize_dtype
 def _dot_csr_csr_type(dt1, dt2):
-    dtr = np.result_type(dt1, dt2)
+    dtr = _dot_dtype(dt1, dt2)
 
     @numba.jit(
         nopython=True,
@@ -673,7 +680,7 @@ def _dot_csr_csr_type(dt1, dt2):
 
 @_memoize_dtype
 def _dot_csr_ndarray_type(dt1, dt2):
-    dtr = np.result_type(dt1, dt2)
+    dtr = _dot_dtype(dt1, dt2)
 
     @numba.jit(
         nopython=True,
@@ -713,7 +720,7 @@ def _dot_csr_ndarray_type(dt1, dt2):
 
 @_memoize_dtype
 def _dot_csr_ndarray_type_sparse(dt1, dt2):
-    dtr = np.result_type(dt1, dt2)
+    dtr = _dot_dtype(dt1, dt2)
 
     @numba.jit(
         nopython=True,
@@ -766,7 +773,7 @@ def _dot_csr_ndarray_type_sparse(dt1, dt2):
 
 @_memoize_dtype
 def _dot_csc_ndarray_type_sparse(dt1, dt2):
-    dtr = np.result_type(dt1, dt2)
+    dtr = _dot_dtype(dt1, dt2)
 
     @numba.jit(
         nopython=True,
@@ -832,7 +839,7 @@ def _dot_csc_ndarray_type_sparse(dt1, dt2):
 
 @_memoize_dtype
 def _dot_csc_ndarray_type(dt1, dt2):
-    dtr = np.result_type(dt1, dt2)
+    dtr = _dot_dtype(dt1, dt2)
 
     @numba.jit(
         nopython=True,
@@ -870,7 +877,7 @@ def _dot_csc_ndarray_type(dt1, dt2):
 
 @_memoize_dtype
 def _dot_ndarray_csc_type(dt1, dt2):
-    dtr = np.result_type(dt1, dt2)
+    dtr = _dot_dtype(dt1, dt2)
 
     @numba.jit(
         nopython=True,
@@ -907,7 +914,7 @@ def _dot_ndarray_csc_type(dt1, dt2):
 
 @_memoize_dtype
 def _dot_coo_coo_type(dt1, dt2):
-    dtr = np.result_type(dt1, dt2)
+    dtr = _dot_dtype(dt1, dt2)
 
     @numba.jit(
         nopython=True,
@@ -986,7 +993,7 @@ def _dot_coo_coo_type(dt1, dt2):
 
 @_memoize_dtype
 def _dot_coo_ndarray_type(dt1, dt2):
-    dtr = np.result_type(dt1, dt2)
+    dtr = _dot_dtype(dt1, dt2)
 
     @numba.jit(nopython=True, nogil=True)
     def _dot_coo_ndarray(coords1, data1, array2, out_shape):  # pragma: no cover
@@ -1026,7 +1033,7 @@ def _dot_coo_ndarray_type(dt1, dt2):
 
 @_memoize_dtype
 def _dot_coo_ndarray_type_sparse(dt1, dt2):
-    dtr = np.result_type(dt1, dt2)
+    dtr = _dot_dtype(dt1, dt2)
 
     @numba.jit(
         nopython=True,
@@ -1086,7 +1093,7 @@ def _dot_coo_ndarray_type_sparse(dt1, dt2):
 
 @_memoize_dtype
 def _dot_ndarray_coo_type(dt1, dt2):
-    dtr = np.result_type(dt1, dt2)
+    dtr = _dot_dtype(dt1, dt2)
 
     @numba.jit(nopython=True, nogil=True)
     def _dot_ndarray_coo(array1, coords2, data2, out_shape):  # pragma: no cover
@@ -1119,7 +1126,7 @@ def _dot_ndarray_coo_type(dt1, dt2):
 
 @_memoize_dtype
 def _dot_ndarray_coo_type_sparse(dt1, dt2):
-    dtr = np.result_type(dt1, dt2)
+    dtr = _dot_dtype(dt1, dt2)
 
     @numba.jit(
         nopython=True,
