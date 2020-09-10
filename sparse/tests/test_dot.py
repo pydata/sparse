@@ -244,7 +244,7 @@ def test_dot_nocoercion():
 
 dot_formats = [
     lambda x: x.asformat("coo"),
-    lambda x: x.asformat("coo"),
+    lambda x: x.asformat("gcxs"),
     lambda x: x.todense(),
 ]
 

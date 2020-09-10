@@ -441,6 +441,7 @@ class _Elemwise:
         self.dtype = kwargs.pop("dtype", None)
         self.kwargs = kwargs
         self.cache = {}
+        self._dense_result = False
 
         self._check_broadcast()
         self._get_fill_value()
@@ -451,7 +452,7 @@ class _Elemwise:
         if self.args is None:
             return NotImplemented
 
-        if self.shape == self.ndarray_shape:
+        if self._dense_result:
             args = [a.todense() if isinstance(a, COO) else a for a in self.args]
             return self.func(*args, **self.kwargs)
 
@@ -518,10 +519,13 @@ class _Elemwise:
 
         # Some elemwise functions require a dtype argument, some abhorr it.
         try:
-            fill_value_array = self.func(*zero_args, dtype=self.dtype, **self.kwargs)
-            self.dtype = None
+            fill_value_array = self.func(
+                *np.broadcast_arrays(*zero_args), dtype=self.dtype, **self.kwargs
+            )
         except TypeError:
-            fill_value_array = self.func(*zero_args, **self.kwargs)
+            fill_value_array = self.func(
+                *np.broadcast_arrays(*zero_args), **self.kwargs
+            )
 
         try:
             fill_value = fill_value_array[(0,) * fill_value_array.ndim]
@@ -532,14 +536,14 @@ class _Elemwise:
             )
             fill_value = self.func(*zero_args, **self.kwargs)[()]
 
-        if (
-            not equivalent(fill_value, fill_value_array).all()
-            and self.shape != self.ndarray_shape
-        ):
+        equivalent_fv = equivalent(fill_value, fill_value_array).all()
+        if not equivalent_fv and self.shape != self.ndarray_shape:
             raise ValueError(
                 "Performing a mixed sparse-dense operation that would result in a dense array. "
                 "Please make sure that func(sparse_fill_values, ndarrays) is a constant array."
             )
+        elif not equivalent_fv:
+            self._dense_result = True
 
         # Store dtype separately if needed.
         if self.dtype is not None:
