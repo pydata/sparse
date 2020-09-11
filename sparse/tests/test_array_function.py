@@ -64,7 +64,6 @@ def test_ternary(func, arg_order):
     xx = func(x, x, x)
     args = [(x, y)[i] for i in arg_order]
     yy = func(*args)
-    sparse.save_npz("y.npz", y)
     assert_eq(xx, yy)
 
 
