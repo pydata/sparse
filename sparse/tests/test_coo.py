@@ -1578,6 +1578,29 @@ def test_random_shape(shape, density):
     assert np.floor(expected_nnz) <= s.nnz <= np.ceil(expected_nnz)
 
 
+@pytest.mark.parametrize(
+    "shape, density, nnz",
+    [
+        ((1,), 1, 1),
+        ((2,), 0.5, 1),
+        ((2, 2), 0.5, 2),
+        ((5,), 0.5, 2),
+        ((5, 5), 0.12, 3),
+        ((7,), 0.2857142857142857, 2),
+        # 6 / (50*50) == 0.0024, but int(0.0024 * (50*50)) == 5
+        ((50, 50), 0.0025, 6),
+    ],
+)
+def test_random_nnz(shape, density, nnz):
+    sd = sparse.random(shape, density)
+    sz = sparse.random(shape, nnz=nnz)
+
+    assert isinstance(sd, COO)
+    assert isinstance(sz, COO)
+
+    assert sd.nnz == sz.nnz == nnz
+
+
 def test_two_random_unequal():
     s1 = sparse.random((2, 3, 4), 0.3)
     s2 = sparse.random((2, 3, 4), 0.3)
