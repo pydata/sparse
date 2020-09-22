@@ -1595,7 +1595,6 @@ def test_random_invalid_density_and_nnz(density, nnz):
         sparse.random((1,), density, nnz=nnz)
 
 
-
 def test_two_random_unequal():
     s1 = sparse.random((2, 3, 4), 0.3)
     s2 = sparse.random((2, 3, 4), 0.3)
