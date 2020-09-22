@@ -11,7 +11,7 @@ import scipy.stats
 import sparse
 from sparse import COO
 from sparse._settings import NEP18_ENABLED
-from sparse._utils import assert_eq, random_value_array
+from sparse._utils import assert_eq, nullcontext as does_not_raise, random_value_array
 
 
 @pytest.fixture(scope="module", params=["f8", "f4", "i8", "i4"])
@@ -1579,26 +1579,30 @@ def test_random_shape(shape, density):
 
 
 @pytest.mark.parametrize(
-    "shape, density, nnz",
+    "shape, density, nnz, expectation",
     [
-        ((1,), 1, 1),
-        ((2,), 0.5, 1),
-        ((2, 2), 0.5, 2),
-        ((5,), 0.5, 2),
-        ((5, 5), 0.12, 3),
-        ((7,), 0.2857142857142857, 2),
+        ((1,), 1, 1, does_not_raise()),
+        ((2,), 0.5, 1, does_not_raise()),
+        ((2, 2), 0.5, 2, does_not_raise()),
+        ((5,), 0.5, 2, does_not_raise()),
+        ((5, 5), 0.12, 3, does_not_raise()),
+        ((7,), 0.2857142857142857, 2, does_not_raise()),
         # 6 / (50*50) == 0.0024, but int(0.0024 * (50*50)) == 5
-        ((50, 50), 0.0025, 6),
+        ((50, 50), 0.0025, 6, does_not_raise()),
+        ((1,), 0, 2, pytest.raises(ValueError)),
+        ((1,), 2, 0, pytest.raises(ValueError)),
+        ((1,), -1, 0, pytest.raises(ValueError)),
     ],
 )
-def test_random_nnz(shape, density, nnz):
-    sd = sparse.random(shape, density)
-    sz = sparse.random(shape, nnz=nnz)
+def test_random_nnz(shape, density, nnz, expectation):
+    with expectation:
+        sd = sparse.random(shape, density)
+        sz = sparse.random(shape, nnz=nnz)
 
-    assert isinstance(sd, COO)
-    assert isinstance(sz, COO)
+        assert isinstance(sd, COO)
+        assert isinstance(sz, COO)
 
-    assert sd.nnz == sz.nnz == nnz
+        assert sd.nnz == sz.nnz == nnz
 
 
 def test_two_random_unequal():
