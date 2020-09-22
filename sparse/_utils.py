@@ -1,4 +1,3 @@
-import contextlib
 import functools
 from collections.abc import Iterable
 from numbers import Integral
@@ -79,7 +78,7 @@ def _zero_of_dtype(dtype):
 
 def random(
     shape,
-    density=0.01,
+    density=None,
     nnz=None,
     random_state=None,
     data_rvs=None,
@@ -94,10 +93,11 @@ def random(
     shape: Tuple[int]
         Shape of the array
     density: float, optional
-        Density of the generated array. Ignored if `nnz` is specified.
+        Density of the generated array; default is 0.01.
+        Mutually exclusive with `nnz`.
     nnz: int, optional
-        Number of nonzero elements in the generated array. If not specified,
-        then `density` is used to determine this parameter.
+        Number of nonzero elements in the generated array.
+        Mutually exclusive with `density`.
     random_state : Union[numpy.random.RandomState, int], optional
         Random number generator or random seed. If not given, the
         singleton numpy.random will be used. This random state will be used
@@ -145,6 +145,11 @@ def random(
     # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
     from ._coo import COO
 
+    if density is not None and nnz is not None:
+        raise ValueError("'density' and 'nnz' are mutually exclusive")
+
+    if density is None:
+        density = 0.01
     if not (0 <= density <= 1):
         raise ValueError("density {} is not in the unit interval".format(density))
 
@@ -152,8 +157,7 @@ def random(
 
     if nnz is None:
         nnz = int(elements * density)
-
-    if nnz > elements:
+    if not (0 <= nnz <= elements):
         raise ValueError(
             "cannot generate {} nonzero elements "
             "for an array with {} total elements".format(nnz, elements)
@@ -457,28 +461,3 @@ def check_consistent_fill_value(arrays):
                 "is different from a fill_value of {!s} in the first "
                 "argument.".format(i, arg.fill_value, fv)
             )
-
-
-try:
-    nullcontext = contextlib.nullcontext
-except AttributeError:
-    # Shim for Python 3.6.
-    class nullcontext(contextlib.AbstractContextManager):
-        """Context manager that does no additional processing.
-
-        Used as a stand-in for a normal context manager, when a particular
-        block of code is only sometimes used with a normal context manager:
-
-        cm = optional_cm if condition else nullcontext()
-        with cm:
-            # Perform operation, using optional_cm if condition is True
-        """
-
-        def __init__(self, enter_result=None):
-            self.enter_result = enter_result
-
-        def __enter__(self):
-            return self.enter_result
-
-        def __exit__(self, *excinfo):
-            pass
