@@ -78,7 +78,8 @@ def _zero_of_dtype(dtype):
 
 def random(
     shape,
-    density=0.01,
+    density=None,
+    nnz=None,
     random_state=None,
     data_rvs=None,
     format="coo",
@@ -92,7 +93,11 @@ def random(
     shape: Tuple[int]
         Shape of the array
     density: float, optional
-        Density of the generated array.
+        Density of the generated array; default is 0.01.
+        Mutually exclusive with `nnz`.
+    nnz: int, optional
+        Number of nonzero elements in the generated array.
+        Mutually exclusive with `density`.
     random_state : Union[numpy.random.RandomState, int], optional
         Random number generator or random seed. If not given, the
         singleton numpy.random will be used. This random state will be used
@@ -140,9 +145,23 @@ def random(
     # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
     from ._coo import COO
 
+    if density is not None and nnz is not None:
+        raise ValueError("'density' and 'nnz' are mutually exclusive")
+
+    if density is None:
+        density = 0.01
+    if not (0 <= density <= 1):
+        raise ValueError("density {} is not in the unit interval".format(density))
+
     elements = np.prod(shape, dtype=np.intp)
 
-    nnz = int(elements * density)
+    if nnz is None:
+        nnz = int(elements * density)
+    if not (0 <= nnz <= elements):
+        raise ValueError(
+            "cannot generate {} nonzero elements "
+            "for an array with {} total elements".format(nnz, elements)
+        )
 
     if format != "gcxs" and compressed_axes is not None:
         raise ValueError(

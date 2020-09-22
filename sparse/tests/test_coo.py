@@ -1578,6 +1578,23 @@ def test_random_shape(shape, density):
     assert np.floor(expected_nnz) <= s.nnz <= np.ceil(expected_nnz)
 
 
+@pytest.mark.parametrize("shape, nnz", [((1,), 1), ((2,), 0), ((3, 4), 5)])
+def test_random_nnz(shape, nnz):
+    s = sparse.random(shape, nnz=nnz)
+
+    assert isinstance(s, COO)
+
+    assert s.nnz == nnz
+
+
+@pytest.mark.parametrize(
+    "density, nnz", [(1, 1), (1.01, None), (-0.01, None), (None, 2)]
+)
+def test_random_invalid_density_and_nnz(density, nnz):
+    with pytest.raises(ValueError):
+        sparse.random((1,), density, nnz=nnz)
+
+
 def test_two_random_unequal():
     s1 = sparse.random((2, 3, 4), 0.3)
     s2 = sparse.random((2, 3, 4), 0.3)
