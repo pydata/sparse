@@ -6,7 +6,7 @@ import scipy.sparse
 
 from itertools import zip_longest
 
-from .._utils import isscalar, equivalent, _zero_of_dtype
+from ._utils import isscalar, equivalent, _zero_of_dtype
 
 
 def elemwise(func, *args, **kwargs):
@@ -25,7 +25,7 @@ def elemwise(func, *args, **kwargs):
 
     Returns
     -------
-    COO
+    SparseArray
         The result of applying the function.
 
     Raises
@@ -377,7 +377,7 @@ def broadcast_to(x, shape):
     --------
     :obj:`numpy.broadcast_to` : NumPy equivalent function
     """
-    from .core import COO
+    from ._coo import COO
 
     if shape == x.shape:
         return x
@@ -417,12 +417,17 @@ class _Elemwise:
         kwargs : dict
             Extra arguments to pass to the function.
         """
-        from .core import COO
-        from .._sparse_array import SparseArray
+        from ._coo import COO
+        from ._sparse_array import SparseArray
+        from ._compressed import GCXS
+        from ._dok import DOK
 
         processed_args = []
+        out_type = GCXS
 
         for arg in args:
+            if isinstance(arg, COO) or isinstance(arg, DOK):
+                out_type = COO
             if isinstance(arg, scipy.sparse.spmatrix):
                 processed_args.append(COO.from_scipy_sparse(arg))
             elif isscalar(arg) or isinstance(arg, np.ndarray):
@@ -436,6 +441,7 @@ class _Elemwise:
             else:
                 processed_args.append(arg)
 
+        self.out_type = out_type
         self.args = tuple(processed_args)
         self.func = func
         self.dtype = kwargs.pop("dtype", None)
@@ -447,7 +453,7 @@ class _Elemwise:
         self._get_fill_value()
 
     def get_result(self):
-        from .core import COO
+        from ._coo import COO
 
         if self.args is None:
             return NotImplemented
@@ -500,7 +506,7 @@ class _Elemwise:
             shape=self.shape,
             has_duplicates=False,
             fill_value=self.fill_value,
-        )
+        ).asformat(self.out_type)
 
     def _get_fill_value(self):
         """
@@ -511,7 +517,7 @@ class _Elemwise:
         ValueError
             If the fill-value is inconsistent.
         """
-        from .core import COO
+        from ._coo import COO
 
         zero_args = tuple(
             arg.fill_value[...] if isinstance(arg, COO) else arg for arg in self.args
@@ -561,7 +567,7 @@ class _Elemwise:
         ValueError
             If the check fails.
         """
-        from .core import COO
+        from ._coo import COO
 
         full_shape = _get_nary_broadcast_shape(*tuple(arg.shape for arg in self.args))
         non_ndarray_shape = _get_nary_broadcast_shape(
@@ -589,7 +595,7 @@ class _Elemwise:
         None or tuple
             The coords/data tuple for the given mask.
         """
-        from .core import COO
+        from ._coo import COO
 
         matched_args = [arg for arg, m in zip(self.args, mask) if m is not None and m]
         unmatched_args = [
@@ -692,8 +698,8 @@ class _Elemwise:
             The expanded, matched :obj:`COO` objects. Only returned if
             ``return_midx`` is ``False``.
         """
-        from .core import COO
-        from .common import linear_loc
+        from ._coo import COO
+        from ._coo.common import linear_loc
 
         cache = kwargs.pop("cache", None)
         return_midx = kwargs.pop("return_midx", False)

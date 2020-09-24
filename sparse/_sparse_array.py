@@ -3,13 +3,12 @@ from collections.abc import Iterable
 from numbers import Integral
 from typing import Callable
 import operator
-import functools
+from functools import reduce
 
-import numba
 import numpy as np
 import scipy.sparse as ss
 
-from ._coo.umath import elemwise
+from ._umath import elemwise
 from ._utils import _zero_of_dtype, html_table, equivalent, normalize_axis
 
 _reduce_super_ufunc = {np.add: np.multiply, np.multiply: np.power}
@@ -136,7 +135,7 @@ class SparseArray:
         """
         # We use this instead of np.prod because np.prod
         # returns a float64 for an empty shape.
-        return functools.reduce(operator.mul, self.shape, 1)
+        return reduce(operator.mul, self.shape, 1)
 
     @property
     def density(self):
@@ -355,9 +354,7 @@ class SparseArray:
 
         if not isinstance(axis, tuple):
             axis = (axis,)
-
         out = self._reduce_calc(method, axis, keepdims, **kwargs)
-
         if len(out) == 1:
             return out[0]
         data, counts, axis, n_cols, arr_attrs = out
@@ -541,3 +538,312 @@ class SparseArray:
         return np.multiply.reduce(
             self, out=out, axis=axis, keepdims=keepdims, dtype=dtype
         )
+
+    def round(self, decimals=0, out=None):
+        """
+        Evenly round to the given number of decimals.
+
+        See also
+        --------
+        :obj:`numpy.round` : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
+        """
+        if out is not None and not isinstance(out, tuple):
+            out = (out,)
+        return self.__array_ufunc__(
+            np.round, "__call__", self, decimals=decimals, out=out
+        )
+
+    round_ = round
+
+    def clip(self, min=None, max=None, out=None):
+        """
+        Clip (limit) the values in the array.
+
+        Return an array whose values are limited to ``[min, max]``. One of min
+        or max must be given.
+
+        See Also
+        --------
+        sparse.clip : For full documentation and more details.
+        numpy.clip : Equivalent NumPy function.
+        """
+        if min is None and max is None:
+            raise ValueError("One of max or min must be given.")
+        if out is not None and not isinstance(out, tuple):
+            out = (out,)
+        return self.__array_ufunc__(
+            np.clip, "__call__", self, a_min=min, a_max=max, out=out
+        )
+
+    def astype(self, dtype, casting="unsafe", copy=True):
+        """
+        Copy of the array, cast to a specified type.
+
+        See also
+        --------
+        scipy.sparse.coo_matrix.astype : SciPy sparse equivalent function
+        numpy.ndarray.astype : NumPy equivalent ufunc.
+        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+            arguments.
+        """
+        # this matches numpy's behavior
+        if self.dtype == dtype and not copy:
+            return self
+        return self.__array_ufunc__(
+            np.ndarray.astype, "__call__", self, dtype=dtype, copy=copy, casting=casting
+        )
+
+    def mean(self, axis=None, keepdims=False, dtype=None, out=None):
+        """
+        Compute the mean along the given axes. Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : Union[int, Iterable[int]], optional
+            The axes along which to compute the mean. Uses all axes by default.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+        dtype: numpy.dtype
+            The data type of the output array.
+
+        Returns
+        -------
+        SparseArray
+            The reduced output sparse array.
+
+        See Also
+        --------
+        numpy.ndarray.mean : Equivalent numpy method.
+        scipy.sparse.coo_matrix.mean : Equivalent Scipy method.
+
+        Notes
+        -----
+        * This function internally calls :obj:`COO.sum_duplicates` to bring the
+          array into canonical form.
+        * The :code:`out` parameter is provided just for compatibility with
+          Numpy and isn't actually supported.
+
+        Examples
+        --------
+        You can use :obj:`COO.mean` to compute the mean of an array across any
+        dimension.
+
+        >>> from sparse import COO
+        >>> x = np.array([[1, 2, 0, 0],
+        ...               [0, 1, 0, 0]], dtype='i8')
+        >>> s = COO.from_numpy(x)
+        >>> s2 = s.mean(axis=1)
+        >>> s2.todense()  # doctest: +SKIP
+        array([0.5, 1.5, 0., 0.])
+
+        You can also use the :code:`keepdims` argument to keep the dimensions
+        after the mean.
+
+        >>> s3 = s.mean(axis=0, keepdims=True)
+        >>> s3.shape
+        (1, 4)
+
+        You can pass in an output datatype, if needed.
+
+        >>> s4 = s.mean(axis=0, dtype=np.float16)
+        >>> s4.dtype
+        dtype('float16')
+
+        By default, this reduces the array down to one number, computing the
+        mean along all axes.
+
+        >>> s.mean()
+        0.5
+        """
+
+        if axis is None:
+            axis = tuple(range(self.ndim))
+        elif not isinstance(axis, tuple):
+            axis = (axis,)
+        den = reduce(operator.mul, (self.shape[i] for i in axis), 1)
+
+        if dtype is None:
+            if issubclass(self.dtype.type, (np.integer, np.bool_)):
+                dtype = inter_dtype = np.dtype("f8")
+            else:
+                dtype = self.dtype
+                inter_dtype = (
+                    np.dtype("f4") if issubclass(dtype.type, np.float16) else dtype
+                )
+        else:
+            inter_dtype = dtype
+
+        num = self.sum(axis=axis, keepdims=keepdims, dtype=inter_dtype)
+
+        if num.ndim:
+            out = np.true_divide(num, den, casting="unsafe")
+            return out.astype(dtype) if out.dtype != dtype else out
+        return np.divide(num, den, dtype=dtype, out=out)
+
+    def var(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False):
+        """
+        Compute the variance along the gi66ven axes. Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : Union[int, Iterable[int]], optional
+            The axes along which to compute the variance. Uses all axes by default.
+        dtype : numpy.dtype, optional
+            The output datatype.
+        out: SparseArray, optional
+            The array to write the output to.
+        ddof: int
+            The degrees of freedom.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+
+        Returns
+        -------
+        SparseArray
+            The reduced output sparse array.
+
+        See Also
+        --------
+        numpy.ndarray.var : Equivalent numpy method.
+
+        Notes
+        -----
+        * This function internally calls :obj:`COO.sum_duplicates` to bring the
+          array into canonical form.
+
+        Examples
+        --------
+        You can use :obj:`COO.var` to compute the variance of an array across any
+        dimension.
+
+        >>> from sparse import COO
+        >>> x = np.array([[1, 2, 0, 0],
+        ...               [0, 1, 0, 0]], dtype='i8')
+        >>> s = COO.from_numpy(x)
+        >>> s2 = s.var(axis=1)
+        >>> s2.todense()  # doctest: +SKIP
+        array([0.6875, 0.1875])
+
+        You can also use the :code:`keepdims` argument to keep the dimensions
+        after the variance.
+
+        >>> s3 = s.var(axis=0, keepdims=True)
+        >>> s3.shape
+        (1, 4)
+
+        You can pass in an output datatype, if needed.
+
+        >>> s4 = s.var(axis=0, dtype=np.float16)
+        >>> s4.dtype
+        dtype('float16')
+
+        By default, this reduces the array down to one number, computing the
+        variance along all axes.
+
+        >>> s.var()
+        0.5
+        """
+        axis = normalize_axis(axis, self.ndim)
+
+        if axis is None:
+            axis = tuple(range(self.ndim))
+
+        if not isinstance(axis, tuple):
+            axis = (axis,)
+
+        rcount = reduce(operator.mul, (self.shape[a] for a in axis), 1)
+        # Make this warning show up on top.
+        if ddof >= rcount:
+            warnings.warn("Degrees of freedom <= 0 for slice", RuntimeWarning)
+
+        # Cast bool, unsigned int, and int to float64 by default
+        if dtype is None and issubclass(self.dtype.type, (np.integer, np.bool_)):
+            dtype = np.dtype("f8")
+
+        arrmean = self.sum(axis, dtype=dtype, keepdims=True)
+        np.divide(arrmean, rcount, out=arrmean)
+        x = self - arrmean
+        if issubclass(self.dtype.type, np.complexfloating):
+            x = x.real * x.real + x.imag * x.imag
+        else:
+            x = np.multiply(x, x, out=x)
+
+        ret = x.sum(axis=axis, dtype=dtype, out=out, keepdims=keepdims)
+
+        # Compute degrees of freedom and make sure it is not negative.
+        rcount = max([rcount - ddof, 0])
+
+        ret = ret[...]
+        np.divide(ret, rcount, out=ret, casting="unsafe")
+        return ret[()]
+
+    def std(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False):
+        """
+        Compute the standard deviation along the given axes. Uses all axes by default.
+
+        Parameters
+        ----------
+        axis : Union[int, Iterable[int]], optional
+            The axes along which to compute the standard deviation. Uses
+            all axes by default.
+        dtype : numpy.dtype, optional
+            The output datatype.
+        out: SparseArray, optional
+            The array to write the output to.
+        ddof: int
+            The degrees of freedom.
+        keepdims : bool, optional
+            Whether or not to keep the dimensions of the original array.
+
+        Returns
+        -------
+        SparseArray
+            The reduced output sparse array.
+
+        See Also
+        --------
+        numpy.ndarray.std : Equivalent numpy method.
+
+        Notes
+        -----
+        * This function internally calls :obj:`COO.sum_duplicates` to bring the
+          array into canonical form.
+
+        Examples
+        --------
+        You can use :obj:`COO.std` to compute the standard deviation of an array
+        across any dimension.
+
+        >>> from sparse import COO
+        >>> x = np.array([[1, 2, 0, 0],
+        ...               [0, 1, 0, 0]], dtype='i8')
+        >>> s = COO.from_numpy(x)
+        >>> s2 = s.std(axis=1)
+        >>> s2.todense()  # doctest: +SKIP
+        array([0.8291562, 0.4330127])
+
+        You can also use the :code:`keepdims` argument to keep the dimensions
+        after the standard deviation.
+
+        >>> s3 = s.std(axis=0, keepdims=True)
+        >>> s3.shape
+        (1, 4)
+
+        You can pass in an output datatype, if needed.
+
+        >>> s4 = s.std(axis=0, dtype=np.float16)
+        >>> s4.dtype
+        dtype('float16')
+
+        By default, this reduces the array down to one number, computing the
+        standard deviation along all axes.
+
+        >>> s.std()  # doctest: +SKIP
+        0.7071067811865476
+        """
+        ret = self.var(axis=axis, dtype=dtype, out=out, ddof=ddof, keepdims=keepdims)
+
+        ret = np.sqrt(ret)
+        return ret

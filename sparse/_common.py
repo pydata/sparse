@@ -8,7 +8,7 @@ from collections.abc import Iterable
 from ._sparse_array import SparseArray
 from ._utils import check_compressed_axes, normalize_axis, check_zero_fill_value
 
-from ._coo.umath import elemwise
+from ._umath import elemwise
 from ._coo.common import (
     clip,
     triu,

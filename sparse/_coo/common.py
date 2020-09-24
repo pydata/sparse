@@ -93,7 +93,7 @@ def kron(a, b):
            [0, 0, 0, 0, 0, 0, 1, 2, 3]], dtype=int64)
     """
     from .core import COO
-    from .umath import _cartesian_product
+    from .._umath import _cartesian_product
 
     check_zero_fill_value(a, b)
 
@@ -556,7 +556,7 @@ def where(condition, x=None, y=None):
     --------
     numpy.where : Equivalent Numpy function.
     """
-    from .umath import elemwise
+    from .._umath import elemwise
 
     x_given = x is not None
     y_given = y is not None

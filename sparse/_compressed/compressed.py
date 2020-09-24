@@ -1,3 +1,4 @@
+import copy as _copy
 import numpy as np
 import operator
 from numpy.lib.mixins import NDArrayOperatorsMixin
@@ -141,6 +142,24 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         if prune:
             self._prune()
 
+    def copy(self, deep=True):
+        """Return a copy of the array.
+
+        Parameters
+        ----------
+        deep : boolean, optional
+            If True (default), the internal coords and data arrays are also
+            copied. Set to ``False`` to only make a shallow copy.
+        """
+        return _copy.deepcopy(self) if deep else _copy.copy(self)
+
+    def _make_shallow_copy_of(self, other):
+        self.data = other.data
+        self.indices = other.indices
+        self.indptr = other.indptr
+        self.compressed_axes = other.compressed_axes
+        super().__init__(other.shape, fill_value=other.fill_value)
+
     @classmethod
     def from_numpy(cls, x, compressed_axes=None, fill_value=0):
         coo = COO(x, fill_value=fill_value)
@@ -262,8 +281,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     __getitem__ = getitem
 
     def _reduce_calc(self, method, axis, keepdims=False, **kwargs):
-
-        if axis[0] is None:
+        if axis[0] is None or np.array_equal(axis, np.arange(self.ndim, dtype=np.intp)):
             x = self.flatten().tocoo()
             out = x.reduce(method, axis=None, keepdims=keepdims, **kwargs)
             if keepdims:
@@ -743,31 +761,6 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             return matmul(other, self)
         except NotImplementedError:
             return NotImplemented
-
-    def astype(self, dtype, casting="unsafe", copy=True):
-        """
-        Copy of the array, cast to a specified type.
-
-        See also
-        --------
-        scipy.sparse.coo_matrix.astype : SciPy sparse equivalent function
-        numpy.ndarray.astype : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
-            arguments.
-        """
-        if self.dtype == dtype and not copy:
-            return self
-        # temporary solution
-        return GCXS(
-            (
-                np.array(self.data, copy=copy).astype(dtype),
-                np.array(self.indices, copy=copy),
-                np.array(self.indptr, copy=copy),
-            ),
-            shape=self.shape,
-            compressed_axes=self.compressed_axes,
-            fill_value=self.fill_value,
-        )
 
     def _prune(self):
         """
