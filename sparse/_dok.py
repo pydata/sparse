@@ -124,11 +124,6 @@ class DOK(SparseArray):
         else:
             raise ValueError("data must be a dict.")
 
-    def _make_shallow_copy_of(self, other):
-        self.dtype = other.dtype
-        self.data = other.data
-        super().__init__(other.shape, fill_value=other.fill_value)
-
     @classmethod
     def from_coo(cls, x):
         """

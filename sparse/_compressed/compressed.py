@@ -153,13 +153,6 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         """
         return _copy.deepcopy(self) if deep else _copy.copy(self)
 
-    def _make_shallow_copy_of(self, other):
-        self.data = other.data
-        self.indices = other.indices
-        self.indptr = other.indptr
-        self.compressed_axes = other.compressed_axes
-        super().__init__(other.shape, fill_value=other.fill_value)
-
     @classmethod
     def from_numpy(cls, x, compressed_axes=None, fill_value=0):
         coo = COO(x, fill_value=fill_value)

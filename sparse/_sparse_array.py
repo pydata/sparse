@@ -219,6 +219,9 @@ class SparseArray:
         True
         """
 
+    def _make_shallow_copy_of(self, other):
+        self.__dict__ = other.__dict__.copy()
+
     def __array__(self, *args, **kwargs):
         from ._settings import AUTO_DENSIFY
 

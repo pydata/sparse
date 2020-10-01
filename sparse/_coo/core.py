@@ -213,6 +213,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if data is None:
             arr = as_coo(coords, shape=shape, fill_value=fill_value)
             self._make_shallow_copy_of(arr)
+            if cache:
+                self.enable_caching()
             return
 
         self.data = np.asarray(data)
@@ -305,11 +307,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             copied. Set to ``False`` to only make a shallow copy.
         """
         return _copy.deepcopy(self) if deep else _copy.copy(self)
-
-    def _make_shallow_copy_of(self, other):
-        self.coords = other.coords
-        self.data = other.data
-        super().__init__(other.shape, fill_value=other.fill_value)
 
     def enable_caching(self):
         """Enable caching of reshape, transpose, and tocsr/csc operations
