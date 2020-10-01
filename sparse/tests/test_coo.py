@@ -1562,3 +1562,9 @@ def test_astype_casting():
     s1 = sparse.random((2, 3, 4), density=0.5)
     with pytest.raises(TypeError):
         s1.astype(dtype=np.int64, casting="safe")
+
+
+def test_astype_no_copy():
+    s1 = sparse.random((2, 3, 4), density=0.5)
+    s2 = s1.astype(s1.dtype, copy=False)
+    assert s1 is s2

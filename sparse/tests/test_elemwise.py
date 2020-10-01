@@ -98,8 +98,9 @@ def test_elemwise_mixed(shape1, shape2, format):
     assert_eq(s1 * x2, x1 * x2)
 
 
-def test_elemwise_mixed_empty():
-    s1 = sparse.random((2, 0, 4), density=0.5)
+@pytest.mark.parametrize("format", [COO, GCXS])
+def test_elemwise_mixed_empty(format):
+    s1 = sparse.random((2, 0, 4), density=0.5, format=format)
     x2 = np.random.rand(2, 0, 4)
 
     x1 = s1.todense()
@@ -107,11 +108,12 @@ def test_elemwise_mixed_empty():
     assert_eq(s1 * x2, x1 * x2)
 
 
-def test_elemwise_unsupported():
+@pytest.mark.parametrize("format", [COO, GCXS])
+def test_elemwise_unsupported(format):
     class A:
         pass
 
-    s1 = sparse.random((2, 3, 4), density=0.5)
+    s1 = sparse.random((2, 3, 4), density=0.5, format=format)
     x2 = A()
 
     with pytest.raises(TypeError):
@@ -120,8 +122,9 @@ def test_elemwise_unsupported():
     assert sparse.elemwise(operator.add, s1, x2) is NotImplemented
 
 
-def test_elemwise_mixed_broadcast():
-    s1 = sparse.random((2, 3, 4), density=0.5)
+@pytest.mark.parametrize("format", [COO, GCXS])
+def test_elemwise_mixed_broadcast(format):
+    s1 = sparse.random((2, 3, 4), density=0.5, format=format)
     s2 = sparse.random(4, density=0.5)
     x3 = np.random.rand(3, 4)
 
@@ -194,11 +197,6 @@ def test_elemwise_trinary(func, shape, formats):
     z = zs.todense()
 
     fs = sparse.elemwise(func, xs, ys, zs)
-    if COO in formats:
-        assert isinstance(fs, COO)
-    else:
-        assert isinstance(fs, GCXS)
-
     assert_eq(fs, func(x, y, z))
 
 
