@@ -42,9 +42,13 @@ def random_sparse_small(request):
     [
         ("sum", {}),
         ("sum", {"dtype": np.float32}),
+        ("mean", {}),
+        ("mean", {"dtype": np.float32}),
         ("prod", {}),
         ("max", {}),
         ("min", {}),
+        ("std", {}),
+        ("var", {}),
     ],
 )
 @pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2), -3, (1, -1)])
@@ -63,7 +67,7 @@ def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
 @pytest.mark.filterwarnings("ignore:overflow")
 @pytest.mark.parametrize(
     "reduction, kwargs",
-    [("sum", {"dtype": np.float16})],
+    [("sum", {"dtype": np.float16}), ("mean", {"dtype": np.float16})],
 )
 @pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2)])
 def test_reductions_float16(random_sparse, reduction, kwargs, axis):
@@ -93,6 +97,8 @@ def test_reductions_bool(random_sparse, reduction, kwargs, axis, keepdims):
         (np.max, {}),
         (np.sum, {}),
         (np.sum, {"dtype": np.float32}),
+        (np.mean, {}),
+        (np.mean, {"dtype": np.float32}),
         (np.prod, {}),
         (np.min, {}),
     ],

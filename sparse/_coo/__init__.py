@@ -1,5 +1,4 @@
 from .core import COO, as_coo
-from .umath import elemwise
 from .common import (
     concatenate,
     clip,
@@ -26,7 +25,6 @@ from .common import (
 __all__ = [
     "COO",
     "as_coo",
-    "elemwise",
     "concatenate",
     "clip",
     "stack",
