@@ -8,6 +8,10 @@ from numba.typed import List
 
 
 def convert_to_flat(inds, shape):
+    """
+    Converts the indices of either the compressed or uncompressed axes
+    into a linearized form. Prepares the inputs for compute_flat.
+    """
     inds = [np.array(ind) for ind in inds]
     if any(ind.ndim > 1 for ind in inds):
         raise IndexError("Only one-dimensional iterable indices supported.")
@@ -22,6 +26,10 @@ def convert_to_flat(inds, shape):
 
 @numba.jit(nopython=True, nogil=True)
 def compute_flat(increments, cols, operations):  # pragma: no cover
+    """
+    Iterates through indices and calculates the linearized
+    indices.
+    """
     start = 0
     end = increments[-1].shape[0]
     positions = np.zeros(len(increments) - 1, dtype=np.intp)
@@ -185,7 +193,9 @@ def _c_ordering(
 
 
 def _transpose(x, shape, axes, compressed_axes, transpose=False):
-    """an algorithm for reshaping, resizing, changing compressed axes, and transposing"""
+    """
+    An algorithm for reshaping, resizing, changing compressed axes, and transposing.
+    """
 
     check_compressed_axes(shape, compressed_axes)
     uncompressed = uncompress_dimension(x.indptr)

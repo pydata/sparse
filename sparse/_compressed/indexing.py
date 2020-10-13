@@ -9,9 +9,10 @@ from .convert import convert_to_flat, uncompress_dimension, is_sorted
 
 def getitem(x, key):
     """
-    GCXS arrays are stored by transposing and reshaping them into csr matrices. For indexing, we
-    first
-
+    GCXS arrays are stored by transposing and reshaping them into csr matrices.
+    For indexing, we first convert the n-dimensional key to its corresponding
+    2-dimensional key and then iterate through each of the relevent rows and
+    columns.
     """
     from .compressed import GCXS
 
@@ -266,6 +267,10 @@ def get_array_selection(
 
 
 def get_single_element(x, key):
+    """
+    A convience function for indexing when returning
+    a single element.
+    """
     key = np.array(key)[x._axis_order]  # reordering the input
     ind = np.ravel_multi_index(key, x._reordered_shape)
     row, col = np.unravel_index(ind, x._compressed_shape)
