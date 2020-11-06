@@ -527,7 +527,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     def reshape(self, shape, order="C", compressed_axes=None):
         """
         Returns a new :obj:`GCXS` array that is a reshaped version of this array.
-        
+
         Parameters
         ----------
         shape : tuple[int]
@@ -535,12 +535,12 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         compressed_axes : Iterable[int], optional
             The axes to compress to store the array. Finds the most efficient storage
             by default.
-        
+
         Returns
         -------
         GCXS
             The reshaped output array.
-        
+
         See Also
         --------
         numpy.ndarray.reshape : The equivalent Numpy function.
