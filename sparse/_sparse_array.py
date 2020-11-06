@@ -850,6 +850,7 @@ class SparseArray:
 
         ret = np.sqrt(ret)
         return ret
+
     @property
     def real(self):
         """The real part of the array.
