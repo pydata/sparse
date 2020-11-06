@@ -224,6 +224,18 @@ def test_tocoo():
     assert_eq(b.tocoo(), coo)
 
 
+@pytest.mark.parametrize("complex", [True, False])
+def test_complex_methods(complex):
+    if complex:
+        x = np.array([1 + 2j, 2 - 1j, 0, 1, 0])
+    else:
+        x = np.array([1, 2, 0, 0, 0])
+    s = GCXS.from_numpy(x)
+    assert_eq(s.imag, x.imag)
+    assert_eq(s.real, x.real)
+    assert_eq(s.conj(), x.conj())
+
+
 @pytest.mark.parametrize(
     "index",
     [

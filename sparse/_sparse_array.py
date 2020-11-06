@@ -541,3 +541,85 @@ class SparseArray:
         return np.multiply.reduce(
             self, out=out, axis=axis, keepdims=keepdims, dtype=dtype
         )
+
+    @property
+    def real(self):
+        """The real part of the array.
+
+        Examples
+        --------
+        >>> from sparse import COO
+        >>> x = COO.from_numpy([1 + 0j, 0 + 1j])
+        >>> x.real.todense()  # doctest: +SKIP
+        array([1., 0.])
+        >>> x.real.dtype
+        dtype('float64')
+
+        Returns
+        -------
+        out : SparseArray
+            The real component of the array elements. If the array dtype is
+            real, the dtype of the array is used for the output. If the array
+            is complex, the output dtype is float.
+
+        See Also
+        --------
+        numpy.ndarray.real : NumPy equivalent attribute.
+        numpy.real : NumPy equivalent function.
+        """
+        return self.__array_ufunc__(np.real, "__call__", self)
+
+    @property
+    def imag(self):
+        """The imaginary part of the array.
+
+        Examples
+        --------
+        >>> from sparse import COO
+        >>> x = COO.from_numpy([1 + 0j, 0 + 1j])
+        >>> x.imag.todense()  # doctest: +SKIP
+        array([0., 1.])
+        >>> x.imag.dtype
+        dtype('float64')
+
+        Returns
+        -------
+        out : SparseArray
+            The imaginary component of the array elements. If the array dtype
+            is real, the dtype of the array is used for the output. If the
+            array is complex, the output dtype is float.
+
+        See Also
+        --------
+        numpy.ndarray.imag : NumPy equivalent attribute.
+        numpy.imag : NumPy equivalent function.
+        """
+        return self.__array_ufunc__(np.imag, "__call__", self)
+
+    def conj(self):
+        """Return the complex conjugate, element-wise.
+
+        The complex conjugate of a complex number is obtained by changing the
+        sign of its imaginary part.
+
+        Examples
+        --------
+        >>> from sparse import COO
+        >>> x = COO.from_numpy([1 + 2j, 2 - 1j])
+        >>> res = x.conj()
+        >>> res.todense()  # doctest: +SKIP
+        array([1.-2.j, 2.+1.j])
+        >>> res.dtype
+        dtype('complex128')
+
+        Returns
+        -------
+        out : SparseArray
+            The complex conjugate, with same dtype as the input.
+
+        See Also
+        --------
+        numpy.ndarray.conj : NumPy equivalent method.
+        numpy.conj : NumPy equivalent function.
+        """
+        return np.conj(self)
