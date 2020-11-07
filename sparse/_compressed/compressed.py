@@ -87,6 +87,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         The shape of the array.
     compressed_axes : Iterable[int]
         The axes to compress.
+    prune : bool, optional
+        A flag indicating whether or not we should prune any fill-values present in
+        the data array.
     fill_value: scalar, optional
         The fill value for this array.
 
@@ -524,6 +527,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     def reshape(self, shape, order="C", compressed_axes=None):
         """
         Returns a new :obj:`GCXS` array that is a reshaped version of this array.
+
         Parameters
         ----------
         shape : tuple[int]
@@ -531,10 +535,12 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         compressed_axes : Iterable[int], optional
             The axes to compress to store the array. Finds the most efficient storage
             by default.
+
         Returns
         -------
         GCXS
             The reshaped output array.
+
         See Also
         --------
         numpy.ndarray.reshape : The equivalent Numpy function.
@@ -695,8 +701,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         See Also
         --------
-        scipy.sparse.csr_matrix.tocsc : Scipy equivalent function.
-        scipy.sparse.csc_matrix.tocsr : Scipy equivalent function.
+        scipy.sparse.csr_matrix.transpose : Scipy equivalent function.
+        scipy.sparse.csc_matrix.transpose : Scipy equivalent function.
         numpy.ndarray.transpose : Numpy equivalent function.
         """
         if self.ndim != 2:
