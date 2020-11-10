@@ -100,6 +100,12 @@ def getitem(x, key):
 
     starts = x.indptr[:-1][rows]  # find the start and end of each of the rows
     ends = x.indptr[1:][rows]
+
+    # determine how much memory to allocate for indexing
+    total_nnz = (ends - starts).sum() + 1
+    total_size = rows.size * cols.size + 1
+    alloc_size = min(total_nnz, total_size)
+
     if np.any(compressed_inds):
         compressed_axes = shape_key[compressed_inds]
 
@@ -120,9 +126,13 @@ def getitem(x, key):
     indptr = np.empty(row_size + 1, dtype=np.intp)
     indptr[0] = 0
     if pos_slice:
-        arg = get_slicing_selection(x.data, x.indices, indptr, starts, ends, cols)
+        arg = get_slicing_selection(
+            x.data, x.indices, indptr, starts, ends, cols, alloc_size
+        )
     else:
-        arg = get_array_selection(x.data, x.indices, indptr, starts, ends, cols)
+        arg = get_array_selection(
+            x.data, x.indices, indptr, starts, ends, cols, total_size
+        )
 
     data, indices, indptr = arg
     size = np.prod(shape[1:])
@@ -172,7 +182,13 @@ def getitem(x, key):
 
 @numba.jit(nopython=True, nogil=True)
 def get_slicing_selection(
-    arr_data, arr_indices, indptr, starts, ends, col
+    arr_data,
+    arr_indices,
+    indptr,
+    starts,
+    ends,
+    col,
+    alloc_size,
 ):  # pragma: no cover
     """
     When the requested elements come in a strictly ascending order, as is the
@@ -181,10 +197,10 @@ def get_slicing_selection(
     evaluating whether to use a linear filtering procedure or a binary-search-based
     method.
     """
-    indices = []
-    ind_list = []
+    indices = np.empty(alloc_size, dtype=np.intp)
+    ind_list = np.empty(alloc_size, dtype=np.intp)
+    ind_iter = 0
     for i, (start, end) in enumerate(zip(starts, ends)):
-        inds = []
         current_row = arr_indices[start:end]
         if current_row.size < col.size:  # linear filtering
             count = 0
@@ -195,8 +211,9 @@ def get_slicing_selection(
                     break
                 if current_row[count] == col[col_count]:
                     nnz += 1
-                    ind_list.append(count + start)
-                    indices.append(col_count)
+                    ind_list[ind_iter] = count + start
+                    indices[ind_iter] = col_count
+                    ind_iter += 1
                     count += 1
                     col_count += 1
                 elif current_row[count] < col[col_count]:
@@ -208,6 +225,7 @@ def get_slicing_selection(
             prev = 0
             size = 0
             col_count = 0
+            cur_nnz = 0
             while col_count < col.size:
                 while (
                     col[col_count] < current_row[size] and col_count < col.size
@@ -222,46 +240,49 @@ def get_slicing_selection(
                 s += prev
                 if not (s >= current_row.size or current_row[s] != col[col_count]):
                     s += start
-                    inds.append(s)
-                    indices.append(col_count)
+                    ind_list[ind_iter] = s
+                    indices[ind_iter] = col_count
+                    ind_iter += 1
                     size += 1
+                    cur_nnz += 1
                 prev = size
                 col_count += 1
-            ind_list.extend(inds)
-            indptr[i + 1] = indptr[i] + len(inds)
-    ind_list = np.array(ind_list, dtype=np.int64)
-    indices = np.array(indices)
+            indptr[i + 1] = indptr[i] + cur_nnz
+    ind_list = ind_list[:ind_iter]
+    indices = indices[:ind_iter]
     data = arr_data[ind_list]
     return (data, indices, indptr)
 
 
 @numba.jit(nopython=True, nogil=True)
 def get_array_selection(
-    arr_data, arr_indices, indptr, starts, ends, col
+    arr_data, arr_indices, indptr, starts, ends, col, alloc_size
 ):  # pragma: no cover
     """
     This is a very general algorithm to be used when more optimized methods don't apply.
     It performs a binary search for each of the requested elements.
     Consequently it roughly scales by O(n log avg(nnz)).
     """
-    indices = []
-    ind_list = []
+    indices = np.empty(alloc_size, dtype=np.intp)
+    ind_list = np.empty(alloc_size, dtype=np.intp)
+    inds_iter = 0
     for i, (start, end) in enumerate(zip(starts, ends)):
-        inds = []
         current_row = arr_indices[start:end]
         if len(current_row) == 0:
             indptr[i + 1] = indptr[i]
             continue
+        cur_nnz = 0
         for c in range(len(col)):
             s = np.searchsorted(current_row, col[c])
             if not (s >= current_row.size or current_row[s] != col[c]):
                 s += start
-                inds.append(s)
-                indices.append(c)
-        ind_list.extend(inds)
-        indptr[i + 1] = indptr[i] + len(inds)
-    ind_list = np.array(ind_list, dtype=np.int64)
-    indices = np.array(indices)
+                ind_list[inds_iter] = s
+                indices[inds_iter] = c
+                inds_iter += 1
+                cur_nnz += 1
+        indptr[i + 1] = indptr[i] + cur_nnz
+    ind_list = ind_list[:inds_iter]
+    indices = indices[:inds_iter]
     data = arr_data[ind_list]
     return (data, indices, indptr)
 
