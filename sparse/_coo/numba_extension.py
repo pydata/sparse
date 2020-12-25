@@ -53,7 +53,7 @@ class COOType(types.Type):
     @property
     def shape_type(self):
         dt = numba.np.numpy_support.from_dtype(self.coords_dtype)
-        return types.UniTuple(at, self.ndim)
+        return types.UniTuple(dt, self.ndim)
 
     @property
     def fill_value_type(self):
