@@ -52,7 +52,7 @@ class COOType(types.Type):
 
     @property
     def shape_type(self):
-        return types.UniTuple(types.int64, self.ndim)
+        return types.UniTuple(types.intp, self.ndim)
 
     @property
     def fill_value_type(self):
