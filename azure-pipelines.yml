@@ -14,9 +14,6 @@ jobs:
           python_version: '3.7'
         Python36:
           python_version: '3.6'
-        ArrayFunction:
-          NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: '1'
-          NUMPY_VERSION: '==1.16.2'
 - job: MacOS
   variables:
     python_version: '3.6'
