@@ -1307,6 +1307,7 @@ def test_ones_zeros_like(funcname):
     assert_eq(sp_func(x), np_func(x))
     assert_eq(sp_func(x, dtype="f8"), np_func(x, dtype="f8"))
     assert_eq(sp_func(x, dtype=None), np_func(x, dtype=None))
+    assert_eq(sp_func(x, shape=(2, 2)), np_func(x, shape=(2, 2)))
 
 
 def test_full():
@@ -1320,6 +1321,9 @@ def test_full_like():
     x = np.zeros((5, 5), dtype="i8")
     assert_eq(sparse.full_like(x, 9.5), np.full_like(x, 9.5))
     assert_eq(sparse.full_like(x, 9.5, dtype="f8"), np.full_like(x, 9.5, dtype="f8"))
+    assert_eq(
+        sparse.full_like(x, 9.5, shape=(2, 2)), np.full_like(x, 9.5, shape=(2, 2))
+    )
 
 
 @pytest.mark.parametrize("complex", [True, False])
