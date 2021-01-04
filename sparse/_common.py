@@ -1375,7 +1375,7 @@ def full(shape, fill_value, dtype=None, format="coo", compressed_axes=None):
     ).asformat(format, compressed_axes=compressed_axes)
 
 
-def full_like(a, fill_value, dtype=None, format=None, compressed_axes=None):
+def full_like(a, fill_value, dtype=None, shape=None, format=None, compressed_axes=None):
     """Return a full array with the same shape and type as a given array.
 
     Parameters
@@ -1403,12 +1403,12 @@ def full_like(a, fill_value, dtype=None, format=None, compressed_axes=None):
     """
     if format is None and not isinstance(a, np.ndarray):
         format = type(a).__name__.lower()
-    else:
+    elif format is None:
         format = "coo"
     if hasattr(a, "compressed_axes") and compressed_axes is None:
         compressed_axes = a.compressed_axes
     return full(
-        a.shape,
+        a.shape if shape is None else shape,
         fill_value,
         dtype=(a.dtype if dtype is None else dtype),
         format=format,
@@ -1452,7 +1452,7 @@ def zeros(shape, dtype=float, format="coo", compressed_axes=None):
     )
 
 
-def zeros_like(a, dtype=None, format=None, compressed_axes=None):
+def zeros_like(a, dtype=None, shape=None, format=None, compressed_axes=None):
     """Return a SparseArray of zeros with the same shape and type as ``a``.
 
     Parameters
@@ -1478,17 +1478,8 @@ def zeros_like(a, dtype=None, format=None, compressed_axes=None):
     array([[0, 0, 0],
            [0, 0, 0]])
     """
-    if format is None and not isinstance(a, np.ndarray):
-        format = type(a).__name__.lower()
-    elif format is None:
-        format = "coo"
-    if hasattr(a, "compressed_axes") and compressed_axes is None:
-        compressed_axes = a.compressed_axes
-    return zeros(
-        a.shape,
-        dtype=(a.dtype if dtype is None else dtype),
-        format=format,
-        compressed_axes=compressed_axes,
+    return full_like(
+        a, 0, dtype=dtype, shape=shape, format=format, compressed_axes=compressed_axes
     )
 
 
@@ -1528,7 +1519,7 @@ def ones(shape, dtype=float, format="coo", compressed_axes=None):
     )
 
 
-def ones_like(a, dtype=None, format=None, compressed_axes=None):
+def ones_like(a, dtype=None, shape=None, format=None, compressed_axes=None):
     """Return a SparseArray of ones with the same shape and type as ``a``.
 
     Parameters
@@ -1554,17 +1545,8 @@ def ones_like(a, dtype=None, format=None, compressed_axes=None):
     array([[1, 1, 1],
            [1, 1, 1]])
     """
-    if format is None and not isinstance(a, np.ndarray):
-        format = type(a).__name__.lower()
-    else:
-        format = "coo"
-    if hasattr(a, "compressed_axes") and compressed_axes is None:
-        compressed_axes = a.compressed_axes
-    return ones(
-        a.shape,
-        dtype=(a.dtype if dtype is None else dtype),
-        format=format,
-        compressed_axes=compressed_axes,
+    return full_like(
+        a, 1, dtype=dtype, shape=shape, format=format, compressed_axes=compressed_axes
     )
 
 
