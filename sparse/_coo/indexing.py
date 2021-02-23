@@ -6,7 +6,7 @@ import numpy as np
 from itertools import zip_longest
 
 from .._slicing import normalize_index
-from .._utils import _zero_of_dtype, equivalent
+from .._utils import _zero_of_dtype, equivalent, min_signed_type
 
 
 def getitem(x, index):
@@ -95,8 +95,11 @@ def getitem(x, index):
             continue
         # Add to the shape and transform the coords in the case of a slice.
         elif isinstance(ind, slice):
+            signed_type = min_signed_type(x.shape[i])
             shape.append(len(range(ind.start, ind.stop, ind.step)))
-            coords.append((x.coords[i, mask] - ind.start) // ind.step)
+            coords.append(
+                (x.coords[i, mask].astype(signed_type) - ind.start) // ind.step
+            )
             i += 1
             if ind.step < 0:
                 sorted = False

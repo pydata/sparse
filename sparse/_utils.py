@@ -461,3 +461,21 @@ def check_consistent_fill_value(arrays):
                 "is different from a fill_value of {!s} in the first "
                 "argument.".format(i, arg.fill_value, fv)
             )
+
+
+def min_signed_type(scalar):
+    """
+    Returns the smallest signed dtype that can be used to store the given scalar.
+
+    Parameters
+    ----------
+    scalar : int
+    """
+    if abs(scalar) < 128:
+        return np.int8
+    elif abs(scalar) < 32768:
+        return np.int16
+    elif abs(scalar) < 2147483648:
+        return np.int32
+    else:
+        return np.int64

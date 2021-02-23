@@ -242,9 +242,15 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 shape = tuple((self.coords.max(axis=1) + 1))
             else:
                 shape = ()
+        # if not isinstance(shape, Iterable):
+        #    shape = (shape,)
 
+        try:
+            coords_dtype = np.min_scalar_type(max(shape) - 1)
+        except:
+            coords_dtype = np.intp
         super().__init__(shape, fill_value=fill_value)
-        self.coords = self.coords.astype(np.intp, copy=False)
+        self.coords = self.coords.astype(coords_dtype, copy=False)
 
         if self.shape:
             if len(self.data) != self.coords.shape[1]:
@@ -1013,7 +1019,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         # TODO: this self.size enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
 
-        coords = np.empty((len(shape), self.nnz), dtype=np.intp)
+        try:
+            coords_dtype = np.min_scalar_type(max(shape) - 1)
+        except:
+            coords_dtype = np.intp
+        coords = np.empty((len(shape), self.nnz), dtype=coords_dtype)
         strides = 1
         for i, d in enumerate(shape[::-1]):
             coords[-(i + 1), :] = (linear_loc // strides) % d
@@ -1063,7 +1073,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         end_idx = np.searchsorted(linear_loc, new_size, side="left")
         linear_loc = linear_loc[:end_idx]
 
-        coords = np.empty((len(shape), len(linear_loc)), dtype=np.intp)
+        try:
+            coords_dtype = np.min_scalar_type(max(shape) - 1)
+        except:
+            coords_dtype = np.intp
+        coords = np.empty((len(shape), len(linear_loc)), dtype=coords_dtype)
         strides = 1
         for i, d in enumerate(shape[::-1]):
             coords[-(i + 1), :] = (linear_loc // strides) % d
@@ -1487,10 +1501,7 @@ def _calc_counts_invidx(groups):
     counts = []
 
     if len(groups) == 0:
-        return (
-            np.array(inv_idx, dtype=groups.dtype),
-            np.array(counts, dtype=groups.dtype),
-        )
+        return (inv_idx, counts)
 
     inv_idx.append(0)
 
@@ -1503,7 +1514,7 @@ def _calc_counts_invidx(groups):
 
     counts.append(len(groups) - inv_idx[-1])
 
-    return (np.array(inv_idx, dtype=groups.dtype), np.array(counts, dtype=groups.dtype))
+    return (inv_idx, counts)
 
 
 def _grouped_reduce(x, groups, method, **kwargs):
@@ -1535,5 +1546,10 @@ def _grouped_reduce(x, groups, method, **kwargs):
     # Partial credit to @shoyer
     # Ref: https://gist.github.com/shoyer/f538ac78ae904c936844
     inv_idx, counts = _calc_counts_invidx(groups)
+    try:
+        inv_idx = np.array(inv_idx, dtype=np.min_scalar_type(inv_idx[-1]))
+    except:
+        inv_idx = np.array(inv_idx, dtype=groups.dtype)
+    counts = np.array(counts, dtype=groups.dtype)
     result = method.reduceat(x, inv_idx, **kwargs)
     return result, inv_idx, counts

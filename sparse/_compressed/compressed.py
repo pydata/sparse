@@ -53,12 +53,12 @@ def _from_coo(x, compressed_axes=None):
     linear = linear_loc(x.coords[axis_order], reordered_shape)
     order = np.argsort(linear)
     linear = linear[order]
-    coords = np.empty((2, x.nnz), dtype=np.intp)
+    coords = np.empty((2, x.nnz), dtype=np.min_scalar_type(max(compressed_shape)))
     strides = 1
     for i, d in enumerate(compressed_shape[::-1]):
         coords[-(i + 1), :] = (linear // strides) % d
         strides *= d
-    indptr = np.empty(row_size + 1, dtype=np.intp)
+    indptr = np.empty(row_size + 1, dtype=np.min_scalar_type(x.nnz + 1))
     indptr[0] = 0
     np.cumsum(np.bincount(coords[0], minlength=row_size), out=indptr[1:])
     indices = coords[1]
@@ -277,19 +277,22 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     __getitem__ = getitem
 
     def _reduce_calc(self, method, axis, keepdims=False, **kwargs):
-        if axis[0] is None or np.array_equal(axis, np.arange(self.ndim, dtype=np.intp)):
+        if axis[0] is None or np.array_equal(
+            axis, np.arange(self.ndim, dtype=np.min_scalar_type(self.ndim))
+        ):
             x = self.flatten().tocoo()
             out = x.reduce(method, axis=None, keepdims=keepdims, **kwargs)
             if keepdims:
-                return (out.reshape(np.ones(self.ndim, dtype=np.intp)),)
+                return (out.reshape(np.ones(self.ndim, dtype=np.uint8)),)
             return (out,)
 
-        r = np.arange(self.ndim, dtype=np.intp)
+        r = np.arange(self.ndim, dtype=np.uint8)
         compressed_axes = [a for a in r if a not in set(axis)]
         x = self.change_compressed_axes(compressed_axes)
         idx = np.diff(x.indptr) != 0
         indptr = x.indptr[:-1][idx]
-        indices = (np.arange(x._compressed_shape[0], dtype=np.intp))[idx]
+        indices_dtype = np.min_scalar_type(x._compressed_shape[0])
+        indices = (np.arange(x._compressed_shape[0], dtype=indices_dtype))[idx]
         data = method.reduceat(x.data, indptr, **kwargs)
         counts = x.indptr[1:][idx] - x.indptr[:-1][idx]
         arr_attrs = (x, compressed_axes, indices)
@@ -368,7 +371,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
                 shape=self.shape,
                 fill_value=self.fill_value,
             )
-        uncompressed = uncompress_dimension(self.indptr)
+        uncompressed = uncompress_dimension(self.indptr, self.indices.dtype)
         coords = np.vstack((uncompressed, self.indices))
         order = np.argsort(self._axis_order)
         return (
@@ -778,11 +781,15 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         mask = ~equivalent(self.data, self.fill_value)
         self.data = self.data[mask]
         if len(self.indptr):
-            coords = np.stack((uncompress_dimension(self.indptr), self.indices))
+            coords = np.stack(
+                (uncompress_dimension(self.indptr, self.indices.dtype), self.indices)
+            )
             coords = coords[:, mask]
             self.indices = coords[1]
             row_size = self._compressed_shape[0]
-            indptr = np.empty(row_size + 1, dtype=np.intp)
+            indptr = np.empty(
+                row_size + 1, dtype=np.min_scalar_type(self.data.size + 1)
+            )
             indptr[0] = 0
             np.cumsum(np.bincount(coords[0], minlength=row_size), out=indptr[1:])
             self.indptr = indptr

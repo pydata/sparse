@@ -15,7 +15,8 @@ def convert_to_flat(inds, shape):
     inds = [np.array(ind) for ind in inds]
     if any(ind.ndim > 1 for ind in inds):
         raise IndexError("Only one-dimensional iterable indices supported.")
-    cols = np.empty(np.prod([ind.size for ind in inds]), dtype=np.intp)
+    col_size = np.prod([ind.size for ind in inds])
+    cols = np.empty(col_size, dtype=np.min_scalar_type(col_size))
     shape_bins = transform_shape(np.asarray(shape))
     increments = List()
     for i in range(len(inds)):
@@ -32,7 +33,7 @@ def compute_flat(increments, cols, operations):  # pragma: no cover
     """
     start = 0
     end = increments[-1].shape[0]
-    positions = np.zeros(len(increments) - 1, dtype=np.intp)
+    positions = np.zeros(len(increments) - 1, dtype=np.uint8)
     pos = len(increments) - 2
     for i in range(operations):
         if i != 0 and positions[pos] == increments[pos].shape[0]:
@@ -57,7 +58,7 @@ def transform_shape(shape):  # pragma: no cover
     it represents. For example, given (5,5,5), it returns
     np.array([25,5,1]).
     """
-    shape_bins = np.empty(len(shape), dtype=np.intp)
+    shape_bins = np.empty(len(shape), dtype=np.uint8)
     shape_bins[-1] = 1
     for i in range(len(shape) - 2, -1, -1):
         shape_bins[i] = np.prod(shape[i + 1 :])
@@ -65,9 +66,9 @@ def transform_shape(shape):  # pragma: no cover
 
 
 @numba.jit(nopython=True, nogil=True)
-def uncompress_dimension(indptr):  # pragma: no cover
+def uncompress_dimension(indptr, dtype):  # pragma: no cover
     """converts an index pointer array into an array of coordinates"""
-    uncompressed = np.empty(indptr[-1], dtype=np.intp)
+    uncompressed = np.empty(indptr[-1], dtype=dtype)
     for i in range(len(indptr) - 1):
         uncompressed[indptr[i] : indptr[i + 1]] = i
     return uncompressed
@@ -122,8 +123,10 @@ def _1d_reshape(x, shape, compressed_axes):
     new_compressed_shape = np.array((row_size, col_size))
     x_indices = x.indices[:end_idx]
     new_nnz = x_indices.size
-    new_linear = np.empty(new_nnz, dtype=np.intp)
-    new_coords = np.empty((2, new_nnz), dtype=np.intp)
+    new_linear = np.empty(new_nnz, dtype=np.min_scalar_type(np.prod(shape)))
+    new_coords = np.empty(
+        (2, new_nnz), dtype=np.min_scalar_type(max(new_compressed_shape))
+    )
 
     _linearize(
         x_indices,
@@ -137,7 +140,7 @@ def _1d_reshape(x, shape, compressed_axes):
 
     order = np.argsort(new_linear)
     new_coords = new_coords[:, order]
-    indptr = np.empty(row_size + 1, dtype=np.intp)
+    indptr = np.empty(row_size + 1, dtype=np.min_scalar_type(x.nnz + 1))
     indptr[0] = 0
     np.cumsum(np.bincount(new_coords[0], minlength=row_size), out=indptr[1:])
     indices = new_coords[1]
@@ -158,11 +161,11 @@ def _resize(x, shape, compressed_axes):
         data = x.data[:end_idx]
         out = GCXS((data, indices, []), shape=(size,), fill_value=x.fill_value)
         return _1d_reshape(out, shape, compressed_axes)
-    uncompressed = uncompress_dimension(x.indptr)
+    uncompressed = uncompress_dimension(x.indptr, x.indices.dtype)
     coords = np.stack((uncompressed, x.indices))
     linear = linear_loc(coords, x._compressed_shape)
     sorted_axis_order = np.argsort(x._axis_order)
-    c_linear = np.empty(x.nnz, dtype=np.intp)
+    c_linear = np.empty(x.nnz, dtype=np.min_scalar_type(np.prod(shape)))
 
     _c_ordering(
         linear,
@@ -198,12 +201,14 @@ def _transpose(x, shape, axes, compressed_axes, transpose=False):
     """
 
     check_compressed_axes(shape, compressed_axes)
-    uncompressed = uncompress_dimension(x.indptr)
+    uncompressed = uncompress_dimension(x.indptr, x.indices.dtype)
+    # print('indptr', x.indptr)
+    # print('uncompressed', uncompressed)
     coords = np.stack((uncompressed, x.indices))
     linear = linear_loc(coords, x._compressed_shape)
     sorted_axis_order = np.argsort(x._axis_order)
     if len(shape) == 1:
-        c_linear = np.empty(x.nnz, dtype=np.intp)
+        c_linear = np.empty(x.nnz, dtype=np.min_scalar_type(np.prod(shape)))
         _c_ordering(
             linear,
             c_linear,
@@ -218,13 +223,15 @@ def _transpose(x, shape, axes, compressed_axes, transpose=False):
 
     new_axis_order = list(compressed_axes)
     new_axis_order.extend(np.setdiff1d(np.arange(len(shape)), compressed_axes))
-    new_linear = np.empty(x.nnz, dtype=np.intp)
+    new_linear = np.empty(x.nnz, dtype=np.min_scalar_type(np.prod(shape)))
     new_reordered_shape = np.array(shape)[new_axis_order]
-    new_coords = np.empty((2, x.nnz), dtype=np.intp)
     axisptr = len(compressed_axes)
     row_size = np.prod(new_reordered_shape[:axisptr])
     col_size = np.prod(new_reordered_shape[axisptr:])
     new_compressed_shape = np.array((row_size, col_size))
+    new_coords = np.empty(
+        (2, x.nnz), dtype=np.min_scalar_type(max(new_compressed_shape))
+    )
 
     _convert_coords(
         linear,
@@ -247,7 +254,7 @@ def _transpose(x, shape, axes, compressed_axes, transpose=False):
         indptr = []
         indices = coords[0, :]
     else:
-        indptr = np.empty(row_size + 1, dtype=np.intp)
+        indptr = np.empty(row_size + 1, dtype=np.min_scalar_type(x.nnz + 1))
         indptr[0] = 0
         np.cumsum(np.bincount(new_coords[0], minlength=row_size), out=indptr[1:])
         indices = new_coords[1]

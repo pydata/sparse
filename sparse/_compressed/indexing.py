@@ -117,7 +117,7 @@ def getitem(x, key):
         compressed_axes = (0,)  # defaults to 0
         row_size = starts.size
 
-    indptr = np.empty(row_size + 1, dtype=np.intp)
+    indptr = np.empty(row_size + 1, dtype=x.indptr.dtype)
     indptr[0] = 0
     if pos_slice:
         arg = get_slicing_selection(x.data, x.indices, indptr, starts, ends, cols)
@@ -128,13 +128,13 @@ def getitem(x, key):
     size = np.prod(shape[1:])
 
     if not np.any(uncompressed_inds):  # only indexing compressed axes
-        uncompressed = uncompress_dimension(indptr)
+        uncompressed = uncompress_dimension(indptr, indices.dtype)
         if len(shape) == 1:
             indices = uncompressed
             indptr = None
         else:
             indices = uncompressed % size
-            indptr = np.empty(shape[0] + 1, dtype=np.intp)
+            indptr = np.empty(shape[0] + 1, dtype=np.min_scalar_type(indices.size + 1))
             indptr[0] = 0
             np.cumsum(
                 np.bincount(uncompressed // size, minlength=shape[0]), out=indptr[1:]
@@ -144,7 +144,7 @@ def getitem(x, key):
             indptr = None
         else:
             uncompressed = indices // size
-            indptr = np.empty(shape[0] + 1, dtype=np.intp)
+            indptr = np.empty(shape[0] + 1, dtype=np.min_scalar_type(indices.size + 1))
             indptr[0] = 0
             np.cumsum(np.bincount(uncompressed, minlength=shape[0]), out=indptr[1:])
             indices = indices % size

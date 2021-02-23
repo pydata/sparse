@@ -170,8 +170,9 @@ def concatenate(arrays, axis=0):
     shape = list(arrays[0].shape)
     shape[axis] = dim
 
+    out_dtype = np.min_scalar_type(max(shape))
     data = np.concatenate([x.data for x in arrays])
-    coords = np.concatenate([x.coords for x in arrays], axis=1)
+    coords = np.concatenate([x.coords for x in arrays], axis=1).astype(out_dtype)
 
     dim = 0
     for x in arrays:
@@ -719,8 +720,12 @@ def roll(a, shift, axis=None):
                 "If 'shift' is a 1D sequence, " "'axis' must have equal length."
             )
 
+        shift_dtype = np.min_scalar_type(min(shift))  # for negative shifts
+        max_dtype = np.min_scalar_type(max(a.shape) + max(shift))
+        out_dtype = np.promote_types(shift_dtype, max_dtype)
+
         # shift elements
-        coords, data = np.copy(a.coords), np.copy(a.data)
+        coords, data = a.coords.astype(out_dtype), np.copy(a.data)
         for sh, ax in zip(shift, axis):
             coords[ax] += sh
             coords[ax] %= a.shape[ax]

@@ -36,7 +36,11 @@ def concatenate(arrays, axis=0, compressed_axes=None):
             ptr_list.append(arr.indptr)
             continue
         ptr_list.append(arr.indptr[1:])
+
+    total_nnz = np.sum([arr.nnz for arr in arrays], dtype=np.intp)
+    indptr_dtype = np.min_scalar_type(total_nnz)
     indptr = np.concatenate(ptr_list)
+    indptr = indptr.astype(indptr_dtype)
     indices = np.concatenate([arr.indices for arr in arrays])
     data = np.concatenate([arr.data for arr in arrays])
     ptr_len = arrays[0].indptr.shape[0]
@@ -81,14 +85,19 @@ def stack(arrays, axis=0, compressed_axes=None):
     for i in range(len(arrays)):
         shape = list(arrays[i].shape)
         shape.insert(axis, 1)
-        arrays[i] = arrays[i].reshape(shape).change_compressed_axes((axis,))
+        print("array", i, "indptr", arrays[i].indptr)
+        arrays[i]
+        arrays[i] = arrays[i].reshape(shape, compressed_axes=(axis,))
         if i == 0:
             ptr_list.append(arrays[i].indptr)
             continue
         ptr_list.append(arrays[i].indptr[1:])
 
     shape[axis] = len(arrays)
+    total_nnz = np.sum([arr.nnz for arr in arrays], dtype=np.intp)
+    indptr_dtype = np.min_scalar_type(total_nnz)
     indptr = np.concatenate(ptr_list)
+    indptr = indptr.astype(indptr_dtype)
     indices = np.concatenate([arr.indices for arr in arrays])
     data = np.concatenate([arr.data for arr in arrays])
     ptr_len = arrays[0].indptr.shape[0]
