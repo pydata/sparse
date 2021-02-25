@@ -242,13 +242,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 shape = tuple((self.coords.max(axis=1) + 1))
             else:
                 shape = ()
-        # if not isinstance(shape, Iterable):
-        #    shape = (shape,)
 
         try:
             coords_dtype = np.min_scalar_type(max(shape) - 1)
         except:
             coords_dtype = np.intp
+
         super().__init__(shape, fill_value=fill_value)
         self.coords = self.coords.astype(coords_dtype, copy=False)
 
