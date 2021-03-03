@@ -95,6 +95,8 @@ def test_getitem(shape, density):
         ((2, 3), (slice(1, 2), 1), np.random.rand()),
         ((2, 3), (slice(1, 2), 1), np.random.rand(1)),
         ((2, 3), (0, 2), np.random.rand()),
+        ((2, 3), ([0, 1], [1, 2]), np.random.rand(2)),
+        ((2, 3), ([0, 1], [1, 2]), np.random.rand()),
     ],
 )
 def test_setitem(shape, index, value):
