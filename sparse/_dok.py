@@ -309,8 +309,11 @@ class DOK(SparseArray):
             return self.fill_value
 
     def __setitem__(self, key, value):
-        if isinstance(key, tuple) and len(key) == self.ndim\
-            and all(isinstance(k, Iterable) for k in key):
+        if (
+            isinstance(key, tuple)
+            and len(key) == self.ndim
+            and all(isinstance(k, Iterable) for k in key)
+        ):
             if all(len(key[0]) == len(k) for k in key[1:]):
                 self._fancy_setitem(key, value)
                 return
@@ -328,30 +331,32 @@ class DOK(SparseArray):
         if not isinstance(idxs, tuple):  # one dimension, one argument
             idxs = (idxs,)
         if len(idxs) != self.ndim:
-            raise NotImplementedError(f'Index sequences for all {self.ndim} array dimensions needed!')
+            raise NotImplementedError(
+                f"Index sequences for all {self.ndim} array dimensions needed!"
+            )
         idxs = tuple(np.asanyarray(idxs) for idxs in idxs)
         if not (isinstance(k.dtype, Integral) for k in idxs):
-            raise IndexError('Indices must be sequences of integer types!')
+            raise IndexError("Indices must be sequences of integer types!")
         if not all(idxs[0].shape == k.shape for k in idxs[1:]):
-            raise IndexError('Unequal length of index sequences!')
+            raise IndexError("Unequal length of index sequences!")
         if idxs[0].ndim != 1:
-            raise IndexError('Indices are not 1d sequences!')
+            raise IndexError("Indices are not 1d sequences!")
         values = np.asanyarray(values, self.dtype)
         if values.ndim == 0:
             values = np.full(idxs[0].size, values, self.dtype)
         elif values.ndim > 1:
-            raise ValueError(f'Dimension of values ({values.ndim}) must be 0 or 1!')
+            raise ValueError(f"Dimension of values ({values.ndim}) must be 0 or 1!")
         if not idxs[0].shape == values.shape:
-            raise ValueError(f'Shape mismatch of indices ({idxs[0].shape}) and values ({values.shape})!')
+            raise ValueError(
+                f"Shape mismatch of indices ({idxs[0].shape}) and values ({values.shape})!"
+            )
         fill_value = self.fill_value
         data = self.data
         for idx, value in zip(zip(*idxs), values):
-            # self._setitem(k, value)  # costly equality checks
             if not value == fill_value:
                 data[idx] = value
             elif idx in data:
                 del data[idx]
-
 
     def _setitem(self, key_list, value):
         value_missing_dims = (
