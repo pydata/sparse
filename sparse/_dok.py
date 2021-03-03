@@ -314,7 +314,7 @@ class DOK(SparseArray):
             if all(len(key[0]) == len(k) for k in key[1:]):
                 self._fancy_setitem(key, value)
                 return
-            
+
         key = normalize_index(key, self.shape)
         value = np.asanyarray(value)
 
