@@ -138,6 +138,19 @@ def test_setitem_notimplemented_error(shape, index, value):
         s[index] = value
 
 
+@pytest.mark.parametrize(
+    "shape, index, value",
+    [
+        ((2, 3), ([0, 1], [1, 2]), np.random.rand((1, 2))),
+    ],
+)
+def test_setitem_value_error(shape, index, value):
+    s = sparse.random(shape, 0.5, format="dok")
+
+    with pytest.raises(ValueError):
+        s[index] = value
+
+
 def test_default_dtype():
     s = DOK((5,))
 
