@@ -95,6 +95,10 @@ def test_getitem(shape, density):
         ((2, 3), (slice(1, 2), 1), np.random.rand()),
         ((2, 3), (slice(1, 2), 1), np.random.rand(1)),
         ((2, 3), (0, 2), np.random.rand()),
+        ((2, 3), ([0, 1], [1, 2]), np.random.rand(2)),
+        ((2, 3), ([0, 1], [1, 2]), np.random.rand()),
+        ((4,), ([1, 3]), np.random.rand()),
+        ((2, 3), ([0, 1], [1, 2]), 0),
     ],
 )
 def test_setitem(shape, index, value):
@@ -105,6 +109,49 @@ def test_setitem(shape, index, value):
     x[index] = value
 
     assert_eq(x, s)
+
+
+@pytest.mark.parametrize(
+    "shape, index, value",
+    [
+        ((2, 3), ([0, 1.5], [1, 2]), np.random.rand()),
+        ((2, 3), ([0, 1], [1]), np.random.rand()),
+        ((2, 3), ([[0], [1]], [1, 2]), np.random.rand()),
+    ],
+)
+def test_setitem_index_error(shape, index, value):
+    s = sparse.random(shape, 0.5, format="dok")
+
+    with pytest.raises(IndexError):
+        s[index] = value
+
+
+@pytest.mark.parametrize(
+    "shape, index, value",
+    [
+        ((2, 3), ([0, 1],), np.random.rand()),
+    ],
+)
+def test_setitem_notimplemented_error(shape, index, value):
+    s = sparse.random(shape, 0.5, format="dok")
+
+    with pytest.raises(NotImplementedError):
+        s[index] = value
+
+
+@pytest.mark.parametrize(
+    "shape, index, value",
+    [
+        ((2, 3), ([0, 1], [1, 2]), np.random.rand(1, 2)),
+        ((2, 3), ([0, 1], [1, 2]), np.random.rand(3)),
+        ((2,), 1, np.random.rand(2)),
+    ],
+)
+def test_setitem_value_error(shape, index, value):
+    s = sparse.random(shape, 0.5, format="dok")
+
+    with pytest.raises(ValueError):
+        s[index] = value
 
 
 def test_default_dtype():

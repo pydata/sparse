@@ -1,4 +1,5 @@
 from numbers import Integral
+from collections.abc import Iterable
 
 import numpy as np
 
@@ -308,14 +309,53 @@ class DOK(SparseArray):
             return self.fill_value
 
     def __setitem__(self, key, value):
-        key = normalize_index(key, self.shape)
-        value = np.asanyarray(value)
+        value = np.asarray(value, dtype=self.dtype)
 
-        value = value.astype(self.dtype)
+        # 1D fancy indexing
+        if (
+            self.ndim == 1
+            and isinstance(key, Iterable)
+            and all(isinstance(i, (int, np.integer)) for i in key)
+        ):
+            key = (key,)
+
+        if isinstance(key, tuple) and all(isinstance(k, Iterable) for k in key):
+            if len(key) != self.ndim:
+                raise NotImplementedError(
+                    f"Index sequences for all {self.ndim} array dimensions needed!"
+                )
+            if not all(len(key[0]) == len(k) for k in key):
+                raise IndexError("Unequal length of index sequences!")
+            self._fancy_setitem(key, value)
+            return
+
+        key = normalize_index(key, self.shape)
 
         key_list = [int(k) if isinstance(k, Integral) else k for k in key]
 
         self._setitem(key_list, value)
+
+    def _fancy_setitem(self, idxs, values):
+        idxs = tuple(np.asanyarray(idxs) for idxs in idxs)
+        if not all(np.issubdtype(k.dtype, np.integer) for k in idxs):
+            raise IndexError("Indices must be sequences of integer types!")
+        if idxs[0].ndim != 1:
+            raise IndexError("Indices are not 1d sequences!")
+        if values.ndim == 0:
+            values = np.full(idxs[0].size, values, self.dtype)
+        elif values.ndim > 1:
+            raise ValueError(f"Dimension of values ({values.ndim}) must be 0 or 1!")
+        if not idxs[0].shape == values.shape:
+            raise ValueError(
+                f"Shape mismatch of indices ({idxs[0].shape}) and values ({values.shape})!"
+            )
+        fill_value = self.fill_value
+        data = self.data
+        for idx, value in zip(zip(*idxs), values):
+            if not value == fill_value:
+                data[idx] = value
+            elif idx in data:
+                del data[idx]
 
     def _setitem(self, key_list, value):
         value_missing_dims = (
