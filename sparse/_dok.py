@@ -302,49 +302,42 @@ class DOK(SparseArray):
             else:
                 return self.fill_value
 
-        coords_array = np.asarray([k for k in self.data])
-        for i, k in enumerate(key):
-            coords_array = self._filter_by_key(coords_array, i, k)
+        slice_key = [to_slice(k) for k in key]
+        coords_array = np.asarray(list(self.data.keys()))
+        values_array = np.asarray(list(self.data.values()))
+        filtered_coords, filter_arr = self._filter_by_key(coords_array, slice_key)
+        filtered_values = values_array[filter_arr]
 
         res_shape = []
+        keep_dims = []
         for i, k in enumerate(key):
-            if isinstance(k, Integral):
-                res_shape.append(k)
-            else:
-                k_indices = k.indices(self.shape[i])
-                n_elements = ceil((k_indices[1] - k_indices[0]) / k_indices[2])
+            if isinstance(k, slice):
+                n_elements = ceil((k.stop - k.start) / k.step)
                 res_shape.append(n_elements)
+                keep_dims.append(i)
 
-        new_data = {}
-        for coord in coords_array:
-            coord = tuple(coord)
-            new_coord = []
-            for i, k in enumerate(key):
-                if isinstance(k, Integral):
-                    new_coord.append(coord[i] - k)
-                else:
-                    start, _, step = k.indices(self.shape[i])
-                    old_index = coord[i]
-                    new_index = (old_index - start) // step
-                    new_coord.append(new_index)
-            new_data[tuple(new_coord)] = self.data[coord]
+        starts = np.asarray([k.start for k in slice_key])
+        steps = np.asarray([k.step for k in slice_key])
+        new_coords = (filtered_coords - starts) // steps
+        new_coords_squeezed = np.take(new_coords, keep_dims, axis=1)
+        new_data = {
+            tuple(coord): val
+            for coord, val in zip(new_coords_squeezed, filtered_values)
+        }
 
         return DOK(
             shape=res_shape, data=new_data, dtype=self.dtype, fill_value=self.fill_value
         )
 
-    def _filter_by_key(self, coords, dim, key):
-        new_coords = []
-        if isinstance(key, Integral):
-            for coord in coords:
-                if coord[dim] == key:
-                    new_coords.append(coord)
-        else:
-            for coord in coords:
-                valid_indices = list(range(*key.indices(self.shape[dim])))
-                if coord[dim] in valid_indices:
-                    new_coords.append(coord)
-        return np.asarray(new_coords)
+    def _filter_by_key(self, coords, slice_key):
+        filter_arr = np.ones(coords.shape[0], dtype=bool)
+        for coords_in_dim, sl in zip(coords.T, slice_key):
+            filter_arr *= (
+                (coords_in_dim >= sl.start)
+                * (coords_in_dim < sl.stop)
+                * ((coords_in_dim - sl.start) % sl.step == 0)
+            )
+        return coords[filter_arr], filter_arr
 
     def __setitem__(self, key, value):
         key = normalize_index(key, self.shape)
@@ -476,3 +469,13 @@ class DOK(SparseArray):
             )
 
         raise NotImplementedError("The given format is not supported.")
+
+
+def to_slice(k):
+    """Convert integer indices to one-element slices.
+
+    It'll make sense at some point. ;)
+    """
+    if isinstance(k, Integral):
+        return slice(k, k + 1, 1)
+    return k

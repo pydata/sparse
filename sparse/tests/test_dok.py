@@ -85,6 +85,7 @@ def test_getitem(shape, density):
         ((5, 5), 0.5, (slice(0, 4, 2),)),
         ((10, 10), 0.2, (slice(5), slice(0, 10, 3))),
         ((5, 5), 0.5, (slice(0, 4, 4), slice(0, 4, 4))),
+        ((5, 5), 0.5, (1, slice(0, 4, 1))),
     ],
 )
 def test_getitem_slice(shape, density, indices):
