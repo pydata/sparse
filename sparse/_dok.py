@@ -345,6 +345,7 @@ class DOK(SparseArray):
         )
 
     def _fancy_getitem(self, key):
+        """Subset of fancy indexing, when all dimensions are accessed"""
         new_data = {}
         for i, k in enumerate(zip(*key)):
             if k in self.data:
@@ -357,6 +358,7 @@ class DOK(SparseArray):
         )
 
     def _filter_by_key(self, coords, slice_key):
+        """Filter data coordinates to be within given slice """
         filter_arr = np.ones(coords.shape[0], dtype=bool)
         for coords_in_dim, sl in zip(coords.T, slice_key):
             filter_arr *= (
@@ -499,9 +501,7 @@ class DOK(SparseArray):
 
 
 def to_slice(k):
-    """Convert integer indices to one-element slices.
-
-    It'll make sense at some point. ;)
+    """Convert integer indices to one-element slices for consistency
     """
     if isinstance(k, Integral):
         return slice(k, k + 1, 1)
