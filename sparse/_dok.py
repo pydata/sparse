@@ -309,7 +309,7 @@ class DOK(SparseArray):
             return self.fill_value
 
     def __setitem__(self, key, value):
-        value = np.asanyarray(value, dtype=self.dtype)
+        value = np.asarray(value, dtype=self.dtype)
 
         # 1D fancy indexing
         if (
