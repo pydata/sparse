@@ -1,5 +1,6 @@
 from math import ceil
 from numbers import Integral
+from collections.abc import Iterable
 
 import numpy as np
 
@@ -288,12 +289,26 @@ class DOK(SparseArray):
         return self.nnz * self.dtype.itemsize
 
     def __getitem__(self, key):
-        key = normalize_index(key, self.shape)
 
-        if not all(isinstance(k, (Integral, slice)) for k in key):
-            raise NotImplementedError(
-                "Only integers and slices supported for item access"
-            )
+        # 1D fancy indexing
+        if (
+            self.ndim == 1
+            and isinstance(key, Iterable)
+            and all(isinstance(i, (int, np.integer)) for i in key)
+            and len(key) > 1
+        ):
+            key = (key,)
+
+        if isinstance(key, tuple) and all(isinstance(k, Iterable) for k in key):
+            if len(key) != self.ndim:
+                raise NotImplementedError(
+                    f"Index sequences for all {self.ndim} array dimensions needed!"
+                )
+            if not all(len(key[0]) == len(k) for k in key):
+                raise IndexError("Unequal length of index sequences!")
+            return self._fancy_getitem(key)
+
+        key = normalize_index(key, self.shape)
 
         # single element doesn't return sparse array
         if all(isinstance(k, Integral) for k in key):
@@ -327,6 +342,18 @@ class DOK(SparseArray):
 
         return DOK(
             shape=res_shape, data=new_data, dtype=self.dtype, fill_value=self.fill_value
+        )
+
+    def _fancy_getitem(self, key):
+        new_data = {}
+        for i, k in enumerate(zip(*key)):
+            if k in self.data:
+                new_data[i] = self.data[k]
+        return DOK(
+            shape=(len(key[0])),
+            data=new_data,
+            dtype=self.dtype,
+            fill_value=self.fill_value,
         )
 
     def _filter_by_key(self, coords, slice_key):
