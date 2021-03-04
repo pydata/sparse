@@ -133,6 +133,13 @@ or slices of the original array. Broadcasting rules are followed.
 
    s[1:3, 3:1:-1] = [[6, 5]]
 
+DOK arrays also support fancy indexing assignment if and only if all dimensions are indexed.
+
+.. code-block:: python
+
+   s[[0, 2], [2, 1], [0, 1]] = 5
+   s[[0, 3], [0, 4], [0, 1]] = [1, 5]
+
 At the end, you can convert the :obj:`DOK` array to a :obj:`COO` array, and
 perform arithmetic or other operations on it.
 
@@ -140,13 +147,15 @@ perform arithmetic or other operations on it.
 
    s3 = COO(s)
 
-In addition, it is possible to access single elements of the :obj:`DOK` array
-using normal Numpy indexing.
+In addition, it is possible to access single elements and slices of the :obj:`DOK` array
+using normal Numpy indexing, as well as fancy indexing if and only if all dimensions are indexed.
+Slicing and fancy indexing will always return a new DOK array.
 
 .. code-block:: python
 
    s[1, 2, 1]  # 5
    s[5, 1, 1]  # 0
+   s[[0, 3], [0, 4], [0, 1]] # <DOK: shape=(2,), dtype=float64, nnz=2, fill_value=0.0>
 
 .. _converting:
 
