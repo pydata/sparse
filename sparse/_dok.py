@@ -1,3 +1,4 @@
+from math import ceil
 from numbers import Integral
 
 import numpy as np
@@ -289,23 +290,61 @@ class DOK(SparseArray):
     def __getitem__(self, key):
         key = normalize_index(key, self.shape)
 
-        if not all(isinstance(i, Integral) for i in key):
+        if not all(isinstance(k, (Integral, slice)) for k in key):
             raise NotImplementedError(
-                "All indices must be integers" " when getting an item."
+                "Only integers and slices supported for item access"
             )
 
-        if len(key) != self.ndim:
-            raise NotImplementedError(
-                "Can only get single elements. "
-                "Expected key of length %d, got %s" % (self.ndim, str(key))
-            )
+        # single element doesn't return sparse array
+        if all(isinstance(k, Integral) for k in key):
+            if key in self.data:
+                return self.data[key]
+            else:
+                return self.fill_value
 
-        key = tuple(int(k) for k in key)
+        coords_array = np.asarray([k for k in self.data])
+        for i, k in enumerate(key):
+            coords_array = self._filter_by_key(coords_array, i, k)
 
-        if key in self.data:
-            return self.data[key]
+        res_shape = []
+        for i, k in enumerate(key):
+            if isinstance(k, Integral):
+                res_shape.append(k)
+            else:
+                k_indices = k.indices(self.shape[i])
+                n_elements = ceil((k_indices[1] - k_indices[0]) / k_indices[2])
+                res_shape.append(n_elements)
+
+        new_data = {}
+        for coord in coords_array:
+            coord = tuple(coord)
+            new_coord = []
+            for i, k in enumerate(key):
+                if isinstance(k, Integral):
+                    new_coord.append(coord[i] - k)
+                else:
+                    start, _, step = k.indices(self.shape[i])
+                    old_index = coord[i]
+                    new_index = (old_index - start) // step
+                    new_coord.append(new_index)
+            new_data[tuple(new_coord)] = self.data[coord]
+
+        return DOK(
+            shape=res_shape, data=new_data, dtype=self.dtype, fill_value=self.fill_value
+        )
+
+    def _filter_by_key(self, coords, dim, key):
+        new_coords = []
+        if isinstance(key, Integral):
+            for coord in coords:
+                if coord[dim] == key:
+                    new_coords.append(coord)
         else:
-            return self.fill_value
+            for coord in coords:
+                valid_indices = list(range(*key.indices(self.shape[dim])))
+                if coord[dim] in valid_indices:
+                    new_coords.append(coord)
+        return np.asarray(new_coords)
 
     def __setitem__(self, key, value):
         key = normalize_index(key, self.shape)

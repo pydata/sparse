@@ -79,6 +79,24 @@ def test_getitem(shape, density):
 
 
 @pytest.mark.parametrize(
+    "shape, density, indices",
+    [
+        ((2, 3), 0.5, (slice(1),)),
+        ((5, 5), 0.5, (slice(0, 4, 2),)),
+        ((10, 10), 0.2, (slice(5), slice(0, 10, 2))),
+    ],
+)
+def test_getitem_slice(shape, density, indices):
+    s = sparse.random(shape, density, format="dok")
+    x = s.todense()
+
+    sparse_sliced = s[indices]
+    dense_sliced = x[indices]
+
+    assert_eq(sparse_sliced.todense(), dense_sliced)
+
+
+@pytest.mark.parametrize(
     "shape, index, value",
     [
         ((2,), slice(None), np.random.rand()),
