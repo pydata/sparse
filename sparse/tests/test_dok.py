@@ -67,15 +67,65 @@ def test_construct(shape, data):
 
 @pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4)])
 @pytest.mark.parametrize("density", [0.1, 0.3, 0.5, 0.7])
-def test_getitem(shape, density):
+def test_getitem_single(shape, density):
     s = sparse.random(shape, density, format="dok")
     x = s.todense()
 
     for _ in range(s.nnz):
         idx = np.random.randint(np.prod(shape))
         idx = np.unravel_index(idx, shape)
+        print(idx)
 
         assert np.isclose(s[idx], x[idx])
+
+
+@pytest.mark.parametrize(
+    "shape, density, indices",
+    [
+        ((2, 3), 0.5, (slice(1),)),
+        ((5, 5), 0.2, (slice(0, 4, 2),)),
+        ((10, 10), 0.2, (slice(5), slice(0, 10, 3))),
+        ((5, 5), 0.5, (slice(0, 4, 4), slice(0, 4, 4))),
+        ((5, 5), 0.4, (1, slice(0, 4, 1))),
+        ((10, 10), 0.8, ([0, 4, 5], [3, 2, 4])),
+    ],
+)
+def test_getitem(shape, density, indices):
+    s = sparse.random(shape, density, format="dok")
+    x = s.todense()
+
+    sparse_sliced = s[indices]
+    dense_sliced = x[indices]
+
+    assert_eq(sparse_sliced.todense(), dense_sliced)
+
+
+@pytest.mark.parametrize(
+    "shape, density, indices",
+    [
+        ((10, 10), 0.8, ([0, 4, 5],)),
+        ((5, 5, 5), 0.5, ([1, 2, 3], [0, 2, 2])),
+    ],
+)
+def test_getitem_notimplemented_error(shape, density, indices):
+    s = sparse.random(shape, density, format="dok")
+
+    with pytest.raises(NotImplementedError):
+        s[indices]
+
+
+@pytest.mark.parametrize(
+    "shape, density, indices",
+    [
+        ((10, 10), 0.8, ([0, 4, 5], [0, 2])),
+        ((5, 5, 5), 0.5, ([1, 2, 3], [0], [2, 3, 4])),
+    ],
+)
+def test_getitem_index_error(shape, density, indices):
+    s = sparse.random(shape, density, format="dok")
+
+    with pytest.raises(IndexError):
+        s[indices]
 
 
 @pytest.mark.parametrize(

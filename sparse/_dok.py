@@ -1,3 +1,4 @@
+from math import ceil
 from numbers import Integral
 from collections.abc import Iterable
 
@@ -288,25 +289,84 @@ class DOK(SparseArray):
         return self.nnz * self.dtype.itemsize
 
     def __getitem__(self, key):
+
+        # 1D fancy indexing
+        if (
+            self.ndim == 1
+            and isinstance(key, Iterable)
+            and all(isinstance(i, (int, np.integer)) for i in key)
+            and len(key) > 1
+        ):
+            key = (key,)
+
+        if isinstance(key, tuple) and all(isinstance(k, Iterable) for k in key):
+            if len(key) != self.ndim:
+                raise NotImplementedError(
+                    f"Index sequences for all {self.ndim} array dimensions needed!"
+                )
+            if not all(len(key[0]) == len(k) for k in key):
+                raise IndexError("Unequal length of index sequences!")
+            return self._fancy_getitem(key)
+
         key = normalize_index(key, self.shape)
 
-        if not all(isinstance(i, Integral) for i in key):
-            raise NotImplementedError(
-                "All indices must be integers" " when getting an item."
+        # single element doesn't return sparse array
+        if all(isinstance(k, Integral) for k in key):
+            if key in self.data:
+                return self.data[key]
+            else:
+                return self.fill_value
+
+        slice_key = [to_slice(k) for k in key]
+        coords_array = np.asarray(list(self.data.keys()))
+        values_array = np.asarray(list(self.data.values()))
+        filtered_coords, filter_arr = self._filter_by_key(coords_array, slice_key)
+        filtered_values = values_array[filter_arr]
+
+        res_shape = []
+        keep_dims = []
+        for i, k in enumerate(key):
+            if isinstance(k, slice):
+                n_elements = ceil((k.stop - k.start) / k.step)
+                res_shape.append(n_elements)
+                keep_dims.append(i)
+
+        starts = np.asarray([k.start for k in slice_key])
+        steps = np.asarray([k.step for k in slice_key])
+        new_coords = (filtered_coords - starts) // steps
+        new_coords_squeezed = np.take(new_coords, keep_dims, axis=1)
+        new_data = {
+            tuple(coord): val
+            for coord, val in zip(new_coords_squeezed, filtered_values)
+        }
+
+        return DOK(
+            shape=res_shape, data=new_data, dtype=self.dtype, fill_value=self.fill_value
+        )
+
+    def _fancy_getitem(self, key):
+        """Subset of fancy indexing, when all dimensions are accessed"""
+        new_data = {}
+        for i, k in enumerate(zip(*key)):
+            if k in self.data:
+                new_data[i] = self.data[k]
+        return DOK(
+            shape=(len(key[0])),
+            data=new_data,
+            dtype=self.dtype,
+            fill_value=self.fill_value,
+        )
+
+    def _filter_by_key(self, coords, slice_key):
+        """Filter data coordinates to be within given slice """
+        filter_arr = np.ones(coords.shape[0], dtype=bool)
+        for coords_in_dim, sl in zip(coords.T, slice_key):
+            filter_arr *= (
+                (coords_in_dim >= sl.start)
+                * (coords_in_dim < sl.stop)
+                * ((coords_in_dim - sl.start) % sl.step == 0)
             )
-
-        if len(key) != self.ndim:
-            raise NotImplementedError(
-                "Can only get single elements. "
-                "Expected key of length %d, got %s" % (self.ndim, str(key))
-            )
-
-        key = tuple(int(k) for k in key)
-
-        if key in self.data:
-            return self.data[key]
-        else:
-            return self.fill_value
+        return coords[filter_arr], filter_arr
 
     def __setitem__(self, key, value):
         value = np.asarray(value, dtype=self.dtype)
@@ -477,3 +537,11 @@ class DOK(SparseArray):
             )
 
         raise NotImplementedError("The given format is not supported.")
+
+
+def to_slice(k):
+    """Convert integer indices to one-element slices for consistency
+    """
+    if isinstance(k, Integral):
+        return slice(k, k + 1, 1)
+    return k
