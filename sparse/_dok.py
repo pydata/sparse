@@ -476,9 +476,6 @@ class DOK(SparseArray):
 
     __repr__ = __str__
 
-    def __eq__(self, o: object) -> bool:
-        return self.todense() == o
-
     def todense(self):
         """
         Convert this :obj:`DOK` array into a Numpy array.
