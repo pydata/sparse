@@ -331,6 +331,10 @@ class DOK(SparseArray):
                 res_shape.append(n_elements)
                 keep_dims.append(i)
 
+        # none of the keys in this array make it into the slice
+        if filtered_coords.size == 0:
+            return DOK(shape=res_shape, dtype=self.dtype, fill_value=self.fill_value)
+
         starts = np.asarray([k.start for k in slice_key])
         steps = np.asarray([k.step for k in slice_key])
         new_coords = (filtered_coords - starts) // steps
@@ -472,6 +476,9 @@ class DOK(SparseArray):
 
     __repr__ = __str__
 
+    def __eq__(self, o: object) -> bool:
+        return self.todense() == o
+
     def todense(self):
         """
         Convert this :obj:`DOK` array into a Numpy array.
@@ -540,8 +547,7 @@ class DOK(SparseArray):
 
 
 def to_slice(k):
-    """Convert integer indices to one-element slices for consistency
-    """
+    """Convert integer indices to one-element slices for consistency"""
     if isinstance(k, Integral):
         return slice(k, k + 1, 1)
     return k

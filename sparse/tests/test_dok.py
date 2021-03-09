@@ -88,6 +88,7 @@ def test_getitem_single(shape, density):
         ((5, 5), 0.5, (slice(0, 4, 4), slice(0, 4, 4))),
         ((5, 5), 0.4, (1, slice(0, 4, 1))),
         ((10, 10), 0.8, ([0, 4, 5], [3, 2, 4])),
+        ((10, 10), 0, (slice(10), slice(10))),
     ],
 )
 def test_getitem(shape, density, indices):
