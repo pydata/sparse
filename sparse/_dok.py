@@ -472,6 +472,31 @@ class DOK(SparseArray):
 
     __repr__ = __str__
 
+    def __eq__(self, o):
+        if isinstance(o, DOK):
+            if self.fill_value == o.fill_value:
+                return DOK.from_numpy(self.todense() == o.todense())
+            else:
+                # the only possible Trues are identical coordinates with matching values
+                common_keys = set(self.data.keys()).intersect(set(o.data.keys()))
+                filtered = [self.data[k] == o.data[k] for k in common_keys]
+                new_data = dict(zip(common_keys, filtered))
+                return DOK(shape=self.shape, data=new_data, dtype=bool, fill_value=False)
+
+        
+        # o is a single value
+        if self.fill_value == o:
+            return DOK.from_numpy(self.todense() == o)
+        else:
+            coords_array = np.asarray(list(self.data.keys()))
+            values_array = np.asarray(list(self.data.values()))
+            filtered = values_array == o
+            filtered_coords = [tuple(c) for c in coords_array[filtered]]
+            new_data = dict(zip(filtered_coords, [True for _ in range(len(filtered_coords))]))
+            return DOK(shape=self.shape, data=new_data, dtype=bool, fill_value=False)
+
+        
+
     def todense(self):
         """
         Convert this :obj:`DOK` array into a Numpy array.
