@@ -475,7 +475,12 @@ class DOK(SparseArray):
     def __eq__(self, o):
         # dense array
         if isinstance(o, np.ndarray):
-            return DOK.from_numpy(self.todense() == o)
+            ret = self.todense() == o
+            if isinstance(ret, bool):
+                raise ValueError(
+                    f"operands could not be broadcast together with shapes {self.shape} {o.shape}"
+                )
+            return DOK.from_numpy(ret)
 
         from ._coo import COO
 

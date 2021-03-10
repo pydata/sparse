@@ -231,6 +231,21 @@ def test_eq(other):
     assert_eq(eq_sparse, eq_dense)
 
 
+@pytest.mark.parametrize(
+    "other",
+    [
+        np.random.rand(5, 10),
+        sparse.random((5, 10), 0.5, format="dok"),
+        sparse.random((10, 5), 0.5),
+    ],
+)
+def test_eq_value_error(other):
+    slf = sparse.random((10, 10), 0.5, format="dok")
+
+    with pytest.raises(ValueError):
+        slf == other
+
+
 def test_default_dtype():
     s = DOK((5,))
 
