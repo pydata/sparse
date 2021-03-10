@@ -204,6 +204,33 @@ def test_setitem_value_error(shape, index, value):
         s[index] = value
 
 
+@pytest.mark.parametrize(
+    "other",
+    [
+        5,
+        0,
+        np.random.rand(10, 10),
+        np.random.rand(1, 10),
+        sparse.random((10, 10), 0.5, format="dok"),
+        sparse.random((1, 10), 0.5, format="dok"),
+        sparse.random((1, 10), 0.5),
+        sparse.random((10, 10), 0.5),
+        sparse.random((10, 10), 0.5, fill_value=5, format="dok"),
+        sparse.random((10, 10), 0.5, fill_value=5),
+    ],
+)
+def test_eq(other):
+    slf = sparse.random((10, 10), 0.5, format="dok")
+    eq_sparse = slf == other
+
+    if hasattr(other, "todense"):
+        other = other.todense()
+
+    eq_dense = slf.todense() == other
+
+    assert_eq(eq_sparse, eq_dense)
+
+
 def test_default_dtype():
     s = DOK((5,))
 

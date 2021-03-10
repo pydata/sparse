@@ -473,17 +473,29 @@ class DOK(SparseArray):
     __repr__ = __str__
 
     def __eq__(self, o):
+        # dense array
+        if isinstance(o, np.ndarray):
+            return DOK.from_numpy(self.todense() == o)
+
+        from ._coo import COO
+
+        # sparse array might need broadcasting
+        if isinstance(o, SparseArray) and self.shape != o.shape:
+            # will raise ValueError if it cannot be broadcast
+            o = DOK.from_coo(COO(o).broadcast_to(self.shape))
+
         if isinstance(o, DOK):
             if self.fill_value == o.fill_value:
                 return DOK.from_numpy(self.todense() == o.todense())
             else:
                 # the only possible Trues are identical coordinates with matching values
-                common_keys = set(self.data.keys()).intersect(set(o.data.keys()))
+                common_keys = set(self.data.keys()) & set(o.data.keys())
                 filtered = [self.data[k] == o.data[k] for k in common_keys]
                 new_data = dict(zip(common_keys, filtered))
-                return DOK(shape=self.shape, data=new_data, dtype=bool, fill_value=False)
+                return DOK(
+                    shape=self.shape, data=new_data, dtype=bool, fill_value=False
+                )
 
-        
         # o is a single value
         if self.fill_value == o:
             return DOK.from_numpy(self.todense() == o)
@@ -492,10 +504,10 @@ class DOK(SparseArray):
             values_array = np.asarray(list(self.data.values()))
             filtered = values_array == o
             filtered_coords = [tuple(c) for c in coords_array[filtered]]
-            new_data = dict(zip(filtered_coords, [True for _ in range(len(filtered_coords))]))
+            new_data = dict(
+                zip(filtered_coords, [True for _ in range(len(filtered_coords))])
+            )
             return DOK(shape=self.shape, data=new_data, dtype=bool, fill_value=False)
-
-        
 
     def todense(self):
         """
@@ -565,8 +577,7 @@ class DOK(SparseArray):
 
 
 def to_slice(k):
-    """Convert integer indices to one-element slices for consistency
-    """
+    """Convert integer indices to one-element slices for consistency"""
     if isinstance(k, Integral):
         return slice(k, k + 1, 1)
     return k
