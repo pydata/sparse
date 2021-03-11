@@ -1195,6 +1195,13 @@ class TestRoll:
         with pytest.raises(ValueError):
             sparse.roll(x, *args)
 
+    @pytest.mark.parametrize("dtype", [np.uint8, np.int8])
+    @pytest.mark.parametrize("shift", [300, -300])
+    def test_dtype_errors(self, dtype, shift):
+        x = sparse.random((5, 5, 5), density=0.2, storage_dtype=dtype)
+        with pytest.raises(ValueError):
+            sparse.roll(x, shift)
+
 
 def test_clip():
     x = np.array([[0, 0, 1, 0, 2], [5, 0, 0, 3, 0]])

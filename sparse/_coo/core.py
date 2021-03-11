@@ -14,7 +14,13 @@ from .._common import dot, matmul
 from .indexing import getitem
 from .._umath import elemwise, broadcast_to
 from .._sparse_array import SparseArray, _reduce_super_ufunc
-from .._utils import normalize_axis, equivalent, check_zero_fill_value, _zero_of_dtype
+from .._utils import (
+    normalize_axis,
+    equivalent,
+    check_zero_fill_value,
+    _zero_of_dtype,
+    can_store,
+)
 
 
 class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
@@ -205,13 +211,16 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         prune=False,
         cache=False,
         fill_value=None,
+        storage_dtype=None,
     ):
         self._cache = None
         if cache:
             self.enable_caching()
 
         if data is None:
-            arr = as_coo(coords, shape=shape, fill_value=fill_value)
+            arr = as_coo(
+                coords, shape=shape, fill_value=fill_value, storage_dtype=storage_dtype
+            )
             self._make_shallow_copy_of(arr)
             if cache:
                 self.enable_caching()
@@ -234,7 +243,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         if shape and not self.coords.size:
             self.coords = np.zeros(
-                (len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.uint64
+                (len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp
             )
 
         if shape is None:
@@ -243,8 +252,18 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             else:
                 shape = ()
 
+        if not isinstance(shape, Iterable):
+            shape = (shape,)
+
         super().__init__(shape, fill_value=fill_value)
-        self.coords = self.coords.astype(np.intp, copy=False)
+        if storage_dtype:
+            if not can_store(storage_dtype, max(shape)):
+                raise ValueError(
+                    "cannot cast array with shape {} to dtype {}.".format(
+                        shape, storage_dtype
+                    )
+                )
+            self.coords = self.coords.astype(storage_dtype)
 
         if self.shape:
             if len(self.data) != self.coords.shape[1]:
@@ -332,7 +351,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         self._cache = defaultdict(lambda: deque(maxlen=3))
 
     @classmethod
-    def from_numpy(cls, x, fill_value=None):
+    def from_numpy(cls, x, fill_value=None, storage_dtype=None):
         """
         Convert the given :obj:`numpy.ndarray` to a :obj:`COO` object.
 
@@ -379,6 +398,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             has_duplicates=False,
             sorted=True,
             fill_value=fill_value,
+            storage_dtype=storage_dtype,
         )
 
     def todense(self):
@@ -618,7 +638,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         >>> coords = np.random.randint(1000, size=(3, 6), dtype=np.uint16)
         >>> s = COO(coords, data, shape=(1000, 1000, 1000))
         >>> s.nbytes
-        150
+        42
         """
         return self.data.nbytes + self.coords.nbytes
 
@@ -997,9 +1017,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             extra = int(self.size / np.prod([d for d in shape if d != -1]))
             shape = tuple([d if d != -1 else extra for d in shape])
 
-        if self.shape == shape:
-            return self
-
         if self.size != reduce(operator.mul, shape, 1):
             raise ValueError(
                 "cannot reshape array of size {} into shape {}".format(self.size, shape)
@@ -1013,7 +1030,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         # TODO: this self.size enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
 
-        coords = np.empty((len(shape), self.nnz), dtype=np.intp)
+        storage_dtype = self.coords.dtype
+        if shape != () and not can_store(storage_dtype, max(shape)):
+            storage_dtype = np.min_scalar_type(max(shape))
+        coords = np.empty((len(shape), self.nnz), dtype=storage_dtype)
         strides = 1
         for i, d in enumerate(shape[::-1]):
             coords[-(i + 1), :] = (linear_loc // strides) % d
@@ -1033,7 +1053,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             self._cache["reshape"].append((shape, result))
         return result
 
-    def resize(self, *args, refcheck=True):
+    def resize(self, *args, refcheck=True, coords_dtype=np.intp):
         """
         This method changes the shape and size of an array in-place.
         Parameters
@@ -1063,7 +1083,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         end_idx = np.searchsorted(linear_loc, new_size, side="left")
         linear_loc = linear_loc[:end_idx]
 
-        coords = np.empty((len(shape), len(linear_loc)), dtype=np.intp)
+        storage_dtype = self.coords.dtype
+        if shape != () and not can_store(storage_dtype, max(shape)):
+            storage_dtype = np.min_scalar_type(max(shape))
+        coords = np.empty((len(shape), len(linear_loc)), dtype=storage_dtype)
         strides = 1
         for i, d in enumerate(shape[::-1]):
             coords[-(i + 1), :] = (linear_loc // strides) % d
@@ -1218,7 +1241,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         >>> s = COO(coords, data)
         >>> s._sort_indices()
         >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
-        array([[0, 1, 2]])
+        array([[0, 1, 2]], dtype=uint8)
         >>> s.data  # doctest: +NORMALIZE_WHITESPACE
         array([3, 4, 1], dtype=uint8)
         """
@@ -1246,7 +1269,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         >>> s = COO(coords, data)
         >>> s._sum_duplicates()
         >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
-        array([[0, 1, 2]])
+        array([[0, 1, 2]], dtype=uint8)
         >>> s.data  # doctest: +NORMALIZE_WHITESPACE
         array([6, 7, 2], dtype=uint8)
         """
@@ -1428,7 +1451,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         raise NotImplementedError("The given format is not supported.")
 
 
-def as_coo(x, shape=None, fill_value=None):
+def as_coo(x, shape=None, fill_value=None, storage_dtype=None):
     """
     Converts any given format to :obj:`COO`. See the "See Also" section for details.
 
@@ -1467,7 +1490,7 @@ def as_coo(x, shape=None, fill_value=None):
         return x.asformat("coo")
 
     if isinstance(x, np.ndarray):
-        return COO.from_numpy(x, fill_value=fill_value)
+        return COO.from_numpy(x, fill_value=fill_value, storage_dtype=storage_dtype)
 
     if isinstance(x, scipy.sparse.spmatrix):
         return COO.from_scipy_sparse(x)

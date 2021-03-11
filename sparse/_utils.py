@@ -85,6 +85,7 @@ def random(
     format="coo",
     compressed_axes=None,
     fill_value=None,
+    storage_dtype=None,
 ):
     """Generate a random sparse multidimensional array
 
@@ -190,7 +191,13 @@ def random(
 
     data = data_rvs(nnz)
 
-    ar = COO(ind[None, :], data, shape=elements, fill_value=fill_value).reshape(shape)
+    ar = COO(
+        ind[None, :],
+        data,
+        shape=elements,
+        fill_value=fill_value,
+        storage_dtype=storage_dtype,
+    ).reshape(shape)
 
     return ar.asformat(format, compressed_axes=compressed_axes)
 
@@ -461,3 +468,19 @@ def check_consistent_fill_value(arrays):
                 "is different from a fill_value of {!s} in the first "
                 "argument.".format(i, arg.fill_value, fv)
             )
+
+
+def get_out_dtype(arr, scalar):
+    out_type = arr.dtype
+    if not can_store(out_type, scalar):
+        out_type = np.min_scalar_type(scalar)
+    return out_type
+
+
+def can_store(dtype, scalar):
+    #  return dtype(scalar) == scalar
+    return np.array(scalar, dtype=dtype) == np.array(scalar)
+
+
+def is_unsigned_dtype(dtype):
+    return not np.array(-1, dtype=dtype) == np.array(-1)
