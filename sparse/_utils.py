@@ -196,8 +196,17 @@ def random(
         data,
         shape=elements,
         fill_value=fill_value,
-        storage_dtype=storage_dtype,
     ).reshape(shape)
+
+    if storage_dtype:
+        if can_store(storage_dtype, max(shape)):
+            ar.coords = ar.coords.astype(storage_dtype)
+        else:
+            raise ValueError(
+                "cannot cast array with shape {} to dtype {}.".format(
+                    shape, storage_dtype
+                )
+            )
 
     return ar.asformat(format, compressed_axes=compressed_axes)
 
@@ -478,7 +487,6 @@ def get_out_dtype(arr, scalar):
 
 
 def can_store(dtype, scalar):
-    #  return dtype(scalar) == scalar
     return np.array(scalar, dtype=dtype) == np.array(scalar)
 
 
