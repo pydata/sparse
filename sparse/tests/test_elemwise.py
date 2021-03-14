@@ -2,7 +2,7 @@ import numpy as np
 import sparse
 import pytest
 import operator
-from sparse import COO
+from sparse import COO, DOK
 from sparse._compressed import GCXS
 from sparse._utils import assert_eq, random_value_array
 
@@ -29,7 +29,7 @@ from sparse._utils import assert_eq, random_value_array
         abs,
     ],
 )
-@pytest.mark.parametrize("format", [COO, GCXS])
+@pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_elemwise(func, format):
     s = sparse.random((2, 3, 4), density=0.5, format=format)
     x = s.todense()
@@ -61,7 +61,7 @@ def test_elemwise(func, format):
         lambda x, out: x.round(decimals=2, out=out),
     ],
 )
-@pytest.mark.parametrize("format", [COO, GCXS])
+@pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_elemwise_inplace(func, format):
     s = sparse.random((2, 3, 4), density=0.5, format=format)
     x = s.todense()
@@ -88,7 +88,7 @@ def test_elemwise_inplace(func, format):
         ((2, 2, 2), (1, 1, 1)),
     ],
 )
-@pytest.mark.parametrize("format", [COO, GCXS])
+@pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_elemwise_mixed(shape1, shape2, format):
     s1 = sparse.random(shape1, density=0.5, format=format)
     x2 = np.random.rand(*shape2)
@@ -98,7 +98,7 @@ def test_elemwise_mixed(shape1, shape2, format):
     assert_eq(s1 * x2, x1 * x2)
 
 
-@pytest.mark.parametrize("format", [COO, GCXS])
+@pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_elemwise_mixed_empty(format):
     s1 = sparse.random((2, 0, 4), density=0.5, format=format)
     x2 = np.random.rand(2, 0, 4)
@@ -108,7 +108,7 @@ def test_elemwise_mixed_empty(format):
     assert_eq(s1 * x2, x1 * x2)
 
 
-@pytest.mark.parametrize("format", [COO, GCXS])
+@pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_elemwise_unsupported(format):
     class A:
         pass
@@ -122,7 +122,7 @@ def test_elemwise_unsupported(format):
     assert sparse.elemwise(operator.add, s1, x2) is NotImplemented
 
 
-@pytest.mark.parametrize("format", [COO, GCXS])
+@pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_elemwise_mixed_broadcast(format):
     s1 = sparse.random((2, 3, 4), density=0.5, format=format)
     s2 = sparse.random(4, density=0.5)
@@ -142,7 +142,7 @@ def test_elemwise_mixed_broadcast(format):
     [operator.mul, operator.add, operator.sub, operator.gt, operator.lt, operator.ne],
 )
 @pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-@pytest.mark.parametrize("format", [COO, GCXS])
+@pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_elemwise_binary(func, shape, format):
     xs = sparse.random(shape, density=0.5, format=format)
     ys = sparse.random(shape, density=0.5, format=format)
@@ -155,7 +155,7 @@ def test_elemwise_binary(func, shape, format):
 
 @pytest.mark.parametrize("func", [operator.imul, operator.iadd, operator.isub])
 @pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-@pytest.mark.parametrize("format", [COO, GCXS])
+@pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_elemwise_binary_inplace(func, shape, format):
     xs = sparse.random(shape, density=0.5, format=format)
     ys = sparse.random(shape, density=0.5, format=format)
@@ -364,6 +364,8 @@ def test_sparsearray_elemwise(format):
     fs = sparse.elemwise(operator.add, xs, ys)
     if format == "gcxs":
         assert isinstance(fs, GCXS)
+    elif format == "dok":
+        assert isinstance(fs, DOK)
     else:
         assert isinstance(fs, COO)
 
@@ -399,7 +401,7 @@ def test_elemwise_noargs():
 )
 @pytest.mark.filterwarnings("ignore:divide by zero")
 @pytest.mark.filterwarnings("ignore:invalid value")
-@pytest.mark.parametrize("format", [COO, GCXS])
+@pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_nonzero_outout_fv_ufunc(func, format):
     xs = sparse.random((2, 3, 4), density=0.5, format=format)
     ys = sparse.random((2, 3, 4), density=0.5, format=format)
@@ -433,7 +435,7 @@ def test_nonzero_outout_fv_ufunc(func, format):
     ],
 )
 @pytest.mark.parametrize("convert_to_np_number", [True, False])
-@pytest.mark.parametrize("format", [COO, GCXS])
+@pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_elemwise_scalar(func, scalar, convert_to_np_number, format):
     xs = sparse.random((2, 3, 4), density=0.5, format=format)
     if convert_to_np_number:
@@ -514,7 +516,7 @@ def test_scalar_output_nonzero_fv(func, scalar):
 
 @pytest.mark.parametrize("func", [operator.and_, operator.or_, operator.xor])
 @pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-@pytest.mark.parametrize("format", [COO, GCXS])
+@pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_bitwise_binary(func, shape, format):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
@@ -529,7 +531,7 @@ def test_bitwise_binary(func, shape, format):
 
 @pytest.mark.parametrize("func", [operator.iand, operator.ior, operator.ixor])
 @pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-@pytest.mark.parametrize("format", [COO, GCXS])
+@pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_bitwise_binary_inplace(func, shape, format):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100

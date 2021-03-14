@@ -3,13 +3,14 @@ from numbers import Integral
 from collections.abc import Iterable
 
 import numpy as np
+from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from ._slicing import normalize_index
 from ._utils import equivalent
 from ._sparse_array import SparseArray
 
 
-class DOK(SparseArray):
+class DOK(SparseArray, NDArrayOperatorsMixin):
     """
     A class for building sparse multidimensional arrays.
 
@@ -471,48 +472,6 @@ class DOK(SparseArray):
         )
 
     __repr__ = __str__
-
-    def __eq__(self, o):
-        # dense array
-        if isinstance(o, np.ndarray):
-            ret = self.todense() == o
-            if isinstance(ret, bool):
-                raise ValueError(
-                    f"operands could not be broadcast together with shapes {self.shape} {o.shape}"
-                )
-            return DOK.from_numpy(ret)
-
-        from ._coo import COO
-
-        # sparse array might need broadcasting
-        if isinstance(o, SparseArray) and self.shape != o.shape:
-            # will raise ValueError if it cannot be broadcast
-            o = DOK.from_coo(COO(o).broadcast_to(self.shape))
-
-        if isinstance(o, DOK):
-            if self.fill_value == o.fill_value:
-                return DOK.from_numpy(self.todense() == o.todense())
-            else:
-                # the only possible Trues are identical coordinates with matching values
-                common_keys = set(self.data.keys()) & set(o.data.keys())
-                filtered = [self.data[k] == o.data[k] for k in common_keys]
-                new_data = dict(zip(common_keys, filtered))
-                return DOK(
-                    shape=self.shape, data=new_data, dtype=bool, fill_value=False
-                )
-
-        # o is a single value
-        if self.fill_value == o:
-            return DOK.from_numpy(self.todense() == o)
-        else:
-            coords_array = np.asarray(list(self.data.keys()))
-            values_array = np.asarray(list(self.data.values()))
-            filtered = values_array == o
-            filtered_coords = [tuple(c) for c in coords_array[filtered]]
-            new_data = dict(
-                zip(filtered_coords, [True for _ in range(len(filtered_coords))])
-            )
-            return DOK(shape=self.shape, data=new_data, dtype=bool, fill_value=False)
 
     def todense(self):
         """
