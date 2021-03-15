@@ -425,9 +425,16 @@ class _Elemwise:
         processed_args = []
         out_type = GCXS
 
+        sparse_args = [arg for arg in args if isinstance(arg, SparseArray)]
+
+        if all(isinstance(arg, DOK) for arg in sparse_args):
+            out_type = DOK
+        elif all(isinstance(arg, GCXS) for arg in sparse_args):
+            out_type = GCXS
+        else:
+            out_type = COO
+
         for arg in args:
-            if isinstance(arg, COO) or isinstance(arg, DOK):
-                out_type = COO
             if isinstance(arg, scipy.sparse.spmatrix):
                 processed_args.append(COO.from_scipy_sparse(arg))
             elif isscalar(arg) or isinstance(arg, np.ndarray):
