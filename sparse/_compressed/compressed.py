@@ -1,5 +1,4 @@
 import copy as _copy
-from numba.core.errors import CompilerError
 import numpy as np
 import operator
 from numpy.lib.mixins import NDArrayOperatorsMixin
@@ -383,12 +382,6 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             .transpose(order)
         )
 
-    def tocsr(self):
-        return CSR(self)
-
-    def tocsc(self):
-        return CSC(self)
-
     def todense(self):
         """
         Convert this :obj:`GCXS` array to a dense :obj:`numpy.ndarray`. Note that
@@ -475,9 +468,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         elif format == "dok":
             return self.todok()
         elif format == "csr":
-            return self.tocsr()
+            return CSR(self)
         elif format == "csc":
-            return self.tocsc()
+            return CSC(self)
         elif format == "gcxs":
             if compressed_axes is None:
                 compressed_axes = self.compressed_axes
