@@ -1,4 +1,5 @@
 import copy as _copy
+from numba.core.errors import CompilerError
 import numpy as np
 import operator
 from numpy.lib.mixins import NDArrayOperatorsMixin
@@ -382,6 +383,12 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             .transpose(order)
         )
 
+    def tocsr(self):
+        return CSR(self)
+
+    def tocsc(self):
+        return CSC(self)
+
     def todense(self):
         """
         Convert this :obj:`GCXS` array to a dense :obj:`numpy.ndarray`. Note that
@@ -411,7 +418,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def todok(self):
 
-        from ..dok import DOK
+        from .. import DOK
 
         return DOK.from_coo(self.tocoo())  # probably a temporary solution
 
@@ -467,6 +474,10 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             return self.tocoo()
         elif format == "dok":
             return self.todok()
+        elif format == "csr":
+            return self.tocsr()
+        elif format == "csc":
+            return self.tocsc()
         elif format == "gcxs":
             if compressed_axes is None:
                 compressed_axes = self.compressed_axes
@@ -788,3 +799,77 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             self.indptr = indptr
         else:
             self.indices = self.indices[mask]
+
+
+class Compressed2d(GCXS):
+    def __init__(self, arg, shape=None, prune=False, fill_value=0):
+        if isinstance(arg, np.ndarray):
+            (arg, shape, _, fill_value) = _from_coo(COO(arg), self.compressed_axes)
+
+        elif isinstance(arg, COO):
+            (arg, shape, _, fill_value) = _from_coo(arg, self.compressed_axes)
+
+        elif isinstance(arg, type(self)):
+            (arg, shape, fill_value) = (
+                (arg.data, arg.indices, arg.indptr),
+                arg.shape,
+                arg.fill_value,
+            )
+
+        elif isinstance(arg, GCXS):
+            if len(arg.shape) != 2:
+                raise ValueError()
+            if arg.compressed_axes != self.compressed_axes:
+                arg = arg.change_compressed_axes(self.compressed_axes)
+            (arg, shape, fill_value) = (
+                (arg.data, arg.indices, arg.indptr),
+                arg.shape,
+                arg.fill_value,
+            )
+
+        if shape is None:
+            raise ValueError("missing `shape` argument")
+        elif len(shape) != 2:
+            raise ValueError(
+                f"{self.__name__} must be two dimensional, given shape {shape}."
+            )
+
+        check_compressed_axes(len(shape), self.compressed_axes)
+
+        self.data, self.indices, self.indptr = arg
+
+        if self.data.ndim != 1:
+            raise ValueError("data must be a scalar or 1-dimensional.")
+
+        self.shape = shape
+        self.fill_value = fill_value
+
+        if prune:
+            self._prune()
+
+    def __str__(self):
+        return "<{}: shape={}, dtype={}, nnz={}, fill_value={}>".format(
+            type(self).__name__,
+            self.shape,
+            self.dtype,
+            self.nnz,
+            self.fill_value,
+        )
+
+    __repr__ = __str__
+
+    @property
+    def ndim(self) -> int:
+        return 2
+
+
+class CSR(Compressed2d):
+    @property
+    def compressed_axes(self) -> int:
+        return (0,)
+
+
+class CSC(Compressed2d):
+    @property
+    def compressed_axes(self) -> int:
+        return (1,)
