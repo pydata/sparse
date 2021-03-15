@@ -864,12 +864,22 @@ class Compressed2d(GCXS):
 
 
 class CSR(Compressed2d):
+    @classmethod
+    def from_scipy_sparse(cls, x):
+        x = x.asformat("csr", copy=False)
+        return cls((x.data, x.indices, x.indptr), shape=x.shape)
+
     @property
     def compressed_axes(self) -> int:
         return (0,)
 
 
 class CSC(Compressed2d):
+    @classmethod
+    def from_scipy_sparse(cls, x):
+        x = x.asformat("csc", copy=False)
+        return cls((x.data, x.indices, x.indptr), shape=x.shape)
+
     @property
     def compressed_axes(self) -> int:
         return (1,)

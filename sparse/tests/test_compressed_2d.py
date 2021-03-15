@@ -1,8 +1,3 @@
-import contextlib
-import operator
-import pickle
-import sys
-
 import numpy as np
 import pytest
 import scipy.sparse
@@ -11,8 +6,6 @@ import scipy.stats
 
 import sparse
 from sparse import COO
-from sparse._settings import NEP18_ENABLED
-from sparse._utils import assert_eq, random_value_array
 from sparse._compressed.compressed import GCXS, CSR, CSC
 from sparse._utils import assert_eq
 
@@ -59,6 +52,15 @@ def test_from_sparse(cls, source_type):
     result = cls(gcxs)
 
     assert_eq(result, gcxs)
+
+
+@pytest.mark.parametrize("scipy_type", ["coo", "csr", "csc", "lil"])
+def test_from_scipy_sparse(scipy_type, cls):
+    orig = scipy.sparse.random(20, 30, density=0.2, format=scipy_type)
+    ref = COO.from_scipy_sparse(orig)
+    result = cls.from_scipy_sparse(orig)
+
+    assert_eq(ref, result)
 
 
 @pytest.mark.parametrize("cls_str", ["coo", "dok", "csr", "csc", "gcxs"])
