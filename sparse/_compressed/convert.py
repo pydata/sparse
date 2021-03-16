@@ -123,7 +123,7 @@ def _1d_reshape(x, shape, compressed_axes):
     x_indices = x.indices[:end_idx]
     new_nnz = x_indices.size
     new_linear = np.empty(new_nnz, dtype=np.intp)
-    coords_dtype = get_out_dtype(x.indices, max(new_compressed_shape))
+    coords_dtype = get_out_dtype(x.indices, max(max(new_compressed_shape), x.nnz))
     new_coords = np.empty((2, new_nnz), dtype=coords_dtype)
 
     _linearize(
@@ -227,7 +227,7 @@ def _transpose(x, shape, axes, compressed_axes, transpose=False):
     row_size = np.prod(new_reordered_shape[:axisptr])
     col_size = np.prod(new_reordered_shape[axisptr:])
     new_compressed_shape = np.array((row_size, col_size))
-    coords_dtype = get_out_dtype(x.indices, max(new_compressed_shape))
+    coords_dtype = get_out_dtype(x.indices, max(max(new_compressed_shape), x.nnz))
     new_coords = np.empty((2, x.nnz), dtype=coords_dtype)
 
     _convert_coords(

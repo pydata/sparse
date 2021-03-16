@@ -211,7 +211,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         prune=False,
         cache=False,
         fill_value=None,
-        storage_dtype=None,
+        idx_dtype=None,
     ):
         self._cache = None
         if cache:
@@ -219,7 +219,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         if data is None:
             arr = as_coo(
-                coords, shape=shape, fill_value=fill_value, storage_dtype=storage_dtype
+                coords, shape=shape, fill_value=fill_value, idx_dtype=idx_dtype
             )
             self._make_shallow_copy_of(arr)
             if cache:
@@ -256,14 +256,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             shape = (shape,)
 
         super().__init__(shape, fill_value=fill_value)
-        if storage_dtype:
-            if not can_store(storage_dtype, max(shape)):
+        if idx_dtype:
+            if not can_store(idx_dtype, max(shape)):
                 raise ValueError(
                     "cannot cast array with shape {} to dtype {}.".format(
-                        shape, storage_dtype
+                        shape, idx_dtype
                     )
                 )
-            self.coords = self.coords.astype(storage_dtype)
+            self.coords = self.coords.astype(idx_dtype)
 
         if self.shape:
             if len(self.data) != self.coords.shape[1]:
@@ -351,7 +351,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         self._cache = defaultdict(lambda: deque(maxlen=3))
 
     @classmethod
-    def from_numpy(cls, x, fill_value=None, storage_dtype=None):
+    def from_numpy(cls, x, fill_value=None, idx_dtype=None):
         """
         Convert the given :obj:`numpy.ndarray` to a :obj:`COO` object.
 
@@ -398,7 +398,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             has_duplicates=False,
             sorted=True,
             fill_value=fill_value,
-            storage_dtype=storage_dtype,
+            idx_dtype=idx_dtype,
         )
 
     def todense(self):
@@ -1030,10 +1030,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         # TODO: this self.size enforces a 2**64 limit to array size
         linear_loc = self.linear_loc()
 
-        storage_dtype = self.coords.dtype
-        if shape != () and not can_store(storage_dtype, max(shape)):
-            storage_dtype = np.min_scalar_type(max(shape))
-        coords = np.empty((len(shape), self.nnz), dtype=storage_dtype)
+        idx_dtype = self.coords.dtype
+        if shape != () and not can_store(idx_dtype, max(shape)):
+            idx_dtype = np.min_scalar_type(max(shape))
+        coords = np.empty((len(shape), self.nnz), dtype=idx_dtype)
         strides = 1
         for i, d in enumerate(shape[::-1]):
             coords[-(i + 1), :] = (linear_loc // strides) % d
@@ -1083,10 +1083,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         end_idx = np.searchsorted(linear_loc, new_size, side="left")
         linear_loc = linear_loc[:end_idx]
 
-        storage_dtype = self.coords.dtype
-        if shape != () and not can_store(storage_dtype, max(shape)):
-            storage_dtype = np.min_scalar_type(max(shape))
-        coords = np.empty((len(shape), len(linear_loc)), dtype=storage_dtype)
+        idx_dtype = self.coords.dtype
+        if shape != () and not can_store(idx_dtype, max(shape)):
+            idx_dtype = np.min_scalar_type(max(shape))
+        coords = np.empty((len(shape), len(linear_loc)), dtype=idx_dtype)
         strides = 1
         for i, d in enumerate(shape[::-1]):
             coords[-(i + 1), :] = (linear_loc // strides) % d
@@ -1451,7 +1451,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         raise NotImplementedError("The given format is not supported.")
 
 
-def as_coo(x, shape=None, fill_value=None, storage_dtype=None):
+def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
     """
     Converts any given format to :obj:`COO`. See the "See Also" section for details.
 
@@ -1490,7 +1490,7 @@ def as_coo(x, shape=None, fill_value=None, storage_dtype=None):
         return x.asformat("coo")
 
     if isinstance(x, np.ndarray):
-        return COO.from_numpy(x, fill_value=fill_value, storage_dtype=storage_dtype)
+        return COO.from_numpy(x, fill_value=fill_value, idx_dtype=idx_dtype)
 
     if isinstance(x, scipy.sparse.spmatrix):
         return COO.from_scipy_sparse(x)

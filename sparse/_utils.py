@@ -85,7 +85,7 @@ def random(
     format="coo",
     compressed_axes=None,
     fill_value=None,
-    storage_dtype=None,
+    idx_dtype=None,
 ):
     """Generate a random sparse multidimensional array
 
@@ -198,14 +198,12 @@ def random(
         fill_value=fill_value,
     ).reshape(shape)
 
-    if storage_dtype:
-        if can_store(storage_dtype, max(shape)):
-            ar.coords = ar.coords.astype(storage_dtype)
+    if idx_dtype:
+        if can_store(idx_dtype, max(shape)):
+            ar.coords = ar.coords.astype(idx_dtype)
         else:
             raise ValueError(
-                "cannot cast array with shape {} to dtype {}.".format(
-                    shape, storage_dtype
-                )
+                "cannot cast array with shape {} to dtype {}.".format(shape, idx_dtype)
             )
 
     return ar.asformat(format, compressed_axes=compressed_axes)

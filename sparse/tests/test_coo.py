@@ -243,7 +243,7 @@ def test_resize(a, b):
 
 
 def test_resize_upcast():
-    s = sparse.random((10, 10, 10), density=0.5, format="coo", storage_dtype=np.uint8)
+    s = sparse.random((10, 10, 10), density=0.5, format="coo", idx_dtype=np.uint8)
     s.resize(600)
     assert s.coords.dtype == np.uint16
 
@@ -378,7 +378,7 @@ def test_reshape_function():
 
 
 def test_reshape_upcast():
-    a = sparse.random((10, 10, 10), density=0.5, format="coo", storage_dtype=np.uint8)
+    a = sparse.random((10, 10, 10), density=0.5, format="coo", idx_dtype=np.uint8)
     assert a.reshape(1000).coords.dtype == np.uint16
 
 
@@ -1209,12 +1209,12 @@ class TestRoll:
     @pytest.mark.parametrize("dtype", [np.uint8, np.int8])
     @pytest.mark.parametrize("shift", [300, -300])
     def test_dtype_errors(self, dtype, shift):
-        x = sparse.random((5, 5, 5), density=0.2, storage_dtype=dtype)
+        x = sparse.random((5, 5, 5), density=0.2, idx_dtype=dtype)
         with pytest.raises(ValueError):
             sparse.roll(x, shift)
 
     def test_unsigned_type_error(self):
-        x = sparse.random((5, 5, 5), density=0.3, storage_dtype=np.uint8)
+        x = sparse.random((5, 5, 5), density=0.3, idx_dtype=np.uint8)
         with pytest.raises(ValueError):
             sparse.roll(x, -1)
 
@@ -1600,4 +1600,9 @@ def test_astype_no_copy():
 def test_coo_valerr():
     a = np.arange(300)
     with pytest.raises(ValueError):
-        COO.from_numpy(a, storage_dtype=np.int8)
+        COO.from_numpy(a, idx_dtype=np.int8)
+
+
+def test_random_idx_dtype():
+    with pytest.raises(ValueError):
+        sparse.random((300,), density=0.1, format="coo", idx_dtype=np.int8)
