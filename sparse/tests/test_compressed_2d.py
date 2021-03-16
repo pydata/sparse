@@ -98,3 +98,8 @@ def test_transpose(random_sparse, copy):
 
     assert_eq(random_sparse, tt)
     assert type(random_sparse) == type(tt)
+
+
+def test_transpose_error(random_sparse):
+    with pytest.raises(ValueError):
+        random_sparse.transpose(axes=1)
