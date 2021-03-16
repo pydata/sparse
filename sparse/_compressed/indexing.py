@@ -89,13 +89,17 @@ def getitem(x, key):
     # convert all indices of compressed axes to a single array index
     # this tells us which 'rows' of the underlying csr matrix to iterate through
     rows = convert_to_flat(
-        reordered_key[: x._axisptr], x._reordered_shape[: x._axisptr]
+        reordered_key[: x._axisptr],
+        x._reordered_shape[: x._axisptr],
+        x.indices.dtype,
     )
 
     # convert all indices of uncompressed axes to a single array index
     # this tells us which 'columns' of the underlying csr matrix to iterate through
     cols = convert_to_flat(
-        reordered_key[x._axisptr :], x._reordered_shape[x._axisptr :]
+        reordered_key[x._axisptr :],
+        x._reordered_shape[x._axisptr :],
+        x.indices.dtype,
     )
 
     starts = x.indptr[:-1][rows]  # find the start and end of each of the rows
@@ -117,7 +121,7 @@ def getitem(x, key):
         compressed_axes = (0,)  # defaults to 0
         row_size = starts.size
 
-    indptr = np.empty(row_size + 1, dtype=np.intp)
+    indptr = np.empty(row_size + 1, dtype=x.indptr.dtype)
     indptr[0] = 0
     if pos_slice:
         arg = get_slicing_selection(x.data, x.indices, indptr, starts, ends, cols)
@@ -134,7 +138,7 @@ def getitem(x, key):
             indptr = None
         else:
             indices = uncompressed % size
-            indptr = np.empty(shape[0] + 1, dtype=np.intp)
+            indptr = np.empty(shape[0] + 1, dtype=x.indptr.dtype)
             indptr[0] = 0
             np.cumsum(
                 np.bincount(uncompressed // size, minlength=shape[0]), out=indptr[1:]
@@ -144,7 +148,7 @@ def getitem(x, key):
             indptr = None
         else:
             uncompressed = indices // size
-            indptr = np.empty(shape[0] + 1, dtype=np.intp)
+            indptr = np.empty(shape[0] + 1, dtype=x.indptr.dtype)
             indptr[0] = 0
             np.cumsum(np.bincount(uncompressed, minlength=shape[0]), out=indptr[1:])
             indices = indices % size
@@ -230,7 +234,7 @@ def get_slicing_selection(
             ind_list.extend(inds)
             indptr[i + 1] = indptr[i] + len(inds)
     ind_list = np.array(ind_list, dtype=np.int64)
-    indices = np.array(indices)
+    indices = np.array(indices, dtype=indptr.dtype)
     data = arr_data[ind_list]
     return (data, indices, indptr)
 
@@ -261,7 +265,7 @@ def get_array_selection(
         ind_list.extend(inds)
         indptr[i + 1] = indptr[i] + len(inds)
     ind_list = np.array(ind_list, dtype=np.int64)
-    indices = np.array(indices)
+    indices = np.array(indices, dtype=indptr.dtype)
     data = arr_data[ind_list]
     return (data, indices, indptr)
 
