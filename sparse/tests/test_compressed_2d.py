@@ -48,6 +48,25 @@ def random_sparse_small(cls, dtype):
     )
 
 
+def test_repr(random_sparse):
+    cls = type(random_sparse).__name__
+
+    str_repr = repr(random_sparse)
+    assert cls in str_repr
+
+
+def test_bad_constructor_input(cls):
+    with pytest.raises(ValueError, match=r".*shape.*"):
+        cls(arg="hello world")
+
+
+@pytest.mark.parametrize("n", [0, 1, 3])
+def test_bad_nd_input(cls, n):
+    a = np.ones(shape=tuple(5 for _ in range(n)))
+    with pytest.raises(ValueError, match=f"{n}-d"):
+        cls(a)
+
+
 @pytest.mark.parametrize("source_type", ["gcxs", "coo"])
 def test_from_sparse(cls, source_type):
     gcxs = sparse.random((20, 30), density=0.25, format=source_type)
