@@ -5,6 +5,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from functools import reduce
 from collections.abc import Iterable
 import scipy.sparse as ss
+from scipy.sparse import compressed
 
 from .._sparse_array import SparseArray, _reduce_super_ufunc
 from .._coo.common import linear_loc
@@ -123,6 +124,16 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         elif isinstance(arg, COO):
             (arg, shape, compressed_axes, fill_value) = _from_coo(arg, compressed_axes)
 
+        elif isinstance(arg, GCXS):
+            if compressed_axes is not None and arg.compressed_axes != compressed_axes:
+                arg = arg.change_compressed_axes(self.compressed_axes)
+            (arg, shape, compressed_axes, fill_value) = (
+                (arg.data, arg.indices, arg.indptr),
+                arg.shape,
+                arg.compressed_axes,
+                arg.fill_value,
+            )
+
         if shape is None:
             raise ValueError("missing `shape` argument")
 
@@ -137,9 +148,13 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             raise ValueError("data must be a scalar or 1-dimensional.")
 
         self.shape = shape
-        self.compressed_axes = (
-            tuple(compressed_axes) if isinstance(compressed_axes, Iterable) else None
-        )
+
+        if not isinstance(self, Compressed2d):
+            self.compressed_axes = (
+                tuple(compressed_axes)
+                if isinstance(compressed_axes, Iterable)
+                else None
+            )
         self.fill_value = fill_value
 
         if prune:
@@ -796,49 +811,21 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
 class Compressed2d(GCXS):
     def __init__(self, arg, shape=None, prune=False, fill_value=0):
-        if isinstance(arg, np.ndarray):
-            (arg, shape, _, fill_value) = _from_coo(COO(arg), self.compressed_axes)
-
-        elif isinstance(arg, COO):
-            (arg, shape, _, fill_value) = _from_coo(arg, self.compressed_axes)
-
-        elif isinstance(arg, type(self)):
-            (arg, shape, fill_value) = (
-                (arg.data, arg.indices, arg.indptr),
-                arg.shape,
-                arg.fill_value,
-            )
-
-        elif isinstance(arg, GCXS):
-            if len(arg.shape) != 2:
-                raise ValueError()
-            if arg.compressed_axes != self.compressed_axes:
-                arg = arg.change_compressed_axes(self.compressed_axes)
-            (arg, shape, fill_value) = (
-                (arg.data, arg.indices, arg.indptr),
-                arg.shape,
-                arg.fill_value,
-            )
-
-        if shape is None:
+        if not hasattr(arg, "shape") and shape is None:
             raise ValueError("missing `shape` argument")
-        elif len(shape) != 2:
-            raise ValueError(
-                f"{self.__name__} must be two dimensional, given shape {shape}."
-            )
+        if shape is not None and hasattr(arg, "shape"):
+            raise NotImplementedError("Cannot change shape in constructor")
+        nd = len(shape if shape is not None else arg.shape)
+        if nd != 2:
+            raise ValueError(f"{type(self).__name__} must be 2-d, passed {nd}-d shape.")
 
-        check_compressed_axes(len(shape), self.compressed_axes)
-
-        self.data, self.indices, self.indptr = arg
-
-        if self.data.ndim != 1:
-            raise ValueError("data must be a scalar or 1-dimensional.")
-
-        self.shape = shape
-        self.fill_value = fill_value
-
-        if prune:
-            self._prune()
+        super().__init__(
+            arg,
+            shape=shape,
+            compressed_axes=self.compressed_axes,
+            prune=prune,
+            fill_value=fill_value,
+        )
 
     def __str__(self):
         return "<{}: shape={}, dtype={}, nnz={}, fill_value={}>".format(
