@@ -1,6 +1,8 @@
 import numpy as np
+from numpy.core.numeric import indices
 import pytest
 import scipy.sparse
+from scipy.sparse import data
 from scipy.sparse.construct import random
 import scipy.stats
 
@@ -75,5 +77,24 @@ def test_to_sparse(cls_str, random_sparse):
     assert_eq(random_sparse, result)
 
 
-def test_foo(random_sparse):
-    assert isinstance(random_sparse, (CSC, CSR))
+@pytest.mark.parametrize("copy", [True, False])
+def test_transpose(random_sparse, copy):
+    from operator import is_, is_not
+
+    t = random_sparse.transpose(copy=copy)
+    tt = t.transpose(copy=copy)
+
+    # Check if a copy was made
+    if copy:
+        check = is_not
+    else:
+        check = is_
+
+    assert check(random_sparse.data, t.data)
+    assert check(random_sparse.indices, t.indices)
+    assert check(random_sparse.indptr, t.indptr)
+
+    assert random_sparse.shape == t.shape[::-1]
+
+    assert_eq(random_sparse, tt)
+    assert type(random_sparse) == type(tt)

@@ -856,6 +856,13 @@ class CSR(Compressed2d):
     def compressed_axes(self) -> int:
         return (0,)
 
+    def transpose(self, axes=None, copy=False):
+        if axes is not None:
+            raise ValueError()
+        if copy:
+            self = self.copy()
+        return CSC((self.data, self.indices, self.indptr), self.shape[::-1])
+
 
 class CSC(Compressed2d):
     @classmethod
@@ -866,3 +873,10 @@ class CSC(Compressed2d):
     @property
     def compressed_axes(self) -> int:
         return (1,)
+
+    def transpose(self, axes=None, copy=False):
+        if axes is not None:
+            raise ValueError()
+        if copy:
+            self = self.copy()
+        return CSR((self.data, self.indices, self.indptr), self.shape[::-1])
