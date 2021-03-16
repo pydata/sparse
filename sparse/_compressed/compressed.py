@@ -116,6 +116,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         self, arg, shape=None, compressed_axes=None, prune=False, fill_value=0
     ):
 
+        if isinstance(arg, ss.spmatrix):
+            arg = self.from_scipy_sparse(arg)
+
         if isinstance(arg, np.ndarray):
             (arg, shape, compressed_axes, fill_value) = _from_coo(
                 COO(arg), compressed_axes
