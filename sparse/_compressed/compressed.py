@@ -5,6 +5,8 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from functools import reduce
 from collections.abc import Iterable
 import scipy.sparse as ss
+from scipy.sparse import compressed
+from typing import Tuple
 
 from .._sparse_array import SparseArray, _reduce_super_ufunc
 from .._coo.common import linear_loc
@@ -136,6 +138,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         idx_dtype=None,
     ):
 
+        if isinstance(arg, ss.spmatrix):
+            arg = self.from_scipy_sparse(arg)
+
         if isinstance(arg, np.ndarray):
             (arg, shape, compressed_axes, fill_value) = _from_coo(
                 COO(arg), compressed_axes
@@ -144,6 +149,16 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         elif isinstance(arg, COO):
             (arg, shape, compressed_axes, fill_value) = _from_coo(
                 arg, compressed_axes, idx_dtype
+            )
+
+        elif isinstance(arg, GCXS):
+            if compressed_axes is not None and arg.compressed_axes != compressed_axes:
+                arg = arg.change_compressed_axes(self.compressed_axes)
+            (arg, shape, compressed_axes, fill_value) = (
+                (arg.data, arg.indices, arg.indptr),
+                arg.shape,
+                arg.compressed_axes,
+                arg.fill_value,
             )
 
         if shape is None:
@@ -160,6 +175,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             raise ValueError("data must be a scalar or 1-dimensional.")
 
         self.shape = shape
+
         self.compressed_axes = (
             tuple(compressed_axes) if isinstance(compressed_axes, Iterable) else None
         )
@@ -440,7 +456,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def todok(self):
 
-        from ..dok import DOK
+        from .. import DOK
 
         return DOK.from_coo(self.tocoo())  # probably a temporary solution
 
@@ -496,6 +512,10 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             return self.tocoo()
         elif format == "dok":
             return self.todok()
+        elif format == "csr":
+            return CSR(self)
+        elif format == "csc":
+            return CSC(self)
         elif format == "gcxs":
             if compressed_axes is None:
                 compressed_axes = self.compressed_axes
@@ -817,3 +837,83 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             self.indptr = indptr
         else:
             self.indices = self.indices[mask]
+
+
+class Compressed2d(GCXS):
+    def __init__(self, arg, shape=None, prune=False, fill_value=0):
+        if not hasattr(arg, "shape") and shape is None:
+            raise ValueError("missing `shape` argument")
+        if shape is not None and hasattr(arg, "shape"):
+            raise NotImplementedError("Cannot change shape in constructor")
+        nd = len(shape if shape is not None else arg.shape)
+        if nd != 2:
+            raise ValueError(f"{type(self).__name__} must be 2-d, passed {nd}-d shape.")
+
+        super().__init__(
+            arg,
+            shape=shape,
+            compressed_axes=self.compressed_axes,
+            prune=prune,
+            fill_value=fill_value,
+        )
+
+    def __str__(self):
+        return "<{}: shape={}, dtype={}, nnz={}, fill_value={}>".format(
+            type(self).__name__,
+            self.shape,
+            self.dtype,
+            self.nnz,
+            self.fill_value,
+        )
+
+    __repr__ = __str__
+
+    @property
+    def ndim(self) -> int:
+        return 2
+
+
+class CSR(Compressed2d):
+    @classmethod
+    def from_scipy_sparse(cls, x):
+        x = x.asformat("csr", copy=False)
+        return cls((x.data, x.indices, x.indptr), shape=x.shape)
+
+    @property
+    def compressed_axes(self) -> int:
+        return (0,)
+
+    @compressed_axes.setter
+    def compressed_axes(self, val):
+        if val != self.compressed_axes:
+            raise ValueError()
+
+    def transpose(self, axes: None = None, copy: bool = False) -> "CSC":
+        if axes is not None:
+            raise ValueError()
+        if copy:
+            self = self.copy()
+        return CSC((self.data, self.indices, self.indptr), self.shape[::-1])
+
+
+class CSC(Compressed2d):
+    @classmethod
+    def from_scipy_sparse(cls, x):
+        x = x.asformat("csc", copy=False)
+        return cls((x.data, x.indices, x.indptr), shape=x.shape)
+
+    @property
+    def compressed_axes(self) -> int:
+        return (1,)
+
+    @compressed_axes.setter
+    def compressed_axes(self, val):
+        if val != self.compressed_axes:
+            raise ValueError()
+
+    def transpose(self, axes: None = None, copy: bool = False) -> CSR:
+        if axes is not None:
+            raise ValueError()
+        if copy:
+            self = self.copy()
+        return CSR((self.data, self.indices, self.indptr), self.shape[::-1])
