@@ -12,6 +12,7 @@ from .._coo.common import linear_loc
 from .._common import dot, matmul
 from .._utils import (
     normalize_axis,
+    can_store,
     check_zero_fill_value,
     check_compressed_axes,
     equivalent,
@@ -21,7 +22,7 @@ from .convert import uncompress_dimension, _transpose, _1d_reshape
 from .indexing import getitem
 
 
-def _from_coo(x, compressed_axes=None):
+def _from_coo(x, compressed_axes=None, idx_dtype=None):
 
     if x.ndim == 0:
         if compressed_axes is not None:
@@ -50,16 +51,30 @@ def _from_coo(x, compressed_axes=None):
     compressed_shape = (row_size, col_size)
     shape = x.shape
 
+    if idx_dtype and not can_store(idx_dtype, max(max(compressed_shape), x.nnz)):
+        raise ValueError(
+            "cannot store array with the compressed shape {} and nnz {} with dtype {}.".format(
+                compressed_shape,
+                x.nnz,
+                idx_dtype,
+            )
+        )
+
+    if not idx_dtype:
+        idx_dtype = x.coords.dtype
+        if not can_store(idx_dtype, max(max(compressed_shape), x.nnz)):
+            idx_dtype = np.min_scalar_type(max(max(compressed_shape), x.nnz))
+
     # transpose axes, linearize, reshape, and compress
     linear = linear_loc(x.coords[axis_order], reordered_shape)
     order = np.argsort(linear)
     linear = linear[order]
-    coords = np.empty((2, x.nnz), dtype=np.intp)
+    coords = np.empty((2, x.nnz), dtype=idx_dtype)
     strides = 1
     for i, d in enumerate(compressed_shape[::-1]):
         coords[-(i + 1), :] = (linear // strides) % d
         strides *= d
-    indptr = np.empty(row_size + 1, dtype=np.intp)
+    indptr = np.empty(row_size + 1, dtype=idx_dtype)
     indptr[0] = 0
     np.cumsum(np.bincount(coords[0], minlength=row_size), out=indptr[1:])
     indices = coords[1]
@@ -113,7 +128,13 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     __array_priority__ = 12
 
     def __init__(
-        self, arg, shape=None, compressed_axes=None, prune=False, fill_value=0
+        self,
+        arg,
+        shape=None,
+        compressed_axes=None,
+        prune=False,
+        fill_value=0,
+        idx_dtype=None,
     ):
 
         if isinstance(arg, ss.spmatrix):
@@ -125,7 +146,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             )
 
         elif isinstance(arg, COO):
-            (arg, shape, compressed_axes, fill_value) = _from_coo(arg, compressed_axes)
+            (arg, shape, compressed_axes, fill_value) = _from_coo(
+                arg, compressed_axes, idx_dtype
+            )
 
         elif isinstance(arg, GCXS):
             if compressed_axes is not None and arg.compressed_axes != compressed_axes:
@@ -175,13 +198,15 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         return _copy.deepcopy(self) if deep else _copy.copy(self)
 
     @classmethod
-    def from_numpy(cls, x, compressed_axes=None, fill_value=0):
-        coo = COO(x, fill_value=fill_value)
-        return cls.from_coo(coo, compressed_axes)
+    def from_numpy(cls, x, compressed_axes=None, fill_value=0, idx_dtype=None):
+        coo = COO(x, fill_value=fill_value, idx_dtype=idx_dtype)
+        return cls.from_coo(coo, compressed_axes, idx_dtype)
 
     @classmethod
-    def from_coo(cls, x, compressed_axes=None):
-        (arg, shape, compressed_axes, fill_value) = _from_coo(x, compressed_axes)
+    def from_coo(cls, x, compressed_axes=None, idx_dtype=None):
+        (arg, shape, compressed_axes, fill_value) = _from_coo(
+            x, compressed_axes, idx_dtype
+        )
         return cls(
             arg, shape=shape, compressed_axes=compressed_axes, fill_value=fill_value
         )
@@ -199,9 +224,13 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             )
 
     @classmethod
-    def from_iter(cls, x, shape=None, compressed_axes=None, fill_value=None):
+    def from_iter(
+        cls, x, shape=None, compressed_axes=None, fill_value=None, idx_dtype=None
+    ):
         return cls.from_coo(
-            COO.from_iter(x, shape, fill_value), compressed_axes=compressed_axes
+            COO.from_iter(x, shape, fill_value),
+            compressed_axes,
+            idx_dtype,
         )
 
     @property
@@ -307,7 +336,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         x = self.change_compressed_axes(compressed_axes)
         idx = np.diff(x.indptr) != 0
         indptr = x.indptr[:-1][idx]
-        indices = (np.arange(x._compressed_shape[0], dtype=np.intp))[idx]
+        indices = (np.arange(x._compressed_shape[0], dtype=self.indptr.dtype))[idx]
         data = method.reduceat(x.data, indptr, **kwargs)
         counts = x.indptr[1:][idx] - x.indptr[:-1][idx]
         arr_attrs = (x, compressed_axes, indices)
@@ -804,7 +833,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             coords = coords[:, mask]
             self.indices = coords[1]
             row_size = self._compressed_shape[0]
-            indptr = np.empty(row_size + 1, dtype=np.intp)
+            indptr = np.empty(row_size + 1, dtype=self.indptr.dtype)
             indptr[0] = 0
             np.cumsum(np.bincount(coords[0], minlength=row_size), out=indptr[1:])
             self.indptr = indptr

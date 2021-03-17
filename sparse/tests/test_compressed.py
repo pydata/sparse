@@ -430,3 +430,32 @@ def test_flatten(in_shape):
     e = x.flatten()
 
     assert_eq(e, a)
+
+
+def test_gcxs_valerr():
+    a = np.arange(300)
+    with pytest.raises(ValueError):
+        GCXS.from_numpy(a, idx_dtype=np.int8)
+
+
+def test_upcast():
+    a = sparse.random((50, 50, 50), density=0.1, format="coo", idx_dtype=np.uint8)
+    b = a.asformat("gcxs")
+    assert b.indices.dtype == np.uint16
+
+    a = sparse.random((8, 7, 6), density=0.5, format="gcxs", idx_dtype=np.uint8)
+    b = sparse.random((6, 6, 6), density=0.8, format="gcxs", idx_dtype=np.uint8)
+    assert sparse.concatenate((a, a)).indptr.dtype == np.uint16
+    assert sparse.stack((b, b)).indptr.dtype == np.uint16
+
+
+def test_from_coo():
+    a = sparse.random((5, 5, 5), density=0.1, format="coo")
+    b = GCXS(a)
+    assert_eq(a, b)
+
+
+def test_from_coo_valerr():
+    a = sparse.random((25, 25, 25), density=0.01, format="coo")
+    with pytest.raises(ValueError):
+        GCXS.from_coo(a, idx_dtype=np.int8)

@@ -1,5 +1,5 @@
 import numpy as np
-from .._utils import check_consistent_fill_value, normalize_axis
+from .._utils import check_consistent_fill_value, normalize_axis, can_store
 
 
 def concatenate(arrays, axis=0, compressed_axes=None):
@@ -41,6 +41,9 @@ def concatenate(arrays, axis=0, compressed_axes=None):
     data = np.concatenate([arr.data for arr in arrays])
     ptr_len = arrays[0].indptr.shape[0]
     nnz = arrays[0].nnz
+    total_nnz = sum(int(arr.nnz) for arr in arrays)
+    if not can_store(indptr.dtype, total_nnz):
+        indptr = indptr.astype(np.min_scalar_type(total_nnz))
     for i in range(1, len(arrays)):
         indptr[ptr_len:] += nnz
         nnz = arrays[i].nnz
@@ -93,6 +96,9 @@ def stack(arrays, axis=0, compressed_axes=None):
     data = np.concatenate([arr.data for arr in arrays])
     ptr_len = arrays[0].indptr.shape[0]
     nnz = arrays[0].nnz
+    total_nnz = sum(int(arr.nnz) for arr in arrays)
+    if not can_store(indptr.dtype, total_nnz):
+        indptr = indptr.astype(np.min_scalar_type(total_nnz))
     for i in range(1, len(arrays)):
         indptr[ptr_len:] += nnz
         nnz = arrays[i].nnz

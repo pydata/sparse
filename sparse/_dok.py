@@ -3,13 +3,14 @@ from numbers import Integral
 from collections.abc import Iterable
 
 import numpy as np
+from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from ._slicing import normalize_index
 from ._utils import equivalent
 from ._sparse_array import SparseArray
 
 
-class DOK(SparseArray):
+class DOK(SparseArray, NDArrayOperatorsMixin):
     """
     A class for building sparse multidimensional arrays.
 

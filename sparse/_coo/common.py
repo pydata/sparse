@@ -10,9 +10,11 @@ import numba
 from .._sparse_array import SparseArray
 from .._utils import (
     isscalar,
+    is_unsigned_dtype,
     normalize_axis,
     check_zero_fill_value,
     check_consistent_fill_value,
+    can_store,
 )
 
 
@@ -173,6 +175,8 @@ def concatenate(arrays, axis=0):
     data = np.concatenate([x.data for x in arrays])
     coords = np.concatenate([x.coords for x in arrays], axis=1)
 
+    if not can_store(coords.dtype, max(shape)):
+        coords = coords.astype(np.min_scalar_type(max(shape)))
     dim = 0
     for x in arrays:
         if dim:
@@ -688,6 +692,7 @@ def roll(a, shift, axis=None):
         Output array, with the same shape as a.
     """
     from .core import COO, as_coo
+    from numpy.core._exceptions import UFuncTypeError
 
     a = as_coo(a)
 
@@ -719,11 +724,27 @@ def roll(a, shift, axis=None):
                 "If 'shift' is a 1D sequence, " "'axis' must have equal length."
             )
 
+        if not can_store(a.coords.dtype, max(a.shape + shift)):
+            raise ValueError(
+                "cannot roll with coords.dtype {} and shift {}. Try casting coords to a larger dtype.".format(
+                    a.coords.dtype,
+                    shift,
+                )
+            )
+
         # shift elements
         coords, data = np.copy(a.coords), np.copy(a.data)
-        for sh, ax in zip(shift, axis):
-            coords[ax] += sh
-            coords[ax] %= a.shape[ax]
+        try:
+            for sh, ax in zip(shift, axis):
+                coords[ax] += sh
+                coords[ax] %= a.shape[ax]
+        except UFuncTypeError:
+            if is_unsigned_dtype(coords.dtype):
+                raise ValueError(
+                    "rolling with coords.dtype as {} is not safe. Try using a signed dtype.".format(
+                        coords.dtype
+                    )
+                )
 
         return COO(
             coords,
