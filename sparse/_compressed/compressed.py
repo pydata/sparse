@@ -6,6 +6,7 @@ from functools import reduce
 from collections.abc import Iterable
 import scipy.sparse as ss
 from scipy.sparse import compressed
+from typing import Tuple
 
 from .._sparse_array import SparseArray, _reduce_super_ufunc
 from .._coo.common import linear_loc
@@ -175,12 +176,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         self.shape = shape
 
-        if not isinstance(self, Compressed2d):
-            self.compressed_axes = (
-                tuple(compressed_axes)
-                if isinstance(compressed_axes, Iterable)
-                else None
-            )
+        self.compressed_axes = (
+            tuple(compressed_axes) if isinstance(compressed_axes, Iterable) else None
+        )
         self.fill_value = fill_value
 
         if prune:
@@ -885,6 +883,11 @@ class CSR(Compressed2d):
     def compressed_axes(self) -> int:
         return (0,)
 
+    @compressed_axes.setter
+    def compressed_axes(self, val):
+        if val != self.compressed_axes:
+            raise ValueError()
+
     def transpose(self, axes: None = None, copy: bool = False) -> "CSC":
         if axes is not None:
             raise ValueError()
@@ -902,6 +905,11 @@ class CSC(Compressed2d):
     @property
     def compressed_axes(self) -> int:
         return (1,)
+
+    @compressed_axes.setter
+    def compressed_axes(self, val):
+        if val != self.compressed_axes:
+            raise ValueError()
 
     def transpose(self, axes: None = None, copy: bool = False) -> CSR:
         if axes is not None:
