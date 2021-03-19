@@ -1066,6 +1066,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         numpy.ndarray.resize : The equivalent Numpy function.
 
         """
+        warnings.warn(
+            "resize is deprecated on all SpraseArray objects.", DeprecationWarning
+        )
         if len(args) == 1 and isinstance(args[0], tuple):
             shape = args[0]
         elif all(isinstance(arg, int) for arg in args):
