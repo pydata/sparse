@@ -153,7 +153,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         elif isinstance(arg, GCXS):
             if compressed_axes is not None and arg.compressed_axes != compressed_axes:
-                arg = arg.change_compressed_axes(self.compressed_axes)
+                arg = arg.change_compressed_axes(compressed_axes)
             (arg, shape, compressed_axes, fill_value) = (
                 (arg.data, arg.indices, arg.indptr),
                 arg.shape,
@@ -176,7 +176,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         self.shape = shape
 
-        self.compressed_axes = (
+        self._compressed_axes = (
             tuple(compressed_axes) if isinstance(compressed_axes, Iterable) else None
         )
         self.fill_value = fill_value
@@ -639,50 +639,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             fill_value=self.fill_value,
         )
 
-    def resize(self, *args, refcheck=True, compressed_axes=None):
-        """
-        This method changes the shape and size of an array in-place.
-
-        Parameters
-        ----------
-        args : tuple, or series of integers
-            The desired shape of the output array.
-        compressed_axes : Iterable[int], optional
-            The axes to compress to store the array. Finds the most efficient storage
-            by default.
-
-        See Also
-        --------
-        numpy.ndarray.resize : The equivalent Numpy function.
-        sparse.COO.resize : The equivalent COO function.
-        """
-        from .convert import _resize
-
-        if len(args) == 1 and isinstance(args[0], tuple):
-            shape = args[0]
-        elif all(isinstance(arg, int) for arg in args):
-            shape = tuple(args)
-        else:
-            raise ValueError("Invalid input")
-
-        if any(d < 0 for d in shape):
-            raise ValueError("negative dimensions not allowed")
-
-        if self.shape == shape:
-            return
-
-        if compressed_axes is None:
-            if len(shape) == self.ndim:
-                compressed_axes = self.compressed_axes
-            elif len(shape) == 1:
-                compressed_axes = None
-            else:
-                compressed_axes = (np.argmin(shape),)
-
-        arg = _resize(self, shape, compressed_axes)
-        self.data, self.indices, self.indptr = arg
-        self.shape = shape
-        self.compressed_axes = compressed_axes
+    @property
+    def compressed_axes(self):
+        return self._compressed_axes
 
     def transpose(self, axes=None, compressed_axes=None):
         """
@@ -839,8 +798,10 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             self.indices = self.indices[mask]
 
 
-class Compressed2d(GCXS):
-    def __init__(self, arg, shape=None, prune=False, fill_value=0):
+class _Compressed2d(GCXS):
+    def __init__(
+        self, arg, shape=None, compressed_axes=None, prune=False, fill_value=0
+    ):
         if not hasattr(arg, "shape") and shape is None:
             raise ValueError("missing `shape` argument")
         if shape is not None and hasattr(arg, "shape"):
@@ -852,7 +813,7 @@ class Compressed2d(GCXS):
         super().__init__(
             arg,
             shape=shape,
-            compressed_axes=self.compressed_axes,
+            compressed_axes=compressed_axes,
             prune=prune,
             fill_value=fill_value,
         )
@@ -873,20 +834,14 @@ class Compressed2d(GCXS):
         return 2
 
 
-class CSR(Compressed2d):
+class CSR(_Compressed2d):
+    def __init__(self, arg, shape=None, prune=False, fill_value=0):
+        super().__init__(arg, shape=shape, compressed_axes=(0,), fill_value=fill_value)
+
     @classmethod
     def from_scipy_sparse(cls, x):
         x = x.asformat("csr", copy=False)
         return cls((x.data, x.indices, x.indptr), shape=x.shape)
-
-    @property
-    def compressed_axes(self) -> int:
-        return (0,)
-
-    @compressed_axes.setter
-    def compressed_axes(self, val):
-        if val != self.compressed_axes:
-            raise ValueError()
 
     def transpose(self, axes: None = None, copy: bool = False) -> "CSC":
         if axes is not None:
@@ -896,20 +851,14 @@ class CSR(Compressed2d):
         return CSC((self.data, self.indices, self.indptr), self.shape[::-1])
 
 
-class CSC(Compressed2d):
+class CSC(_Compressed2d):
+    def __init__(self, arg, shape=None, prune=False, fill_value=0):
+        super().__init__(arg, shape=shape, compressed_axes=(1,), fill_value=fill_value)
+
     @classmethod
     def from_scipy_sparse(cls, x):
         x = x.asformat("csc", copy=False)
         return cls((x.data, x.indices, x.indptr), shape=x.shape)
-
-    @property
-    def compressed_axes(self) -> int:
-        return (1,)
-
-    @compressed_axes.setter
-    def compressed_axes(self, val):
-        if val != self.compressed_axes:
-            raise ValueError()
 
     def transpose(self, axes: None = None, copy: bool = False) -> CSR:
         if axes is not None:

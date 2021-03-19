@@ -140,33 +140,6 @@ def test_ufunc_reductions_kwargs(reduction, kwargs, fill_value):
 @pytest.mark.parametrize(
     "a,b",
     [
-        [(3, 4), (5, 5)],
-        [(12,), (3, 4)],
-        [(12,), (3, 6)],
-        [(5, 5, 5), (6, 6, 6)],
-        [(3, 4), (9, 4)],
-        [(5,), (4,)],
-        [(2, 3, 4, 5), (2, 3, 4, 5, 6)],
-        [(100,), (5, 5)],
-        [(2, 3, 4, 5), (20, 6)],
-        [(), ()],
-    ],
-)
-def test_resize(a, b):
-    s = sparse.random(a, density=0.5, format="gcxs")
-    orig_size = s.size
-    x = s.todense()
-    x = np.resize(x, b)
-    s.resize(b)
-    temp = x.reshape(x.size)
-    temp[orig_size:] = s.fill_value
-    assert isinstance(s, sparse.SparseArray)
-    assert_eq(x, s)
-
-
-@pytest.mark.parametrize(
-    "a,b",
-    [
         [(3, 4), (3, 4)],
         [(12,), (3, 4)],
         [(12,), (3, -1)],
