@@ -327,10 +327,11 @@ def html_table(arr):
     table = "<table>"
     table += "<tbody>"
     headings = ["Format", "Data Type", "Shape", "nnz", "Density", "Read-only"]
-    try:
+    
+    if arr.size > 0:
         density = (arr.nnz / arr.size)
-    except ZeroDivisionError:
-        density = 'undefined'
+    else:
+        density = np.NaN
     
     info = [
         type(arr).__name__.lower(),
@@ -342,19 +343,18 @@ def html_table(arr):
 
     # read-only
     info.append(str(not hasattr(arr, "__setitem__")))
-
-    try:
-        storage_ratio = "{:.1f}".format(arr.nbytes / (reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize))
-    except ZeroDivisionError:
-        storage_ratio = 'undefined'
-
+    
+    if any(x == 0 for x in arr.shape):
+        storage_ratio = np.NaN
+    else:
+        storage_ratio = float("{:.1f}".format(arr.nbytes / (reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize)))
     
     if hasattr(arr, "nbytes"):
         headings.append("Size")
         info.append(human_readable_size(arr.nbytes))
         headings.append("Storage ratio")
         info.append(
-            storage_ratio
+            str(storage_ratio)
         )
 
 
