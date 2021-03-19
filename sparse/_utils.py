@@ -327,25 +327,36 @@ def html_table(arr):
     table = "<table>"
     table += "<tbody>"
     headings = ["Format", "Data Type", "Shape", "nnz", "Density", "Read-only"]
+    try:
+        density = (arr.nnz / arr.size)
+    except ZeroDivisionError:
+        density = 'undefined'
+    
     info = [
         type(arr).__name__.lower(),
         str(arr.dtype),
         str(arr.shape),
         str(arr.nnz),
-        str(arr.nnz / arr.size),
+        str(density),
     ]
 
     # read-only
     info.append(str(not hasattr(arr, "__setitem__")))
 
+    try:
+        storage_ratio = "{:.1f}".format(arr.nbytes / (reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize))
+    except ZeroDivisionError:
+        storage_ratio = 'undefined'
+
+    
     if hasattr(arr, "nbytes"):
         headings.append("Size")
         info.append(human_readable_size(arr.nbytes))
         headings.append("Storage ratio")
         info.append(
-            "%.1f"
-            % (arr.nbytes / (reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize))
+            storage_ratio
         )
+
 
     # compressed_axes
     if type(arr).__name__ == "GCXS":
