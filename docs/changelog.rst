@@ -3,7 +3,25 @@ Changelog
 
 .. currentmodule:: sparse
 
-0.11.1 / 2020-09-04
+0.12.0 / 2021-03-19
+-------------------
+
+There are a number of large changes in this release. For example, we have implemented the
+:obj:`GCXS` type, and its specializations :obj:`CSR` and :obj:`CSC`. We plan on gradually improving
+the performance of these.
+
+* A number of :obj:`GCXS` fixes and additions (:pr:`409`, :pr:`407`, :pr:`414`,
+  :pr:`417`, :pr:`419` thanks :ghuser:`daletovar`)
+* Ability to change the index dtype for better storage characteristics. (:pr:`441`,
+  thanks :ghuser:`daletovar`)
+* Some work on :obj:`DOK` arrays to bring them closer to the other formats (:pr:`435`,
+  :pr:`437`, :pr:`439`, :pr:`440`, thanks :ghuser:`DragaDoncila`)
+* :obj:`CSR` and :obj:`CSC` specializations of :obj:`GCXS` (:pr:`442`, thanks :ghuser:`ivirshup`)
+  For now, this is experimental undocumented API, and subject to change.
+* Fix a number of bugs (:pr:`407`, :issue:`406`)
+* Add ``nnz`` parameter to :obj:`sparse.random` (:pr:`410`, thanks :ghuser:`emilmelnikov`)
+
+0.11.2 / 2020-09-04
 -------------------
 
 * Fix :obj:`TypingError` on :obj:`sparse.dot` with complex dtypes. (:issue:`403`, :pr:`404`)
