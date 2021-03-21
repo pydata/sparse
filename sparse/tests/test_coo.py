@@ -11,7 +11,7 @@ import scipy.stats
 import sparse
 from sparse import COO
 from sparse._settings import NEP18_ENABLED
-from sparse._utils import assert_eq, random_value_array
+from sparse._utils import assert_eq, random_value_array, html_table
 
 
 @pytest.fixture(scope="module", params=["f8", "f4", "i8", "i4"])
@@ -1606,3 +1606,10 @@ def test_coo_valerr():
 def test_random_idx_dtype():
     with pytest.raises(ValueError):
         sparse.random((300,), density=0.1, format="coo", idx_dtype=np.int8)
+
+
+def test_html_for_size_zero():
+    try:
+        html_table(sparse.COO.from_numpy(np.array(())))
+    except exception:
+        raise pytest.fail("DID RAISE {0}".format(exception))

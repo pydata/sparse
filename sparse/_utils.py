@@ -327,12 +327,9 @@ def html_table(arr):
     table = "<table>"
     table += "<tbody>"
     headings = ["Format", "Data Type", "Shape", "nnz", "Density", "Read-only"]
-    
-    if arr.size > 0:
-        density = (arr.nnz / arr.size)
-    else:
-        density = np.NaN
-    
+
+    density = np.float_(arr.nnz) / np.float_(arr.size)
+
     info = [
         type(arr).__name__.lower(),
         str(arr.dtype),
@@ -343,20 +340,18 @@ def html_table(arr):
 
     # read-only
     info.append(str(not hasattr(arr, "__setitem__")))
-    
-    if any(x == 0 for x in arr.shape):
-        storage_ratio = np.NaN
-    else:
-        storage_ratio = float("{:.1f}".format(arr.nbytes / (reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize)))
-    
+
     if hasattr(arr, "nbytes"):
         headings.append("Size")
         info.append(human_readable_size(arr.nbytes))
         headings.append("Storage ratio")
         info.append(
-            str(storage_ratio)
+            "%.1f"
+            % (
+                np.float_(arr.nbytes)
+                / np.float_(reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize)
+            )
         )
-
 
     # compressed_axes
     if type(arr).__name__ == "GCXS":
