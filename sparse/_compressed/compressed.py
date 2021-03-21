@@ -89,11 +89,21 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     This is stored in GCXS format, a generalization of the GCRS/GCCS formats
     from 'Efficient storage scheme for n-dimensional sparse array: GCRS/GCCS':
-    https://ieeexplore.ieee.org/document/7237032. GCXS generalizes the csr/csc
-    sparse matrix formats. For arrays with ndim == 2, GCXS is the same csr/csc.
+    https://ieeexplore.ieee.org/document/7237032. GCXS generalizes the CRS/CCS
+    sparse matrix formats.
+
+    For arrays with ndim == 2, GCXS is the same CSR/CSC.
     For arrays with ndim >2, any combination of axes can be compressed,
     significantly reducing storage.
 
+    Let the 3 arrays be RO, CO and VL. The first element
+    of array RO is the integer 1 and later elements are the number of
+    cumulative non-zero elements in each row for GCRS, column for
+    GCCS. CO stores column indexes of non-zero elements at each row for GCRS, column for GCCS.
+    VL stores the values of the non-zero array elements.
+
+    The superiority of the GCRS/GCCS over traditional (CRS/CCS) is shown by both
+    theoretical analysis and experimental results, outlined in the linked research paper.
 
     Parameters
     ----------
