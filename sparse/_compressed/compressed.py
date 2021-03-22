@@ -874,6 +874,12 @@ class Compressed2d(GCXS):
 
 
 class CSR(Compressed2d):
+    """
+    The CSR or CRS scheme stores a n-dimensional array using n+1 one-dimensional arrays.
+    The 3 arrays are same as GCRS. The remaining n-2 arrays are for storing the indices of
+    the non-zero values of the sparse matrix. CSR is simply the transpose of CSC.
+    """
+
     @classmethod
     def from_scipy_sparse(cls, x):
         x = x.asformat("csr", copy=False)
@@ -897,6 +903,12 @@ class CSR(Compressed2d):
 
 
 class CSC(Compressed2d):
+    """
+    The CSC or CCS scheme stores a n-dimensional array using n+1 one-dimensional arrays.
+    The 3 arrays are same as GCCS. The remaining n-2 arrays are for storing the indices of
+    the non-zero values of the sparse matrix. CSC is simply the transpose of CSR.
+    """
+
     @classmethod
     def from_scipy_sparse(cls, x):
         x = x.asformat("csc", copy=False)
