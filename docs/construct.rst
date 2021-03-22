@@ -140,8 +140,20 @@ DOK arrays also support fancy indexing assignment if and only if all dimensions 
    s[[0, 2], [2, 1], [0, 1]] = 5
    s[[0, 3], [0, 4], [0, 1]] = [1, 5]
 
-At the end, you can convert the :obj:`DOK` array to a :obj:`COO` array, and
-perform arithmetic or other operations on it.
+Alongside indexing assignment and retrieval, DOK arrays support any arbitrary broadcasting function
+to any number of arguments where the arguments can be :obj:`SparseArray` objects, :obj:`scipy.sparse.spmatrix`
+objects, or :obj:`numpy.ndarrays`. 
+
+.. code-block:: python
+
+   x = sparse.random((10, 10), 0.5, format="dok")
+   y = sparse.random((10, 10), 0.5, format="dok")
+   sparse.elemwise(np.add, x, y)
+
+:obj:`DOK` arrays are returned from elemwise functions if and only if all :obj:`SparseArray` objects are
+obj:`DOK` arrays. Otherwise, a :obj:`COO` array or dense array are returned.
+
+At the end, you can convert the :obj:`DOK` array to a :obj:`COO` arrays.
 
 .. code-block:: python
 
