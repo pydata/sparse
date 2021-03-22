@@ -140,7 +140,7 @@ DOK arrays also support fancy indexing assignment if and only if all dimensions 
    s[[0, 2], [2, 1], [0, 1]] = 5
    s[[0, 3], [0, 4], [0, 1]] = [1, 5]
 
-Alongside indexing assignment and retrieval, DOK arrays support any arbitrary broadcasting function
+Alongside indexing assignment and retrieval, :obj:`DOK` arrays support any arbitrary broadcasting function
 to any number of arguments where the arguments can be :obj:`SparseArray` objects, :obj:`scipy.sparse.spmatrix`
 objects, or :obj:`numpy.ndarrays`. 
 
@@ -150,8 +150,19 @@ objects, or :obj:`numpy.ndarrays`.
    y = sparse.random((10, 10), 0.5, format="dok")
    sparse.elemwise(np.add, x, y)
 
-:obj:`DOK` arrays are returned from elemwise functions if and only if all :obj:`SparseArray` objects are
-obj:`DOK` arrays. Otherwise, a :obj:`COO` array or dense array are returned.
+:obj:`DOK` arrays also support standard `__ufunc__` operations and operators, including comparison operators,
+in combination with other objects implementing the `numpy` `ndarray.__array_ufunc__` method. For example,
+the following code will perform elementwise equality comparison on the two arrays
+and return a new boolean :obj:`DOK` array.
+
+.. code-block:: python
+
+   x = sparse.random((10, 10), 0.5, format="dok")
+   y = np.random.random((10, 10))
+   x == y
+
+:obj:`DOK` arrays are returned from elemwise functions and standard `__ufunc__` operations if and only if all 
+:obj:`SparseArray` objects are obj:`DOK` arrays. Otherwise, a :obj:`COO` array or dense array are returned.
 
 At the end, you can convert the :obj:`DOK` array to a :obj:`COO` arrays.
 
