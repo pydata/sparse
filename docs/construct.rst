@@ -150,7 +150,7 @@ objects, or :obj:`numpy.ndarrays`.
    y = sparse.random((10, 10), 0.5, format="dok")
    sparse.elemwise(np.add, x, y)
 
-:obj:`DOK` arrays also support standard `__ufunc__` operations and operators, including comparison operators,
+:obj:`DOK` arrays also support standard universal operations and operators, including comparison operators,
 in combination with other objects implementing the `numpy` `ndarray.__array_ufunc__` method. For example,
 the following code will perform elementwise equality comparison on the two arrays
 and return a new boolean :obj:`DOK` array.
@@ -161,7 +161,7 @@ and return a new boolean :obj:`DOK` array.
    y = np.random.random((10, 10))
    x == y
 
-:obj:`DOK` arrays are returned from elemwise functions and standard `__ufunc__` operations if and only if all 
+:obj:`DOK` arrays are returned from elemwise functions and standard universal operations if and only if all 
 :obj:`SparseArray` objects are obj:`DOK` arrays. Otherwise, a :obj:`COO` array or dense array are returned.
 
 At the end, you can convert the :obj:`DOK` array to a :obj:`COO` arrays.
