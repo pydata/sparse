@@ -1611,39 +1611,16 @@ def test_random_idx_dtype():
 
 def test_html_for_size_zero():
     arr = sparse.COO.from_numpy(np.array(()))
-    ground_truth = "<table>"
-    ground_truth += "<tbody>"
-    headings = [
-        "Format",
-        "Data Type",
-        "Shape",
-        "nnz",
-        "Density",
-        "Read-only",
-        "Size",
-        "Storage ratio",
-    ]
-
-    info = [
-        type(arr).__name__.lower(),
-        str(arr.dtype),
-        str(arr.shape),
-        str(arr.nnz),
-        str("nan"),
-        str(True),
-        str(arr.size),
-        str("nan"),
-    ]
-
-    for h, i in zip(headings, info):
-        ground_truth += (
-            "<tr>"
-            '<th style="text-align: left">%s</th>'
-            '<td style="text-align: left">%s</td>'
-            "</tr>" % (h, i)
-        )
-    ground_truth += "</tbody>"
-    ground_truth += "</table>"
+    ground_truth = "<table><tbody>"
+    ground_truth += '<tr><th style="text-align: left">Format</th><td style="text-align: left">coo</td></tr>'
+    ground_truth += '<tr><th style="text-align: left">Data Type</th><td style="text-align: left">float64</td></tr>'
+    ground_truth += '<tr><th style="text-align: left">Shape</th><td style="text-align: left">(0,)</td></tr>'
+    ground_truth += '<tr><th style="text-align: left">nnz</th><td style="text-align: left">0</td></tr>'
+    ground_truth += '<tr><th style="text-align: left">Density</th><td style="text-align: left">nan</td></tr>'
+    ground_truth += '<tr><th style="text-align: left">Read-only</th><td style="text-align: left">True</td></tr>'
+    ground_truth += '<tr><th style="text-align: left">Size</th><td style="text-align: left">0</td></tr>'
+    ground_truth += '<tr><th style="text-align: left">Storage ratio</th><td style="text-align: left">nan</td></tr>'
+    ground_truth += "</tbody></table>"
 
     table = html_table(arr)
     assert table == ground_truth
