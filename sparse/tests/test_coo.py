@@ -1609,10 +1609,41 @@ def test_random_idx_dtype():
         sparse.random((300,), density=0.1, format="coo", idx_dtype=np.int8)
 
 
-def test_coo_for_size_zero():
+def test_html_for_size_zero():
     arr = sparse.COO.from_numpy(np.array(()))
-    assert np.isnan(np.float_(arr.nnz) / np.float_(arr.size))
-    assert np.isnan(
-        np.float_(arr.nbytes)
-        / np.float_(reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize)
-    )
+    ground_truth = "<table>"
+    ground_truth += "<tbody>"
+    headings = [
+        "Format",
+        "Data Type",
+        "Shape",
+        "nnz",
+        "Density",
+        "Read-only",
+        "Size",
+        "Storage ratio",
+    ]
+
+    info = [
+        type(arr).__name__.lower(),
+        str(arr.dtype),
+        str(arr.shape),
+        str(arr.nnz),
+        str("nan"),
+        str(True),
+        str(arr.size),
+        str("nan"),
+    ]
+
+    for h, i in zip(headings, info):
+        ground_truth += (
+            "<tr>"
+            '<th style="text-align: left">%s</th>'
+            '<td style="text-align: left">%s</td>'
+            "</tr>" % (h, i)
+        )
+    ground_truth += "</tbody>"
+    ground_truth += "</table>"
+
+    table = html_table(arr)
+    assert table == ground_truth
