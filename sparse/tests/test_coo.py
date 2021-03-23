@@ -2,6 +2,7 @@ import contextlib
 import operator
 import pickle
 import sys
+from functools import reduce
 
 import numpy as np
 import pytest
@@ -1608,8 +1609,10 @@ def test_random_idx_dtype():
         sparse.random((300,), density=0.1, format="coo", idx_dtype=np.int8)
 
 
-def test_html_for_size_zero():
-    try:
-        html_table(sparse.COO.from_numpy(np.array(())))
-    except exception:
-        raise pytest.fail("DID RAISE {0}".format(exception))
+def test_coo_for_size_zero():
+    arr = sparse.COO.from_numpy(np.array(()))
+    assert np.isnan(np.float_(arr.nnz) / np.float_(arr.size))
+    assert np.isnan(
+        np.float_(arr.nbytes)
+        / np.float_(reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize)
+    )
