@@ -327,12 +327,15 @@ def html_table(arr):
     table = "<table>"
     table += "<tbody>"
     headings = ["Format", "Data Type", "Shape", "nnz", "Density", "Read-only"]
+
+    density = np.float_(arr.nnz) / np.float_(arr.size)
+
     info = [
         type(arr).__name__.lower(),
         str(arr.dtype),
         str(arr.shape),
         str(arr.nnz),
-        str(arr.nnz / arr.size),
+        str(density),
     ]
 
     # read-only
@@ -344,7 +347,10 @@ def html_table(arr):
         headings.append("Storage ratio")
         info.append(
             "%.1f"
-            % (arr.nbytes / (reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize))
+            % (
+                np.float_(arr.nbytes)
+                / np.float_(reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize)
+            )
         )
 
     # compressed_axes
