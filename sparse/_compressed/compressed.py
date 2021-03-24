@@ -89,11 +89,21 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     This is stored in GCXS format, a generalization of the GCRS/GCCS formats
     from 'Efficient storage scheme for n-dimensional sparse array: GCRS/GCCS':
-    https://ieeexplore.ieee.org/document/7237032. GCXS generalizes the csr/csc
-    sparse matrix formats. For arrays with ndim == 2, GCXS is the same csr/csc.
+    https://ieeexplore.ieee.org/document/7237032. GCXS generalizes the CRS/CCS
+    sparse matrix formats.
+
+    For arrays with ndim == 2, GCXS is the same CSR/CSC.
     For arrays with ndim >2, any combination of axes can be compressed,
     significantly reducing storage.
 
+    Let the 3 arrays be RO, CO and VL. The first element
+    of array RO is the integer 0 and later elements are the number of
+    cumulative non-zero elements in each row for GCRS, column for
+    GCCS. CO stores column indexes of non-zero elements at each row for GCRS, column for GCCS.
+    VL stores the values of the non-zero array elements.
+
+    The superiority of the GCRS/GCCS over traditional (CRS/CCS) is shown by both
+    theoretical analysis and experimental results, outlined in the linked research paper.
 
     Parameters
     ----------
@@ -835,6 +845,14 @@ class _Compressed2d(GCXS):
 
 
 class CSR(_Compressed2d):
+    """
+    The CSR or CRS scheme stores a n-dimensional array using n+1 one-dimensional arrays.
+    The 3 arrays are same as GCRS. The remaining n-2 arrays are for storing the indices of
+    the non-zero values of the sparse matrix. CSR is simply the transpose of CSC.
+
+    Sparse supports 2-D CSR.
+    """
+
     def __init__(self, arg, shape=None, prune=False, fill_value=0):
         super().__init__(arg, shape=shape, compressed_axes=(0,), fill_value=fill_value)
 
@@ -852,6 +870,14 @@ class CSR(_Compressed2d):
 
 
 class CSC(_Compressed2d):
+    """
+    The CSC or CCS scheme stores a n-dimensional array using n+1 one-dimensional arrays.
+    The 3 arrays are same as GCCS. The remaining n-2 arrays are for storing the indices of
+    the non-zero values of the sparse matrix. CSC is simply the transpose of CSR.
+
+    Sparse supports 2-D CSC.
+    """
+
     def __init__(self, arg, shape=None, prune=False, fill_value=0):
         super().__init__(arg, shape=shape, compressed_axes=(1,), fill_value=fill_value)
 
