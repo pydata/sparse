@@ -687,7 +687,7 @@ class SparseArray:
 
     def var(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False):
         """
-        Compute the variance along the gi66ven axes. Uses all axes by default.
+        Compute the variance along the given axes. Uses all axes by default.
 
         Parameters
         ----------
