@@ -19,7 +19,7 @@ implementation in the PyData ecosystem.
 Topics
 ------
 
-* More storage formats (the most important being CSF, a generalisation of CSR/CSC).
+* More storage formats
 * Better performance/algorithms
 * Covering more of the NumPy API
 * SciPy Integration
@@ -90,3 +90,11 @@ creation functions) becomes available through array protocols, it will be automa
 
 Support for ``scipy.sparse.linalg`` has been completed. We hope to add support for ``scipy.sparse.csgraph``
 in the future.
+
+More Storage Formats
+-------------------------------------
+
+GCXS, a compressed n-dimensional array format based on the GCRS/GCCS formats of
+`Shaikh and Hasan 2015 <https://ieeexplore.ieee.org/document/7237032>`_, has been added.
+In conjunction with this work, the CSR/CSC matrix formats have been are now a part of pydata/sparse.
+We plan to add better-performing algorithms for many of the operations currently supported.
