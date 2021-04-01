@@ -92,7 +92,7 @@ Support for ``scipy.sparse.linalg`` has been completed. We hope to add support f
 in the future.
 
 More Storage Formats
--------------------------------------
+--------------------
 
 GCXS, a compressed n-dimensional array format based on the GCRS/GCCS formats of
 `Shaikh and Hasan 2015 <https://ieeexplore.ieee.org/document/7237032>`_, has been added.

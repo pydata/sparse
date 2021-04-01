@@ -176,7 +176,7 @@ currently work:
 
 
 :obj:`SparseArray.reduce`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 This method can take an arbitrary :doc:`numpy.ufunc <reference/ufuncs>` and performs a
 reduction using that method. For example, the following will perform
 a sum:
