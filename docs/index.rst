@@ -18,7 +18,7 @@ where scipy.sparse matrices are not well suited,
 but it should not be considered a full replacement.
 The data structures in pydata/sparse complement and can
 be used in conjunction with the fast linear algebra routines
-inside scipy.sparse.
+inside scipy.sparse. A format conversion or copy may be required.
 
 
 Motivation
