@@ -17,10 +17,10 @@ def elemwise(func, *args, **kwargs):
     ----------
     func : Callable
         The function to apply. Must support broadcasting.
-    args : tuple, optional
+    *args : tuple, optional
         The arguments to the function. Can be :obj:`SparseArray` objects
         or :obj:`scipy.sparse.spmatrix` objects.
-    kwargs : dict, optional
+    **kwargs : dict, optional
         Any additional arguments to pass to the function.
 
     Returns
@@ -36,7 +36,8 @@ def elemwise(func, *args, **kwargs):
 
     See Also
     --------
-    :obj:`numpy.ufunc` : A similar Numpy construct. Note that any :code:`ufunc` can be used
+    :obj:`numpy.ufunc` :
+        A similar Numpy construct. Note that any :code:`ufunc` can be used
         as the :code:`func` input to this function.
 
     Notes
@@ -96,7 +97,7 @@ def _get_nary_broadcast_shape(*shapes):
 
     Parameters
     ----------
-    shapes : tuple[tuple[int]]
+    *shapes : tuple[tuple[int]]
         The shapes to broadcast.
 
     Returns
@@ -215,7 +216,7 @@ def _get_reduced_shape(shape, params):
 
     Parameters
     ----------
-    coords : np.ndarray
+    shape : np.ndarray
         The coordinates to reduce.
     params : list
         The params from which to check which dimensions to get.
@@ -299,7 +300,7 @@ def _cartesian_product(*arrays):
 
     Parameters
     ----------
-    arrays : Tuple[np.ndarray]
+    *arrays : Tuple[np.ndarray]
         The arrays to get a cartesian product of. Always sorted with respect
         to the original array.
 
@@ -330,6 +331,7 @@ def _get_matching_coords(coords, params):
         The input coordinates.
     params : list[Union[bool, none]]
         The broadcast parameters.
+
     Returns
     -------
     numpy.ndarray
@@ -373,7 +375,7 @@ def broadcast_to(x, shape):
     ValueError
         If the operand cannot be broadcast to the given shape.
 
-    See also
+    See Also
     --------
     :obj:`numpy.broadcast_to` : NumPy equivalent function
     """
@@ -412,9 +414,9 @@ class _Elemwise:
         ----------
         func : types.Callable
             The function to compute
-        args : tuple[Union[SparseArray, ndarray, scipy.sparse.spmatrix]]
+        *args : tuple[Union[SparseArray, ndarray, scipy.sparse.spmatrix]]
             The arguments to compute the function on.
-        kwargs : dict
+        **kwargs : dict
             Extra arguments to pass to the function.
         """
         from ._coo import COO
@@ -688,7 +690,7 @@ class _Elemwise:
 
         Parameters
         ----------
-        args : Tuple[COO]
+        *args : Tuple[COO]
             The input :obj:`COO` arrays.
         return_midx : bool
             Whether to return matched indices or matched arrays. Matching

@@ -91,12 +91,12 @@ def random(
 
     Parameters
     ----------
-    shape: Tuple[int]
+    shape : Tuple[int]
         Shape of the array
-    density: float, optional
+    density : float, optional
         Density of the generated array; default is 0.01.
         Mutually exclusive with `nnz`.
-    nnz: int, optional
+    nnz : int, optional
         Number of nonzero elements in the generated array.
         Mutually exclusive with `density`.
     random_state : Union[numpy.random.RandomState, int], optional
@@ -120,14 +120,11 @@ def random(
 
     See Also
     --------
-    :obj:`scipy.sparse.rand`
-        Equivalent Scipy function.
-    :obj:`numpy.random.rand`
-        Similar Numpy function.
+    :obj:`scipy.sparse.rand` : Equivalent Scipy function.
+    :obj:`numpy.random.rand` : Similar Numpy function.
 
     Examples
     --------
-
     >>> from sparse import random
     >>> from scipy import stats
     >>> rvs = lambda x: stats.poisson(25, loc=10).rvs(x, random_state=np.random.RandomState(1))
@@ -376,7 +373,7 @@ def check_compressed_axes(ndim, compressed_axes):
 
     Parameters
     ----------
-    shape : int
+    ndim : int
     compressed_axes : Iterable
 
     Raises
@@ -406,7 +403,7 @@ def check_zero_fill_value(*args):
 
     Parameters
     ----------
-    args : Iterable[SparseArray]
+    *args : Iterable[SparseArray]
 
     Raises
     ------

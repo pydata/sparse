@@ -333,7 +333,7 @@ class SparseArray:
             The axes along which to perform the reduction. Uses all axes by default.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
-        kwargs : dict
+        **kwargs : dict
             Any extra arguments to pass to the reduction operation.
 
         See Also
@@ -403,7 +403,7 @@ class SparseArray:
             The axes along which to sum. Uses all axes by default.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
-        dtype: numpy.dtype
+        dtype : numpy.dtype
             The data type of the output array.
 
         Returns
@@ -428,7 +428,7 @@ class SparseArray:
             The axes along which to maximize. Uses all axes by default.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
-        dtype: numpy.dtype
+        out : numpy.dtype
             The data type of the output array.
 
         Returns
@@ -499,7 +499,7 @@ class SparseArray:
             The axes along which to minimize. Uses all axes by default.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
-        dtype: numpy.dtype
+        out : numpy.dtype
             The data type of the output array.
 
         Returns
@@ -526,7 +526,7 @@ class SparseArray:
             The axes along which to multiply. Uses all axes by default.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
-        dtype: numpy.dtype
+        dtype : numpy.dtype
             The data type of the output array.
 
         Returns
@@ -546,10 +546,12 @@ class SparseArray:
         """
         Evenly round to the given number of decimals.
 
-        See also
+        See Also
         --------
-        :obj:`numpy.round` : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+        :obj:`numpy.round` :
+            NumPy equivalent ufunc.
+        :obj:`COO.elemwise` :
+            Apply an arbitrary element-wise function to one or two
             arguments.
         """
         if out is not None and not isinstance(out, tuple):
@@ -584,11 +586,14 @@ class SparseArray:
         """
         Copy of the array, cast to a specified type.
 
-        See also
+        See Also
         --------
-        scipy.sparse.coo_matrix.astype : SciPy sparse equivalent function
-        numpy.ndarray.astype : NumPy equivalent ufunc.
-        :obj:`COO.elemwise`: Apply an arbitrary element-wise function to one or two
+        scipy.sparse.coo_matrix.astype :
+            SciPy sparse equivalent function
+        numpy.ndarray.astype :
+            NumPy equivalent ufunc.
+        :obj:`COO.elemwise` :
+            Apply an arbitrary element-wise function to one or two
             arguments.
         """
         # this matches numpy's behavior
@@ -608,7 +613,7 @@ class SparseArray:
             The axes along which to compute the mean. Uses all axes by default.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
-        dtype: numpy.dtype
+        dtype : numpy.dtype
             The data type of the output array.
 
         Returns
@@ -695,9 +700,9 @@ class SparseArray:
             The axes along which to compute the variance. Uses all axes by default.
         dtype : numpy.dtype, optional
             The output datatype.
-        out: SparseArray, optional
+        out : SparseArray, optional
             The array to write the output to.
-        ddof: int
+        ddof : int
             The degrees of freedom.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
@@ -793,9 +798,9 @@ class SparseArray:
             all axes by default.
         dtype : numpy.dtype, optional
             The output datatype.
-        out: SparseArray, optional
+        out : SparseArray, optional
             The array to write the output to.
-        ddof: int
+        ddof : int
             The degrees of freedom.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
