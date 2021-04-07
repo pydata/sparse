@@ -1341,6 +1341,7 @@ def full(shape, fill_value, dtype=None, format="coo", compressed_axes=None):
         A format string.
     compressed_axes : iterable, optional
         The axes to compress if returning a GCXS array.
+
     Returns
     -------
     out : SparseArray

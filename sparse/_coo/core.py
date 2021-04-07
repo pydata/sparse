@@ -977,21 +977,27 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     def reshape(self, shape, order="C"):
         """
         Returns a new :obj:`COO` array that is a reshaped version of this array.
+
         Parameters
         ----------
         shape : tuple[int]
             The desired shape of the output array.
+
         Returns
         -------
         COO
             The reshaped output array.
+
         See Also
         --------
         numpy.ndarray.reshape : The equivalent Numpy function.
+
         Notes
         -----
+
         The :code:`order` parameter is provided just for compatibility with
         Numpy and isn't actually supported.
+
         Examples
         --------
         >>> s = COO.from_numpy(np.arange(25))

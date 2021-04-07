@@ -330,6 +330,7 @@ def _get_matching_coords(coords, params):
         The input coordinates.
     params : list[Union[bool, none]]
         The broadcast parameters.
+
     Returns
     -------
     numpy.ndarray
