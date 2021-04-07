@@ -805,8 +805,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        :obj:`COO.transpose` : A method where you can specify the order of the axes.
-        numpy.ndarray.T : Numpy equivalent property.
+        :obj:`COO.transpose` :
+            A method where you can specify the order of the axes.
+        numpy.ndarray.T :
+            Numpy equivalent property.
 
         Examples
         --------
@@ -845,7 +847,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         ----------
         axis1 : int
             first axis to swap
-        axis2: int
+        axis2 : int
             second axis to swap
 
         Returns
@@ -920,12 +922,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         The nonzero coordinates of a flattened version of this array. Note that
         the coordinates may be out of order.
 
-        Parameters
-        ----------
-        signed : bool, optional
-            Whether to use a signed datatype for the output array. :code:`False`
-            by default.
-
         Returns
         -------
         numpy.ndarray
@@ -994,7 +990,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         Notes
         -----
-
         The :code:`order` parameter is provided just for compatibility with
         Numpy and isn't actually supported.
 
@@ -1120,7 +1115,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         ------
         ValueError
             If the array is not two-dimensional.
-
         ValueError
             If all the array doesn't zero fill-values.
 
@@ -1168,7 +1162,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         ------
         ValueError
             If the array is not two-dimensional.
-
         ValueError
             If all the array doesn't have zero fill-values.
 
@@ -1209,7 +1202,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         ------
         ValueError
             If the array is not two-dimensional.
-
         ValueError
             If the array doesn't have zero fill-values.
 
@@ -1337,7 +1329,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         ValueError
             If the operand cannot be broadcast to the given shape.
 
-        See also
+        See Also
         --------
         :obj:`numpy.broadcast_to` : NumPy equivalent function
         """
@@ -1361,7 +1353,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             The dense array.
 
         Raises
-        -------
+        ------
         ValueError
             If the returned array would be too large.
 
@@ -1478,10 +1470,14 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
 
     See Also
     --------
-    SparseArray.asformat : A utility function to convert between formats in this library.
-    COO.from_numpy : Convert a Numpy array to :obj:`COO`.
-    COO.from_scipy_sparse : Convert a SciPy sparse matrix to :obj:`COO`.
-    COO.from_iter : Convert an iterable to :obj:`COO`.
+    SparseArray.asformat :
+        A utility function to convert between formats in this library.
+    COO.from_numpy :
+        Convert a Numpy array to :obj:`COO`.
+    COO.from_scipy_sparse :
+        Convert a SciPy sparse matrix to :obj:`COO`.
+    COO.from_iter :
+        Convert an iterable to :obj:`COO`.
     """
     if hasattr(x, "shape") and shape is not None:
         raise ValueError(
@@ -1551,7 +1547,7 @@ def _grouped_reduce(x, groups, method, **kwargs):
         contiguous.
     method : np.ufunc
         The :code:`ufunc` to use to perform the reduction.
-    kwargs : dict
+    **kwargs : dict
         The kwargs to pass to the :code:`ufunc`'s :code:`reduceat`
         function.
 

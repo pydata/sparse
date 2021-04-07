@@ -351,7 +351,7 @@ def nansum(x, axis=None, keepdims=False, dtype=None, out=None):
         The axes along which to sum. Uses all axes by default.
     keepdims : bool, optional
         Whether or not to keep the dimensions of the original array.
-    dtype: numpy.dtype
+    dtype : numpy.dtype
         The data type of the output array.
 
     Returns
@@ -381,7 +381,7 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
         The axes along which to compute the mean. Uses all axes by default.
     keepdims : bool, optional
         Whether or not to keep the dimensions of the original array.
-    dtype: numpy.dtype
+    dtype : numpy.dtype
         The data type of the output array.
 
     Returns
@@ -435,7 +435,7 @@ def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
         The axes along which to maximize. Uses all axes by default.
     keepdims : bool, optional
         Whether or not to keep the dimensions of the original array.
-    dtype: numpy.dtype
+    dtype : numpy.dtype
         The data type of the output array.
 
     Returns
@@ -471,7 +471,7 @@ def nanmin(x, axis=None, keepdims=False, dtype=None, out=None):
         The axes along which to minimize. Uses all axes by default.
     keepdims : bool, optional
         Whether or not to keep the dimensions of the original array.
-    dtype: numpy.dtype
+    dtype : numpy.dtype
         The data type of the output array.
 
     Returns
@@ -508,7 +508,7 @@ def nanprod(x, axis=None, keepdims=False, dtype=None, out=None):
         The axes along which to multiply. Uses all axes by default.
     keepdims : bool, optional
         Whether or not to keep the dimensions of the original array.
-    dtype: numpy.dtype
+    dtype : numpy.dtype
         The data type of the output array.
 
     Returns
@@ -581,7 +581,7 @@ def argwhere(a):
 
     Parameters
     ----------
-    a: array_like
+    a : array_like
         Input data.
 
     Returns
@@ -645,7 +645,7 @@ def nanreduce(x, method, identity=None, axis=None, keepdims=False, **kwargs):
         The axes along which to perform the reduction. Uses all axes by default.
     keepdims : bool, optional
         Whether or not to keep the dimensions of the original array.
-    kwargs : dict
+    **kwargs : dict
         Any extra arguments to pass to the reduction operation.
 
     Returns
@@ -673,7 +673,7 @@ def roll(a, shift, axis=None):
 
     Parameters
     ----------
-    x : COO
+    a : COO
         Input array
     shift : int or tuple of ints
         Number of index positions that elements are shifted. If a tuple is
@@ -761,11 +761,11 @@ def diagonal(a, offset=0, axis1=0, axis2=1):
 
     Parameters
     ----------
-    a: COO
+    a : COO
         The array to perform the operation on.
-    offset: int, optional
+    offset : int, optional
         Offset of the diagonal from the main diagonal. Defaults to main diagonal (0).
-    axis1: int, optional
+    axis1 : int, optional
         First axis from which the diagonals should be taken.
         Defaults to first axis (0).
     axis2 : int, optional
@@ -802,7 +802,7 @@ def diagonal(a, offset=0, axis1=0, axis2=1):
 
     See Also
     --------
-    :obj:`numpy.diagonal`: NumPy equivalent function
+    :obj:`numpy.diagonal` : NumPy equivalent function
     """
     from .core import COO
 
@@ -831,9 +831,9 @@ def diagonalize(a, axis=0):
 
     Parameters
     ----------
-    a: Union[COO, np.ndarray, scipy.sparse.spmatrix]
+    a : Union[COO, np.ndarray, scipy.sparse.spmatrix]
         The array to diagonalize.
-    axis: int, optional
+    axis : int, optional
         The axis to diagonalize. Defaults to first axis (0).
 
     Examples
@@ -864,7 +864,7 @@ def diagonalize(a, axis=0):
 
     See Also
     --------
-    :obj:`numpy.diag`: NumPy equivalent for 1D array
+    :obj:`numpy.diag` : NumPy equivalent for 1D array
     """
     from .core import COO, as_coo
 
@@ -959,10 +959,8 @@ def _diagonal_idx(coordlist, axis1, axis2, offset):
     ----------
     coordlist : list of lists
         Coordinate indices.
-
     axis1, axis2 : int
         The axes of the diagonal.
-
     offset : int
         Offset of the diagonal from the main diagonal. Defaults to main diagonal (0).
     """
@@ -984,7 +982,7 @@ def clip(a, a_min=None, a_max=None, out=None):
 
     Parameters
     ----------
-    a:
+    a
     a_min : scalar or `SparseArray` or `None`
         Minimum value. If `None`, clipping is not performed on lower
         interval edge.
@@ -1013,7 +1011,7 @@ def clip(a, a_min=None, a_max=None, out=None):
     >>> sparse.clip(x, a_min=1, a_max=2).todense() # doctest: +NORMALIZE_WHITESPACE
     array([1, 1, 1, 1, 2, 2])
 
-    See also
+    See Also
     --------
     numpy.clip : Equivalent NumPy function
     """

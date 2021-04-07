@@ -22,7 +22,7 @@ def save_npz(filename, matrix, compressed=True):
     compressed : bool
         Whether to save in compressed or uncompressed mode
 
-    Example
+    Examples
     --------
     Store sparse matrix to disk, and load it again:
 
@@ -85,7 +85,7 @@ def load_npz(filename):
     SparseArray
         The sparse matrix at path ``filename``.
 
-    Example
+    Examples
     --------
     See :obj:`save_npz` for usage examples.
 

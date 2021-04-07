@@ -605,7 +605,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         See Also
         --------
         numpy.ndarray.reshape : The equivalent Numpy function.
-        sparse.COO.reshape: The equivalent COO function.
+        sparse.COO.reshape : The equivalent COO function.
 
         Notes
         -----
