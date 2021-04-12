@@ -463,7 +463,7 @@ class SparseArray:
 
         See Also
         --------
-        :obj:`numpy.all` : Equivalent numpy function.
+        :obj:`numpy.any` : Equivalent numpy function.
         """
         return np.logical_or.reduce(self, out=out, axis=axis, keepdims=keepdims)
 
