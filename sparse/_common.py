@@ -1,9 +1,11 @@
 import numpy as np
 import numba
+from numba import njit
 import scipy.sparse
 from functools import wraps
 from itertools import chain
 from collections.abc import Iterable
+import warnings
 
 from ._sparse_array import SparseArray
 from ._utils import check_compressed_axes, normalize_axis, check_zero_fill_value
@@ -145,6 +147,11 @@ def tensordot(a, b, axes=2, *, return_type=None):
     return res.reshape(olda + oldb)
 
 
+@njit
+def check_nan(a, b, fv1, fv2):
+    return np.isnan(fv1) or np.isnan(fv2) or np.isnan(np.min(a)) or np.isnan(np.min(b))
+
+
 def matmul(a, b):
     """Perform the equivalent of :obj:`numpy.matmul` on two arrays.
 
@@ -168,6 +175,8 @@ def matmul(a, b):
     numpy.matmul : NumPy equivalent function.
     COO.__matmul__ : Equivalent function for COO objects.
     """
+    if check_nan(a.data, b.data, a.fill_value, b.fill_value):
+        warnings.warn("Warning: nan is not propagated in matrix multiplication")
     check_zero_fill_value(a, b)
     if not hasattr(a, "ndim") or not hasattr(b, "ndim"):
         raise TypeError(
