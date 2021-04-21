@@ -589,9 +589,10 @@ class _Elemwise:
             If the fill-value is inconsistent.
         """
         from ._coo import COO
+        from ._sparse_array import SparseArray
 
         zero_args = tuple(
-            arg.fill_value[...] if isinstance(arg, COO) else arg for arg in self.args
+            arg.fill_value[...] if isinstance(arg, SparseArray) else arg for arg in self.args
         )
 
         # Some elemwise functions require a dtype argument, some abhorr it.

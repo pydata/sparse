@@ -5,6 +5,7 @@ import operator
 from sparse import COO, DOK
 from sparse._compressed import GCXS, CSR, CSC
 from sparse._utils import assert_eq, random_value_array
+from sparse import SparseArray
 
 
 @pytest.mark.parametrize(
@@ -508,7 +509,19 @@ def test_2d_binary_op(func, type_a, type_b):
 
 
 from itertools import product
+from functools import singledispatch
 
+@singledispatch
+def asdense(x):
+    raise NotImplementedError()
+
+@asdense.register(SparseArray)
+def _(x):
+    return x.todense()
+
+@asdense.register(np.ndarray)
+def _(x):
+    return x
 
 @pytest.mark.parametrize("func", [np.add, np.subtract, np.multiply])
 @pytest.mark.parametrize(
@@ -544,7 +557,7 @@ def test_2d_binary_op(func, a, b):
     expected = func(ref_a, ref_b)
     result = func(a, b)
 
-    assert_eq(expected, result)
+    assert_eq(expected, asdense(result))
 
 
 @pytest.mark.parametrize(

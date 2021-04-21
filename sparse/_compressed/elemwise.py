@@ -5,6 +5,8 @@ import numpy as np
 import scipy.sparse
 from numba import njit
 
+from .compressed import _Compressed2d
+
 
 def op_unary(func, a):
     res = a.copy()
@@ -19,7 +21,10 @@ def _numba_d(func):
 
 def binary_op(func, a, b):
     func = _numba_d(func)
-    return op_union_indices(func, a, b)
+    if isinstance(a, _Compressed2d) and isinstance(b, _Compressed2d):
+        return op_union_indices(func, a, b)
+    else:
+        raise NotImplementedError()
 
 
 def op_union_indices(
