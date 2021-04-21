@@ -3,7 +3,7 @@ import sparse
 import pytest
 import operator
 from sparse import COO, DOK
-from sparse._compressed import GCXS
+from sparse._compressed import GCXS, CSR, CSC
 from sparse._utils import assert_eq, random_value_array
 
 
@@ -479,6 +479,72 @@ def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number):
     assert xs.nnz >= fs.nnz
 
     assert_eq(fs, func(y, x))
+
+
+@pytest.mark.parametrize("func", [np.add, np.subtract, np.multiply])
+@pytest.mark.parametrize("type_a,type_b", [(CSR, CSR), (CSR, CSC), (CSR, np.asarray)])
+def test_2d_binary_op(func, type_a, type_b):
+    # TODO: implement COO.asformat(CSR)
+    from sparse import SparseArray
+
+    # Doing the ugly conditional since this errors from explicit conversion to dense
+    # There's gotta be a better way to do this
+    if type_a != np.asarray:
+        a = type_a(sparse.random((20, 10), density=0.5))
+    else:
+        a = sparse.random((20, 10), density=0.5).todense()
+    if type_b != np.asarray:
+        b = type_b(sparse.random((20, 10), density=0.5))
+    else:
+        b = sparse.random((20, 10), density=0.5).todense()
+
+    ref_a = a.todense() if isinstance(a, SparseArray) else a
+    ref_b = b.todense() if isinstance(b, SparseArray) else b
+
+    expected = func(ref_a, ref_b)
+    result = func(a, b)
+
+    assert_eq(expected, result)
+
+
+from itertools import product
+
+
+@pytest.mark.parametrize("func", [np.add, np.subtract, np.multiply])
+@pytest.mark.parametrize(
+    "a,b",
+    # TODO: would be nice if the tests would take names from these parameters
+    list(
+        product(
+            [
+                # pytest.param(CSR(sparse.random((20, 10), density=0.5)), id="CSR"),
+                # pytest.param(CSC(sparse.random((20, 10), density=0.5)), id="CSC"),
+                # pytest.param(sparse.random((20, 10), density=0.5).todense(), id="COO"),
+                # pytest.param(sparse.random((20, 10), density=0.5, format=COO), id="dense-2d"),
+                # pytest.param(np.random.rand(20), id="dense-row"),
+                # pytest.param(np.random.rand(1, 10), id="dense-col"),
+                CSR(sparse.random((20, 10), density=0.5)),
+                CSC(sparse.random((20, 10), density=0.5)),
+                sparse.random((20, 10), density=0.5).todense(),
+                sparse.random((20, 10), density=0.5, format=COO),
+                np.random.rand(10),
+                np.random.rand(20, 1),
+            ],
+            repeat=2,
+        )
+    ),
+)
+def test_2d_binary_op(func, a, b):
+    # TODO: implement COO.asformat(CSR)
+    from sparse import SparseArray
+
+    ref_a = a.todense() if isinstance(a, SparseArray) else a
+    ref_b = b.todense() if isinstance(b, SparseArray) else b
+
+    expected = func(ref_a, ref_b)
+    result = func(a, b)
+
+    assert_eq(expected, result)
 
 
 @pytest.mark.parametrize(
