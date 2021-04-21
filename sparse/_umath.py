@@ -671,7 +671,7 @@ class _Elemwise:
             func_coords, func_data, self.shape, has_duplicates=False, sorted=True
         )
 
-        unmatched_mask = np.ones(func_array.nnz, dtype=np.bool)
+        unmatched_mask = np.ones(func_array.nnz, dtype=np.bool_)
 
         for arg in unmatched_args:
             matched_idx = self._match_coo(func_array, arg, return_midx=True)[0]
