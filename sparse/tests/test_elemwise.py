@@ -482,32 +482,6 @@ def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number):
     assert_eq(fs, func(y, x))
 
 
-@pytest.mark.parametrize("func", [np.add, np.subtract, np.multiply])
-@pytest.mark.parametrize("type_a,type_b", [(CSR, CSR), (CSR, CSC), (CSR, np.asarray)])
-def test_2d_binary_op(func, type_a, type_b):
-    # TODO: implement COO.asformat(CSR)
-    from sparse import SparseArray
-
-    # Doing the ugly conditional since this errors from explicit conversion to dense
-    # There's gotta be a better way to do this
-    if type_a != np.asarray:
-        a = type_a(sparse.random((20, 10), density=0.5))
-    else:
-        a = sparse.random((20, 10), density=0.5).todense()
-    if type_b != np.asarray:
-        b = type_b(sparse.random((20, 10), density=0.5))
-    else:
-        b = sparse.random((20, 10), density=0.5).todense()
-
-    ref_a = a.todense() if isinstance(a, SparseArray) else a
-    ref_b = b.todense() if isinstance(b, SparseArray) else b
-
-    expected = func(ref_a, ref_b)
-    result = func(a, b)
-
-    assert_eq(expected, result)
-
-
 from itertools import product
 from functools import singledispatch
 
@@ -523,6 +497,7 @@ def _(x):
 def _(x):
     return x
 
+# TODO: Add test for result types
 @pytest.mark.parametrize("func", [np.add, np.subtract, np.multiply])
 @pytest.mark.parametrize(
     "a,b",

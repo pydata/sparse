@@ -498,13 +498,14 @@ class _Elemwise:
 
     def get_result(self):
         from ._coo import COO
+        from ._sparse_array import SparseArray
         from ._compressed.compressed import _Compressed2d
 
         if self.args is None:
             return NotImplemented
 
         if self._dense_result:
-            args = [a.todense() if isinstance(a, COO) else a for a in self.args]
+            args = [a.todense() if isinstance(a, SparseArray) else a for a in self.args]
             return self.func(*args, **self.kwargs)
 
         if issubclass(self.out_type, _Compressed2d):
@@ -588,7 +589,6 @@ class _Elemwise:
         ValueError
             If the fill-value is inconsistent.
         """
-        from ._coo import COO
         from ._sparse_array import SparseArray
 
         zero_args = tuple(
@@ -609,7 +609,7 @@ class _Elemwise:
             fill_value = fill_value_array[(0,) * fill_value_array.ndim]
         except IndexError:
             zero_args = tuple(
-                arg.fill_value if isinstance(arg, COO) else _zero_of_dtype(arg.dtype)
+                arg.fill_value if isinstance(arg, SparseArray) else _zero_of_dtype(arg.dtype)
                 for arg in self.args
             )
             fill_value = self.func(*zero_args, **self.kwargs)[()]
