@@ -130,31 +130,32 @@ def test_getitem_index_error(shape, density, indices):
 
 
 @pytest.mark.parametrize(
-    "shape, index, value",
+    "shape, index, value_shape",
     [
-        ((2,), slice(None), np.random.rand()),
-        ((2,), slice(1, 2), np.random.rand()),
-        ((2,), slice(0, 2), np.random.rand(2)),
-        ((2,), 1, np.random.rand()),
-        ((2, 3), (0, slice(None)), np.random.rand()),
-        ((2, 3), (0, slice(1, 3)), np.random.rand()),
-        ((2, 3), (1, slice(None)), np.random.rand(3)),
-        ((2, 3), (0, slice(1, 3)), np.random.rand(2)),
-        ((2, 3), (0, slice(2, 0, -1)), np.random.rand(2)),
-        ((2, 3), (slice(None), 1), np.random.rand()),
-        ((2, 3), (slice(None), 1), np.random.rand(2)),
-        ((2, 3), (slice(1, 2), 1), np.random.rand()),
-        ((2, 3), (slice(1, 2), 1), np.random.rand(1)),
-        ((2, 3), (0, 2), np.random.rand()),
-        ((2, 3), ([0, 1], [1, 2]), np.random.rand(2)),
-        ((2, 3), ([0, 1], [1, 2]), np.random.rand()),
-        ((4,), ([1, 3]), np.random.rand()),
+        ((2,), slice(None), ()),
+        ((2,), slice(1, 2), ()),
+        ((2,), slice(0, 2), (2,)),
+        ((2,), 1, ()),
+        ((2, 3), (0, slice(None)), ()),
+        ((2, 3), (0, slice(1, 3)), ()),
+        ((2, 3), (1, slice(None)), (3,)),
+        ((2, 3), (0, slice(1, 3)), (2,)),
+        ((2, 3), (0, slice(2, 0, -1)), (2,)),
+        ((2, 3), (slice(None), 1), ()),
+        ((2, 3), (slice(None), 1), (2,)),
+        ((2, 3), (slice(1, 2), 1), ()),
+        ((2, 3), (slice(1, 2), 1), (1,)),
+        ((2, 3), (0, 2), ()),
+        ((2, 3), ([0, 1], [1, 2]), (2,)),
+        ((2, 3), ([0, 1], [1, 2]), ()),
+        ((4,), ([1, 3]), ()),
         ((2, 3), ([0, 1], [1, 2]), 0),
     ],
 )
-def test_setitem(shape, index, value):
+def test_setitem(shape, index, value_shape):
     s = sparse.random(shape, 0.5, format="dok")
     x = s.todense()
+    value = np.random.rand(*value_shape)
 
     s[index] = value
     x[index] = value
@@ -163,43 +164,45 @@ def test_setitem(shape, index, value):
 
 
 @pytest.mark.parametrize(
-    "shape, index, value",
+    "shape, index, value_shape",
     [
-        ((2, 3), ([0, 1.5], [1, 2]), np.random.rand()),
-        ((2, 3), ([0, 1], [1]), np.random.rand()),
-        ((2, 3), ([[0], [1]], [1, 2]), np.random.rand()),
+        ((2, 3), ([0, 1.5], [1, 2]), ()),
+        ((2, 3), ([0, 1], [1]), ()),
+        ((2, 3), ([[0], [1]], [1, 2]), ()),
     ],
 )
-def test_setitem_index_error(shape, index, value):
+def test_setitem_index_error(shape, index, value_shape):
     s = sparse.random(shape, 0.5, format="dok")
+    value = np.random.rand(*value_shape)
 
     with pytest.raises(IndexError):
         s[index] = value
 
 
 @pytest.mark.parametrize(
-    "shape, index, value",
+    "shape, index, value_shape",
     [
-        ((2, 3), ([0, 1],), np.random.rand()),
+        ((2, 3), ([0, 1],), ()),
     ],
 )
-def test_setitem_notimplemented_error(shape, index, value):
+def test_setitem_notimplemented_error(shape, index, value_shape):
     s = sparse.random(shape, 0.5, format="dok")
-
+    value = np.random.rand(*value_shape)
     with pytest.raises(NotImplementedError):
         s[index] = value
 
 
 @pytest.mark.parametrize(
-    "shape, index, value",
+    "shape, index, value_shape",
     [
-        ((2, 3), ([0, 1], [1, 2]), np.random.rand(1, 2)),
-        ((2, 3), ([0, 1], [1, 2]), np.random.rand(3)),
-        ((2,), 1, np.random.rand(2)),
+        ((2, 3), ([0, 1], [1, 2]), (1, 2)),
+        ((2, 3), ([0, 1], [1, 2]), (3,)),
+        ((2,), 1, (2,)),
     ],
 )
-def test_setitem_value_error(shape, index, value):
+def test_setitem_value_error(shape, index, value_shape):
     s = sparse.random(shape, 0.5, format="dok")
+    value = np.random.rand(*value_shape)
 
     with pytest.raises(ValueError):
         s[index] = value
