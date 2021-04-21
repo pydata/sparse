@@ -149,18 +149,32 @@ def test_getitem_index_error(shape, density, indices):
         ((2, 3), ([0, 1], [1, 2]), (2,)),
         ((2, 3), ([0, 1], [1, 2]), ()),
         ((4,), ([1, 3]), ()),
-        ((2, 3), ([0, 1], [1, 2]), 0),
     ],
 )
 def test_setitem(shape, index, value_shape):
     s = sparse.random(shape, 0.5, format="dok")
     x = s.todense()
+
     value = np.random.rand(*value_shape)
 
     s[index] = value
     x[index] = value
 
     assert_eq(x, s)
+
+
+def test_setitem_delete():
+    shape = (2, 3)
+    index = [0, 1], [1, 2]
+    value = 0
+    s = sparse.random(shape, 1.0, format="dok")
+    x = s.todense()
+
+    s[index] = value
+    x[index] = value
+
+    assert_eq(x, s)
+    assert s.nnz < s.size
 
 
 @pytest.mark.parametrize(
