@@ -47,6 +47,15 @@ def test_convert_to_numpy():
     assert_eq(x, s)
 
 
+def test_convert_from_scipy_sparse():
+    import scipy.sparse
+
+    x = scipy.sparse.rand(6, 3, density=0.2)
+    s = DOK(x)
+
+    assert_eq(x, s)
+
+
 @pytest.mark.parametrize(
     "shape, data",
     [
