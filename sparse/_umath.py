@@ -415,7 +415,6 @@ def _resolve_result_type(args: "list[ArrayLike]") -> "Type":
     from ._compressed.compressed import _Compressed2d
 
     args = [arg for arg in args if isinstance(arg, SparseArray)]
-    print([type(arg) for arg in args])
 
     if all(isinstance(arg, DOK) for arg in args):
         out_type = DOK
@@ -468,14 +467,15 @@ class _Elemwise:
         from ._compressed.compressed import _Compressed2d
         from ._dok import DOK
 
+        args = [arg if not isinstance(arg, scipy.sparse.spmatrix) else _from_scipy_sparse(arg) for arg in args]
+
         processed_args = []
 
+        self.out_type = _resolve_result_type(args)
         # Should this happen before dispatch?
         # Hmm, this may need major major changes.
         # Case to consider: CSR or CSC + 1d COO
         for arg in args:
-            if isinstance(arg, scipy.sparse.spmatrix):
-                arg = _from_scipy_sparse(arg)
             if isinstance(arg, _Compressed2d):
                 processed_args.append(arg)
             elif isscalar(arg) or isinstance(arg, np.ndarray):
@@ -489,7 +489,6 @@ class _Elemwise:
             else:
                 processed_args.append(arg)
 
-        self.out_type = _resolve_result_type(processed_args)
         self.args = tuple(processed_args)
         self.func = func
         self.dtype = kwargs.pop("dtype", None)
