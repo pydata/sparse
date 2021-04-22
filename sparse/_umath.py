@@ -481,7 +481,7 @@ class _Elemwise:
         # Hmm, this may need major major changes.
         # Case to consider: CSR or CSC + 1d COO
         for arg in args:
-            if isinstance(arg, _Compressed2d):
+            if self.out_type != COO and isinstance(arg, _Compressed2d):
                 processed_args.append(arg)
             elif isscalar(arg) or isinstance(arg, np.ndarray):
                 # Faster and more reliable to pass ()-shaped ndarrays as scalars.
