@@ -524,7 +524,14 @@ def _(x):
 )
 def test_2d_binary_op(func, a, b):
     # TODO: implement COO.asformat(CSR)
+    def _is_ndarray_1d(x):
+        return isinstance(x, np.ndarray) and sum(s != 1 for s in x.shape) <= 1
+
     from sparse import SparseArray
+
+    if func in [np.add, np.subtract] and (_is_ndarray_1d(a) or _is_ndarray_1d(b)):
+        # https://github.com/pydata/sparse/issues/460
+        pytest.skip()
 
     ref_a = a.todense() if isinstance(a, SparseArray) else a
     ref_b = b.todense() if isinstance(b, SparseArray) else b
