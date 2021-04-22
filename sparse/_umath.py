@@ -411,7 +411,11 @@ def _resolve_result_type(args: "list[ArrayLike]") -> "Type":
     from ._compressed import GCXS, CSR, CSC
     from ._coo import COO
     from ._dok import DOK
+    from ._sparse_array import SparseArray
     from ._compressed.compressed import _Compressed2d
+
+    args = [arg for arg in args if isinstance(arg, SparseArray)]
+    print([type(arg) for arg in args])
 
     if all(isinstance(arg, DOK) for arg in args):
         out_type = DOK
