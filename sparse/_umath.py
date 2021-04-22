@@ -442,7 +442,7 @@ def _from_scipy_sparse(a):
     elif isinstance(a, scipy.sparse.csc_matrix):
         return CSC(a)
     elif isinstance(a, scipy.sparse.dok_matrix):
-        return DOK(a)
+        return DOK(a.shape, data=dict(a))
     else:
         return COO(a)
 
@@ -467,7 +467,12 @@ class _Elemwise:
         from ._compressed.compressed import _Compressed2d
         from ._dok import DOK
 
-        args = [arg if not isinstance(arg, scipy.sparse.spmatrix) else _from_scipy_sparse(arg) for arg in args]
+        args = [
+            arg
+            if not isinstance(arg, scipy.sparse.spmatrix)
+            else _from_scipy_sparse(arg)
+            for arg in args
+        ]
 
         processed_args = []
 
@@ -563,6 +568,7 @@ class _Elemwise:
     def _get_result_compressed_2d(self):
         from ._compressed import elemwise as elemwise2d
         from ._compressed.compressed import _Compressed2d
+
         if len(self.args) == 1:
             result = elemwise2d.op_unary(self.func, self.args[0])
 
@@ -582,7 +588,6 @@ class _Elemwise:
 
         return result
 
-
     def _get_fill_value(self):
         """
         A function that finds and returns the fill-value.
@@ -595,7 +600,8 @@ class _Elemwise:
         from ._sparse_array import SparseArray
 
         zero_args = tuple(
-            arg.fill_value[...] if isinstance(arg, SparseArray) else arg for arg in self.args
+            arg.fill_value[...] if isinstance(arg, SparseArray) else arg
+            for arg in self.args
         )
 
         # Some elemwise functions require a dtype argument, some abhorr it.
@@ -612,7 +618,9 @@ class _Elemwise:
             fill_value = fill_value_array[(0,) * fill_value_array.ndim]
         except IndexError:
             zero_args = tuple(
-                arg.fill_value if isinstance(arg, SparseArray) else _zero_of_dtype(arg.dtype)
+                arg.fill_value
+                if isinstance(arg, SparseArray)
+                else _zero_of_dtype(arg.dtype)
                 for arg in self.args
             )
             fill_value = self.func(*zero_args, **self.kwargs)[()]
