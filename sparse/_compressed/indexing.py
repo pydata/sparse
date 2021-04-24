@@ -34,8 +34,8 @@ def getitem(x, key):
         return get_single_element(x, key)
 
     shape = []
-    compressed_inds = np.zeros(len(x.shape), dtype=np.bool)
-    uncompressed_inds = np.zeros(len(x.shape), dtype=np.bool)
+    compressed_inds = np.zeros(len(x.shape), dtype=np.bool_)
+    uncompressed_inds = np.zeros(len(x.shape), dtype=np.bool_)
 
     # which axes will be compressed in the resulting array
     shape_key = np.zeros(len(x.shape), dtype=np.intp)

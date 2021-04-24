@@ -3,6 +3,7 @@ from numbers import Integral
 from collections.abc import Iterable
 
 import numpy as np
+import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from ._slicing import normalize_index
@@ -106,6 +107,11 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
             self._make_shallow_copy_of(ar)
             return
 
+        if isinstance(shape, scipy.sparse.spmatrix):
+            ar = DOK.from_scipy_sparse(shape)
+            self._make_shallow_copy_of(ar)
+            return
+
         self.dtype = np.dtype(dtype)
 
         if not data:
@@ -126,6 +132,32 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
                 self[c] = d
         else:
             raise ValueError("data must be a dict.")
+
+    @classmethod
+    def from_scipy_sparse(cls, x):
+        """
+        Create a :obj:`DOK` array from a :obj:`scipy.sparse.spmatrix`.
+
+        Parameters
+        ----------
+        x : scipy.sparse.spmatrix
+            The matrix to convert.
+
+        Returns
+        -------
+        DOK
+            The equivalent :obj:`DOK` array.
+
+        Examples
+        --------
+        >>> x = scipy.sparse.rand(6, 3, density=0.2)
+        >>> s = DOK.from_scipy_sparse(x)
+        >>> np.array_equal(x.todense(), s.todense())
+        True
+        """
+        from sparse import COO
+
+        return COO.from_scipy_sparse(x).asformat(cls)
 
     @classmethod
     def from_coo(cls, x):
@@ -249,13 +281,11 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         -------
         str
             The storage format of this array.
-
         See Also
         -------
         COO.format : Equivalent :obj:`COO` array property.
         GCXS.format : Equivalent :obj:`GCXS` array property.
         scipy.sparse.dok_matrix.format : The Scipy equivalent property.
-
         Examples
         -------
         >>> import sparse

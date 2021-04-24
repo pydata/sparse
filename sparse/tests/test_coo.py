@@ -949,8 +949,8 @@ def test_two_random_same_seed():
     "rvs, dtype",
     [
         (None, np.float64),
-        (scipy.stats.poisson(25, loc=10).rvs, np.int),
-        (lambda x: np.random.choice([True, False], size=x), np.bool),
+        (scipy.stats.poisson(25, loc=10).rvs, np.int_),
+        (lambda x: np.random.choice([True, False], size=x), np.bool_),
     ],
 )
 @pytest.mark.parametrize("shape", [(2, 4, 5), (20, 40, 50)])
@@ -1016,7 +1016,7 @@ def test_np_array():
     ],
 )
 def test_three_arg_where(shapes):
-    cs = sparse.random(shapes[0], density=0.5).astype(np.bool)
+    cs = sparse.random(shapes[0], density=0.5).astype(np.bool_)
     xs = sparse.random(shapes[1], density=0.5)
     ys = sparse.random(shapes[2], density=0.5)
 
@@ -1052,7 +1052,7 @@ def test_one_arg_where_dense():
 
 
 def test_two_arg_where():
-    cs = sparse.random((2, 3, 4), density=0.5).astype(np.bool)
+    cs = sparse.random((2, 3, 4), density=0.5).astype(np.bool_)
     xs = sparse.random((2, 3, 4), density=0.5)
 
     with pytest.raises(ValueError):

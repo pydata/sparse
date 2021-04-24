@@ -277,8 +277,8 @@ def replace_none(idx, dim):
 
     Parameters
     ----------
-    idx: slice or other index
-    dim: dimension length
+    idx : slice or other index
+    dim : dimension length
 
     Examples
     --------

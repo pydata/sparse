@@ -36,6 +36,8 @@ DOK
       DOK.from_coo
    
       DOK.from_numpy
+
+      DOK.from_scipy_sparse
    
       DOK.to_coo
    

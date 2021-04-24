@@ -508,10 +508,12 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         ----------
         format : str
             A format string.
+
         Returns
         -------
         out : SparseArray
             The converted array.
+
         Raises
         ------
         NotImplementedError
@@ -603,7 +605,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         See Also
         --------
         numpy.ndarray.reshape : The equivalent Numpy function.
-        sparse.COO.reshape: The equivalent COO function.
+        sparse.COO.reshape : The equivalent COO function.
+
         Notes
         -----
         The :code:`order` parameter is provided just for compatibility with

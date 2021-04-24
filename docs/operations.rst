@@ -1,16 +1,16 @@
 .. currentmodule:: sparse
 
-Operations on :obj:`COO` arrays
-===============================
+Operations on :obj:`COO` and :obj:`GCXS` arrays
+===============================================
 
 .. _operations-operators:
 
 Operators
 ---------
 
-:obj:`COO` objects support a number of operations. They interact with scalars,
-:doc:`Numpy arrays <reference/generated/numpy.ndarray>`, other :obj:`COO` objects, and
-:obj:`scipy.sparse.spmatrix` objects, all following standard Python and Numpy
+:obj:`COO` and :obj:`GCXS` objects support a number of operations. They interact with scalars,
+:doc:`Numpy arrays <reference/generated/numpy.ndarray>`, other :obj:`COO` and :obj:`GCXS` objects,
+and :obj:`scipy.sparse.spmatrix` objects, all following standard Python and Numpy
 conventions.
 
 For example, the following Numpy expression produces equivalent
@@ -26,7 +26,7 @@ yet implemented for sparse arrays.
 
 .. code-block:: python
 
-   np.svd(x)  # sparse svd not implemented
+   np.linalg.cholesky(x)  # sparse cholesky not implemented
 
 
 This page describes those valid operations, and their limitations.
@@ -79,7 +79,7 @@ In these cases, they will produce an output with a fill value of :code:`1` or :c
 assuming the original array has a fill value of :code:`0` or :code:`False` respectively.
 
 If densification is needed, it must be explicit. In other words, you must call
-:obj:`COO.todense` on the :obj:`COO` object. If both operands are :obj:`COO`,
+:obj:`SparseArray.todense` on the :obj:`SparseArray` object. If both operands are :obj:`SparseArray`,
 both must be densified.
 
 Operations with NumPy arrays
@@ -111,12 +111,12 @@ For example, the following are all allowed if :code:`y` is a :obj:`scipy.sparse.
    x > y
    x < y
 
-In general, if operating on a :code:`scipy.sparse.spmatrix` is the same as operating
-on :obj:`COO`, as long as it is to the right of the operator.
+In general, operating on a :code:`scipy.sparse.spmatrix` is the same as operating
+on :obj:`COO` or :obj:`GCXS`, as long as it is to the right of the operator.
 
 .. note:: Results are not guaranteed if :code:`x` is a :obj:`scipy.sparse.spmatrix`.
    For this reason, we recommend that all Scipy sparse matrices should be explicitly
-   converted to :obj:`COO` before any operations.
+   converted to :obj:`COO` or :obj:`GCXS` before any operations.
 
 
 Broadcasting
@@ -134,11 +134,11 @@ will raise a :obj:`ValueError`.
 
 Element-wise Operations
 -----------------------
-:obj:`COO` arrays support a variety of element-wise operations. However, as
+:obj:`COO` and :obj:`GCXS` arrays support a variety of element-wise operations. However, as
 with operators, operations that map zero to a nonzero value are not supported.
 
 To illustrate, the following are all possible, and will produce another
-:obj:`COO` array:
+:obj:`SparseArray`:
 
 .. code-block:: python
 
@@ -163,7 +163,7 @@ we check that operating on the array with zero would always produce a zero.
 
 Reductions
 ----------
-:obj:`COO` objects support a number of reductions. However, not all important
+:obj:`COO` and :obj:`GCXS` objects support a number of reductions. However, not all important
 reductions are currently implemented (help welcome!) All of the following
 currently work:
 
@@ -174,12 +174,9 @@ currently work:
    np.min(x, axis=(0, 2))
    x.prod()
 
-.. note::
-   If you are performing multiple reductions along the same axes, it may
-   be beneficial to call :obj:`COO.enable_caching`.
 
-:obj:`COO.reduce`
-~~~~~~~~~~~~~~~~~
+:obj:`SparseArray.reduce`
+~~~~~~~~~~~~~~~~~~~~~~~~~
 This method can take an arbitrary :doc:`numpy.ufunc <reference/ufuncs>` and performs a
 reduction using that method. For example, the following will perform
 a sum:
@@ -209,11 +206,11 @@ in the form :code:`x.reduction()`, the following reductions are supported:
 
 Indexing
 --------
-:obj:`COO` arrays can be :obj:`indexed <numpy.doc.indexing>` just like regular
+:obj:`COO` and :obj:`GCXS` arrays can be :obj:`indexed <numpy.doc.indexing>` just like regular
 :obj:`numpy.ndarray` objects. They support integer, slice and boolean indexing.
 However, currently, numpy advanced indexing is not properly supported. This
 means that all of the following work like in Numpy, except that they will produce
-:obj:`COO` arrays rather than :obj:`numpy.ndarray` objects, and will produce
+:obj:`SparseArray` arrays rather than :obj:`numpy.ndarray` objects, and will produce
 scalars where expected. Assume that :code:`z.shape` is :code:`(5, 6, 7)`
 
 .. code-block:: python
@@ -266,7 +263,7 @@ memory than an equivalent desne array, set the environment variable
 
 Other Operations
 ----------------
-:obj:`COO` arrays support a number of other common operations. Among them are
+:obj:`COO` and :obj:`GCXS` arrays support a number of other common operations. Among them are
 :obj:`dot`, :obj:`tensordot`, :obj:`concatenate`
 and :obj:`stack`, :obj:`transpose <COO.transpose>` and :obj:`reshape <COO.reshape>`.
 You can view the full list on the :doc:`API reference page <generated/sparse>`.

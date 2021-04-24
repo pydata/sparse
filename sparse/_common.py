@@ -46,7 +46,6 @@ def tensordot(a, b, axes=2, *, return_type=None):
     return_type : {None, COO, np.ndarray}, optional
         Type of returned array.
 
-
     Returns
     -------
     Union[COO, numpy.ndarray]
@@ -497,18 +496,13 @@ def _csr_csr_count_nnz(
     with compressed rows: (a @ b).nnz.
 
     Parameters
-        ----------
-        out_shape : tuple
-            The shape of the output array.
-
-        indptr : ndarray
-            The empty index pointer array for the output.
-
-        a_indices, a_indptr : np.ndarray
-            The indices and index pointer array of ``a``.
-
-        b_data, b_indices, b_indptr : np.ndarray
-            The indices and index pointer array of ``b``.
+    ----------
+    out_shape : tuple
+        The shape of the output array.
+    a_indices, a_indptr : np.ndarray
+        The indices and index pointer array of ``a``.
+    b_data, b_indices, b_indptr : np.ndarray
+        The indices and index pointer array of ``b``.
     """
     n_row, n_col = out_shape
     nnz = 0
@@ -534,18 +528,15 @@ def _csr_ndarray_count_nnz(
     numpy array: (a @ b).nnz.
 
     Parameters
-        ----------
-        out_shape : tuple
-            The shape of the output array.
-
-        indptr : ndarray
-            The empty index pointer array for the output.
-
-        a_indices, a_indptr : np.ndarray
-            The indices and index pointer array of ``a``.
-
-        b : np.ndarray
-            The second input array ``b``.
+    ----------
+    out_shape : tuple
+        The shape of the output array.
+    indptr : ndarray
+        The empty index pointer array for the output.
+    a_indices, a_indptr : np.ndarray
+        The indices and index pointer array of ``a``.
+    b : np.ndarray
+        The second input array ``b``.
     """
     nnz = 0
     for i in range(out_shape[0]):
@@ -569,18 +560,15 @@ def _csc_ndarray_count_nnz(
     numpy array: (a @ b).nnz.
 
     Parameters
-        ----------
-        a_shape, b_shape : tuple
-            The shapes of the input arrays.
-
-        indptr : ndarray
-            The empty index pointer array for the output.
-
-        a_indices, a_indptr : np.ndarray
-            The indices and index pointer array of ``a``.
-
-        b : np.ndarray
-            The second input array ``b``.
+    ----------
+    a_shape, b_shape : tuple
+        The shapes of the input arrays.
+    indptr : ndarray
+        The empty index pointer array for the output.
+    a_indices, a_indptr : np.ndarray
+        The indices and index pointer array of ``a``.
+    b : np.ndarray
+        The second input array ``b``.
     """
     nnz = 0
     mask = np.full(a_shape[0], -1)
@@ -620,10 +608,8 @@ def _dot_csr_csr_type(dt1, dt2):
         ----------
         out_shape : tuple
             The shape of the output array.
-
         a_data, a_indices, a_indptr : np.ndarray
             The data, indices, and index pointer arrays of ``a``.
-
         b_data, b_indices, b_indptr : np.ndarray
             The data, indices, and index pointer arrays of ``b``.
         """
@@ -697,10 +683,8 @@ def _dot_csr_ndarray_type(dt1, dt2):
         ----------
         a_data, a_indices, a_indptr : np.ndarray
             The data, indices, and index pointers of ``a``.
-
         b : np.ndarray
             The second input array ``b``.
-
         out_shape : Tuple[int]
             The shape of the output array.
         """
@@ -739,10 +723,8 @@ def _dot_csr_ndarray_type_sparse(dt1, dt2):
         ----------
         a_data, a_indices, a_indptr : np.ndarray
             The data, indices, and index pointers of ``a``.
-
         b : np.ndarray
             The second input array ``b``.
-
         out_shape : Tuple[int]
             The shape of the output array.
         """
@@ -792,10 +774,8 @@ def _dot_csc_ndarray_type_sparse(dt1, dt2):
         ----------
         a_data, a_indices, a_indptr : np.ndarray
             The data, indices, and index pointers of ``a``.
-
         b : np.ndarray
             The second input array ``b``.
-
         a_shape, b_shape : Tuple[int]
             The shapes of the input arrays.
         """
@@ -858,10 +838,8 @@ def _dot_csc_ndarray_type(dt1, dt2):
         ----------
         a_data, a_indices, a_indptr : np.ndarray
             The data, indices, and index pointers of ``a``.
-
         b : np.ndarray
             The second input array ``b``.
-
         a_shape, b_shape : Tuple[int]
             The shapes of the input arrays.
         """
@@ -893,10 +871,8 @@ def _dot_ndarray_csc_type(dt1, dt2):
         ----------
         a : np.ndarray
             The input array ``a``.
-
         b_data, b_indices, b_indptr : np.ndarray
             The data, indices, and index pointers of ``b``.
-
         out_shape : Tuple[int]
             The shape of the output array.
         """
@@ -932,10 +908,8 @@ def _dot_coo_coo_type(dt1, dt2):
         ----------
         a_shape, b_shape : tuple
             The shapes of the input arrays.
-
         a_data, a_coords : np.ndarray
             The data and coordinates of ``a``.
-
         b_data, b_coords : np.ndarray
             The data and coordinates of ``b``.
         """
@@ -1006,10 +980,8 @@ def _dot_coo_ndarray_type(dt1, dt2):
         ----------
         data1, coords1 : np.ndarray
             The data and coordinates of ``s1``.
-
         array2 : np.ndarray
             The second input array ``x2``.
-
         out_shape : Tuple[int]
             The output shape.
         """
@@ -1050,10 +1022,8 @@ def _dot_coo_ndarray_type_sparse(dt1, dt2):
         ----------
         data1, coords1 : np.ndarray
             The data and coordinates of ``s1``.
-
         array2 : np.ndarray
             The second input array ``x2``.
-
         out_shape : Tuple[int]
             The output shape.
         """
@@ -1105,10 +1075,8 @@ def _dot_ndarray_coo_type(dt1, dt2):
         ----------
         array1 : np.ndarray
             The input array ``x1``.
-
         data2, coords2 : np.ndarray
             The data and coordinates of ``s2``.
-
         out_shape : Tuple[int]
             The output shape.
         """
@@ -1142,10 +1110,8 @@ def _dot_ndarray_coo_type_sparse(dt1, dt2):
         ----------
         array1 : np.ndarray
             The input array ``x1``.
-
         data2, coords2 : np.ndarray
             The data and coordinates of ``s2``.
-
         out_shape : Tuple[int]
             The output shape.
         """
@@ -1341,6 +1307,7 @@ def full(shape, fill_value, dtype=None, format="coo", compressed_axes=None):
         A format string.
     compressed_axes : iterable, optional
         The axes to compress if returning a GCXS array.
+
     Returns
     -------
     out : SparseArray
