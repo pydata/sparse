@@ -147,9 +147,28 @@ def tensordot(a, b, axes=2, *, return_type=None):
     return res.reshape(olda + oldb)
 
 
+# Helper functions to detect nan
 @njit
-def check_nan(a, b, fv1, fv2):
+def check_nan_sp(a, b, fv1, fv2):
     return np.isnan(fv1) or np.isnan(fv2) or np.isnan(np.min(a)) or np.isnan(np.min(b))
+
+
+@njit
+def check_nan_np(a, b):
+    a = np.int64(a)
+    b = np.int64(b)
+    return np.isnan(np.min(a)) or np.isnan(np.min(b))
+
+
+@njit
+def check_nan_sp1(a, fv):
+    return np.isnan(fv) or np.isnan(np.min(a))
+
+
+@njit
+def check_nan_np1(a):
+    a = np.int64(a)
+    return np.isnan(np.min(a))
 
 
 def matmul(a, b):
@@ -175,8 +194,19 @@ def matmul(a, b):
     numpy.matmul : NumPy equivalent function.
     COO.__matmul__ : Equivalent function for COO objects.
     """
-    if check_nan(a.data, b.data, a.fill_value, b.fill_value):
-        warnings.warn("Warning: nan is not propagated in matrix multiplication")
+    from ._sparse_array import SparseArray
+    from scipy.sparse import spmatrix
+
+    if isinstance(a, SparseArray) and isinstance(b, SparseArray):
+        if check_nan_sp(a.data, b.data, a.fill_value, b.fill_value):
+            warnings.warn("Warning: nan is not propagated in matrix multiplication")
+    elif isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
+        if check_nan_np(a, b):
+            warnings.warn("Warning: nan is not propagated in matrix multiplication")
+    else:
+        if np.isnan(np.min(a)) or np.isnan(np.min(b)):
+            warnings.warn("Warning: nan is not propagated in matrix multiplication")
+
     check_zero_fill_value(a, b)
     if not hasattr(a, "ndim") or not hasattr(b, "ndim"):
         raise TypeError(
