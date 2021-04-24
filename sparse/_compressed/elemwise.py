@@ -40,8 +40,11 @@ def op_union_indices(
     # TODO: numpy is weird with bools here
     out_dtype = np.array(op(a.data[0], b.data[0])).dtype
     default_value = out_dtype.type(default_value)
-    return type(a)(
-        op_union_indices_csr_csr(
+    out_indptr = np.zeros_like(a.indptr)
+    out_indices = np.zeros(len(a.indices) + len(b.indices), dtype=np.promote_types(a.indices.dtype, b.indices.dtype))
+    out_data = np.zeros(len(out_indices), dtype=out_dtype)
+
+    nnz = op_union_indices_csr_csr(
             op,
             a.indptr,
             a.indices,
@@ -49,11 +52,15 @@ def op_union_indices(
             b.indptr,
             b.indices,
             b.data,
+            out_indptr,
+            out_indices,
+            out_data,
             out_dtype=out_dtype,
             default_value=default_value,
-        ),
-        a.shape,
-    )
+        )
+    out_data.resize(nnz)
+    out_indices.resize(nnz)
+    return type(a)((out_data, out_indices, out_indptr), shape=a.shape)
 
 
 @njit
@@ -65,12 +72,15 @@ def op_union_indices_csr_csr(
     b_indptr: np.ndarray,
     b_indices: np.ndarray,
     b_data: np.ndarray,
+    out_indptr: np.ndarray,
+    out_indices: np.ndarray,
+    out_data: np.ndarray,
     out_dtype,
     default_value,
 ):
-    out_indptr = np.zeros_like(a_indptr)
-    out_indices = np.zeros(len(a_indices) + len(b_indices), dtype=a_indices.dtype)
-    out_data = np.zeros(len(out_indices), dtype=out_dtype)
+    # out_indptr = np.zeros_like(a_indptr)
+    # out_indices = np.zeros(len(a_indices) + len(b_indices), dtype=a_indices.dtype)
+    # out_data = np.zeros(len(out_indices), dtype=out_dtype)
 
     out_idx = 0
 
@@ -85,38 +95,50 @@ def op_union_indices_csr_csr(
             a_j = a_indices[a_idx]
             b_j = b_indices[b_idx]
             if a_j < b_j:
-                out_indices[out_idx] = a_j
-                out_data[out_idx] = op(a_data[a_idx], default_value)
+                val = op(a_data[a_idx], default_value)
+                if val != default_value:
+                    out_indices[out_idx] = a_j
+                    out_data[out_idx] = val
+                    out_idx += 1
                 a_idx += 1
             elif b_j < a_j:
-                out_indices[out_idx] = b_j
-                out_data[out_idx] = op(default_value, b_data[b_idx])
+                val = op(default_value, b_data[b_idx])
+                if val != default_value:
+                    out_indices[out_idx] = b_j
+                    out_data[out_idx] = val
+                    out_idx += 1
                 b_idx += 1
             else:
-                out_indices[out_idx] = a_j
-                out_data[out_idx] = op(a_data[a_idx], b_data[b_idx])
+                val = op(a_data[a_idx], b_data[b_idx])
+                if val != default_value:
+                    out_indices[out_idx] = a_j
+                    out_data[out_idx] = val
+                    out_idx += 1
                 a_idx += 1
                 b_idx += 1
-            out_idx += 1
 
         # Catch up the other set
         while a_idx < a_end:
-            a_j = a_indices[a_idx]
-            out_indices[out_idx] = a_j
-            out_data[out_idx] = op(a_data[a_idx], default_value)
+            val = op(a_data[a_idx], default_value)
+            if val != default_value:
+                out_indices[out_idx] = a_indices[a_idx]
+                out_data[out_idx] = val
+                out_idx += 1
             a_idx += 1
-            out_idx += 1
 
         while b_idx < b_end:
-            b_j = b_indices[b_idx]
-            out_indices[out_idx] = b_j
-            out_data[out_idx] = op(default_value, b_data[b_idx])
+            val = op(default_value, b_data[b_idx])
+            if val != default_value:
+                out_indices[out_idx] = b_indices[b_idx]
+                out_data[out_idx] = val
+                out_idx += 1
             b_idx += 1
-            out_idx += 1
 
         out_indptr[i + 1] = out_idx
 
-    out_indices = out_indices[: out_idx]
-    out_data = out_data[: out_idx]
+    # This may need to change to be "resize" to allow memory reallocation
+    # resize is currently not implemented in numba
+    # out_indices = out_indices[: out_idx]
+    # out_data = out_data[: out_idx]
 
-    return out_data, out_indices, out_indptr
+    return out_idx
