@@ -39,7 +39,7 @@ def tensordot(a, b, axes=2, *, return_type=None):
 
     Parameters
     ----------
-    a, b : Union[COO, np.ndarray, scipy.sparse.spmatrix]
+    a, b : Union[GCXS, COO, np.ndarray, scipy.sparse.spmatrix]
         The arrays to perform the :code:`tensordot` operation on.
     axes : tuple[Union[int, tuple[int], Union[int, tuple[int]], optional
         The axes to match when performing the sum.
@@ -150,7 +150,7 @@ def matmul(a, b):
 
     Parameters
     ----------
-    a, b : Union[COO, np.ndarray, scipy.sparse.spmatrix]
+    a, b : Union[GCXS, COO, np.ndarray, scipy.sparse.spmatrix]
         The arrays to perform the :code:`matmul` operation on.
 
     Returns
@@ -228,7 +228,7 @@ def dot(a, b):
 
     Parameters
     ----------
-    a, b : Union[COO, np.ndarray, scipy.sparse.spmatrix]
+    a, b : Union[GCXS, COO, np.ndarray, scipy.sparse.spmatrix]
         The arrays to perform the :code:`dot` operation on.
 
     Returns

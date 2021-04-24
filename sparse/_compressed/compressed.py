@@ -96,7 +96,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     For arrays with ndim >2, any combination of axes can be compressed,
     significantly reducing storage.
 
-    Let the 3 arrays be RO, CO and VL. The first element
+    GCXS consists of 3 arrays. Let the 3 arrays be RO, CO and VL. The first element
     of array RO is the integer 0 and later elements are the number of
     cumulative non-zero elements in each row for GCRS, column for
     GCCS. CO stores column indexes of non-zero elements at each row for GCRS, column for GCCS.
