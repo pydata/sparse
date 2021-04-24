@@ -26,6 +26,17 @@ def binary_op(func, a, b):
     else:
         raise NotImplementedError()
 
+# From scipy._util
+def _prune_array(array):
+    """Return an array equivalent to the input array. If the input
+    array is a view of a much larger array, copy its contents to a
+    newly allocated array. Otherwise, return the input unchanged.
+    """
+    if array.base is not None and array.size < array.base.size // 2:
+        return array.copy()
+    return array
+
+
 
 def op_union_indices(
     op: Callable, a: scipy.sparse.csr_matrix, b: scipy.sparse.csr_matrix, *, default_value=0
@@ -58,8 +69,8 @@ def op_union_indices(
             out_dtype=out_dtype,
             default_value=default_value,
         )
-    out_data.resize(nnz)
-    out_indices.resize(nnz)
+    out_data = _prune_array(out_data[:nnz])
+    out_indices = _prune_array(out_indices[:nnz])
     return type(a)((out_data, out_indices, out_indptr), shape=a.shape)
 
 
@@ -138,7 +149,7 @@ def op_union_indices_csr_csr(
 
     # This may need to change to be "resize" to allow memory reallocation
     # resize is currently not implemented in numba
-    # out_indices = out_indices[: out_idx]
-    # out_data = out_data[: out_idx]
+    out_indices = out_indices[: out_idx]
+    out_data = out_data[: out_idx]
 
     return out_idx
