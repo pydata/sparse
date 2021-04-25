@@ -45,6 +45,9 @@ def nan_check(*args):
 
 
 def check_class_nan(test):
+    from ._compressed import GCXS
+    from ._coo import COO
+
     if isinstance(test, SparseArray):
         return nan_check(test.data, test.fill_value)
     elif isinstance(test, spmatrix):
