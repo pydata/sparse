@@ -158,6 +158,44 @@ def test_matmul_errors():
 
 
 @pytest.mark.parametrize(
+    "a, b",
+    [
+        (
+            sparse.GCXS.from_numpy(
+                np.random.choice(
+                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
+                )
+            ),
+            sparse.random((100, 100), density=0.01),
+        ),
+        (
+            sparse.COO.from_numpy(
+                np.random.choice(
+                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
+                )
+            ),
+            sparse.random((100, 100), density=0.01),
+        ),
+        (
+            sparse.GCXS.from_numpy(
+                np.random.choice(
+                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
+                )
+            ),
+            scipy.sparse.random(100, 100),
+        ),
+        (
+            np.random.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]),
+            sparse.random((100, 100), density=0.01),
+        ),
+    ],
+)
+def test_matmul_nan_warnings(a, b):
+    with pytest.warns(RuntimeWarning):
+        a @ b
+
+
+@pytest.mark.parametrize(
     "a_shape, b_shape",
     [
         ((1, 4, 5), (3, 5, 6)),

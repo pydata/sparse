@@ -4,6 +4,9 @@ import scipy.sparse
 from functools import wraps
 from itertools import chain
 from collections.abc import Iterable
+from scipy.sparse import spmatrix
+from numba import literal_unroll
+import warnings
 
 from ._sparse_array import SparseArray
 from ._utils import check_compressed_axes, normalize_axis, check_zero_fill_value
@@ -31,6 +34,50 @@ from ._coo.common import (
     asCOO,
     linear_loc,
 )
+
+
+@numba.njit
+def nan_check(*args):
+    """
+    Check for the NaN values in Numpy Arrays
+
+    Parameters
+    ----------
+    Union[Numpy Array, Integer, Float]
+
+    Returns
+    -------
+    Boolean Whether Numpy Array Contains NaN
+
+    """
+    for i in literal_unroll(args):
+        if np.isnan(np.min(np.asarray(i))):
+            return True
+    return False
+
+
+def check_class_nan(test):
+    """
+    Check NaN for Sparse Arrays
+
+    Parameters
+    ----------
+    test : Union[sparse.COO, sparse.GCXS, scipy.sparse.spmatrix, Numpy Ndarrays]
+
+    Returns
+    -------
+    Boolean Whether Sparse Array Contains NaN
+
+    """
+    from ._compressed import GCXS
+    from ._coo import COO
+
+    if isinstance(test, (GCXS, COO)):
+        return nan_check(test.fill_value, test.data)
+    elif isinstance(test, spmatrix):
+        return nan_check(test.data)
+    else:
+        return nan_check(test)
 
 
 def tensordot(a, b, axes=2, *, return_type=None):
@@ -172,6 +219,11 @@ def matmul(a, b):
     if not hasattr(a, "ndim") or not hasattr(b, "ndim"):
         raise TypeError(
             "Cannot perform dot product on types %s, %s" % (type(a), type(b))
+        )
+
+    if check_class_nan(a) or check_class_nan(b):
+        warnings.warn(
+            "Nan will not be propagated in matrix multiplication", RuntimeWarning
         )
 
     # When b is 2-d, it is equivalent to dot
