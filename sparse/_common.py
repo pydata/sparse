@@ -39,7 +39,7 @@ def tensordot(a, b, axes=2, *, return_type=None):
 
     Parameters
     ----------
-    a, b : Union[GCXS, COO, np.ndarray, scipy.sparse.spmatrix]
+    a, b : Union[SparseArray, np.ndarray, scipy.sparse.spmatrix]
         The arrays to perform the :code:`tensordot` operation on.
     axes : tuple[Union[int, tuple[int], Union[int, tuple[int]], optional
         The axes to match when performing the sum.
@@ -48,7 +48,7 @@ def tensordot(a, b, axes=2, *, return_type=None):
 
     Returns
     -------
-    Union[COO, numpy.ndarray]
+    Union[SparseArray, numpy.ndarray]
         The result of the operation.
 
     Raises
@@ -150,12 +150,12 @@ def matmul(a, b):
 
     Parameters
     ----------
-    a, b : Union[GCXS, COO, np.ndarray, scipy.sparse.spmatrix]
+    a, b : Union[SparseArray, np.ndarray, scipy.sparse.spmatrix]
         The arrays to perform the :code:`matmul` operation on.
 
     Returns
     -------
-    Union[COO, numpy.ndarray]
+    Union[SparseArray, numpy.ndarray]
         The result of the operation.
 
     Raises
@@ -228,12 +228,12 @@ def dot(a, b):
 
     Parameters
     ----------
-    a, b : Union[GCXS, COO, np.ndarray, scipy.sparse.spmatrix]
+    a, b : Union[SparseArray, np.ndarray, scipy.sparse.spmatrix]
         The arrays to perform the :code:`dot` operation on.
 
     Returns
     -------
-    Union[COO, numpy.ndarray]
+    Union[SparseArray, numpy.ndarray]
         The result of the operation.
 
     Raises
@@ -1578,7 +1578,7 @@ def moveaxis(a, source, destination):
 
     Parameters
     ----------
-    a : COO
+    a : SparseArray
         The array whose axes should be reordered.
     source : int or List[int]
         Original positions of the axes to move. These must be unique.
@@ -1587,7 +1587,7 @@ def moveaxis(a, source, destination):
 
     Returns
     -------
-    COO
+    SparseArray
         Array with moved axes.
 
     Examples
