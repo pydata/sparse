@@ -38,6 +38,18 @@ from ._coo.common import (
 
 @numba.njit
 def nan_check(*args):
+    """
+    Check for the NaN values in Numpy Arrays
+
+    Parameters
+    ----------
+    Union[Numpy Array, Integer, Float]
+
+    Returns
+    -------
+    Boolean Whether Numpy Array Contains NaN
+
+    """
     for i in literal_unroll(args):
         if np.isnan(np.min(np.asarray(i))):
             return True
@@ -45,6 +57,18 @@ def nan_check(*args):
 
 
 def check_class_nan(test):
+    """
+    Check NaN for Sparse Arrays
+
+    Parameters
+    ----------
+    test : Union[sparse.COO, sparse.GCXS, scipy.sparse.spmatrix, Numpy Ndarrays]
+
+    Returns
+    -------
+    Boolean Whether Sparse Array Contains NaN
+
+    """
     from ._compressed import GCXS
     from ._coo import COO
 
@@ -199,7 +223,7 @@ def matmul(a, b):
 
     if check_class_nan(a) or check_class_nan(b):
         warnings.warn(
-            "Warning: nan is not propagated in matrix multiplication", RuntimeWarning
+            "Nan will not be propagated in matrix multiplication", RuntimeWarning
         )
 
     # When b is 2-d, it is equivalent to dot
