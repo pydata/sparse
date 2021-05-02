@@ -38,6 +38,7 @@ trigger:
   branches:
     include:
     - master
+    - vnext
   tags:
     include:
     - '*'
