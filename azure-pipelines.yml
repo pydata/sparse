@@ -8,12 +8,12 @@ jobs:
     - template: ci/azure-steps.yml
   strategy:
     matrix:
+        Python39:
+          python_version: '3.9'
         Python38:
           python_version: '3.8'
         Python37:
           python_version: '3.7'
-        Python36:
-          python_version: '3.6'
 - job: MacOS
   variables:
     python_version: '3.6'
