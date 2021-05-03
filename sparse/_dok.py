@@ -393,7 +393,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         )
 
     def _filter_by_key(self, coords, slice_key):
-        """Filter data coordinates to be within given slice """
+        """Filter data coordinates to be within given slice"""
         filter_arr = np.ones(coords.shape[0], dtype=bool)
         for coords_in_dim, sl in zip(coords.T, slice_key):
             filter_arr *= (
