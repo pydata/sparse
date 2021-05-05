@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from hypothesis import given, strategies as st
 import scipy.sparse
 import scipy.stats
 
@@ -316,3 +317,10 @@ def test_complex(dtype1, dtype2, format1, format2):
     x1, x2 = dense_convertor(s1), dense_convertor(s2)
 
     assert_eq(x1 @ x2, s1 @ s2)
+
+
+@given(x=st.integers(min_value=0), y=st.integers(min_value=0))
+def test_dot_coo(x, y):
+    a = np.random.rand(x, y)
+    b = COO.from_numpy(a)
+    assert_eq(sparse.dot(b, b).todense(), np.dot(a, a))
