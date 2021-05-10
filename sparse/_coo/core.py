@@ -1464,6 +1464,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         mode : str
             Pads to a constant value which is fill value. Currently only constant mode is implemented
 
+        constant_values : Int
+            The values to set the padded values for each axis. Default is 0.
+
         Returns
         -------
         COO
@@ -1485,10 +1488,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if mode.lower() != "constant":
             raise NotImplementedError("Mode '{}' is not supported.".format(mode))
 
-        if kwargs.pop("constant_values", self.fill_value) != self.fill_value:
+        if kwargs.pop("constant_values", _zero_of_dtype(self.dtype)) != self.fill_value:
             raise ValueError("constant_values can only be equal to fill value.")
 
-        if bool(kwargs):
+        if kwargs:
             raise NotImplementedError("Additional Unknown arguments present.")
 
         pad_width = np.broadcast_to(pad_width, (len(self.shape), 2))
