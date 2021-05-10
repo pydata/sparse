@@ -461,7 +461,7 @@ def test_pad_valid(pad_width, constant_values):
     ],
 )
 @pytest.mark.parametrize("constant_values", [150, 2, (1, 2)])
-def test_pad_invalid(pad_width, constant_values, fill_value=0, format="gcxs"):
-    y = sparse.random((50, 50, 3), density=0.15)
+def test_pad_invalid(pad_width, constant_values, fill_value=0):
+    y = sparse.random((50, 50, 3), density=0.15, format="gcxs")
     with pytest.raises(ValueError):
         np.pad(y, pad_width, constant_values=constant_values)
