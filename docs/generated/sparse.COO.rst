@@ -73,7 +73,6 @@ COO
       COO.copy
       COO.dot
       COO.flatten
-      COO.pad
       COO.reshape
       COO.resize
       COO.transpose

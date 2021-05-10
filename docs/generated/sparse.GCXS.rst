@@ -81,8 +81,6 @@ GCXS
       GCXS.mean
    
       GCXS.min
-
-      GCXS.pad
    
       GCXS.prod
    
