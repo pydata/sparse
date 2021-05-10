@@ -1458,14 +1458,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         Parameters
         ----------
-        pad_width : {Sequence, Array_like, Int}
+        pad_width : {sequence, array_like, int}
             Number of values padded to the edges of each axis. ((before_1, after_1), … (before_N, after_N)) unique pad widths for each axis. ((before, after),) yields same before and after pad for each axis. (pad,) or int is a shortcut for before = after = pad width for all axes.
 
         mode : str
             Pads to a constant value which is fill value. Currently only constant mode is implemented
 
-        constant_values : Int
-            The values to set the padded values for each axis. Default is 0.
+        constant_values : int
+            The values to set the padded values for each axis. Default is 0. This must be same as fill value.
 
         Returns
         -------
@@ -1486,7 +1486,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         """
         if mode.lower() != "constant":
-            raise NotImplementedError("Mode '{}' is not supported.".format(mode))
+            raise NotImplementedError(f"Mode '{mode}' is not supported.")
 
         if not equivalent(
             kwargs.pop("constant_values", _zero_of_dtype(self.dtype)), self.fill_value

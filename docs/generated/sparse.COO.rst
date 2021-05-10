@@ -73,12 +73,12 @@ COO
       COO.copy
       COO.dot
       COO.flatten
+      COO.pad
       COO.reshape
       COO.resize
       COO.transpose
       COO.swapaxes
       COO.nonzero
-      COO.pad
 
    .. rubric:: Utility functions
    .. autosummary::
