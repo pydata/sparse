@@ -1452,6 +1452,45 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         raise NotImplementedError("The given format is not supported.")
 
     def pad(self, pad_width, mode="constant", **kwargs):
+        """
+        Performs the equivalent of :obj:`numpy.pad` for :obj:`COO`. Note that
+        this function returns a new array instead of a view.
+
+        Parameters
+        ----------
+        pad_width : {Sequence, Array_like, Int}
+            Number of values padded to the edges of each axis. ((before_1, after_1), … (before_N, after_N)) unique pad widths for each axis. ((before, after),) yields same before and after pad for each axis. (pad,) or int is a shortcut for before = after = pad width for all axes.
+
+        mode : str
+            Pads to a constant value which is fill value. Currently only constant mode is implemented
+
+        Returns
+        -------
+        COO
+            The padded sparse array.
+
+        Raises
+        ------
+        NotImplementedError
+            If mode != 'constant' or there are unknown arguments.
+
+        ValueError
+            If constant_values != self.fill_value
+
+        See Also
+        --------
+        :obj:`numpy.pad` : NumPy equivalent function
+
+        """
+        if mode.lower() != "constant":
+            raise NotImplementedError("Mode '{}' is not supported.".format(mode))
+
+        if kwargs.pop("constant_values", self.fill_value) != self.fill_value:
+            raise ValueError("constant_values can only be equal to fill value.")
+
+        if bool(kwargs):
+            raise NotImplementedError("Additional Unknown arguments present.")
+
         pad_width = np.broadcast_to(pad_width, (len(self.shape), 2))
         new_coords = self.coords + pad_width[:, 0:1]
         new_shape = tuple(
