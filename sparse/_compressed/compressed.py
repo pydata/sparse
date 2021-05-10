@@ -10,7 +10,7 @@ from typing import Tuple
 
 from .._sparse_array import SparseArray, _reduce_super_ufunc
 from .._coo.common import linear_loc
-from .._common import dot, matmul
+from .._common import dot, matmul, pad
 from .._utils import (
     normalize_axis,
     can_store,
@@ -809,6 +809,42 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             self.indptr = indptr
         else:
             self.indices = self.indices[mask]
+
+    def pad(self, pad_width, mode="constant", **kwargs):
+        """
+        Performs the equivalent of :obj:`numpy.pad` for :obj:`GCXS`. Note that
+        this function returns a new array instead of a view.
+
+        Parameters
+        ----------
+        pad_width : {sequence, array_like, int}
+            Number of values padded to the edges of each axis. ((before_1, after_1), … (before_N, after_N)) unique pad widths for each axis. ((before, after),) yields same before and after pad for each axis. (pad,) or int is a shortcut for before = after = pad width for all axes.
+
+        mode : str
+            Pads to a constant value which is fill value. Currently only constant mode is implemented
+
+        constant_values : int
+            The values to set the padded values for each axis. Default is 0. This must be same as fill value.
+
+        Returns
+        -------
+        GCXS
+            The padded sparse array.
+
+        Raises
+        ------
+        NotImplementedError
+            If mode != 'constant' or there are unknown arguments.
+
+        ValueError
+            If constant_values != self.fill_value
+
+        See Also
+        --------
+        :obj:`numpy.pad` : NumPy equivalent function
+
+        """
+        return pad(self, pad_width, mode=mode, **kwargs)
 
 
 class _Compressed2d(GCXS):

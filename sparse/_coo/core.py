@@ -10,7 +10,7 @@ import numba
 import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
-from .._common import dot, matmul
+from .._common import dot, matmul, pad
 from .indexing import getitem
 from .._umath import elemwise, broadcast_to
 from .._sparse_array import SparseArray, _reduce_super_ufunc
@@ -1485,27 +1485,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         :obj:`numpy.pad` : NumPy equivalent function
 
         """
-        if mode.lower() != "constant":
-            raise NotImplementedError(f"Mode '{mode}' is not yet supported.")
-
-        if not equivalent(
-            kwargs.pop("constant_values", _zero_of_dtype(self.dtype)), self.fill_value
-        ):
-            raise ValueError("constant_values can only be equal to fill value.")
-
-        if kwargs:
-            raise NotImplementedError("Additional Unknown arguments present.")
-
-        pad_width = np.broadcast_to(pad_width, (len(self.shape), 2))
-        new_coords = self.coords + pad_width[:, 0:1]
-        new_shape = tuple(
-            [
-                self.shape[i] + pad_width[i, 0] + pad_width[i, 1]
-                for i in range(len(self.shape))
-            ]
-        )
-        new_data = self.data
-        return COO(new_coords, new_data, new_shape, fill_value=self.fill_value)
+        return pad(self, pad_width, mode=mode, **kwargs)
 
 
 def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
