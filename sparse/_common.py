@@ -1687,6 +1687,9 @@ def pad(array, pad_width, mode="constant", **kwargs):
 
     Parameters
     ----------
+    array : SparseArray
+        Sparse array which is to be padded.
+
     pad_width : {sequence, array_like, int}
         Number of values padded to the edges of each axis. ((before_1, after_1), … (before_N, after_N)) unique pad widths for each axis. ((before, after),) yields same before and after pad for each axis. (pad,) or int is a shortcut for before = after = pad width for all axes.
 
@@ -1728,16 +1731,8 @@ def pad(array, pad_width, mode="constant", **kwargs):
     if kwargs:
         raise NotImplementedError("Additional Unknown arguments present.")
 
-    from ._compressed import GCXS
-    from ._dok import DOK
     from ._coo import COO
 
-    if isinstance(array, GCXS):
-        ftype = "gcxs"
-    elif isinstance(array, DOK):
-        ftype = "dok"
-    else:
-        ftype = "coo"
     array = array.asformat("coo")
 
     pad_width = np.broadcast_to(pad_width, (len(array.shape), 2))
@@ -1749,6 +1744,4 @@ def pad(array, pad_width, mode="constant", **kwargs):
         ]
     )
     new_data = array.data
-    return COO(new_coords, new_data, new_shape, fill_value=array.fill_value).asformat(
-        ftype
-    )
+    return COO(new_coords, new_data, new_shape, fill_value=array.fill_value)
