@@ -16,6 +16,7 @@ if not NEP18_ENABLED:
         np.std,
         np.var,
         np.sum,
+        np.pad,
         lambda x: np.sum(x, axis=0),
         lambda x: np.transpose(x),
     ],
