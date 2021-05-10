@@ -10,7 +10,7 @@ from typing import Tuple
 
 from .._sparse_array import SparseArray, _reduce_super_ufunc
 from .._coo.common import linear_loc
-from .._common import dot, matmul, pad
+from .._common import dot, matmul
 from .._utils import (
     normalize_axis,
     can_store,

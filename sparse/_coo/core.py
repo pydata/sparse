@@ -10,7 +10,7 @@ import numba
 import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
-from .._common import dot, matmul, pad
+from .._common import dot, matmul
 from .indexing import getitem
 from .._umath import elemwise, broadcast_to
 from .._sparse_array import SparseArray, _reduce_super_ufunc
