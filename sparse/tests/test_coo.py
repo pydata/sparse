@@ -8,7 +8,6 @@ import numpy as np
 import pytest
 import scipy.sparse
 import scipy.stats
-from hypothesis import given, strategies as st
 
 import sparse
 from sparse import COO
