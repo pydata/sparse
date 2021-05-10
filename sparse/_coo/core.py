@@ -1461,7 +1461,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             ]
         )
         new_data = self.data
-        return COO(new_coords, new_data, new_shape)
+        return COO(new_coords, new_data, new_shape, fill_value=self.fill_value)
 
 
 def as_coo(x, shape=None, fill_value=None, idx_dtype=None):

@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 import scipy.sparse
 import scipy.stats
+from hypothesis import given, strategies as st
 
 import sparse
 from sparse import COO
@@ -1624,3 +1625,32 @@ def test_html_for_size_zero():
 
     table = html_table(arr)
     assert table == ground_truth
+
+
+@pytest.mark.parametrize(
+    "pad_width",
+    [
+        2,
+        (2, 1),
+        ((2), (1)),
+        ((1, 2), (4, 5), (7, 8)),
+    ],
+)
+def test_pad_valid(pad_width):
+    y = sparse.random((50, 50, 3), density=0.15)
+    x = y.todense()
+    xx = np.pad(x, pad_width=pad_width)
+    yy = np.pad(y, pad_width=pad_width)
+    assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize(
+    "pad_width",
+    [
+        ((2, 1), (5, 7)),
+    ],
+)
+def test_pad_invalid(pad_width):
+    y = sparse.random((50, 50, 3), density=0.15)
+    with pytest.raises(ValueError):
+        np.pad(y, pad_width)
