@@ -1451,10 +1451,15 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         raise NotImplementedError("The given format is not supported.")
 
-    def pad(self, pad_width, mode='constant', **kwargs):
+    def pad(self, pad_width, mode="constant", **kwargs):
         pad_width = np.broadcast_to(pad_width, (len(self.shape), 2))
-        new_coords = self.coords + pad_width[:,0:1]
-        new_shape = tuple([self.shape[i] + pad_width[i, 0] + pad_width[i, 1] for i in range(len(self.shape))])
+        new_coords = self.coords + pad_width[:, 0:1]
+        new_shape = tuple(
+            [
+                self.shape[i] + pad_width[i, 0] + pad_width[i, 1]
+                for i in range(len(self.shape))
+            ]
+        )
         new_data = self.data
         return COO(new_coords, new_data, new_shape)
 
@@ -1514,7 +1519,6 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
         "Format not supported for conversion. Supplied type is "
         "%s, see help(sparse.as_coo) for supported formats." % type(x)
     )
-
 
 
 @numba.jit(nopython=True, nogil=True)  # pragma: no cover
