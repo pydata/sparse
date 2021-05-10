@@ -1486,7 +1486,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         """
         if mode.lower() != "constant":
-            raise NotImplementedError(f"Mode '{mode}' is not supported.")
+            raise NotImplementedError(f"Mode '{mode}' is not yet supported.")
 
         if not equivalent(
             kwargs.pop("constant_values", _zero_of_dtype(self.dtype)), self.fill_value
