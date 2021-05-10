@@ -77,6 +77,8 @@ API
 
     outer
 
+    pad
+
     random
 
     result_type
