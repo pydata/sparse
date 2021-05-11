@@ -44,4 +44,9 @@ trigger:
     - '*'
 
 pr:
-- master
+  branches:
+    include:
+    - master
+    - releases/*
+    exclude:
+    - releases/old*
