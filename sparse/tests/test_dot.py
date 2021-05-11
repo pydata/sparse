@@ -196,18 +196,19 @@ def test_matmul_nan_warnings(a, b):
         a @ b
 
 
-@pytest.mark.parametrize(
-    "a_shape, b_shape",
-    [
-        ((1, 4, 5), (3, 5, 6)),
-        ((3, 4, 5), (1, 5, 6)),
-        ((3, 4, 5), (3, 5, 6)),
-        ((3, 4, 5), (5, 6)),
-        ((4, 5), (5, 6)),
-        ((5,), (5, 6)),
-        ((4, 5), (5,)),
-        ((5,), (5,)),
-    ],
+@given(
+    a_shape=st.one_of(
+        st.tuples(
+            st.integers(min_value=1, max_value=10),
+            st.integers(min_value=1, max_value=10),
+        ),
+    ),
+    b_shape=st.one_of(
+        st.tuples(
+            st.integers(min_value=1, max_value=10),
+            st.integers(min_value=1, max_value=10),
+        ),
+    ),
 )
 @pytest.mark.parametrize(
     "a_format, b_format",
@@ -217,6 +218,8 @@ def test_matmul_nan_warnings(a, b):
     "a_comp_axes, b_comp_axes", [([0], [0]), ([0], [1]), ([1], [0]), ([1], [1])]
 )
 def test_dot(a_shape, b_shape, a_format, b_format, a_comp_axes, b_comp_axes):
+    a_shape = a_shape + (b_shape[-1],)
+    b_shape = b_shape + (5,)
     if a_format == "coo" or len(a_shape) == 1:
         a_comp_axes = None
     if b_format == "coo" or len(b_shape) == 1:
@@ -317,10 +320,3 @@ def test_complex(dtype1, dtype2, format1, format2):
     x1, x2 = dense_convertor(s1), dense_convertor(s2)
 
     assert_eq(x1 @ x2, s1 @ s2)
-
-
-@given(x=st.integers(min_value=0), y=st.integers(min_value=0))
-def test_dot_coo(x, y):
-    a = np.random.rand(x, y)
-    b = COO.from_numpy(a)
-    assert_eq(sparse.dot(b, b).todense(), np.dot(a, a))

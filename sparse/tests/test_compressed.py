@@ -1,5 +1,6 @@
 import sparse
 import pytest
+from hypothesis import given, strategies as st
 import numpy as np
 import scipy
 
@@ -51,8 +52,10 @@ def random_sparse_small(request):
         ("var", {}),
     ],
 )
-@pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2), -3, (1, -1)])
-@pytest.mark.parametrize("keepdims", [True, False])
+@given(
+    axis=st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)]),
+    keepdims=st.sampled_from([True, False]),
+)
 def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
     x = random_sparse
     y = x.todense()
@@ -69,7 +72,7 @@ def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
     "reduction, kwargs",
     [("sum", {"dtype": np.float16}), ("mean", {"dtype": np.float16})],
 )
-@pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2)])
+@given(axis=st.sampled_from([None, 0, 1, 2, (0, 2)]))
 def test_reductions_float16(random_sparse, reduction, kwargs, axis):
     x = random_sparse
     y = x.todense()
@@ -79,8 +82,10 @@ def test_reductions_float16(random_sparse, reduction, kwargs, axis):
 
 
 @pytest.mark.parametrize("reduction,kwargs", [("any", {}), ("all", {})])
-@pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2), -3, (1, -1)])
-@pytest.mark.parametrize("keepdims", [True, False])
+@given(
+    axis=st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)]),
+    keepdims=st.sampled_from([True, False]),
+)
 def test_reductions_bool(random_sparse, reduction, kwargs, axis, keepdims):
     y = np.zeros((2, 3, 4), dtype=bool)
     y[0] = True
@@ -103,8 +108,10 @@ def test_reductions_bool(random_sparse, reduction, kwargs, axis, keepdims):
         (np.min, {}),
     ],
 )
-@pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2), -1, (0, -1)])
-@pytest.mark.parametrize("keepdims", [True, False])
+@given(
+    axis=st.sampled_from([None, 0, 1, 2, (0, 2), -1, (0, -1)]),
+    keepdims=st.sampled_from([True, False]),
+)
 def test_ufunc_reductions(random_sparse, reduction, kwargs, axis, keepdims):
     x = random_sparse
     y = x.todense()
@@ -125,7 +132,7 @@ def test_ufunc_reductions(random_sparse, reduction, kwargs, axis, keepdims):
         (np.minimum.reduce, {"axis": 0}),
     ],
 )
-@pytest.mark.parametrize("fill_value", [0, 1.0, -1, -2.2, 5.0])
+@given(fill_value=st.sampled_from([0, 1.0, -1, -2.2, 5.0]))
 def test_ufunc_reductions_kwargs(reduction, kwargs, fill_value):
     x = sparse.random((2, 3, 4), density=0.5, format="gcxs", fill_value=fill_value)
     y = x.todense()
@@ -272,7 +279,7 @@ def test_complex_methods(complex):
         (slice(0, 5, -1),),
     ],
 )
-@pytest.mark.parametrize("compressed_axes", [(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)])
+@given(compressed_axes=st.sampled_from([(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)]))
 def test_slicing(index, compressed_axes):
     s = sparse.random(
         (2, 3, 4), density=0.5, format="gcxs", compressed_axes=compressed_axes
@@ -296,7 +303,7 @@ def test_slicing(index, compressed_axes):
         (1, [2, 0, 1]),
     ],
 )
-@pytest.mark.parametrize("compressed_axes", [(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)])
+@given(compressed_axes=st.sampled_from([(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)]))
 def test_advanced_indexing(index, compressed_axes):
     s = sparse.random(
         (2, 3, 4), density=0.5, format="gcxs", compressed_axes=compressed_axes
@@ -366,8 +373,10 @@ def test_concatenate():
     )
 
 
-@pytest.mark.parametrize("axis", [0, 1])
-@pytest.mark.parametrize("func", [sparse.stack, sparse.concatenate])
+@given(
+    axis=st.sampled_from([0, 1]),
+    func=st.sampled_from([sparse.stack, sparse.concatenate]),
+)
 def test_concatenate_mixed(func, axis):
     s = sparse.random((10, 10), density=0.5, format="gcxs")
     d = s.todense()
@@ -381,8 +390,9 @@ def test_concatenate_noarrays():
         sparse.concatenate([])
 
 
-@pytest.mark.parametrize("shape", [(5,), (2, 3, 4), (5, 2)])
-@pytest.mark.parametrize("axis", [0, 1, -1])
+@given(
+    shape=st.sampled_from([(5,), (2, 3, 4), (5, 2)]), axis=st.sampled_from([0, 1, -1])
+)
 def test_stack(shape, axis):
     xx = sparse.random(shape, density=0.5, format="gcxs")
     x = xx.todense()
@@ -394,7 +404,7 @@ def test_stack(shape, axis):
     assert_eq(np.stack([x, y, z], axis=axis), sparse.stack([xx, yy, zz], axis=axis))
 
 
-@pytest.mark.parametrize("in_shape", [(5, 5), 62, (3, 3, 3)])
+@given(in_shape=st.sampled_from([(5, 5), 62, (3, 3, 3)]))
 def test_flatten(in_shape):
     s = sparse.random(in_shape, format="gcxs", density=0.5)
     x = s.todense()

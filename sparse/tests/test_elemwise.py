@@ -1,6 +1,7 @@
 import numpy as np
 import sparse
 import pytest
+from hypothesis import given, strategies as st
 import operator
 from sparse import COO, DOK
 from sparse._compressed import GCXS
@@ -29,7 +30,7 @@ from sparse._utils import assert_eq, random_value_array
         abs,
     ],
 )
-@pytest.mark.parametrize("format", [COO, GCXS, DOK])
+@given(format=st.sampled_from([COO, GCXS, DOK]))
 def test_elemwise(func, format):
     s = sparse.random((2, 3, 4), density=0.5, format=format)
     x = s.todense()
@@ -41,27 +42,28 @@ def test_elemwise(func, format):
     assert_eq(func(x), fs)
 
 
-@pytest.mark.parametrize(
-    "func",
-    [
-        np.expm1,
-        np.log1p,
-        np.sin,
-        np.tan,
-        np.sinh,
-        np.tanh,
-        np.floor,
-        np.ceil,
-        np.sqrt,
-        np.conj,
-        np.round,
-        np.rint,
-        np.conjugate,
-        np.conj,
-        lambda x, out: x.round(decimals=2, out=out),
-    ],
+@given(
+    func=st.sampled_from(
+        [
+            np.expm1,
+            np.log1p,
+            np.sin,
+            np.tan,
+            np.sinh,
+            np.tanh,
+            np.floor,
+            np.ceil,
+            np.sqrt,
+            np.conj,
+            np.round,
+            np.rint,
+            np.conjugate,
+            np.conj,
+            lambda x, out: x.round(decimals=2, out=out),
+        ]
+    ),
+    format=st.sampled_from([COO, GCXS, DOK]),
 )
-@pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_elemwise_inplace(func, format):
     s = sparse.random((2, 3, 4), density=0.5, format=format)
     x = s.todense()
@@ -88,7 +90,7 @@ def test_elemwise_inplace(func, format):
         ((2, 2, 2), (1, 1, 1)),
     ],
 )
-@pytest.mark.parametrize("format", [COO, GCXS, DOK])
+@given(format=st.sampled_from([COO, GCXS, DOK]))
 def test_elemwise_mixed(shape1, shape2, format):
     s1 = sparse.random(shape1, density=0.5, format=format)
     x2 = np.random.rand(*shape2)
@@ -98,7 +100,7 @@ def test_elemwise_mixed(shape1, shape2, format):
     assert_eq(s1 * x2, x1 * x2)
 
 
-@pytest.mark.parametrize("format", [COO, GCXS, DOK])
+@given(format=st.sampled_from([COO, GCXS, DOK]))
 def test_elemwise_mixed_empty(format):
     s1 = sparse.random((2, 0, 4), density=0.5, format=format)
     x2 = np.random.rand(2, 0, 4)
@@ -108,7 +110,7 @@ def test_elemwise_mixed_empty(format):
     assert_eq(s1 * x2, x1 * x2)
 
 
-@pytest.mark.parametrize("format", [COO, GCXS, DOK])
+@given(format=st.sampled_from([COO, GCXS, DOK]))
 def test_elemwise_unsupported(format):
     class A:
         pass
@@ -122,7 +124,7 @@ def test_elemwise_unsupported(format):
     assert sparse.elemwise(operator.add, s1, x2) is NotImplemented
 
 
-@pytest.mark.parametrize("format", [COO, GCXS, DOK])
+@given(format=st.sampled_from([COO, GCXS, DOK]))
 def test_elemwise_mixed_broadcast(format):
     s1 = sparse.random((2, 3, 4), density=0.5, format=format)
     s2 = sparse.random(4, density=0.5)
@@ -137,12 +139,22 @@ def test_elemwise_mixed_broadcast(format):
     assert_eq(sparse.elemwise(func, s1, s2, x3), func(x1, x2, x3))
 
 
-@pytest.mark.parametrize(
-    "func",
-    [operator.mul, operator.add, operator.sub, operator.gt, operator.lt, operator.ne],
+@given(
+    func=st.sampled_from(
+        [
+            operator.mul,
+            operator.add,
+            operator.sub,
+            operator.gt,
+            operator.lt,
+            operator.ne,
+        ]
+    ),
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
+    format=st.sampled_from([COO, GCXS, DOK]),
 )
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-@pytest.mark.parametrize("format", [COO, GCXS, DOK])
+# @pytest.mark.parametrize("shape", )
+# @pytest.mark.parametrize("format", [])
 def test_elemwise_binary(func, shape, format):
     xs = sparse.random(shape, density=0.5, format=format)
     ys = sparse.random(shape, density=0.5, format=format)
@@ -153,9 +165,11 @@ def test_elemwise_binary(func, shape, format):
     assert_eq(func(xs, ys), func(x, y))
 
 
-@pytest.mark.parametrize("func", [operator.imul, operator.iadd, operator.isub])
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-@pytest.mark.parametrize("format", [COO, GCXS, DOK])
+@given(
+    func=st.sampled_from([operator.imul, operator.iadd, operator.isub]),
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
+    format=st.sampled_from([COO, GCXS, DOK]),
+)
 def test_elemwise_binary_inplace(func, shape, format):
     xs = sparse.random(shape, density=0.5, format=format)
     ys = sparse.random(shape, density=0.5, format=format)
@@ -200,7 +214,7 @@ def test_elemwise_trinary(func, shape, formats):
     assert_eq(fs, func(x, y, z))
 
 
-@pytest.mark.parametrize("func", [operator.add, operator.mul])
+@given(func=st.sampled_from([operator.add, operator.mul]))
 @pytest.mark.parametrize(
     "shape1,shape2",
     [
@@ -259,16 +273,17 @@ def test_broadcast_to(shape1, shape2):
         [(2,), (2, 1), (2, 1, 1)],
     ],
 )
-@pytest.mark.parametrize(
-    "func",
-    [
-        lambda x, y, z: (x + y) * z,
-        lambda x, y, z: x * (y + z),
-        lambda x, y, z: x * y * z,
-        lambda x, y, z: x + y + z,
-        lambda x, y, z: x + y - z,
-        lambda x, y, z: x - y + z,
-    ],
+@given(
+    func=st.sampled_from(
+        [
+            lambda x, y, z: (x + y) * z,
+            lambda x, y, z: x * (y + z),
+            lambda x, y, z: x * y * z,
+            lambda x, y, z: x + y + z,
+            lambda x, y, z: x + y - z,
+            lambda x, y, z: x - y + z,
+        ]
+    ),
 )
 def test_trinary_broadcasting(shapes, func):
     args = [sparse.random(s, density=0.5) for s in shapes]
