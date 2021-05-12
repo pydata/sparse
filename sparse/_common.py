@@ -1232,9 +1232,9 @@ def stack(arrays, axis=0, compressed_axes=None):
     --------
     numpy.stack : NumPy equivalent function
     """
-    from ._coo import COO
+    from ._compressed import GCXS
 
-    if any(isinstance(arr, COO) for arr in arrays):
+    if not all(isinstance(arr, GCXS) for arr in arrays):
         from ._coo import stack as coo_stack
 
         return coo_stack(arrays, axis)
@@ -1271,9 +1271,9 @@ def concatenate(arrays, axis=0, compressed_axes=None):
     --------
     numpy.concatenate : NumPy equivalent function
     """
-    from ._coo import COO
+    from ._compressed import GCXS
 
-    if any(isinstance(arr, COO) for arr in arrays):
+    if not all(isinstance(arr, GCXS) for arr in arrays):
         from ._coo import concatenate as coo_concat
 
         return coo_concat(arrays, axis)

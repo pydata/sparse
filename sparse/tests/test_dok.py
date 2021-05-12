@@ -323,3 +323,14 @@ def test_pad_invalid(pad_width, constant_values, fill_value=0):
     y = sparse.random((50, 50, 3), density=0.15, format="dok")
     with pytest.raises(ValueError):
         np.pad(y, pad_width, constant_values=constant_values)
+
+
+@pytest.mark.parametrize("func", [np.concatenate, np.stack])
+def test_dok_concat_stack(func):
+    s1 = sparse.random((4, 4), density=0.25, format="dok")
+    s2 = sparse.random((4, 4), density=0.25, format="dok")
+
+    x1 = s1.todense()
+    x2 = s2.todense()
+
+    assert_eq(func([s1, s2]), func([x1, x2]))
