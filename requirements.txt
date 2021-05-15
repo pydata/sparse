@@ -1,4 +1,3 @@
 numpy>=1.17
 scipy>=0.19
 numba>=0.49
-hypothesis>=6.5

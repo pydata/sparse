@@ -1,4 +1,6 @@
 import pytest
+from hypothesis import given, strategies as st
+from hypothesis.strategies import data
 
 import numpy as np
 
@@ -7,8 +9,10 @@ from sparse import DOK
 from sparse._utils import assert_eq
 
 
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4)])
-@pytest.mark.parametrize("density", [0.1, 0.3, 0.5, 0.7])
+@given(
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4)]),
+    density=st.sampled_from([0.1, 0.3, 0.5, 0.7]),
+)
 def test_random_shape_nnz(shape, density):
     s = sparse.random(shape, density, format="dok")
 
@@ -56,15 +60,40 @@ def test_convert_from_scipy_sparse():
     assert_eq(x, s)
 
 
-@pytest.mark.parametrize(
-    "shape, data",
-    [
-        (2, {0: 1}),
-        ((2, 3), {(0, 1): 3, (1, 2): 4}),
-        ((2, 3, 4), {(0, 1): 3, (1, 2, 3): 4, (1, 1): [6, 5, 4, 1]}),
-    ],
+# @pytest.mark.parametrize(
+#     "shape, data",
+#     [
+#         (2, {0: 1}),
+#         ((2, 3), {(0, 1): 3, (1, 2): 4}),
+#         ((2, 3, 4), {(0, 1): 3, (1, 2, 3): 4, (1, 1): [6, 5, 4, 1]}),
+#     ],
+# )
+@given(
+    st.one_of(
+        st.tuples(
+            st.tuples(st.integers(min_value=1, max_value=5)),
+            st.dictionaries(
+                st.integers(min_value=0, max_value=2),
+                st.integers(min_value=0, max_value=4),
+            ),
+        ),
+        st.tuples(
+            st.tuples(
+                st.integers(min_value=1, max_value=5),
+                st.integers(min_value=1, max_value=5),
+            ),
+            st.dictionaries(
+                st.tuples(
+                    st.integers(min_value=0, max_value=2),
+                    st.integers(min_value=0, max_value=2),
+                ),
+                st.integers(min_value=0, max_value=4),
+            ),
+        ),
+    )
 )
-def test_construct(shape, data):
+def test_construct(sd):
+    shape, data = sd
     s = DOK(shape, data)
     x = np.zeros(shape, dtype=s.dtype)
 
@@ -74,8 +103,10 @@ def test_construct(shape, data):
     assert_eq(x, s)
 
 
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4)])
-@pytest.mark.parametrize("density", [0.1, 0.3, 0.5, 0.7])
+@given(
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4)]),
+    density=st.sampled_from([0.1, 0.3, 0.5, 0.7]),
+)
 def test_getitem_single(shape, density):
     s = sparse.random(shape, density, format="dok")
     x = s.todense()
@@ -88,19 +119,24 @@ def test_getitem_single(shape, density):
         assert np.isclose(s[idx], x[idx])
 
 
-@pytest.mark.parametrize(
-    "shape, density, indices",
-    [
-        ((2, 3), 0.5, (slice(1),)),
-        ((5, 5), 0.2, (slice(0, 4, 2),)),
-        ((10, 10), 0.2, (slice(5), slice(0, 10, 3))),
-        ((5, 5), 0.5, (slice(0, 4, 4), slice(0, 4, 4))),
-        ((5, 5), 0.4, (1, slice(0, 4, 1))),
-        ((10, 10), 0.8, ([0, 4, 5], [3, 2, 4])),
-        ((10, 10), 0, (slice(10), slice(10))),
-    ],
-)
-def test_getitem(shape, density, indices):
+# @pytest.mark.parametrize(
+#     "shape, density, indices",
+#     [
+#         ((2, 3), 0.5, (slice(1),)),
+#         ((5, 5), 0.2, (slice(0, 4, 2),)),
+#         ((10, 10), 0.2, (slice(5), slice(0, 10, 3))),
+#         ((5, 5), 0.5, (slice(0, 4, 4), slice(0, 4, 4))),
+#         ((5, 5), 0.4, (1, slice(0, 4, 1))),
+#         ((10, 10), 0.8, ([0, 4, 5], [3, 2, 4])),
+#         ((10, 10), 0, (slice(10), slice(10))),
+#     ],
+# )
+@given(data())
+def test_getitem(data):
+    n = st.integers(min_value=1, max_value=5)
+    shape = st.tuples(n, n)
+    density = st.floats(min_value=0, max_value=1)
+    indices = st.slices(st.integers(min_value=1, max_value=3))
     s = sparse.random(shape, density, format="dok")
     x = s.todense()
 
@@ -110,18 +146,16 @@ def test_getitem(shape, density, indices):
     assert_eq(sparse_sliced.todense(), dense_sliced)
 
 
-@pytest.mark.parametrize(
-    "shape, density, indices",
-    [
-        ((10, 10), 0.8, ([0, 4, 5],)),
-        ((5, 5, 5), 0.5, ([1, 2, 3], [0, 2, 2])),
-    ],
-)
-def test_getitem_notimplemented_error(shape, density, indices):
-    s = sparse.random(shape, density, format="dok")
+# @given(
+#     shape=st.sampled_from([(10, 10), (5, 5, 5)]),
+#     density=st.sampled_from([0.8, 0.5]),
+#     indices=st.sampled_from([([0, 4, 5],), ([1, 2, 3], [0, 2, 2])]),
+# )
+# def test_getitem_notimplemented_error(shape, density, indices):
+#     s = sparse.random(shape, density, format="dok")
 
-    with pytest.raises(NotImplementedError):
-        s[indices]
+#     with pytest.raises(NotImplementedError):
+#         s[indices]
 
 
 @pytest.mark.parametrize(
@@ -262,7 +296,7 @@ def test_set_zero():
     assert s.nnz == 0
 
 
-@pytest.mark.parametrize("format", ["coo", "dok"])
+@given(format=st.sampled_from(["coo", "dok"]))
 def test_asformat(format):
     s = sparse.random((2, 3, 4), density=0.5, format="dok")
     s2 = s.asformat(format)

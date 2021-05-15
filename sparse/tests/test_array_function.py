@@ -3,22 +3,24 @@ from sparse._settings import NEP18_ENABLED
 from sparse._utils import assert_eq
 import numpy as np
 import pytest
+from hypothesis import given, strategies as st
 
 
 if not NEP18_ENABLED:
     pytest.skip("NEP18 is not enabled", allow_module_level=True)
 
 
-@pytest.mark.parametrize(
-    "func",
-    [
-        np.mean,
-        np.std,
-        np.var,
-        np.sum,
-        lambda x: np.sum(x, axis=0),
-        lambda x: np.transpose(x),
-    ],
+@given(
+    func=st.sampled_from(
+        [
+            np.mean,
+            np.std,
+            np.var,
+            np.sum,
+            lambda x: np.sum(x, axis=0),
+            lambda x: np.transpose(x),
+        ]
+    ),
 )
 def test_unary(func):
     y = sparse.random((50, 50), density=0.25)
@@ -28,8 +30,10 @@ def test_unary(func):
     assert_eq(xx, yy)
 
 
-@pytest.mark.parametrize("arg_order", [(0, 1), (1, 0), (1, 1)])
-@pytest.mark.parametrize("func", [np.dot, np.result_type, np.tensordot, np.matmul])
+@given(
+    arg_order=st.sampled_from([(0, 1), (1, 0), (1, 1)]),
+    func=st.sampled_from([np.dot, np.result_type, np.tensordot, np.matmul]),
+)
 def test_binary(func, arg_order):
     y = sparse.random((50, 50), density=0.25)
     x = y.todense()
@@ -53,11 +57,12 @@ def test_stack():
     assert_eq(xx, yy)
 
 
-@pytest.mark.parametrize(
-    "arg_order",
-    [(0, 0, 1), (0, 1, 0), (0, 1, 1), (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)],
+@given(
+    arg_order=st.sampled_from(
+        [(0, 0, 1), (0, 1, 0), (0, 1, 1), (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]
+    ),
+    func=st.sampled_from([lambda a, b, c: np.where(a.astype(bool), b, c)]),
 )
-@pytest.mark.parametrize("func", [lambda a, b, c: np.where(a.astype(bool), b, c)])
 def test_ternary(func, arg_order):
     y = sparse.random((50, 50), density=0.25)
     x = y.todense()
@@ -67,7 +72,7 @@ def test_ternary(func, arg_order):
     assert_eq(xx, yy)
 
 
-@pytest.mark.parametrize("func", [np.shape, np.size, np.ndim])
+@given(func=st.sampled_from([np.shape, np.size, np.ndim]))
 def test_property(func):
     y = sparse.random((50, 50), density=0.25)
     x = y.todense()

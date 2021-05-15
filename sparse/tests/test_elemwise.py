@@ -8,29 +8,30 @@ from sparse._compressed import GCXS
 from sparse._utils import assert_eq, random_value_array
 
 
-@pytest.mark.parametrize(
-    "func",
-    [
-        np.expm1,
-        np.log1p,
-        np.sin,
-        np.tan,
-        np.sinh,
-        np.tanh,
-        np.floor,
-        np.ceil,
-        np.sqrt,
-        np.conj,
-        np.round,
-        np.rint,
-        lambda x: x.astype("int32"),
-        np.conjugate,
-        np.conj,
-        lambda x: x.round(decimals=2),
-        abs,
-    ],
+@given(
+    format=st.sampled_from([COO, GCXS, DOK]),
+    func=st.sampled_from(
+        [
+            np.expm1,
+            np.log1p,
+            np.sin,
+            np.tan,
+            np.sinh,
+            np.tanh,
+            np.floor,
+            np.ceil,
+            np.sqrt,
+            np.conj,
+            np.round,
+            np.rint,
+            lambda x: x.astype("int32"),
+            np.conjugate,
+            np.conj,
+            lambda x: x.round(decimals=2),
+            abs,
+        ]
+    ),
 )
-@given(format=st.sampled_from([COO, GCXS, DOK]))
 def test_elemwise(func, format):
     s = sparse.random((2, 3, 4), density=0.5, format=format)
     x = s.todense()
