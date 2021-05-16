@@ -119,24 +119,12 @@ def test_getitem_single(shape, density):
         assert np.isclose(s[idx], x[idx])
 
 
-# @pytest.mark.parametrize(
-#     "shape, density, indices",
-#     [
-#         ((2, 3), 0.5, (slice(1),)),
-#         ((5, 5), 0.2, (slice(0, 4, 2),)),
-#         ((10, 10), 0.2, (slice(5), slice(0, 10, 3))),
-#         ((5, 5), 0.5, (slice(0, 4, 4), slice(0, 4, 4))),
-#         ((5, 5), 0.4, (1, slice(0, 4, 1))),
-#         ((10, 10), 0.8, ([0, 4, 5], [3, 2, 4])),
-#         ((10, 10), 0, (slice(10), slice(10))),
-#     ],
-# )
 @given(data())
 def test_getitem(data):
     n = st.integers(min_value=1, max_value=5)
-    shape = st.tuples(n, n)
-    density = st.floats(min_value=0, max_value=1)
-    indices = st.slices(st.integers(min_value=1, max_value=3))
+    shape = data.draw(st.tuples(n, n))
+    density = data.draw(st.floats(min_value=0, max_value=1))
+    indices = data.draw(st.tuples(st.slices(shape[0]), st.slices(shape[1])))
     s = sparse.random(shape, density, format="dok")
     x = s.todense()
 
@@ -146,16 +134,16 @@ def test_getitem(data):
     assert_eq(sparse_sliced.todense(), dense_sliced)
 
 
-# @given(
-#     shape=st.sampled_from([(10, 10), (5, 5, 5)]),
-#     density=st.sampled_from([0.8, 0.5]),
-#     indices=st.sampled_from([([0, 4, 5],), ([1, 2, 3], [0, 2, 2])]),
-# )
-# def test_getitem_notimplemented_error(shape, density, indices):
-#     s = sparse.random(shape, density, format="dok")
+@given(
+    shape=st.sampled_from([(10, 10), (5, 5, 5)]),
+    density=st.sampled_from([0.8, 0.5]),
+    indices=st.sampled_from([([0, 4, 5],), ([1, 2, 3], [0, 2, 2])]),
+)
+def test_getitem_notimplemented_error(shape, density, indices):
+    s = sparse.random(shape, density, format="dok")
 
-#     with pytest.raises(NotImplementedError):
-#         s[indices]
+    with pytest.raises(NotImplementedError):
+        s[indices]
 
 
 @pytest.mark.parametrize(
