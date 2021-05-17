@@ -3,12 +3,17 @@ import sparse
 
 
 class Matmul_Sparse:
-    params = (["coo", "gcxs"], [0.01, 0.33, 0.5, 1.0])
+    params = (["coo", "gcxs"], [0, 1, None])
 
     def setup(self, p, dens_arg):
         np.random.seed(0)
         self.x = sparse.random((100, 100), density=0.01, format=p)
-        self.y = sparse.random((100, 100), density=dens_arg, format=p)
+        self.y = sparse.random((100, 100), density=0.01, format=p)
+
+        if(dens_arg==1):
+            self.x = self.x.todense()
+        elif(dens_arg==0)
+            self.y = self.y.todense()
 
         self.x @ self.y
 
