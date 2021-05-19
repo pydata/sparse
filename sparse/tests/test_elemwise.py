@@ -2,7 +2,9 @@ import numpy as np
 import sparse
 import pytest
 from hypothesis import given, strategies as st
+from hypothesis.strategies import composite
 import operator
+import random
 from sparse import COO, DOK
 from sparse._compressed import GCXS
 from sparse._utils import assert_eq, random_value_array
@@ -76,22 +78,32 @@ def test_elemwise_inplace(func, format):
     assert_eq(x, s)
 
 
-@pytest.mark.parametrize(
-    "shape1, shape2",
-    [
-        ((2, 3, 4), (3, 4)),
-        ((3, 4), (2, 3, 4)),
-        ((3, 1, 4), (3, 2, 4)),
-        ((1, 3, 4), (3, 4)),
-        ((3, 4, 1), (3, 4, 2)),
-        ((1, 5), (5, 1)),
-        ((3, 1), (3, 4)),
-        ((3, 1), (1, 4)),
-        ((1, 4), (3, 4)),
-        ((2, 2, 2), (1, 1, 1)),
-    ],
+# @pytest.mark.parametrize(
+#     "shape1, shape2",
+#     [
+#         ((2, 3, 4), (3, 4)),
+#         ((3, 4), (2, 3, 4)),
+#         ((3, 1, 4), (3, 2, 4)),
+#         ((1, 3, 4), (3, 4)),
+#         ((3, 4, 1), (3, 4, 2)),
+#         ((1, 5), (5, 1)),
+#         ((3, 1), (3, 4)),
+#         ((3, 1), (1, 4)),
+#         ((1, 4), (3, 4)),
+#         ((2, 2, 2), (1, 1, 1)),
+#     ],
+# )
+@composite
+def generate_shapes(draw, elements=st.integers(min_value=1, max_value=5)):
+    shape = st.tuples(elements)
+    return shape
+
+
+@given(
+    shape1=generate_shapes(),
+    shape2=generate_shapes(),
+    format=st.sampled_from([COO, GCXS, DOK]),
 )
-@given(format=st.sampled_from([COO, GCXS, DOK]))
 def test_elemwise_mixed(shape1, shape2, format):
     s1 = sparse.random(shape1, density=0.5, format=format)
     x2 = np.random.rand(*shape2)
@@ -154,8 +166,6 @@ def test_elemwise_mixed_broadcast(format):
     shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
     format=st.sampled_from([COO, GCXS, DOK]),
 )
-# @pytest.mark.parametrize("shape", )
-# @pytest.mark.parametrize("format", [])
 def test_elemwise_binary(func, shape, format):
     xs = sparse.random(shape, density=0.5, format=format)
     ys = sparse.random(shape, density=0.5, format=format)
@@ -184,23 +194,23 @@ def test_elemwise_binary_inplace(func, shape, format):
     assert_eq(xs, x)
 
 
-@pytest.mark.parametrize(
-    "func",
-    [
-        lambda x, y, z: x + y + z,
-        lambda x, y, z: x * y * z,
-        lambda x, y, z: x + y * z,
-        lambda x, y, z: (x + y) * z,
-    ],
-)
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-@pytest.mark.parametrize(
-    "formats",
-    [
-        [COO, COO, COO],
-        [GCXS, GCXS, GCXS],
-        [COO, GCXS, GCXS],
-    ],
+@given(
+    func=st.sampled_from(
+        [
+            lambda x, y, z: x + y + z,
+            lambda x, y, z: x * y * z,
+            lambda x, y, z: x + y * z,
+            lambda x, y, z: (x + y) * z,
+        ],
+    ),
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
+    formats=st.sampled_from(
+        [
+            [COO, COO, COO],
+            [GCXS, GCXS, GCXS],
+            [COO, GCXS, GCXS],
+        ]
+    ),
 )
 def test_elemwise_trinary(func, shape, formats):
     xs = sparse.random(shape, density=0.5, format=formats[0])
@@ -305,8 +315,10 @@ def test_trinary_broadcasting(shapes, func):
         ([(4,), (4, 4), (4, 4, 4)], lambda x, y, z: x + y + z),
     ],
 )
-@pytest.mark.parametrize("value", [np.nan, np.inf, -np.inf])
-@pytest.mark.parametrize("fraction", [0.25, 0.5, 0.75, 1.0])
+@given(
+    value=st.sampled_from([np.nan, np.inf, -np.inf]),
+    fraction=st.sampled_from([0.25, 0.5, 0.75, 1.0]),
+)
 @pytest.mark.filterwarnings("ignore:invalid value")
 def test_trinary_broadcasting_pathological(shapes, func, value, fraction):
     args = [
@@ -369,7 +381,7 @@ def test_dense_broadcasting(monkeypatch):
     assert state["num_matches"] <= 3
 
 
-@pytest.mark.parametrize("format", ["coo", "dok", "gcxs"])
+@given(format=st.sampled_from(["coo", "dok", "gcxs"]))
 def test_sparsearray_elemwise(format):
     xs = sparse.random((3, 4), density=0.5, format=format)
     ys = sparse.random((3, 4), density=0.5, format=format)
@@ -403,17 +415,18 @@ def test_elemwise_noargs():
     assert_eq(sparse.elemwise(func), func())
 
 
-@pytest.mark.parametrize(
-    "func",
-    [
-        operator.pow,
-        operator.truediv,
-        operator.floordiv,
-        operator.ge,
-        operator.le,
-        operator.eq,
-        operator.mod,
-    ],
+@given(
+    func=st.sampled_from(
+        [
+            operator.pow,
+            operator.truediv,
+            operator.floordiv,
+            operator.ge,
+            operator.le,
+            operator.eq,
+            operator.mod,
+        ]
+    ),
 )
 @pytest.mark.filterwarnings("ignore:divide by zero")
 @pytest.mark.filterwarnings("ignore:invalid value")
@@ -450,8 +463,10 @@ def test_nonzero_outout_fv_ufunc(func, format):
         (operator.mod, 5),
     ],
 )
-@pytest.mark.parametrize("convert_to_np_number", [True, False])
-@pytest.mark.parametrize("format", [COO, GCXS, DOK])
+@given(
+    convert_to_np_number=st.sampled_from([True, False]),
+    format=st.sampled_from([COO, GCXS, DOK]),
+)
 def test_elemwise_scalar(func, scalar, convert_to_np_number, format):
     xs = sparse.random((2, 3, 4), density=0.5, format=format)
     if convert_to_np_number:
@@ -481,7 +496,7 @@ def test_elemwise_scalar(func, scalar, convert_to_np_number, format):
         (operator.eq, 1),
     ],
 )
-@pytest.mark.parametrize("convert_to_np_number", [True, False])
+@given(convert_to_np_number=st.sampled_from([True, False]))
 def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number):
     xs = sparse.random((2, 3, 4), density=0.5)
     if convert_to_np_number:
@@ -530,9 +545,11 @@ def test_scalar_output_nonzero_fv(func, scalar):
     assert_eq(f, fs)
 
 
-@pytest.mark.parametrize("func", [operator.and_, operator.or_, operator.xor])
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-@pytest.mark.parametrize("format", [COO, GCXS, DOK])
+@given(
+    func=st.sampled_from([operator.and_, operator.or_, operator.xor]),
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
+    format=st.sampled_from([COO, GCXS, DOK]),
+)
 def test_bitwise_binary(func, shape, format):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
@@ -545,9 +562,11 @@ def test_bitwise_binary(func, shape, format):
     assert_eq(func(xs, ys), func(x, y))
 
 
-@pytest.mark.parametrize("func", [operator.iand, operator.ior, operator.ixor])
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-@pytest.mark.parametrize("format", [COO, GCXS, DOK])
+@given(
+    func=st.sampled_from([operator.iand, operator.ior, operator.ixor]),
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
+    format=st.sampled_from([COO, GCXS, DOK]),
+)
 def test_bitwise_binary_inplace(func, shape, format):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
@@ -563,8 +582,10 @@ def test_bitwise_binary_inplace(func, shape, format):
     assert_eq(xs, x)
 
 
-@pytest.mark.parametrize("func", [operator.lshift, operator.rshift])
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+@given(
+    func=st.sampled_from([operator.lshift, operator.rshift]),
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
+)
 def test_bitshift_binary(func, shape):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
@@ -580,8 +601,10 @@ def test_bitshift_binary(func, shape):
     assert_eq(func(xs, ys), func(x, y))
 
 
-@pytest.mark.parametrize("func", [operator.ilshift, operator.irshift])
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+@given(
+    func=st.sampled_from([operator.ilshift, operator.irshift]),
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
+)
 def test_bitshift_binary_inplace(func, shape):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
@@ -600,8 +623,10 @@ def test_bitshift_binary_inplace(func, shape):
     assert_eq(xs, x)
 
 
-@pytest.mark.parametrize("func", [operator.and_])
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+@given(
+    func=st.sampled_from([operator.and_]),
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
+)
 def test_bitwise_scalar(func, shape):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
@@ -614,8 +639,10 @@ def test_bitwise_scalar(func, shape):
     assert_eq(func(y, xs), func(y, x))
 
 
-@pytest.mark.parametrize("func", [operator.lshift, operator.rshift])
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+@given(
+    func=st.sampled_from([operator.lshift, operator.rshift]),
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
+)
 def test_bitshift_scalar(func, shape):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
@@ -630,8 +657,10 @@ def test_bitshift_scalar(func, shape):
     assert_eq(func(xs, y), func(x, y))
 
 
-@pytest.mark.parametrize("func", [operator.invert])
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+@given(
+    func=st.sampled_from([operator.invert]),
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
+)
 def test_unary_bitwise_nonzero_output_fv(func, shape):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
@@ -647,8 +676,10 @@ def test_unary_bitwise_nonzero_output_fv(func, shape):
     assert_eq(f, fs)
 
 
-@pytest.mark.parametrize("func", [operator.or_, operator.xor])
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+@given(
+    func=st.sampled_from([operator.or_, operator.xor]),
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
+)
 def test_binary_bitwise_nonzero_output_fv(func, shape):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
@@ -666,11 +697,19 @@ def test_binary_bitwise_nonzero_output_fv(func, shape):
     assert_eq(f, fs)
 
 
-@pytest.mark.parametrize(
-    "func",
-    [operator.mul, operator.add, operator.sub, operator.gt, operator.lt, operator.ne],
+@given(
+    func=st.sampled_from(
+        [
+            operator.mul,
+            operator.add,
+            operator.sub,
+            operator.gt,
+            operator.lt,
+            operator.ne,
+        ]
+    ),
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
 )
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
 def test_elemwise_nonzero_input_fv(func, shape):
     xs = sparse.random(shape, density=0.5, fill_value=np.random.rand())
     ys = sparse.random(shape, density=0.5, fill_value=np.random.rand())
@@ -681,8 +720,10 @@ def test_elemwise_nonzero_input_fv(func, shape):
     assert_eq(func(xs, ys), func(x, y))
 
 
-@pytest.mark.parametrize("func", [operator.lshift, operator.rshift])
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+@given(
+    func=st.sampled_from([operator.lshift, operator.rshift]),
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
+)
 def test_binary_bitshift_densification_fails(func, shape):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
@@ -700,8 +741,10 @@ def test_binary_bitshift_densification_fails(func, shape):
     assert_eq(f, fs)
 
 
-@pytest.mark.parametrize("func", [operator.and_, operator.or_, operator.xor])
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+@given(
+    func=st.sampled_from([operator.and_, operator.or_, operator.xor]),
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
+)
 def test_bitwise_binary_bool(func, shape):
     # Small arrays need high density to have nnz entries
     xs = sparse.random(shape, density=0.5).astype(bool)
