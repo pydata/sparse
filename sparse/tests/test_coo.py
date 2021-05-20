@@ -162,10 +162,8 @@ def test_ufunc_reductions_kwargs(reduction, kwargs):
         assert isinstance(xx, COO)
 
 
-@pytest.mark.parametrize(
-    "reduction", ["nansum", "nanmean", "nanprod", "nanmax", "nanmin"]
-)
 @given(
+    reduction=st.sampled_from(["nansum", "nanmean", "nanprod", "nanmax", "nanmin"]),
     axis=st.sampled_from([None, 0, 1]),
     keepdims=st.sampled_from([False]),
     fraction=st.sampled_from([0.25, 0.5, 0.75, 1.0]),
@@ -207,18 +205,19 @@ def test_transpose(axis):
     assert_eq(xx, yy)
 
 
-@pytest.mark.parametrize(
-    "axis",
-    [
-        (0, 1),  # too few
-        (0, 1, 2, 3),  # too many
-        (3, 1, 0),  # axis 3 illegal
-        (0, -1, -4),  # axis -4 illegal
-        (0, 0, 1),  # duplicate axis 0
-        (0, -1, 2),  # duplicate axis -1 == 2
-        0.3,  # Invalid type in axis
-        ((0, 1, 2),),  # Iterable inside iterable
-    ],
+@given(
+    axis=st.sampled_from(
+        [
+            (0, 1),  # too few
+            (0, 1, 2, 3),  # too many
+            (3, 1, 0),  # axis 3 illegal
+            (0, -1, -4),  # axis -4 illegal
+            (0, 0, 1),  # duplicate axis 0
+            (0, -1, 2),  # duplicate axis -1 == 2
+            0.3,  # Invalid type in axis
+            ((0, 1, 2),),  # Iterable inside iterable
+        ]
+    ),
 )
 def test_transpose_error(axis):
     x = sparse.random((2, 3, 4), density=0.25)
@@ -423,8 +422,8 @@ def test_kron(a_ndim, b_ndim):
         assert_eq(sparse.kron(a, b), sol)
 
 
-@pytest.mark.parametrize(
-    "a_spmatrix, b_spmatrix", [(True, True), (True, False), (False, True)]
+@given(
+    a_spmatrix=st.sampled_from([True, False]), b_spmatrix=st.sampled_from([True, False])
 )
 def test_kron_spmatrix(a_spmatrix, b_spmatrix):
     sa = sparse.random((3, 4), density=0.5)
@@ -474,67 +473,68 @@ def test_gt():
     assert_eq(x >= m, s >= m)
 
 
-@pytest.mark.parametrize(
-    "index",
-    [
-        # Integer
-        0,
-        1,
-        -1,
-        (1, 1, 1),
-        # Pure slices
-        (slice(0, 2),),
-        (slice(None, 2), slice(None, 2)),
-        (slice(1, None), slice(1, None)),
-        (slice(None, None),),
-        (slice(None, None, -1),),
-        (slice(None, 2, -1), slice(None, 2, -1)),
-        (slice(1, None, 2), slice(1, None, 2)),
-        (slice(None, None, 2),),
-        (slice(None, 2, -1), slice(None, 2, -2)),
-        (slice(1, None, 2), slice(1, None, 1)),
-        (slice(None, None, -2),),
-        # Combinations
-        (0, slice(0, 2)),
-        (slice(0, 1), 0),
-        (None, slice(1, 3), 0),
-        (slice(0, 3), None, 0),
-        (slice(1, 2), slice(2, 4)),
-        (slice(1, 2), slice(None, None)),
-        (slice(1, 2), slice(None, None), 2),
-        (slice(1, 2, 2), slice(None, None), 2),
-        (slice(1, 2, None), slice(None, None, 2), 2),
-        (slice(1, 2, -2), slice(None, None), -2),
-        (slice(1, 2, None), slice(None, None, -2), 2),
-        (slice(1, 2, -1), slice(None, None), -1),
-        (slice(1, 2, None), slice(None, None, -1), 2),
-        (slice(2, 0, -1), slice(None, None), -1),
-        (slice(-2, None, None),),
-        (slice(-1, None, None), slice(-2, None, None)),
-        # With ellipsis
-        (Ellipsis, slice(1, 3)),
-        (1, Ellipsis, slice(1, 3)),
-        (slice(0, 1), Ellipsis),
-        (Ellipsis, None),
-        (None, Ellipsis),
-        (1, Ellipsis),
-        (1, Ellipsis, None),
-        (1, 1, 1, Ellipsis),
-        (Ellipsis, 1, None),
-        # With multi-axis advanced indexing
-        ([0, 1],) * 2,
-        ([0, 1], [0, 2]),
-        ([0, 0, 0], [0, 1, 2], [1, 2, 1]),
-        # Pathological - Slices larger than array
-        (slice(None, 1000)),
-        (slice(None), slice(None, 1000)),
-        (slice(None), slice(1000, -1000, -1)),
-        (slice(None), slice(1000, -1000, -50)),
-        # Pathological - Wrong ordering of start/stop
-        (slice(5, 0),),
-        (slice(0, 5, -1),),
-        (slice(0, 0, None),),
-    ],
+@given(
+    index=st.sampled_from(
+        [
+            # Integer
+            0,
+            1,
+            -1,
+            (1, 1, 1),
+            # Pure slices
+            (slice(0, 2),),
+            (slice(None, 2), slice(None, 2)),
+            (slice(1, None), slice(1, None)),
+            (slice(None, None),),
+            (slice(None, None, -1),),
+            (slice(None, 2, -1), slice(None, 2, -1)),
+            (slice(1, None, 2), slice(1, None, 2)),
+            (slice(None, None, 2),),
+            (slice(None, 2, -1), slice(None, 2, -2)),
+            (slice(1, None, 2), slice(1, None, 1)),
+            (slice(None, None, -2),),
+            # Combinations
+            (0, slice(0, 2)),
+            (slice(0, 1), 0),
+            (None, slice(1, 3), 0),
+            (slice(0, 3), None, 0),
+            (slice(1, 2), slice(2, 4)),
+            (slice(1, 2), slice(None, None)),
+            (slice(1, 2), slice(None, None), 2),
+            (slice(1, 2, 2), slice(None, None), 2),
+            (slice(1, 2, None), slice(None, None, 2), 2),
+            (slice(1, 2, -2), slice(None, None), -2),
+            (slice(1, 2, None), slice(None, None, -2), 2),
+            (slice(1, 2, -1), slice(None, None), -1),
+            (slice(1, 2, None), slice(None, None, -1), 2),
+            (slice(2, 0, -1), slice(None, None), -1),
+            (slice(-2, None, None),),
+            (slice(-1, None, None), slice(-2, None, None)),
+            # With ellipsis
+            (Ellipsis, slice(1, 3)),
+            (1, Ellipsis, slice(1, 3)),
+            (slice(0, 1), Ellipsis),
+            (Ellipsis, None),
+            (None, Ellipsis),
+            (1, Ellipsis),
+            (1, Ellipsis, None),
+            (1, 1, 1, Ellipsis),
+            (Ellipsis, 1, None),
+            # With multi-axis advanced indexing
+            ([0, 1],) * 2,
+            ([0, 1], [0, 2]),
+            ([0, 0, 0], [0, 1, 2], [1, 2, 1]),
+            # Pathological - Slices larger than array
+            (slice(None, 1000)),
+            (slice(None), slice(None, 1000)),
+            (slice(None), slice(1000, -1000, -1)),
+            (slice(None), slice(1000, -1000, -50)),
+            # Pathological - Wrong ordering of start/stop
+            (slice(5, 0),),
+            (slice(0, 5, -1),),
+            (slice(0, 0, None),),
+        ]
+    )
 )
 def test_slicing(index):
     s = sparse.random((2, 3, 4), density=0.5)
@@ -543,21 +543,22 @@ def test_slicing(index):
     assert_eq(x[index], s[index])
 
 
-@pytest.mark.parametrize(
-    "index",
-    [
-        ([1, 0], 0),
-        (1, [0, 2]),
-        (0, [1, 0], 0),
-        (1, [2, 0], 0),
-        (1, [], 0),
-        ([True, False], slice(1, None), slice(-2, None)),
-        (slice(1, None), slice(-2, None), [True, False, True, False]),
-        ([1, 0],),
-        (Ellipsis, [2, 1, 3]),
-        (slice(None), [2, 1, 2]),
-        (1, [2, 0, 1]),
-    ],
+@given(
+    index=st.sampled_from(
+        [
+            ([1, 0], 0),
+            (1, [0, 2]),
+            (0, [1, 0], 0),
+            (1, [2, 0], 0),
+            (1, [], 0),
+            ([True, False], slice(1, None), slice(-2, None)),
+            (slice(1, None), slice(-2, None), [True, False, True, False]),
+            ([1, 0],),
+            (Ellipsis, [2, 1, 3]),
+            (slice(None), [2, 1, 2]),
+            (1, [2, 0, 1]),
+        ]
+    )
 )
 def test_advanced_indexing(index):
     s = sparse.random((2, 3, 4), density=0.5)
@@ -584,21 +585,22 @@ def test_custom_dtype_slicing():
     assert_eq(x["part3"], s["part3"])
 
 
-@pytest.mark.parametrize(
-    "index",
-    [
-        (Ellipsis, Ellipsis),
-        (1, 1, 1, 1),
-        (slice(None),) * 4,
-        5,
-        -5,
-        "foo",
-        [True, False, False],
-        0.5,
-        [0.5],
-        {"potato": "kartoffel"},
-        ([[0, 1]],),
-    ],
+@given(
+    index=st.sampled_from(
+        [
+            (Ellipsis, Ellipsis),
+            (1, 1, 1, 1),
+            (slice(None),) * 4,
+            5,
+            -5,
+            "foo",
+            [True, False, False],
+            0.5,
+            [0.5],
+            {"potato": "kartoffel"},
+            ([[0, 1]],),
+        ]
+    )
 )
 def test_slicing_errors(index):
     s = sparse.random((2, 3, 4), density=0.5)
@@ -790,28 +792,37 @@ def test_op_scipy_sparse(func):
     assert_eq(func(x, y), func(xs, ys))
 
 
-@pytest.mark.parametrize(
-    "func",
-    [
-        operator.add,
-        operator.sub,
-        pytest.param(
-            operator.mul,
-            marks=pytest.mark.xfail(reason="Scipy sparse auto-densifies in this case."),
-        ),
-        pytest.param(
-            operator.gt,
-            marks=pytest.mark.xfail(reason="Scipy sparse doesn't support this yet."),
-        ),
-        pytest.param(
-            operator.lt,
-            marks=pytest.mark.xfail(reason="Scipy sparse doesn't support this yet."),
-        ),
-        pytest.param(
-            operator.ne,
-            marks=pytest.mark.xfail(reason="Scipy sparse doesn't support this yet."),
-        ),
-    ],
+@given(
+    func=st.sampled_from(
+        [
+            operator.add,
+            operator.sub,
+            pytest.param(
+                operator.mul,
+                marks=pytest.mark.xfail(
+                    reason="Scipy sparse auto-densifies in this case."
+                ),
+            ),
+            pytest.param(
+                operator.gt,
+                marks=pytest.mark.xfail(
+                    reason="Scipy sparse doesn't support this yet."
+                ),
+            ),
+            pytest.param(
+                operator.lt,
+                marks=pytest.mark.xfail(
+                    reason="Scipy sparse doesn't support this yet."
+                ),
+            ),
+            pytest.param(
+                operator.ne,
+                marks=pytest.mark.xfail(
+                    reason="Scipy sparse doesn't support this yet."
+                ),
+            ),
+        ]
+    )
 )
 def test_op_scipy_sparse_left(func):
     ys = sparse.random((3, 4), density=0.5)
@@ -1027,20 +1038,21 @@ def test_np_array():
         np.array(s)
 
 
-@pytest.mark.parametrize(
-    "shapes",
-    [
-        [(2,), (3, 2), (4, 3, 2)],
-        [(3,), (2, 3), (2, 2, 3)],
-        [(2,), (2, 2), (2, 2, 2)],
-        [(4,), (4, 4), (4, 4, 4)],
-        [(4,), (4, 4), (4, 4, 4)],
-        [(4,), (4, 4), (4, 4, 4)],
-        [(1, 1, 2), (1, 3, 1), (4, 1, 1)],
-        [(2,), (2, 1), (2, 1, 1)],
-        [(3,), (), (2, 3)],
-        [(4, 4), (), ()],
-    ],
+@given(
+    shapes=st.sampled_from(
+        [
+            [(2,), (3, 2), (4, 3, 2)],
+            [(3,), (2, 3), (2, 2, 3)],
+            [(2,), (2, 2), (2, 2, 2)],
+            [(4,), (4, 4), (4, 4, 4)],
+            [(4,), (4, 4), (4, 4, 4)],
+            [(4,), (4, 4), (4, 4, 4)],
+            [(1, 1, 2), (1, 3, 1), (4, 1, 1)],
+            [(2,), (2, 1), (2, 1, 1)],
+            [(3,), (), (2, 3)],
+            [(4, 4), (), ()],
+        ]
+    )
 )
 def test_three_arg_where(shapes):
     cs = sparse.random(shapes[0], density=0.5).astype(np.bool_)
@@ -1086,7 +1098,7 @@ def test_two_arg_where():
         sparse.where(cs, xs)
 
 
-@pytest.mark.parametrize("func", [operator.imul, operator.iadd, operator.isub])
+@given(func=st.sampled_from([operator.imul, operator.iadd, operator.isub]))
 def test_inplace_invalid_shape(func):
     xs = sparse.random((3, 4), density=0.5)
     ys = sparse.random((2, 3, 4), density=0.5)
@@ -1542,8 +1554,11 @@ RESULT_TYPE_DTYPES = [
 ]
 
 
-@pytest.mark.parametrize("t1", RESULT_TYPE_DTYPES)
-@pytest.mark.parametrize("t2", RESULT_TYPE_DTYPES)
+@given(
+    t1=st.sampled_from(RESULT_TYPE_DTYPES),
+    t2=st.sampled_from(RESULT_TYPE_DTYPES),
+    data=st.sampled_from([1, [1]]),
+)
 @pytest.mark.parametrize(
     "func",
     [
@@ -1554,7 +1569,6 @@ RESULT_TYPE_DTYPES = [
         ),
     ],
 )
-@given(data=st.sampled_from([1, [1]]))  # Not the same outputs!
 def test_result_type(t1, t2, func, data):
     a = np.array(data, dtype=t1)
     b = np.array(data, dtype=t2)
