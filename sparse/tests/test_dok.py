@@ -1,6 +1,7 @@
 import pytest
 from hypothesis import given, strategies as st
-from hypothesis.strategies import data
+from hypothesis.strategies import data, composite
+from _utils import gen_shape_data
 
 import numpy as np
 
@@ -60,38 +61,7 @@ def test_convert_from_scipy_sparse():
     assert_eq(x, s)
 
 
-# @pytest.mark.parametrize(
-#     "shape, data",
-#     [
-#         (2, {0: 1}),
-#         ((2, 3), {(0, 1): 3, (1, 2): 4}),
-#         ((2, 3, 4), {(0, 1): 3, (1, 2, 3): 4, (1, 1): [6, 5, 4, 1]}),
-#     ],
-# )
-@given(
-    st.one_of(
-        st.tuples(
-            st.tuples(st.integers(min_value=1, max_value=5)),
-            st.dictionaries(
-                st.integers(min_value=0, max_value=2),
-                st.integers(min_value=0, max_value=4),
-            ),
-        ),
-        st.tuples(
-            st.tuples(
-                st.integers(min_value=1, max_value=5),
-                st.integers(min_value=1, max_value=5),
-            ),
-            st.dictionaries(
-                st.tuples(
-                    st.integers(min_value=0, max_value=2),
-                    st.integers(min_value=0, max_value=2),
-                ),
-                st.integers(min_value=0, max_value=4),
-            ),
-        ),
-    )
-)
+@given(gen_shape_data())
 def test_construct(sd):
     shape, data = sd
     s = DOK(shape, data)
