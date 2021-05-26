@@ -1,7 +1,7 @@
 import pytest
 from hypothesis import given, strategies as st
 from hypothesis.strategies import data, composite
-from _utils import gen_shape_data
+from _utils import gen_shape_data, gen_getitem_notimpl_err, gen_getitem_index_err
 
 import numpy as np
 
@@ -104,26 +104,18 @@ def test_getitem(data):
     assert_eq(sparse_sliced.todense(), dense_sliced)
 
 
-@given(
-    shape=st.sampled_from([(10, 10), (5, 5, 5)]),
-    density=st.sampled_from([0.8, 0.5]),
-    indices=st.sampled_from([([0, 4, 5],), ([1, 2, 3], [0, 2, 2])]),
-)
-def test_getitem_notimplemented_error(shape, density, indices):
+@given(gen_getitem_notimpl_err())
+def test_getitem_notimplemented_error(sd):
+    shape, density, indices = sd
     s = sparse.random(shape, density, format="dok")
 
     with pytest.raises(NotImplementedError):
         s[indices]
 
 
-@pytest.mark.parametrize(
-    "shape, density, indices",
-    [
-        ((10, 10), 0.8, ([0, 4, 5], [0, 2])),
-        ((5, 5, 5), 0.5, ([1, 2, 3], [0], [2, 3, 4])),
-    ],
-)
-def test_getitem_index_error(shape, density, indices):
+@given(gen_getitem_index_err())
+def test_getitem_index_error(sd):
+    shape, density, indices = sd
     s = sparse.random(shape, density, format="dok")
 
     with pytest.raises(IndexError):
