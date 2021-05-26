@@ -1,7 +1,13 @@
 import pytest
 from hypothesis import given, strategies as st
 from hypothesis.strategies import data, composite
-from _utils import gen_shape_data, gen_getitem_notimpl_err, gen_getitem_index_err
+from _utils import (
+    gen_shape_data,
+    gen_getitem_notimpl_err,
+    gen_getitem_index_err,
+    gen_setitem_notimpl_err,
+    gen_setitem_val_err,
+)
 
 import numpy as np
 
@@ -186,28 +192,26 @@ def test_setitem_index_error(shape, index, value_shape):
         s[index] = value
 
 
-@pytest.mark.parametrize(
-    "shape, index, value_shape",
-    [
-        ((2, 3), ([0, 1],), ()),
-    ],
-)
-def test_setitem_notimplemented_error(shape, index, value_shape):
+@given(gen_setitem_notimpl_err())
+def test_setitem_notimplemented_error(sd):
+    shape, index = sd
     s = sparse.random(shape, 0.5, format="dok")
-    value = np.random.rand(*value_shape)
+    value = np.random.rand()
     with pytest.raises(NotImplementedError):
         s[index] = value
 
 
-@pytest.mark.parametrize(
-    "shape, index, value_shape",
-    [
-        ((2, 3), ([0, 1], [1, 2]), (1, 2)),
-        ((2, 3), ([0, 1], [1, 2]), (3,)),
-        ((2,), 1, (2,)),
-    ],
-)
-def test_setitem_value_error(shape, index, value_shape):
+# @pytest.mark.parametrize(
+#     "shape, index, value_shape",
+#     [
+#         ((2, 3), ([0, 1], [1, 2]), (1, 2)),
+#         ((2, 3), ([0, 1], [1, 2]), (3,)),
+#         ((2,), 1, (2,)),
+#     ],
+# )
+@given(gen_setitem_val_err())
+def test_setitem_value_error(sd):
+    shape, index, value_shape = sd
     s = sparse.random(shape, 0.5, format="dok")
     value = np.random.rand(*value_shape)
 

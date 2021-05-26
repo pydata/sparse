@@ -42,3 +42,29 @@ def gen_getitem_index_err(draw):
         ).map(tuple)
     )
     return shape, density, indices
+
+
+@composite
+def gen_setitem_notimpl_err(draw):
+    shape = draw(array_shapes(max_dims=2, min_side=5))
+    index = draw(st.lists(st.lists(st.integers(), min_size=2, max_size=2)).map(tuple))
+
+    return shape, index
+
+
+@composite
+def gen_setitem_val_err(draw):
+    shape = draw(array_shapes(max_dims=2, min_side=5))
+    index = draw(
+        st.lists(
+            st.lists(st.integers(), min_size=2, max_size=2), min_size=2, max_size=2
+        ).map(tuple)
+    )
+    value_shape = draw(
+        st.one_of(
+            array_shapes(max_dims=2, min_side=1, max_side=3),
+            array_shapes(max_dims=1, min_side=1, max_side=3),
+        )
+    )
+
+    return shape, index, value_shape
