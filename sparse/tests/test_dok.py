@@ -129,6 +129,7 @@ def test_getitem_notimplemented_error(shape, density, indices):
     [
         ((10, 10), 0.8, ([0, 4, 5], [0, 2])),
         ((5, 5, 5), 0.5, ([1, 2, 3], [0], [2, 3, 4])),
+        ((10,), 0.5, (5, 6)),
     ],
 )
 def test_getitem_index_error(shape, density, indices):
