@@ -278,3 +278,47 @@ def test_zeros_like():
     assert s.shape == s2.shape
     assert s.dtype == s2.dtype
     assert isinstance(s2, sparse.DOK)
+
+
+@pytest.mark.parametrize(
+    "pad_width",
+    [
+        2,
+        (2, 1),
+        ((2), (1)),
+        ((1, 2), (4, 5), (7, 8)),
+    ],
+)
+@pytest.mark.parametrize("constant_values", [0, 1, 150, np.nan])
+def test_pad_valid(pad_width, constant_values):
+    y = sparse.random(
+        (50, 50, 3), density=0.15, fill_value=constant_values, format="dok"
+    )
+    x = y.todense()
+    xx = np.pad(x, pad_width=pad_width, constant_values=constant_values)
+    yy = np.pad(y, pad_width=pad_width, constant_values=constant_values)
+    assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize(
+    "pad_width",
+    [
+        ((2, 1), (5, 7)),
+    ],
+)
+@pytest.mark.parametrize("constant_values", [150, 2, (1, 2)])
+def test_pad_invalid(pad_width, constant_values, fill_value=0):
+    y = sparse.random((50, 50, 3), density=0.15, format="dok")
+    with pytest.raises(ValueError):
+        np.pad(y, pad_width, constant_values=constant_values)
+
+
+@pytest.mark.parametrize("func", [np.concatenate, np.stack])
+def test_dok_concat_stack(func):
+    s1 = sparse.random((4, 4), density=0.25, format="dok")
+    s2 = sparse.random((4, 4), density=0.25, format="dok")
+
+    x1 = s1.todense()
+    x2 = s2.todense()
+
+    assert_eq(func([s1, s2]), func([x1, x2]))

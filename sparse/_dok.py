@@ -320,17 +320,10 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         return self.nnz * self.dtype.itemsize
 
     def __getitem__(self, key):
-
-        # 1D fancy indexing
-        if (
-            self.ndim == 1
-            and isinstance(key, Iterable)
-            and all(isinstance(i, (int, np.integer)) for i in key)
-            and len(key) > 1
-        ):
+        if not isinstance(key, tuple):
             key = (key,)
 
-        if isinstance(key, tuple) and all(isinstance(k, Iterable) for k in key):
+        if all(isinstance(k, Iterable) for k in key):
             if len(key) != self.ndim:
                 raise NotImplementedError(
                     f"Index sequences for all {self.ndim} array dimensions needed!"
@@ -393,7 +386,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         )
 
     def _filter_by_key(self, coords, slice_key):
-        """Filter data coordinates to be within given slice """
+        """Filter data coordinates to be within given slice"""
         filter_arr = np.ones(coords.shape[0], dtype=bool)
         for coords_in_dim, sl in zip(coords.T, slice_key):
             filter_arr *= (

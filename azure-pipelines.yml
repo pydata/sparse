@@ -3,34 +3,34 @@ jobs:
   variables:
     python_version: '3.6'
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-latest'
   steps:
     - template: ci/azure-steps.yml
   strategy:
     matrix:
+        Python39:
+          python_version: '3.9'
         Python38:
           python_version: '3.8'
         Python37:
           python_version: '3.7'
-        Python36:
-          python_version: '3.6'
 - job: MacOS
   variables:
     python_version: '3.6'
   pool:
-    vmImage: 'macos-10.14'
+    vmImage: 'macos-latest'
   steps:
     - template: ci/azure-steps.yml
 - job: Windows
   variables:
     python_version: '3.6'
   pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-latest'
   steps:
     - template: ci/azure-steps.yml
 - job: Docs
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-latest'
   steps:
     - template: ci/azure-docs.yml
 
@@ -38,9 +38,15 @@ trigger:
   branches:
     include:
     - master
+    - vnext
   tags:
     include:
     - '*'
 
 pr:
-- master
+  branches:
+    include:
+    - master
+    - releases/*
+    exclude:
+    - releases/old*

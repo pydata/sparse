@@ -9,7 +9,13 @@ from numba import literal_unroll
 import warnings
 
 from ._sparse_array import SparseArray
-from ._utils import check_compressed_axes, normalize_axis, check_zero_fill_value
+from ._utils import (
+    check_compressed_axes,
+    normalize_axis,
+    check_zero_fill_value,
+    equivalent,
+    _zero_of_dtype,
+)
 
 from ._umath import elemwise
 from ._coo.common import (
@@ -1226,9 +1232,9 @@ def stack(arrays, axis=0, compressed_axes=None):
     --------
     numpy.stack : NumPy equivalent function
     """
-    from ._coo import COO
+    from ._compressed import GCXS
 
-    if any(isinstance(arr, COO) for arr in arrays):
+    if not all(isinstance(arr, GCXS) for arr in arrays):
         from ._coo import stack as coo_stack
 
         return coo_stack(arrays, axis)
@@ -1265,9 +1271,9 @@ def concatenate(arrays, axis=0, compressed_axes=None):
     --------
     numpy.concatenate : NumPy equivalent function
     """
-    from ._coo import COO
+    from ._compressed import GCXS
 
-    if any(isinstance(arr, COO) for arr in arrays):
+    if not all(isinstance(arr, GCXS) for arr in arrays):
         from ._coo import concatenate as coo_concat
 
         return coo_concat(arrays, axis)
@@ -1672,3 +1678,70 @@ def moveaxis(a, source, destination):
 
     result = a.transpose(order)
     return result
+
+
+def pad(array, pad_width, mode="constant", **kwargs):
+    """
+    Performs the equivalent of :obj:`numpy.pad` for :obj:`SparseArray`. Note that
+    this function returns a new array instead of a view.
+
+    Parameters
+    ----------
+    array : SparseArray
+        Sparse array which is to be padded.
+
+    pad_width : {sequence, array_like, int}
+        Number of values padded to the edges of each axis. ((before_1, after_1), … (before_N, after_N)) unique pad widths for each axis. ((before, after),) yields same before and after pad for each axis. (pad,) or int is a shortcut for before = after = pad width for all axes.
+
+    mode : str
+        Pads to a constant value which is fill value. Currently only constant mode is implemented
+
+    constant_values : int
+        The values to set the padded values for each axis. Default is 0. This must be same as fill value.
+
+    Returns
+    -------
+    SparseArray
+        The padded sparse array.
+
+    Raises
+    ------
+    NotImplementedError
+        If mode != 'constant' or there are unknown arguments.
+
+    ValueError
+        If constant_values != self.fill_value
+
+    See Also
+    --------
+    :obj:`numpy.pad` : NumPy equivalent function
+
+    """
+    if not isinstance(array, SparseArray):
+        raise NotImplementedError("Input array is not compatible.")
+
+    if mode.lower() != "constant":
+        raise NotImplementedError(f"Mode '{mode}' is not yet supported.")
+
+    if not equivalent(
+        kwargs.pop("constant_values", _zero_of_dtype(array.dtype)), array.fill_value
+    ):
+        raise ValueError("constant_values can only be equal to fill value.")
+
+    if kwargs:
+        raise NotImplementedError("Additional Unknown arguments present.")
+
+    from ._coo import COO
+
+    array = array.asformat("coo")
+
+    pad_width = np.broadcast_to(pad_width, (len(array.shape), 2))
+    new_coords = array.coords + pad_width[:, 0:1]
+    new_shape = tuple(
+        [
+            array.shape[i] + pad_width[i, 0] + pad_width[i, 1]
+            for i in range(len(array.shape))
+        ]
+    )
+    new_data = array.data
+    return COO(new_coords, new_data, new_shape, fill_value=array.fill_value)

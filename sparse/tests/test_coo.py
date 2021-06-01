@@ -1669,3 +1669,34 @@ def test_html_for_size_zero():
 
     table = html_table(arr)
     assert table == ground_truth
+
+
+@pytest.mark.parametrize(
+    "pad_width",
+    [
+        2,
+        (2, 1),
+        ((2), (1)),
+        ((1, 2), (4, 5), (7, 8)),
+    ],
+)
+@pytest.mark.parametrize("constant_values", [0, 1, 150, np.nan])
+def test_pad_valid(pad_width, constant_values):
+    y = sparse.random((50, 50, 3), density=0.15, fill_value=constant_values)
+    x = y.todense()
+    xx = np.pad(x, pad_width=pad_width, constant_values=constant_values)
+    yy = np.pad(y, pad_width=pad_width, constant_values=constant_values)
+    assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize(
+    "pad_width",
+    [
+        ((2, 1), (5, 7)),
+    ],
+)
+@pytest.mark.parametrize("constant_values", [150, 2, (1, 2)])
+def test_pad_invalid(pad_width, constant_values, fill_value=0):
+    y = sparse.random((50, 50, 3), density=0.15)
+    with pytest.raises(ValueError):
+        np.pad(y, pad_width, constant_values=constant_values)

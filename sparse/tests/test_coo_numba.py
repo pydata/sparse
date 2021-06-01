@@ -7,14 +7,14 @@ import numpy as np
 
 @numba.njit
 def identity(x):
-    """ Pass an object through numba and back """
+    """Pass an object through numba and back"""
     return x
 
 
 def identity_constant(x):
     @numba.njit
     def get_it():
-        """ Pass an object through numba and back as a constant """
+        """Pass an object through numba and back as a constant"""
         return x
 
     return get_it()
@@ -34,7 +34,7 @@ def assert_coo_same_memory(c1, c2):
 
 
 class TestBasic:
-    """ Test very simple construction and field access """
+    """Test very simple construction and field access"""
 
     def test_roundtrip(self):
         c1 = sparse.COO(np.eye(3), fill_value=1)
