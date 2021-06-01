@@ -61,7 +61,7 @@ def test_bad_constructor_input(cls):
         cls(arg="hello world")
 
 
-@pytest.mark.parametrize("n", [0, 1, 3])
+@given(n=st.sampled_from([0, 1, 3]))
 def test_bad_nd_input(cls, n):
     a = np.ones(shape=tuple(5 for _ in range(n)))
     with pytest.raises(ValueError, match=f"{n}-d"):
