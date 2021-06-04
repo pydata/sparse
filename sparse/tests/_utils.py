@@ -68,3 +68,18 @@ def gen_setitem_val_err(draw):
     )
 
     return shape, index, value_shape
+
+
+@composite
+def gen_bin_brdcst(draw):
+    shape1 = draw(
+        st.lists(st.integers(min_value=1, max_value=5), min_size=2, max_size=3)
+    )
+    shape2 = draw(
+        st.lists(st.integers(min_value=1, max_value=5), min_size=2, max_size=3)
+    )
+    shape2[-1] = shape1[-1]
+    shape1 = tuple(shape1)
+    shape2 = tuple(shape2)
+
+    return shape1, shape2

@@ -26,9 +26,8 @@ from sparse._utils import assert_eq
         [(4,), (4,), 0],
     ],
 )
-@pytest.mark.parametrize(
-    "a_format, b_format",
-    [("coo", "coo"), ("coo", "gcxs"), ("gcxs", "coo"), ("gcxs", "gcxs")],
+@given(
+    a_format=st.sampled_from(["coo", "gcxs"]), b_format=st.sampled_from(["coo", "gcxs"])
 )
 def test_tensordot(a_shape, b_shape, axes, a_format, b_format):
     sa = sparse.random(a_shape, density=0.5, format=a_format)
@@ -112,12 +111,11 @@ def test_tensordot_valueerror():
         ((3, 4), (1, 2, 4, 3)),
     ],
 )
-@pytest.mark.parametrize(
-    "a_format, b_format",
-    [("coo", "coo"), ("coo", "gcxs"), ("gcxs", "coo"), ("gcxs", "gcxs")],
-)
-@pytest.mark.parametrize(
-    "a_comp_axes, b_comp_axes", [([0], [0]), ([0], [1]), ([1], [0]), ([1], [1])]
+@given(
+    a_format=st.sampled_from(["coo", "gcxs"]),
+    b_format=st.sampled_from(["coo", "gcxs"]),
+    a_comp_axes=st.sampled_from([[0], [1]]),
+    b_comp_axes=st.sampled_from([[0], [1]]),
 )
 def test_matmul(a_shape, b_shape, a_format, b_format, a_comp_axes, b_comp_axes):
     if a_format == "coo" or len(a_shape) == 1:
@@ -209,13 +207,10 @@ def test_matmul_nan_warnings(a, b):
             st.integers(min_value=1, max_value=10),
         ),
     ),
-)
-@pytest.mark.parametrize(
-    "a_format, b_format",
-    [("coo", "coo"), ("coo", "gcxs"), ("gcxs", "coo"), ("gcxs", "gcxs")],
-)
-@pytest.mark.parametrize(
-    "a_comp_axes, b_comp_axes", [([0], [0]), ([0], [1]), ([1], [0]), ([1], [1])]
+    a_format=st.sampled_from(["coo", "gcxs"]),
+    b_format=st.sampled_from(["coo", "gcxs"]),
+    a_comp_axes=st.sampled_from([[0], [1]]),
+    b_comp_axes=st.sampled_from([[0], [1]]),
 )
 def test_dot(a_shape, b_shape, a_format, b_format, a_comp_axes, b_comp_axes):
     a_shape = a_shape + (b_shape[-1],)
@@ -246,13 +241,10 @@ def test_dot(a_shape, b_shape, a_format, b_format, a_comp_axes, b_comp_axes):
     # assert_eq(eval("a @ sb"), eval("sa @ b"))
 
 
-@pytest.mark.parametrize(
-    "a_dense, b_dense, o_type",
-    [
-        (False, False, sparse.SparseArray),
-        (False, True, np.ndarray),
-        (True, False, np.ndarray),
-    ],
+@given(
+    a_dense=st.sampled_from([True, False]),
+    b_dense=st.sampled_from([True, False]),
+    o_type=st.sampled_from([sparse.SparseArray, np.ndarray]),
 )
 def test_dot_type(a_dense, b_dense, o_type):
     a = sparse.random((3, 4), density=0.8)
@@ -291,8 +283,7 @@ dot_formats = [
 ]
 
 
-@pytest.mark.parametrize("format1", dot_formats)
-@pytest.mark.parametrize("format2", dot_formats)
+@given(format1=st.sampled_from([dot_formats]), format2=st.sampled_from([dot_formats]))
 def test_small_values(format1, format2):
     s1 = format1(sparse.COO(coords=[[0, 10]], data=[3.6e-100, 7.2e-009], shape=(20,)))
     s2 = format2(
@@ -308,10 +299,12 @@ def test_small_values(format1, format2):
 dot_dtypes = [np.complex64, np.complex128]
 
 
-@pytest.mark.parametrize("dtype1", dot_dtypes)
-@pytest.mark.parametrize("dtype2", dot_dtypes)
-@pytest.mark.parametrize("format1", dot_formats)
-@pytest.mark.parametrize("format2", dot_formats)
+@given(
+    dtype1=st.sampled_from([dot_dtypes]),
+    dtype2=st.sampled_from([dot_dtypes]),
+    format1=st.sampled_from([dot_formats]),
+    format2=st.sampled_from([dot_formats]),
+)
 def test_complex(dtype1, dtype2, format1, format2):
     s1 = format1(sparse.random((20,), density=0.5).astype(dtype1))
     s2 = format2(sparse.random((20,), density=0.5).astype(dtype2))

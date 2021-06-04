@@ -201,14 +201,6 @@ def test_setitem_notimplemented_error(sd):
         s[index] = value
 
 
-# @pytest.mark.parametrize(
-#     "shape, index, value_shape",
-#     [
-#         ((2, 3), ([0, 1], [1, 2]), (1, 2)),
-#         ((2, 3), ([0, 1], [1, 2]), (3,)),
-#         ((2,), 1, (2,)),
-#     ],
-# )
 @given(gen_setitem_val_err())
 def test_setitem_value_error(sd):
     shape, index, value_shape = sd
@@ -313,7 +305,7 @@ def test_pad_invalid(pad_width, constant_values, fill_value=0):
         np.pad(y, pad_width, constant_values=constant_values)
 
 
-@pytest.mark.parametrize("func", [np.concatenate, np.stack])
+@given(func=st.sampled_from([np.concatenate, np.stack]))
 def test_dok_concat_stack(func):
     s1 = sparse.random((4, 4), density=0.25, format="dok")
     s2 = sparse.random((4, 4), density=0.25, format="dok")

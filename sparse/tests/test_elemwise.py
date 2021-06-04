@@ -3,6 +3,7 @@ import sparse
 import pytest
 from hypothesis import given, strategies as st
 from hypothesis.strategies import composite
+from _utils import gen_bin_brdcst
 import operator
 import random
 from sparse import COO, DOK
@@ -225,23 +226,9 @@ def test_elemwise_trinary(func, shape, formats):
     assert_eq(fs, func(x, y, z))
 
 
-@given(func=st.sampled_from([operator.add, operator.mul]))
-@pytest.mark.parametrize(
-    "shape1,shape2",
-    [
-        ((2, 3, 4), (3, 4)),
-        ((3, 4), (2, 3, 4)),
-        ((3, 1, 4), (3, 2, 4)),
-        ((1, 3, 4), (3, 4)),
-        ((3, 4, 1), (3, 4, 2)),
-        ((1, 5), (5, 1)),
-        ((3, 1), (3, 4)),
-        ((3, 1), (1, 4)),
-        ((1, 4), (3, 4)),
-        ((2, 2, 2), (1, 1, 1)),
-    ],
-)
-def test_binary_broadcasting(func, shape1, shape2):
+@given(func=st.sampled_from([operator.add, operator.mul]), sd=gen_bin_brdcst())
+def test_binary_broadcasting(func, sd):
+    shape1, shape2 = sd
     density1 = 1 if np.prod(shape1) == 1 else 0.5
     density2 = 1 if np.prod(shape2) == 1 else 0.5
 
@@ -260,30 +247,15 @@ def test_binary_broadcasting(func, shape1, shape2):
     assert np.count_nonzero(expected) == actual.nnz
 
 
-@pytest.mark.parametrize(
-    "shape1,shape2",
-    [((3, 4), (2, 3, 4)), ((3, 1, 4), (3, 2, 4)), ((3, 4, 1), (3, 4, 2))],
-)
-def test_broadcast_to(shape1, shape2):
+@given(sd=gen_bin_brdcst())
+def test_broadcast_to(sd):
+    shape1, shape2 = sd
     a = sparse.random(shape1, density=0.5)
     x = a.todense()
 
     assert_eq(np.broadcast_to(x, shape2), a.broadcast_to(shape2))
 
 
-@pytest.mark.parametrize(
-    "shapes",
-    [
-        [(2,), (3, 2), (4, 3, 2)],
-        [(3,), (2, 3), (2, 2, 3)],
-        [(2,), (2, 2), (2, 2, 2)],
-        [(4,), (4, 4), (4, 4, 4)],
-        [(4,), (4, 4), (4, 4, 4)],
-        [(4,), (4, 4), (4, 4, 4)],
-        [(1, 1, 2), (1, 3, 1), (4, 1, 1)],
-        [(2,), (2, 1), (2, 1, 1)],
-    ],
-)
 @given(
     func=st.sampled_from(
         [
@@ -293,6 +265,18 @@ def test_broadcast_to(shape1, shape2):
             lambda x, y, z: x + y + z,
             lambda x, y, z: x + y - z,
             lambda x, y, z: x - y + z,
+        ]
+    ),
+    shapes=st.sampled_from(
+        [
+            [(2,), (3, 2), (4, 3, 2)],
+            [(3,), (2, 3), (2, 2, 3)],
+            [(2,), (2, 2), (2, 2, 2)],
+            [(4,), (4, 4), (4, 4, 4)],
+            [(4,), (4, 4), (4, 4, 4)],
+            [(4,), (4, 4), (4, 4, 4)],
+            [(1, 1, 2), (1, 3, 1), (4, 1, 1)],
+            [(2,), (2, 1), (2, 1, 1)],
         ]
     ),
 )
@@ -427,10 +411,10 @@ def test_elemwise_noargs():
             operator.mod,
         ]
     ),
+    format=st.sampled_from([COO, GCXS, DOK]),
 )
 @pytest.mark.filterwarnings("ignore:divide by zero")
 @pytest.mark.filterwarnings("ignore:invalid value")
-@pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_nonzero_outout_fv_ufunc(func, format):
     xs = sparse.random((2, 3, 4), density=0.5, format=format)
     ys = sparse.random((2, 3, 4), density=0.5, format=format)
@@ -445,27 +429,27 @@ def test_nonzero_outout_fv_ufunc(func, format):
     assert_eq(f, fs)
 
 
-@pytest.mark.parametrize(
-    "func, scalar",
-    [
-        (operator.mul, 5),
-        (operator.add, 0),
-        (operator.sub, 0),
-        (operator.pow, 5),
-        (operator.truediv, 3),
-        (operator.floordiv, 4),
-        (operator.gt, 5),
-        (operator.lt, -5),
-        (operator.ne, 0),
-        (operator.ge, 5),
-        (operator.le, -3),
-        (operator.eq, 1),
-        (operator.mod, 5),
-    ],
-)
 @given(
     convert_to_np_number=st.sampled_from([True, False]),
     format=st.sampled_from([COO, GCXS, DOK]),
+    func=st.sampled_from(
+        [
+            (operator.mul),
+            (operator.add),
+            (operator.sub),
+            (operator.pow),
+            (operator.truediv),
+            (operator.floordiv),
+            (operator.gt),
+            (operator.lt),
+            (operator.ne),
+            (operator.ge),
+            (operator.le),
+            (operator.eq),
+            (operator.mod),
+        ]
+    ),
+    scalar=st.integers(min_value=-10, max_value=10),
 )
 def test_elemwise_scalar(func, scalar, convert_to_np_number, format):
     xs = sparse.random((2, 3, 4), density=0.5, format=format)
@@ -482,21 +466,23 @@ def test_elemwise_scalar(func, scalar, convert_to_np_number, format):
     assert_eq(fs, func(x, y))
 
 
-@pytest.mark.parametrize(
-    "func, scalar",
-    [
-        (operator.mul, 5),
-        (operator.add, 0),
-        (operator.sub, 0),
-        (operator.gt, -5),
-        (operator.lt, 5),
-        (operator.ne, 0),
-        (operator.ge, -5),
-        (operator.le, 3),
-        (operator.eq, 1),
-    ],
+@given(
+    func=st.sampled_from(
+        [
+            (operator.mul),
+            (operator.add),
+            (operator.sub),
+            (operator.gt),
+            (operator.lt),
+            (operator.ne),
+            (operator.ge),
+            (operator.le),
+            (operator.eq),
+        ]
+    ),
+    scalar=st.integers(min_value=-10, max_value=10),
+    convert_to_np_number=st.sampled_from([True, False]),
 )
-@given(convert_to_np_number=st.sampled_from([True, False]))
 def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number):
     xs = sparse.random((2, 3, 4), density=0.5)
     if convert_to_np_number:
@@ -512,21 +498,23 @@ def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number):
     assert_eq(fs, func(y, x))
 
 
-@pytest.mark.parametrize(
-    "func, scalar",
-    [
-        (operator.add, 5),
-        (operator.sub, -5),
-        (operator.pow, -3),
-        (operator.truediv, 0),
-        (operator.floordiv, 0),
-        (operator.gt, -5),
-        (operator.lt, 5),
-        (operator.ne, 1),
-        (operator.ge, -3),
-        (operator.le, 3),
-        (operator.eq, 0),
-    ],
+@given(
+    func=st.sampled_from(
+        [
+            (operator.add),
+            (operator.sub),
+            (operator.pow),
+            (operator.truediv),
+            (operator.floordiv),
+            (operator.gt),
+            (operator.lt),
+            (operator.ne),
+            (operator.ge),
+            (operator.le),
+            (operator.eq),
+        ]
+    ),
+    scalar=st.integers(min_value=-10, max_value=10),
 )
 @pytest.mark.filterwarnings("ignore:divide by zero")
 @pytest.mark.filterwarnings("ignore:invalid value")

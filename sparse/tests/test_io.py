@@ -1,4 +1,5 @@
 import pytest
+from hypothesis import given, strategies as st
 import numpy as np
 
 import sparse
@@ -7,8 +8,9 @@ from sparse import save_npz, load_npz
 from sparse._utils import assert_eq
 
 
-@pytest.mark.parametrize("compression", [True, False])
-@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@given(
+    compression=st.sampled_from([True, False]), format=st.sampled_from(["coo", "gcxs"])
+)
 def test_save_load_npz_file(tmp_path, compression, format):
     x = sparse.random((2, 3, 4, 5), density=0.25, format=format)
     y = x.todense()
