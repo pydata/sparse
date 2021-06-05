@@ -83,3 +83,16 @@ def gen_bin_brdcst(draw):
     shape2 = tuple(shape2)
 
     return shape1, shape2
+
+
+@composite
+def gen_transpose(draw):
+    a = draw(st.lists(st.integers(min_value=1, max_value=5), min_size=2, max_size=4))
+    if len(a) is 2:
+        b = draw(st.sampled_from([(1, 0), (0, 1)]))
+    elif len(a) is 3:
+        b = draw(st.sampled_from([(0, 2, 1), (2, 0, 1), (1, 2, 0)]))
+    else:
+        b = draw(st.sampled_from([(0, 3, 2, 1), (1, 0, 3, 2), (3, 2, 0, 1)]))
+
+    return a, b

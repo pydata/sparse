@@ -1,6 +1,7 @@
 import sparse
 import pytest
 from hypothesis import given, strategies as st
+from _utils import gen_transpose
 import numpy as np
 import scipy
 
@@ -38,21 +39,9 @@ def random_sparse_small(request):
     ).astype(dtype)
 
 
-@pytest.mark.parametrize(
-    "reduction, kwargs",
-    [
-        ("sum", {}),
-        ("sum", {"dtype": np.float32}),
-        ("mean", {}),
-        ("mean", {"dtype": np.float32}),
-        ("prod", {}),
-        ("max", {}),
-        ("min", {}),
-        ("std", {}),
-        ("var", {}),
-    ],
-)
 @given(
+    reduction=st.sampled_from(["sum", "mean", "prod", "max", "std", "var"]),
+    kwargs=st.sampled_from([{"dtype": np.float32}, {}]),
     axis=st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)]),
     keepdims=st.sampled_from([True, False]),
 )
@@ -68,11 +57,11 @@ def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
     reason=("Setting output dtype=float16 produces results " "inconsistent with numpy")
 )
 @pytest.mark.filterwarnings("ignore:overflow")
-@pytest.mark.parametrize(
-    "reduction, kwargs",
-    [("sum", {"dtype": np.float16}), ("mean", {"dtype": np.float16})],
+@given(
+    reduction=st.sampled_from(["sum", "mean"]),
+    kwargs=st.sampled_from([{"dtype": np.float16}]),
+    axis=st.sampled_from([None, 0, 1, 2, (0, 2)]),
 )
-@given(axis=st.sampled_from([None, 0, 1, 2, (0, 2)]))
 def test_reductions_float16(random_sparse, reduction, kwargs, axis):
     x = random_sparse
     y = x.todense()
@@ -81,8 +70,9 @@ def test_reductions_float16(random_sparse, reduction, kwargs, axis):
     assert_eq(xx, yy, atol=1e-2)
 
 
-@pytest.mark.parametrize("reduction,kwargs", [("any", {}), ("all", {})])
 @given(
+    reduction=st.sampled_from(["any", "all"]),
+    kwargs=st.sampled_from([{}]),
     axis=st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)]),
     keepdims=st.sampled_from([True, False]),
 )
@@ -96,19 +86,9 @@ def test_reductions_bool(random_sparse, reduction, kwargs, axis, keepdims):
     assert_eq(xx, yy)
 
 
-@pytest.mark.parametrize(
-    "reduction,kwargs",
-    [
-        (np.max, {}),
-        (np.sum, {}),
-        (np.sum, {"dtype": np.float32}),
-        (np.mean, {}),
-        (np.mean, {"dtype": np.float32}),
-        (np.prod, {}),
-        (np.min, {}),
-    ],
-)
 @given(
+    reduction=st.sampled_from([np.max, np.sum, np.mean, np.prod]),
+    kwargs=st.sampled_from([{"dtype": np.float32}, {}]),
     axis=st.sampled_from([None, 0, 1, 2, (0, 2), -1, (0, -1)]),
     keepdims=st.sampled_from([True, False]),
 )
@@ -123,16 +103,11 @@ def test_ufunc_reductions(random_sparse, reduction, kwargs, axis, keepdims):
         assert isinstance(xx, GCXS)
 
 
-@pytest.mark.parametrize(
-    "reduction,kwargs",
-    [
-        (np.max, {}),
-        (np.sum, {"axis": 0}),
-        (np.prod, {"keepdims": True}),
-        (np.minimum.reduce, {"axis": 0}),
-    ],
+@given(
+    reduction=st.sampled_from([np.sum, np.max, np.prod, np.minimum.reduce]),
+    kwargs=st.sampled_from([{}, {"axis": 0}, {"keepdims": True}]),
+    fill_value=st.sampled_from([0, 1.0, -1, -2.2, 5.0]),
 )
-@given(fill_value=st.sampled_from([0, 1.0, -1, -2.2, 5.0]))
 def test_ufunc_reductions_kwargs(reduction, kwargs, fill_value):
     x = sparse.random((2, 3, 4), density=0.5, format="gcxs", fill_value=fill_value)
     y = x.todense()
@@ -172,18 +147,9 @@ def test_reshape_same():
     assert s.reshape(s.shape) is s
 
 
-@pytest.mark.parametrize(
-    "a,b",
-    [
-        [(3, 4, 5), (2, 1, 0)],
-        [(12,), None],
-        [(9, 10), (1, 0)],
-        [(4, 3, 5), (1, 0, 2)],
-        [(5, 4, 3), (0, 2, 1)],
-        [(3, 4, 5, 6), (0, 2, 1, 3)],
-    ],
-)
-def test_tranpose(a, b):
+@given(ab=gen_transpose())
+def test_tranpose(ab):
+    a, b = ab
     s = sparse.random(a, density=0.5, format="gcxs")
     x = s.todense()
 
@@ -210,7 +176,7 @@ def test_tocoo():
     assert_eq(b.tocoo(), coo)
 
 
-@pytest.mark.parametrize("complex", [True, False])
+@given(complex=st.sampled_from([True, False]))
 def test_complex_methods(complex):
     if complex:
         x = np.array([1 + 2j, 2 - 1j, 0, 1, 0])
@@ -222,64 +188,65 @@ def test_complex_methods(complex):
     assert_eq(s.conj(), x.conj())
 
 
-@pytest.mark.parametrize(
-    "index",
-    [
-        # Integer
-        0,
-        1,
-        -1,
-        (1, 1, 1),
-        # Pure slices
-        (slice(0, 2),),
-        (slice(None, 2), slice(None, 2)),
-        (slice(1, None), slice(1, None)),
-        (slice(None, None),),
-        (slice(None, None, -1),),
-        (slice(None, 2, -1), slice(None, 2, -1)),
-        (slice(1, None, 2), slice(1, None, 2)),
-        (slice(None, None, 2),),
-        (slice(None, 2, -1), slice(None, 2, -2)),
-        (slice(1, None, 2), slice(1, None, 1)),
-        (slice(None, None, -2),),
-        # Combinations
-        (0, slice(0, 2)),
-        (slice(0, 1), 0),
-        (None, slice(1, 3), 0),
-        (slice(0, 3), None, 0),
-        (slice(1, 2), slice(2, 4)),
-        (slice(1, 2), slice(None, None)),
-        (slice(1, 2), slice(None, None), 2),
-        (slice(1, 2, 2), slice(None, None), 2),
-        (slice(1, 2, None), slice(None, None, 2), 2),
-        (slice(1, 2, -2), slice(None, None), -2),
-        (slice(1, 2, None), slice(None, None, -2), 2),
-        (slice(1, 2, -1), slice(None, None), -1),
-        (slice(1, 2, None), slice(None, None, -1), 2),
-        (slice(2, 0, -1), slice(None, None), -1),
-        (slice(-2, None, None),),
-        (slice(-1, None, None), slice(-2, None, None)),
-        # With ellipsis
-        (Ellipsis, slice(1, 3)),
-        (1, Ellipsis, slice(1, 3)),
-        (slice(0, 1), Ellipsis),
-        (Ellipsis, None),
-        (None, Ellipsis),
-        (1, Ellipsis),
-        (1, Ellipsis, None),
-        (1, 1, 1, Ellipsis),
-        (Ellipsis, 1, None),
-        # Pathological - Slices larger than array
-        (slice(None, 1000)),
-        (slice(None), slice(None, 1000)),
-        (slice(None), slice(1000, -1000, -1)),
-        (slice(None), slice(1000, -1000, -50)),
-        # Pathological - Wrong ordering of start/stop
-        (slice(5, 0),),
-        (slice(0, 5, -1),),
-    ],
+@given(
+    index=st.sampled_from(
+        [
+            # Integer
+            0,
+            1,
+            -1,
+            (1, 1, 1),
+            # Pure slices
+            (slice(0, 2),),
+            (slice(None, 2), slice(None, 2)),
+            (slice(1, None), slice(1, None)),
+            (slice(None, None),),
+            (slice(None, None, -1),),
+            (slice(None, 2, -1), slice(None, 2, -1)),
+            (slice(1, None, 2), slice(1, None, 2)),
+            (slice(None, None, 2),),
+            (slice(None, 2, -1), slice(None, 2, -2)),
+            (slice(1, None, 2), slice(1, None, 1)),
+            (slice(None, None, -2),),
+            # Combinations
+            (0, slice(0, 2)),
+            (slice(0, 1), 0),
+            (None, slice(1, 3), 0),
+            (slice(0, 3), None, 0),
+            (slice(1, 2), slice(2, 4)),
+            (slice(1, 2), slice(None, None)),
+            (slice(1, 2), slice(None, None), 2),
+            (slice(1, 2, 2), slice(None, None), 2),
+            (slice(1, 2, None), slice(None, None, 2), 2),
+            (slice(1, 2, -2), slice(None, None), -2),
+            (slice(1, 2, None), slice(None, None, -2), 2),
+            (slice(1, 2, -1), slice(None, None), -1),
+            (slice(1, 2, None), slice(None, None, -1), 2),
+            (slice(2, 0, -1), slice(None, None), -1),
+            (slice(-2, None, None),),
+            (slice(-1, None, None), slice(-2, None, None)),
+            # With ellipsis
+            (Ellipsis, slice(1, 3)),
+            (1, Ellipsis, slice(1, 3)),
+            (slice(0, 1), Ellipsis),
+            (Ellipsis, None),
+            (None, Ellipsis),
+            (1, Ellipsis),
+            (1, Ellipsis, None),
+            (1, 1, 1, Ellipsis),
+            (Ellipsis, 1, None),
+            # Pathological - Slices larger than array
+            (slice(None, 1000)),
+            (slice(None), slice(None, 1000)),
+            (slice(None), slice(1000, -1000, -1)),
+            (slice(None), slice(1000, -1000, -50)),
+            # Pathological - Wrong ordering of start/stop
+            (slice(5, 0),),
+            (slice(0, 5, -1),),
+        ]
+    ),
+    compressed_axes=st.sampled_from([(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)]),
 )
-@given(compressed_axes=st.sampled_from([(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)]))
 def test_slicing(index, compressed_axes):
     s = sparse.random(
         (2, 3, 4), density=0.5, format="gcxs", compressed_axes=compressed_axes
@@ -288,22 +255,23 @@ def test_slicing(index, compressed_axes):
     assert_eq(x[index], s[index])
 
 
-@pytest.mark.parametrize(
-    "index",
-    [
-        ([1, 0], 0),
-        (1, [0, 2]),
-        (0, [1, 0], 0),
-        (1, [2, 0], 0),
-        ([True, False], slice(1, None), slice(-2, None)),
-        (slice(1, None), slice(-2, None), [True, False, True, False]),
-        ([1, 0],),
-        (Ellipsis, [2, 1, 3]),
-        (slice(None), [2, 1, 2]),
-        (1, [2, 0, 1]),
-    ],
+@given(
+    index=st.sampled_from(
+        [
+            ([1, 0], 0),
+            (1, [0, 2]),
+            (0, [1, 0], 0),
+            (1, [2, 0], 0),
+            ([True, False], slice(1, None), slice(-2, None)),
+            (slice(1, None), slice(-2, None), [True, False, True, False]),
+            ([1, 0],),
+            (Ellipsis, [2, 1, 3]),
+            (slice(None), [2, 1, 2]),
+            (1, [2, 0, 1]),
+        ]
+    ),
+    compressed_axes=st.sampled_from([(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)]),
 )
-@given(compressed_axes=st.sampled_from([(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)]))
 def test_advanced_indexing(index, compressed_axes):
     s = sparse.random(
         (2, 3, 4), density=0.5, format="gcxs", compressed_axes=compressed_axes
@@ -313,21 +281,22 @@ def test_advanced_indexing(index, compressed_axes):
     assert_eq(x[index], s[index])
 
 
-@pytest.mark.parametrize(
-    "index",
-    [
-        (Ellipsis, Ellipsis),
-        (1, 1, 1, 1),
-        (slice(None),) * 4,
-        5,
-        -5,
-        "foo",
-        [True, False, False],
-        0.5,
-        [0.5],
-        {"potato": "kartoffel"},
-        ([[0, 1]],),
-    ],
+@given(
+    index=st.sampled_from(
+        [
+            (Ellipsis, Ellipsis),
+            (1, 1, 1, 1),
+            (slice(None),) * 4,
+            5,
+            -5,
+            "foo",
+            [True, False, False],
+            0.5,
+            [0.5],
+            {"potato": "kartoffel"},
+            ([[0, 1]],),
+        ]
+    )
 )
 def test_slicing_errors(index):
     s = sparse.random((2, 3, 4), density=0.5, format="gcxs")
@@ -444,16 +413,17 @@ def test_from_coo_valerr():
         GCXS.from_coo(a, idx_dtype=np.int8)
 
 
-@pytest.mark.parametrize(
-    "pad_width",
-    [
-        2,
-        (2, 1),
-        ((2), (1)),
-        ((1, 2), (4, 5), (7, 8)),
-    ],
+@given(
+    pad_width=st.sampled_from(
+        [
+            2,
+            (2, 1),
+            ((2), (1)),
+            ((1, 2), (4, 5), (7, 8)),
+        ]
+    ),
+    constant_values=st.sampled_from([0, 1, 150, np.nan]),
 )
-@pytest.mark.parametrize("constant_values", [0, 1, 150, np.nan])
 def test_pad_valid(pad_width, constant_values):
     y = sparse.random(
         (50, 50, 3), density=0.15, fill_value=constant_values, format="gcxs"
@@ -464,13 +434,10 @@ def test_pad_valid(pad_width, constant_values):
     assert_eq(xx, yy)
 
 
-@pytest.mark.parametrize(
-    "pad_width",
-    [
-        ((2, 1), (5, 7)),
-    ],
+@given(
+    pad_width=st.sampled_from([((2, 1), (5, 7))]),
+    constant_values=st.sampled_from([150, 2, (1, 2)]),
 )
-@pytest.mark.parametrize("constant_values", [150, 2, (1, 2)])
 def test_pad_invalid(pad_width, constant_values, fill_value=0):
     y = sparse.random((50, 50, 3), density=0.15, format="gcxs")
     with pytest.raises(ValueError):
