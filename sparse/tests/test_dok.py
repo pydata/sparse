@@ -272,16 +272,17 @@ def test_zeros_like():
     assert isinstance(s2, sparse.DOK)
 
 
-@pytest.mark.parametrize(
-    "pad_width",
-    [
-        2,
-        (2, 1),
-        ((2), (1)),
-        ((1, 2), (4, 5), (7, 8)),
-    ],
+@given(
+    pad_width=st.sampled_from(
+        [
+            2,
+            (2, 1),
+            ((2), (1)),
+            ((1, 2), (4, 5), (7, 8)),
+        ]
+    ),
+    constant_values=st.sampled_from([0, 1, 150, np.nan]),
 )
-@pytest.mark.parametrize("constant_values", [0, 1, 150, np.nan])
 def test_pad_valid(pad_width, constant_values):
     y = sparse.random(
         (50, 50, 3), density=0.15, fill_value=constant_values, format="dok"
@@ -292,13 +293,14 @@ def test_pad_valid(pad_width, constant_values):
     assert_eq(xx, yy)
 
 
-@pytest.mark.parametrize(
-    "pad_width",
-    [
-        ((2, 1), (5, 7)),
-    ],
+@given(
+    pad_width=st.sampled_from(
+        [
+            ((2, 1), (5, 7)),
+        ]
+    ),
+    constant_values=st.sampled_from([150, 2, (1, 2)]),
 )
-@pytest.mark.parametrize("constant_values", [150, 2, (1, 2)])
 def test_pad_invalid(pad_width, constant_values, fill_value=0):
     y = sparse.random((50, 50, 3), density=0.15, format="dok")
     with pytest.raises(ValueError):
