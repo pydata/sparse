@@ -6,7 +6,7 @@ from functools import reduce
 
 import numpy as np
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import settings, given, strategies as st
 import scipy.sparse
 import scipy.stats
 
@@ -55,6 +55,7 @@ def test_reductions_fv(reduction, random_sparse_small, axis, keepdims, kwargs):
     assert_eq(xx, yy)
 
 
+@settings(deadline=None)
 @pytest.mark.parametrize(
     "reduction, kwargs",
     [
@@ -162,6 +163,7 @@ def test_ufunc_reductions_kwargs(reduction, kwargs):
         assert isinstance(xx, COO)
 
 
+@settings(deadline=None)
 @given(
     reduction=st.sampled_from(["nansum", "nanmean", "nanprod", "nanmax", "nanmin"]),
     axis=st.sampled_from([None, 0, 1]),
@@ -473,6 +475,7 @@ def test_gt():
     assert_eq(x >= m, s >= m)
 
 
+@settings(deadline=None)
 @given(
     index=st.sampled_from(
         [
@@ -543,6 +546,7 @@ def test_slicing(index):
     assert_eq(x[index], s[index])
 
 
+@settings(deadline=None)
 @given(
     index=st.sampled_from(
         [

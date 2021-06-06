@@ -1,7 +1,7 @@
 import numpy as np
 import sparse
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import settings, given, strategies as st
 from hypothesis.strategies import composite
 from _utils import gen_bin_brdcst
 import operator
@@ -11,6 +11,7 @@ from sparse._compressed import GCXS
 from sparse._utils import assert_eq, random_value_array
 
 
+@settings(deadline=None)
 @given(
     format=st.sampled_from([COO, GCXS, DOK]),
     func=st.sampled_from(

@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.core.numeric import indices
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import settings, given, strategies as st
 import scipy.sparse
 from scipy.sparse import data
 from scipy.sparse.construct import random
@@ -76,6 +76,7 @@ def test_from_sparse(cls, source_type):
     assert_eq(result, gcxs)
 
 
+@settings(deadline=None)
 @given(
     scipy_type=st.sampled_from(["coo", "csr", "csc", "lil"]),
     CLS=st.sampled_from([CSR, CSC, GCXS]),
@@ -92,6 +93,7 @@ def test_from_scipy_sparse(scipy_type, CLS, dtype):
     assert_eq(ref, result_via_init)
 
 
+@settings(deadline=None)
 @given(cls_str=st.sampled_from(["coo", "dok", "csr", "csc", "gcxs"]))
 def test_to_sparse(cls_str, random_sparse):
     result = random_sparse.asformat(cls_str)

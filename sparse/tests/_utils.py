@@ -1,6 +1,7 @@
 from hypothesis import given, strategies as st
 from hypothesis.strategies import data, composite
 from hypothesis.extra.numpy import array_shapes, basic_indices
+import numpy as np
 
 
 @composite
@@ -96,3 +97,13 @@ def gen_transpose(draw):
         b = draw(st.sampled_from([(0, 3, 2, 1), (1, 0, 3, 2), (3, 2, 0, 1)]))
 
     return a, b
+
+
+@composite
+def gen_reductions(draw):
+    reduction = (draw(st.sampled_from(["sum", "mean", "prod", "max", "std", "var"])),)
+    kwargs = (draw(st.sampled_from([{"dtype": np.float32}, {}])),)
+    axis = (draw(st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)])),)
+    keepdims = draw(st.sampled_from([True, False]))
+
+    return reduction, kwargs, axis, keepdims

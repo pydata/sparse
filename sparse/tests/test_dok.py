@@ -300,9 +300,10 @@ def test_pad_valid(pad_width, constant_values):
         ]
     ),
     constant_values=st.sampled_from([150, 2, (1, 2)]),
+    fill_value=st.floats(min_value=0, max_value=10),
 )
-def test_pad_invalid(pad_width, constant_values, fill_value=0):
-    y = sparse.random((50, 50, 3), density=0.15, format="dok")
+def test_pad_invalid(pad_width, constant_values, fill_value):
+    y = sparse.random((50, 50, 3), density=0.15, format="dok", fill_value=fill_value)
     with pytest.raises(ValueError):
         np.pad(y, pad_width, constant_values=constant_values)
 

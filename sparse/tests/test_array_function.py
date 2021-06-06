@@ -3,13 +3,14 @@ from sparse._settings import NEP18_ENABLED
 from sparse._utils import assert_eq
 import numpy as np
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import settings, given, strategies as st
 
 
 if not NEP18_ENABLED:
     pytest.skip("NEP18 is not enabled", allow_module_level=True)
 
 
+@settings(deadline=None)
 @given(
     func=st.sampled_from(
         [
@@ -30,6 +31,7 @@ def test_unary(func):
     assert_eq(xx, yy)
 
 
+@settings(deadline=None)
 @given(
     arg_order=st.sampled_from([(0, 1), (1, 0), (1, 1)]),
     func=st.sampled_from([np.dot, np.result_type, np.tensordot, np.matmul]),

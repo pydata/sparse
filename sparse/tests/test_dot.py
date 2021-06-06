@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import settings, given, strategies as st
 import scipy.sparse
 import scipy.stats
 
@@ -11,6 +11,7 @@ from sparse import COO
 from sparse._utils import assert_eq
 
 
+@settings(deadline=None)
 @pytest.mark.parametrize(
     "a_shape,b_shape,axes",
     [
@@ -95,6 +96,7 @@ def test_tensordot_valueerror():
         x1 @ x2
 
 
+@settings(deadline=None)
 @pytest.mark.parametrize(
     "a_shape, b_shape",
     [
@@ -194,6 +196,7 @@ def test_matmul_nan_warnings(a, b):
         a @ b
 
 
+@settings(deadline=None)
 @given(
     a_shape=st.one_of(
         st.tuples(

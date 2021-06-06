@@ -1,7 +1,7 @@
 import sparse
 import pytest
-from hypothesis import given, strategies as st
-from _utils import gen_transpose
+from hypothesis import settings, given, strategies as st
+from _utils import gen_transpose, gen_reductions
 import numpy as np
 import scipy
 
@@ -39,13 +39,10 @@ def random_sparse_small(request):
     ).astype(dtype)
 
 
-@given(
-    reduction=st.sampled_from(["sum", "mean", "prod", "max", "std", "var"]),
-    kwargs=st.sampled_from([{"dtype": np.float32}, {}]),
-    axis=st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)]),
-    keepdims=st.sampled_from([True, False]),
-)
-def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
+@settings(deadline=None)
+@given(p=gen_reductions())
+def test_reductions(p, random_sparse):
+    reduction, kwargs, axis, keepdims = p
     x = random_sparse
     y = x.todense()
     xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
@@ -70,6 +67,7 @@ def test_reductions_float16(random_sparse, reduction, kwargs, axis):
     assert_eq(xx, yy, atol=1e-2)
 
 
+@settings(deadline=None)
 @given(
     reduction=st.sampled_from(["any", "all"]),
     kwargs=st.sampled_from([{}]),
@@ -103,6 +101,7 @@ def test_ufunc_reductions(random_sparse, reduction, kwargs, axis, keepdims):
         assert isinstance(xx, GCXS)
 
 
+@settings(deadline=None)
 @given(
     reduction=st.sampled_from([np.sum, np.max, np.prod, np.minimum.reduce]),
     kwargs=st.sampled_from([{}, {"axis": 0}, {"keepdims": True}]),
@@ -147,6 +146,7 @@ def test_reshape_same():
     assert s.reshape(s.shape) is s
 
 
+@settings(deadline=None)
 @given(ab=gen_transpose())
 def test_tranpose(ab):
     a, b = ab
@@ -188,6 +188,7 @@ def test_complex_methods(complex):
     assert_eq(s.conj(), x.conj())
 
 
+@settings(deadline=None)
 @given(
     index=st.sampled_from(
         [
@@ -255,6 +256,7 @@ def test_slicing(index, compressed_axes):
     assert_eq(x[index], s[index])
 
 
+@settings(deadline=None)
 @given(
     index=st.sampled_from(
         [
@@ -437,8 +439,9 @@ def test_pad_valid(pad_width, constant_values):
 @given(
     pad_width=st.sampled_from([((2, 1), (5, 7))]),
     constant_values=st.sampled_from([150, 2, (1, 2)]),
+    fill_value=st.floats(min_value=0, max_value=10),
 )
-def test_pad_invalid(pad_width, constant_values, fill_value=0):
-    y = sparse.random((50, 50, 3), density=0.15, format="gcxs")
+def test_pad_invalid(pad_width, constant_values, fill_value):
+    y = sparse.random((50, 50, 3), density=0.15, format="gcxs", fill_value=fill_value)
     with pytest.raises(ValueError):
         np.pad(y, pad_width, constant_values=constant_values)
