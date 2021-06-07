@@ -42,11 +42,14 @@ def random_sparse_small(request):
     return sparse.random((20, 30, 40), density=0.25, data_rvs=data_rvs).astype(dtype)
 
 
+@settings(deadline=None)
 @pytest.mark.parametrize(
     "reduction, kwargs", [("sum", {}), ("sum", {"dtype": np.float32}), ("prod", {})]
 )
-@pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2), -3, (1, -1)])
-@pytest.mark.parametrize("keepdims", [True, False])
+@given(
+    axis=st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)]),
+    keepdims=st.sampled_from([True, False]),
+)
 def test_reductions_fv(reduction, random_sparse_small, axis, keepdims, kwargs):
     x = random_sparse_small + np.random.randint(-1, 1, dtype="i4")
     y = x.todense()
@@ -99,8 +102,9 @@ def test_reductions_float16(random_sparse, reduction, kwargs, axis):
     assert_eq(xx, yy, atol=1e-2)
 
 
-@pytest.mark.parametrize("reduction,kwargs", [("any", {}), ("all", {})])
 @given(
+    reduction=st.sampled_from(["any", "all"]),
+    kwargs=st.sampled_from([{}]),
     axis=st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)]),
     keepdims=st.sampled_from([True, False]),
 )
@@ -184,7 +188,7 @@ def test_nan_reductions(reduction, axis, keepdims, fraction):
 
 @given(
     reduction=st.sampled_from(["nanmax", "nanmin", "nanmean"]),
-    axis=st.sampled_from([(None, 0, 1)]),
+    axis=st.sampled_from([None, 0, 1]),
 )
 def test_all_nan_reduction_warning(reduction, axis):
     x = random_value_array(np.nan, 1.0)(2 * 3 * 4).reshape(2, 3, 4)

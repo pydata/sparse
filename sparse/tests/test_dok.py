@@ -110,7 +110,7 @@ def test_getitem(data):
     assert_eq(sparse_sliced.todense(), dense_sliced)
 
 
-@given(gen_getitem_notimpl_err())
+@given(sd=gen_getitem_notimpl_err())
 def test_getitem_notimplemented_error(sd):
     shape, density, indices = sd
     s = sparse.random(shape, density, format="dok")

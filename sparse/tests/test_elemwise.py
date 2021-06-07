@@ -3,7 +3,7 @@ import sparse
 import pytest
 from hypothesis import settings, given, strategies as st
 from hypothesis.strategies import composite
-from _utils import gen_bin_brdcst
+from _utils import gen_broadcast_shape
 import operator
 import random
 from sparse import COO, DOK
@@ -80,33 +80,12 @@ def test_elemwise_inplace(func, format):
     assert_eq(x, s)
 
 
-# @pytest.mark.parametrize(
-#     "shape1, shape2",
-#     [
-#         ((2, 3, 4), (3, 4)),
-#         ((3, 4), (2, 3, 4)),
-#         ((3, 1, 4), (3, 2, 4)),
-#         ((1, 3, 4), (3, 4)),
-#         ((3, 4, 1), (3, 4, 2)),
-#         ((1, 5), (5, 1)),
-#         ((3, 1), (3, 4)),
-#         ((3, 1), (1, 4)),
-#         ((1, 4), (3, 4)),
-#         ((2, 2, 2), (1, 1, 1)),
-#     ],
-# )
-@composite
-def generate_shapes(draw, elements=st.integers(min_value=1, max_value=5)):
-    shape = st.tuples(elements)
-    return shape
-
-
 @given(
-    shape1=generate_shapes(),
-    shape2=generate_shapes(),
+    shape12=gen_broadcast_shape(),
     format=st.sampled_from([COO, GCXS, DOK]),
 )
-def test_elemwise_mixed(shape1, shape2, format):
+def test_elemwise_mixed(shape12, format):
+    shape1, shape2 = shape12
     s1 = sparse.random(shape1, density=0.5, format=format)
     x2 = np.random.rand(*shape2)
 
@@ -139,6 +118,7 @@ def test_elemwise_unsupported(format):
     assert sparse.elemwise(operator.add, s1, x2) is NotImplemented
 
 
+@settings(deadline=None)
 @given(format=st.sampled_from([COO, GCXS, DOK]))
 def test_elemwise_mixed_broadcast(format):
     s1 = sparse.random((2, 3, 4), density=0.5, format=format)
@@ -227,7 +207,7 @@ def test_elemwise_trinary(func, shape, formats):
     assert_eq(fs, func(x, y, z))
 
 
-@given(func=st.sampled_from([operator.add, operator.mul]), sd=gen_bin_brdcst())
+@given(func=st.sampled_from([operator.add, operator.mul]), sd=gen_broadcast_shape())
 def test_binary_broadcasting(func, sd):
     shape1, shape2 = sd
     density1 = 1 if np.prod(shape1) == 1 else 0.5
@@ -248,7 +228,7 @@ def test_binary_broadcasting(func, sd):
     assert np.count_nonzero(expected) == actual.nnz
 
 
-@given(sd=gen_bin_brdcst())
+@given(sd=gen_broadcast_shape())
 def test_broadcast_to(sd):
     shape1, shape2 = sd
     a = sparse.random(shape1, density=0.5)

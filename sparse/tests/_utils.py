@@ -1,7 +1,9 @@
 from hypothesis import given, strategies as st
 from hypothesis.strategies import data, composite
-from hypothesis.extra.numpy import array_shapes, basic_indices
+from hypothesis.extra.numpy import array_shapes, basic_indices, broadcastable_shapes
 import numpy as np
+import sparse
+import scipy.sparse
 
 
 @composite
@@ -15,17 +17,14 @@ def gen_shape_data(draw):
 
 @composite
 def gen_getitem_notimpl_err(draw):
-    shape = draw(array_shapes(max_dims=3, min_side=5))
+    n = draw(st.integers(min_value=2, max_value=3))
+    shape = draw(array_shapes(max_dims=n, min_side=5))
+    data = array_shapes(min_dims=3, max_dims=3, max_side=4)
     density = draw(st.floats(min_value=0, max_value=1))
     indices = draw(
-        st.one_of(
             st.lists(
-                st.lists(st.integers(), min_size=4, max_size=5), min_size=4, max_size=5
+                st.lists(data), min_size=n-1, max_size=n-1
             ).map(tuple),
-            st.lists(st.lists(st.integers(), min_size=4, max_size=5), max_size=3).map(
-                tuple
-            ),
-        )
     )
     return shape, density, indices
 
@@ -72,21 +71,6 @@ def gen_setitem_val_err(draw):
 
 
 @composite
-def gen_bin_brdcst(draw):
-    shape1 = draw(
-        st.lists(st.integers(min_value=1, max_value=5), min_size=2, max_size=3)
-    )
-    shape2 = draw(
-        st.lists(st.integers(min_value=1, max_value=5), min_size=2, max_size=3)
-    )
-    shape2[-1] = shape1[-1]
-    shape1 = tuple(shape1)
-    shape2 = tuple(shape2)
-
-    return shape1, shape2
-
-
-@composite
 def gen_transpose(draw):
     a = draw(st.lists(st.integers(min_value=1, max_value=5), min_size=2, max_size=4))
     if len(a) is 2:
@@ -107,3 +91,50 @@ def gen_reductions(draw):
     keepdims = draw(st.sampled_from([True, False]))
 
     return reduction, kwargs, axis, keepdims
+
+
+@composite
+def gen_broadcast_shape(draw):
+    shape1 = draw(
+        st.lists(st.integers(min_value=1, max_value=5), min_size=2, max_size=3).map(
+            tuple
+        )
+    )
+    shape2 = draw(broadcastable_shapes(shape1))
+
+    return shape1, shape2
+
+
+@composite
+def gen_matmul_warning(draw):
+    a = draw(
+        st.sampled_from(
+            [
+                sparse.GCXS.from_numpy(
+                    np.random.choice(
+                        [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
+                    )
+                ),
+                sparse.COO.from_numpy(
+                    np.random.choice(
+                        [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
+                    )
+                ),
+                sparse.GCXS.from_numpy(
+                    np.random.choice(
+                        [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
+                    )
+                ),
+                np.random.choice(
+                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
+                ),
+            ]
+        )
+    )
+    b = draw(
+        st.sampled_from(
+            [sparse.random((100, 100), density=0.01), scipy.sparse.random(100, 100)]
+        )
+    )
+
+    return a, b

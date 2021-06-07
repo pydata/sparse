@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from hypothesis import settings, given, strategies as st
+from _utils import gen_matmul_warning
 import scipy.sparse
 import scipy.stats
 
@@ -158,40 +159,31 @@ def test_matmul_errors():
         sparse.matmul(sa, sb)
 
 
-@pytest.mark.parametrize(
-    "a, b",
-    [
-        (
-            sparse.GCXS.from_numpy(
-                np.random.choice(
-                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
-                )
-            ),
-            sparse.random((100, 100), density=0.01),
-        ),
-        (
-            sparse.COO.from_numpy(
-                np.random.choice(
-                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
-                )
-            ),
-            sparse.random((100, 100), density=0.01),
-        ),
-        (
-            sparse.GCXS.from_numpy(
-                np.random.choice(
-                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
-                )
-            ),
-            scipy.sparse.random(100, 100),
-        ),
-        (
-            np.random.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]),
-            sparse.random((100, 100), density=0.01),
-        ),
-    ],
-)
-def test_matmul_nan_warnings(a, b):
+# @pytest.mark.parametrize(
+#     "a, b",
+#     [
+#         (
+#             ,
+
+#         ),
+#         (
+#             ,
+#             sparse.random((100, 100), density=0.01),
+#         ),
+#         (
+#             ,
+
+#         ),
+#         (
+
+#             sparse.random((100, 100), density=0.01),
+#         ),
+#     ],
+# )
+@settings(deadline=None)
+@given(ab=gen_matmul_warning())
+def test_matmul_nan_warnings(ab):
+    a, b = ab
     with pytest.warns(RuntimeWarning):
         a @ b
 
@@ -286,7 +278,7 @@ dot_formats = [
 ]
 
 
-@given(format1=st.sampled_from([dot_formats]), format2=st.sampled_from([dot_formats]))
+@given(format1=st.sampled_from(dot_formats), format2=st.sampled_from(dot_formats))
 def test_small_values(format1, format2):
     s1 = format1(sparse.COO(coords=[[0, 10]], data=[3.6e-100, 7.2e-009], shape=(20,)))
     s2 = format2(
@@ -302,11 +294,12 @@ def test_small_values(format1, format2):
 dot_dtypes = [np.complex64, np.complex128]
 
 
+@settings(deadline=None)
 @given(
-    dtype1=st.sampled_from([dot_dtypes]),
-    dtype2=st.sampled_from([dot_dtypes]),
-    format1=st.sampled_from([dot_formats]),
-    format2=st.sampled_from([dot_formats]),
+    dtype1=st.sampled_from(dot_dtypes),
+    dtype2=st.sampled_from(dot_dtypes),
+    format1=st.sampled_from(dot_formats),
+    format2=st.sampled_from(dot_formats),
 )
 def test_complex(dtype1, dtype2, format1, format2):
     s1 = format1(sparse.random((20,), density=0.5).astype(dtype1))
