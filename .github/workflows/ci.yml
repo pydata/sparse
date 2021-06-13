@@ -23,9 +23,9 @@ jobs:
           installer-url: ${{ matrix.mambaforge-url }}
           activate-environment: sparse-dev
           allow-softlinks: true
+          environment-file: ci/environment.yml
       - name: Install package
         run: |
-          mamba create -n sparse-dev python=$PYTHON_VERSION
           pip install -e .[tests]
           pip install codecov
       - name: Run tests
