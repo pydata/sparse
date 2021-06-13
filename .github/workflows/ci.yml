@@ -48,9 +48,10 @@ jobs:
           installer-url: ${{ matrix.miniconda-url }}
           activate-environment: sparse-dev
           allow-softlinks: true
+          environment-file: ci/environment.yml
+          python-version: ${{ matrix.python }}
       - name: Install package
         run: |
-          conda create -n sparse-dev python
           pip install -e .[docs]
       - name: Run tests
         run: |
@@ -64,11 +65,11 @@ on:
   # but only for the main branch
   push:
     branches:
-      - main
+      - master
       - vnext
   pull_request:
     branches:
-      - main
+      - master
       - vnext
   # Also trigger on page_build, as well as release created events
   page_build:
