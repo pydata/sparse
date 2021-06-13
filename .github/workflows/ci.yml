@@ -2,7 +2,7 @@ jobs:
   test:
     strategy:
       matrix:
-        platform:
+        include:
          - os: ubuntu-latest
            miniconda-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
          - os: macos-latest
