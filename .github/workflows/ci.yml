@@ -2,15 +2,17 @@ jobs:
   test:
     strategy:
       matrix:
-        platform:
+        include:
           - os: macos-latest
             mambaforge-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-MacOSX-x86_64.sh
+            python: 3.9
           - os: windows-latest
             mambaforge-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Windows-x86_64.exe
+            python: 3.9
           - os: ubuntu-18.04
             mambaforge-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
-        python: [3.7, 3.8, 3.9]
-    runs-on: ${{ matrix.platform.os }}
+            python: [3.7, 3.8, 3.9]
+    runs-on: ${{ matrix.os }}
     env:
       PYTHON_VERSION: ${{ matrix.python }}
     steps:
@@ -18,7 +20,7 @@ jobs:
         uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
         with:
-          installer-url: ${{ matrix.platform.mambaforge-url }}
+          installer-url: ${{ matrix.mambaforge-url }}
           activate-environment: sparse-dev
           allow-softlinks: true
       - name: Install package
