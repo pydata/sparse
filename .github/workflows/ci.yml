@@ -2,6 +2,9 @@ jobs:
   test:
     strategy:
       matrix:
+        os: [ubuntu-latest]
+        python: [3.7, 3.8, 3.9]
+        mambaforge-url: [https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh]
         include:
           - os: macos-latest
             mambaforge-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-MacOSX-x86_64.sh
@@ -9,9 +12,6 @@ jobs:
           - os: windows-latest
             mambaforge-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Windows-x86_64.exe
             python: 3.9
-          - os: ubuntu-18.04
-            mambaforge-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
-            python: [3.7, 3.8, 3.9]
     runs-on: ${{ matrix.os }}
     env:
       PYTHON_VERSION: ${{ matrix.python }}
@@ -25,7 +25,7 @@ jobs:
           allow-softlinks: true
       - name: Install package
         run: |
-          conda create -n sparse-dev python=$PYTHON_VERSION
+          mamba create -n sparse-dev python=$PYTHON_VERSION
           pip install -e .[tests]
           pip install codecov
       - name: Run tests
