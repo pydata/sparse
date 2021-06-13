@@ -18,13 +18,11 @@ def gen_shape_data(draw):
 @composite
 def gen_getitem_notimpl_err(draw):
     n = draw(st.integers(min_value=2, max_value=3))
-    shape = draw(array_shapes(max_dims=n, min_side=5))
+    shape = draw(array_shapes(min_dims=n, max_dims=n, min_side=5, max_side=10))
     data = array_shapes(min_dims=3, max_dims=3, max_side=4)
     density = draw(st.floats(min_value=0, max_value=1))
     indices = draw(
-            st.lists(
-                st.lists(data), min_size=n-1, max_size=n-1
-            ).map(tuple),
+        st.lists(st.lists(data), min_size=n - 1, max_size=n - 1).map(tuple),
     )
     return shape, density, indices
 
@@ -46,8 +44,12 @@ def gen_getitem_index_err(draw):
 
 @composite
 def gen_setitem_notimpl_err(draw):
-    shape = draw(array_shapes(max_dims=2, min_side=5))
-    index = draw(st.lists(st.lists(st.integers(), min_size=2, max_size=2)).map(tuple))
+    shape = draw(array_shapes(min_dims=2, max_dims=2, min_side=2, max_side=3))
+    index = draw(
+        st.lists(
+            st.lists(st.integers(min_value=0, max_value=1), min_size=2, max_size=2)
+        ).map(tuple)
+    )
 
     return shape, index
 
