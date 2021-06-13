@@ -61,7 +61,7 @@ jobs:
           sphinx-build -W -b html docs/ _build/html
       - uses: actions/upload-artifact@v1
         with:
-          name: Publish client
+          name: Documentation
           path: _build/html
 on:
   # Trigger the workflow on push or pull request,
