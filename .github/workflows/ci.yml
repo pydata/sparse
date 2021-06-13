@@ -4,11 +4,14 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python: [3.7, 3.8, 3.9]
+        shell: ["bash -l {0}"]
         include:
           - os: macos-latest
             python: 3.9
+            shell: "zsh -l {0}"
           - os: windows-latest
             python: 3.9
+            shell: pwsh
     runs-on: ${{ matrix.os }}
     env:
       PYTHON_VERSION: ${{ matrix.python }}
@@ -24,10 +27,12 @@ jobs:
           miniforge-variant: Mambaforge
           use-mamba: true
       - name: Install package
+        shell: ${{ matrix.shell }}
         run: |
           pip install -e .[tests]
           pip install codecov
       - name: Run tests
+        shell: ${{ matrix.shell }}
         run: |
           pytest --pyargs sparse
       - uses: codecov/codecov-action@v1
@@ -50,9 +55,11 @@ jobs:
           environment-file: ci/environment.yml
           python-version: ${{ matrix.python }}
       - name: Install package
+        shell: ${{ matrix.shell }}
         run: |
           pip install -e .[docs]
       - name: Run tests
+        shell: ${{ matrix.shell }}
         run: |
           sphinx-build -W -b html docs/ _build/html
       - uses: actions/upload-artifact@v1
