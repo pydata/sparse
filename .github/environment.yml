@@ -3,3 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - python
+  - cmake
+  - ninja
+  - make
+  - compilers
