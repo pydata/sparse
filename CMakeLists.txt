@@ -1,23 +1,11 @@
 cmake_minimum_required(VERSION 3.4.0)
 
-project(sparse)
+find_package(PythonExtensions)
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
+include( ExternalProject)
 
-find_package (Python COMPONENTS Interpreter Development)
-
-
-
-
-
-include(FetchContent)
-
-FetchContent_Declare(
+ ExternalProject_Add(
   taco
   GIT_REPOSITORY https://github.com/tensor-compiler/taco.git
-  GIT_TAG        master
+  GIT_TAG        origin/master
 )
-
-FetchContent_MakeAvailable(taco)
-
-add_executable(sparse sparse)
