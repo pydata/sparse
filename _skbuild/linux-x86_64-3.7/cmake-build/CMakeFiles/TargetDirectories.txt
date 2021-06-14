@@ -1,3 +1,0 @@
-/home/sayandip/sparse/_skbuild/linux-x86_64-3.7/cmake-build/CMakeFiles/rebuild_cache.dir
-/home/sayandip/sparse/_skbuild/linux-x86_64-3.7/cmake-build/CMakeFiles/edit_cache.dir
-/home/sayandip/sparse/_skbuild/linux-x86_64-3.7/cmake-build/CMakeFiles/taco.dir

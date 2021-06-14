@@ -1,3 +1,0 @@
-repository='https://github.com/tensor-compiler/taco.git'
-module=''
-tag='origin'
