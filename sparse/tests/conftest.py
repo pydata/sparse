@@ -2,6 +2,5 @@ import platform
 import numpy.distutils.system_info as sysinfo
 
 def pytest_cmdline_preparse(args):
-    if platform.system() != "Windows":
-        if sysinfo.platform_bits != 32:
-            args.append("--doctest-modules")
+    if platform.system() != "Windows" or sysinfo.platform_bits != 32:
+        args.append("--doctest-modules")
