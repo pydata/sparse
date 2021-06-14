@@ -98,7 +98,7 @@ def gen_reductions(draw):
 @composite
 def gen_broadcast_shape(draw):
     shape1 = draw(
-        st.lists(st.integers(min_value=1, max_value=5), min_size=2, max_size=3).map(
+        st.lists(st.integers(min_value=2, max_value=5), min_size=2, max_size=3).map(
             tuple
         )
     )
@@ -133,10 +133,37 @@ def gen_matmul_warning(draw):
             ]
         )
     )
-    b = draw(
-        st.sampled_from(
-            [sparse.random((100, 100), density=0.01), scipy.sparse.random(100, 100)]
+    if not isinstance(a, np.ndarray):
+        b = draw(
+            st.sampled_from(
+                [sparse.random((100, 100), density=0.01), scipy.sparse.random(100, 100)]
+            )
         )
-    )
+    else:
+        b = draw(st.sampled_from([sparse.random((100, 100), density=0.01)]))
 
     return a, b
+
+
+@composite
+def gen_broadcast_shape_dot(draw):
+    a_shape = draw(
+        st.lists(st.integers(min_value=2, max_value=5), min_size=2, max_size=3).map(
+            tuple
+        )
+    )
+    b_shape = draw(broadcastable_shapes(a_shape, min_dims=2, max_dims=3))
+
+    return a_shape, b_shape
+
+
+@composite
+def gen_broadcast_shape2(draw):
+    shape1 = draw(
+        st.lists(st.integers(min_value=2, max_value=5), min_size=2, max_size=3).map(
+            tuple
+        )
+    )
+    shape2 = draw(broadcastable_shapes(shape1, min_dims=2, max_dims=3))
+
+    return shape1, shape2

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from hypothesis import settings, given, strategies as st
-from _utils import gen_matmul_warning
+from _utils import gen_matmul_warning, gen_broadcast_shape_dot
 import scipy.sparse
 import scipy.stats
 
@@ -159,27 +159,6 @@ def test_matmul_errors():
         sparse.matmul(sa, sb)
 
 
-# @pytest.mark.parametrize(
-#     "a, b",
-#     [
-#         (
-#             ,
-
-#         ),
-#         (
-#             ,
-#             sparse.random((100, 100), density=0.01),
-#         ),
-#         (
-#             ,
-
-#         ),
-#         (
-
-#             sparse.random((100, 100), density=0.01),
-#         ),
-#     ],
-# )
 @settings(deadline=None)
 @given(ab=gen_matmul_warning())
 def test_matmul_nan_warnings(ab):
@@ -190,24 +169,14 @@ def test_matmul_nan_warnings(ab):
 
 @settings(deadline=None)
 @given(
-    a_shape=st.one_of(
-        st.tuples(
-            st.integers(min_value=1, max_value=10),
-            st.integers(min_value=1, max_value=10),
-        ),
-    ),
-    b_shape=st.one_of(
-        st.tuples(
-            st.integers(min_value=1, max_value=10),
-            st.integers(min_value=1, max_value=10),
-        ),
-    ),
+    ab=gen_broadcast_shape_dot(),
     a_format=st.sampled_from(["coo", "gcxs"]),
     b_format=st.sampled_from(["coo", "gcxs"]),
     a_comp_axes=st.sampled_from([[0], [1]]),
     b_comp_axes=st.sampled_from([[0], [1]]),
 )
-def test_dot(a_shape, b_shape, a_format, b_format, a_comp_axes, b_comp_axes):
+def test_dot(ab, a_format, b_format, a_comp_axes, b_comp_axes):
+    a_shape, b_shape = ab
     a_shape = a_shape + (b_shape[-1],)
     b_shape = b_shape + (5,)
     if a_format == "coo" or len(a_shape) == 1:
@@ -236,10 +205,13 @@ def test_dot(a_shape, b_shape, a_format, b_format, a_comp_axes, b_comp_axes):
     # assert_eq(eval("a @ sb"), eval("sa @ b"))
 
 
-@given(
-    a_dense=st.sampled_from([True, False]),
-    b_dense=st.sampled_from([True, False]),
-    o_type=st.sampled_from([sparse.SparseArray, np.ndarray]),
+@pytest.mark.parametrize(
+    "a_dense, b_dense, o_type",
+    [
+        (False, False, sparse.SparseArray),
+        (False, True, np.ndarray),
+        (True, False, np.ndarray),
+    ],
 )
 def test_dot_type(a_dense, b_dense, o_type):
     a = sparse.random((3, 4), density=0.8)

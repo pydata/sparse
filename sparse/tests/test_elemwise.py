@@ -3,7 +3,7 @@ import sparse
 import pytest
 from hypothesis import settings, given, strategies as st
 from hypothesis.strategies import composite
-from _utils import gen_broadcast_shape
+from _utils import gen_broadcast_shape, gen_broadcast_shape2
 import operator
 import random
 from sparse import COO, DOK
@@ -228,7 +228,7 @@ def test_binary_broadcasting(func, sd):
     assert np.count_nonzero(expected) == actual.nnz
 
 
-@given(sd=gen_broadcast_shape())
+@given(sd=gen_broadcast_shape2())
 def test_broadcast_to(sd):
     shape1, shape2 = sd
     a = sparse.random(shape1, density=0.5)
