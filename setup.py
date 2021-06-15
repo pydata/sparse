@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from setuptools import find_packages, setup
+from skbuild import setup
+from setuptools import find_packages
 import versioneer
 from pathlib import Path
 
