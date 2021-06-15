@@ -26,6 +26,7 @@ jobs:
       - name: Install package
         shell: bash -l {0}
         run: |
+          pip install -U setuptools wheel
           pip install -e .[tests]
           pip install codecov
       - name: Run tests
@@ -54,6 +55,7 @@ jobs:
       - name: Install package
         shell: bash -l {0}
         run: |
+          pip install -U setuptools wheel
           pip install -e .[docs]
       - name: Run tests
         shell: bash -l {0}
