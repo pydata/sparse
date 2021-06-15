@@ -2,11 +2,7 @@ cmake_minimum_required(VERSION 3.4.0)
 
 project(sparse)
 
-list(APPEND CMAKE_MODULE_PATH "/home/sayandip/anaconda3/lib/python3.7/site-packages/skbuild/resources/cmake")
-
-find_package(PythonExtensions)
-
-
+find_package (Python COMPONENTS Interpreter Development)
 
 include(FetchContent)
 
