@@ -1,0 +1,3 @@
+[submodule "sparse/taco-master"]
+	path = sparse/taco-master
+	url = https://github.com/tensor-compiler/taco.git
