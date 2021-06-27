@@ -1,5 +1,8 @@
 jobs:
   test:
+    defaults:  
+      run:
+        shell: bash -l {0}
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -23,14 +26,17 @@ jobs:
           python-version: ${{ matrix.python }}
           miniforge-variant: Mambaforge
           use-mamba: true
+      - name: Setup Visual Studio Tools
+        uses: seanmiddleditch/gha-setup-vsdevenv@master
+        if: ${{ contains(matrix.os, 'windows') }}
+        with:
+          vswhere: vswhere.exe
       - name: Install package
-        shell: bash -l {0}
         run: |
           pip install -U setuptools wheel
           pip install -e .[tests]
           pip install codecov
       - name: Run tests
-        shell: bash -l {0}
         run: |
           pytest --pyargs sparse
       - uses: codecov/codecov-action@v1
@@ -41,6 +47,9 @@ jobs:
         with:
           files: "**/test-*.xml"
   docs:
+    defaults:  
+      run:
+        shell: bash -l {0}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
@@ -53,12 +62,10 @@ jobs:
           miniforge-variant: Mambaforge
           use-mamba: true
       - name: Install package
-        shell: bash -l {0}
         run: |
           pip install -U setuptools wheel
           pip install -e .[docs]
       - name: Run tests
-        shell: bash -l {0}
         run: |
           sphinx-build -W -b html docs/ _build/html
       - uses: actions/upload-artifact@v1
