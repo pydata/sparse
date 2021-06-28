@@ -31,7 +31,7 @@ jobs:
           use-mamba: true
       - name: Install package
         run: |
-          if grep -iq  win <(echo "${OSTYPE}");then export CXX=cl.exe;fi
+          if grep -iq  Windows <(uname -s);then export CXX=cl.exe;fi
           export CMAKE_GENERATOR=Ninja
           pip install -U setuptools wheel
           pip install -e .[tests]
