@@ -77,7 +77,7 @@ with nonzero fill values.
    data = [0, 0]
    s = COO(coords, data, fill_value=1)
 
-From :doc:`Scipy sparse matrices <generated/scipy.sparse.spmatrix>`
+From :doc:`Scipy sparse matrices <reference/sparse>`
 -------------------------------------------------------------------
 To construct :obj:`COO` array from :obj:`spmatrix <scipy.sparse.spmatrix>`
 objects, you can use the :obj:`COO.from_scipy_sparse` method. As an
