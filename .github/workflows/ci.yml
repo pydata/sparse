@@ -33,6 +33,7 @@ jobs:
           vswhere: vswhere.exe
       - name: Install package
         run: |
+          if grep -iq  win <(echo "${OSTYPE}");then export CXX=cl.exe;fi
           pip install -U setuptools wheel
           pip install -e .[tests]
           pip install codecov
