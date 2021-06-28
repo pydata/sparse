@@ -18,6 +18,9 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v2
+      - name: Setup Visual Studio Tools
+        uses: seanmiddleditch/gha-setup-vsdevenv@master
+        if: ${{ contains(matrix.os, 'windows') }}
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: sparse-dev
@@ -26,11 +29,6 @@ jobs:
           python-version: ${{ matrix.python }}
           miniforge-variant: Mambaforge
           use-mamba: true
-      - name: Setup Visual Studio Tools
-        uses: seanmiddleditch/gha-setup-vsdevenv@master
-        if: ${{ contains(matrix.os, 'windows') }}
-        with:
-          vswhere: vswhere.exe
       - name: Install package
         run: |
           if grep -iq  win <(echo "${OSTYPE}");then export CXX=cl.exe;fi
