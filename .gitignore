@@ -74,3 +74,6 @@ default.profraw
 
 # Sandbox
 sandbox.py
+
+# scikit-build
+_skbuild/

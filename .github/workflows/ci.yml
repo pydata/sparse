@@ -1,5 +1,8 @@
 jobs:
   test:
+    defaults:  
+      run:
+        shell: bash -l {0}
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -9,12 +12,26 @@ jobs:
             python: 3.9
           - os: windows-latest
             python: 3.9
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
       PYTHON_VERSION: ${{ matrix.python }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v2
+      - name: Setup Visual Studio Tools
+        uses: seanmiddleditch/gha-setup-vsdevenv@master
+        if: ${{ contains(matrix.os, 'windows') }}
+      - name: Cache conda
+        uses: actions/cache@v2
+        env:
+          # Increase this value to reset cache if ci/environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key:
+            test-${{ matrix.os }}-conda-py${{ matrix.python }}-${{ env.CACHE_NUMBER }}-${{
+            hashFiles('ci/environment.yml') }}
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: sparse-dev
@@ -22,14 +39,18 @@ jobs:
           environment-file: ci/environment.yml
           python-version: ${{ matrix.python }}
           miniforge-variant: Mambaforge
+          use-only-tar-bz2: true
           use-mamba: true
-      - name: Install package
-        shell: bash -l {0}
+      - name: Export C++ compiler Windows
         run: |
+          echo "CXX=cl.exe" >> $GITHUB_ENV
+        if: ${{ contains(matrix.os, 'windows') }}
+      - name: Install package
+        run: |
+          pip install -U setuptools wheel
           pip install -e .[tests]
           pip install codecov
       - name: Run tests
-        shell: bash -l {0}
         run: |
           pytest --pyargs sparse
       - uses: codecov/codecov-action@v1
@@ -40,23 +61,35 @@ jobs:
         with:
           files: "**/test-*.xml"
   docs:
+    defaults:  
+      run:
+        shell: bash -l {0}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v2
+      - name: Cache conda
+        uses: actions/cache@v2
+        env:
+          # Increase this value to reset cache if ci/environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key:
+            docs-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment.yml') }}
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: sparse-dev
           allow-softlinks: true
           environment-file: ci/environment.yml
           miniforge-variant: Mambaforge
+          use-only-tar-bz2: true
           use-mamba: true
       - name: Install package
-        shell: bash -l {0}
         run: |
+          pip install -U setuptools wheel
           pip install -e .[docs]
       - name: Run tests
-        shell: bash -l {0}
         run: |
           sphinx-build -W -b html docs/ _build/html
       - uses: actions/upload-artifact@v1
