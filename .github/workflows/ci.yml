@@ -12,6 +12,7 @@ jobs:
             python: 3.9
           - os: windows-latest
             python: 3.9
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
       PYTHON_VERSION: ${{ matrix.python }}
@@ -29,10 +30,12 @@ jobs:
           python-version: ${{ matrix.python }}
           miniforge-variant: Mambaforge
           use-mamba: true
+      - name: Export C++ compiler Windows
+        run: |
+          echo "CXX=cl.exe" >> $GITHUB_ENV
+        if: ${{ contains(matrix.os, 'windows') }}
       - name: Install package
         run: |
-          if grep -iq  Windows <(uname -s);then export CXX=cl.exe;fi
-          export CMAKE_GENERATOR=Ninja
           pip install -U setuptools wheel
           pip install -e .[tests]
           pip install codecov
