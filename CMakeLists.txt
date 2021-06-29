@@ -5,10 +5,23 @@ set(CMAKE_RC_COMPILER ${CMAKE_CXX_COMPILER})
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development NumPy)
 find_package(pybind11 CONFIG)
 
+include(FetchContent)
+FetchContent_Declare(
+  taco
+  GIT_REPOSITORY https://github.com/tensor-compiler/taco.git
+  GIT_TAG        master
+)
+FetchContent_GetProperties(taco)
+if(NOT taco_POPULATED)
+  FetchContent_Populate(taco)
+endif()
+add_subdirectory(${taco_SOURCE_DIR})
+# add_library(taco)
+# target_link_libraries(taco sparse)
+
+
 # Satisfy pybind11 dep from source if not found on system
 if(NOT TARGET pybind11::pybind11)
-  include(FetchContent)
-
   # To prevent download of the pybind11 source you can overwrite the following
   # behavior by setting the cmake variable FETCHCONTENT_SOURCE_DIR_PYBIND11 to a
   # local source directory
