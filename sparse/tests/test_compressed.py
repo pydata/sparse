@@ -42,11 +42,11 @@ def random_sparse_small(request):
 @settings(deadline=None)
 @given(p=gen_reductions())
 def test_reductions(p, random_sparse):
-    reduction, kwargs, axis, keepdims = p
+    reduction, kwargs = p
     x = random_sparse
     y = x.todense()
-    xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
-    yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
+    xx = getattr(x, reduction)(**kwargs)
+    yy = getattr(y, reduction)(**kwargs)
     assert_eq(xx, yy)
 
 
@@ -84,17 +84,13 @@ def test_reductions_bool(random_sparse, reduction, kwargs, axis, keepdims):
     assert_eq(xx, yy)
 
 
-@given(
-    reduction=st.sampled_from([np.max, np.sum, np.mean, np.prod]),
-    kwargs=st.sampled_from([{"dtype": np.float32}, {}]),
-    axis=st.sampled_from([None, 0, 1, 2, (0, 2), -1, (0, -1)]),
-    keepdims=st.sampled_from([True, False]),
-)
-def test_ufunc_reductions(random_sparse, reduction, kwargs, axis, keepdims):
+@given(p=gen_reductions(function=True))
+def test_ufunc_reductions(random_sparse, p):
+    reduction, kwargs = p
     x = random_sparse
     y = x.todense()
-    xx = reduction(x, axis=axis, keepdims=keepdims, **kwargs)
-    yy = reduction(y, axis=axis, keepdims=keepdims, **kwargs)
+    xx = reduction(x, **kwargs)
+    yy = reduction(y, **kwargs)
     assert_eq(xx, yy)
     # If not a scalar/1 element array, must be a sparse array
     if xx.size > 1:

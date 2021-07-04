@@ -1,3 +1,4 @@
+from numbers import Rational
 from hypothesis import given, strategies as st
 from hypothesis.strategies import data, composite
 from hypothesis.extra.numpy import array_shapes, basic_indices, broadcastable_shapes
@@ -86,13 +87,28 @@ def gen_transpose(draw):
 
 
 @composite
-def gen_reductions(draw):
-    reduction = (draw(st.sampled_from(["sum", "mean", "prod", "max", "std", "var"])),)
-    kwargs = (draw(st.sampled_from([{"dtype": np.float32}, {}])),)
-    axis = (draw(st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)])),)
-    keepdims = draw(st.sampled_from([True, False]))
+def gen_sparse_random(draw, shape, **kwargs):
+    seed = draw(st.integers(min_value=0))
+    return sparse.random(shape, random_state=seed, **kwargs)
 
-    return reduction, kwargs, axis, keepdims
+
+@composite
+def gen_reductions(draw, function=False):
+    reduction = draw(
+        st.sampled_from(
+            ["sum", "mean", "prod", "max", "min", "std", "var", "any", "all"]
+        )
+    )
+    kwargs = {}
+    if reduction not in {"max", "min", "any", "all"}:
+        dtype = draw(st.sampled_from([np.float32, np.float64, None]))
+        kwargs["dtype"] = dtype
+    kwargs["axis"] = draw(st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)]))
+    kwargs["keepdims"] = draw(st.sampled_from([True, False]))
+    if function:
+        reduction = getattr(np, reduction)
+
+    return reduction, kwargs
 
 
 @composite
