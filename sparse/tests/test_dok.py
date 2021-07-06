@@ -6,7 +6,7 @@ from _utils import (
     gen_getitem_index_err,
     gen_setitem_val_err,
     gen_getitem,
-    gen_setitem
+    gen_setitem,
 )
 
 import numpy as np
@@ -126,35 +126,42 @@ def test_getitem_index_error(sd):
         s[indices]
 
 
-# @pytest.mark.parametrize(
-#     "shape, index, value_shape",
-#     [
-#         ((2,), slice(None), ()),
-#         ((2,), slice(1, 2), ()),
-#         ((2,), slice(0, 2), (2,)),
-#         ((2,), 1, ()),
-#         ((2, 3), (0, slice(None)), ()),
-#         ((2, 3), (0, slice(1, 3)), ()),
-#         ((2, 3), (1, slice(None)), (3,)),
-#         ((2, 3), (0, slice(1, 3)), (2,)),
-#         ((2, 3), (0, slice(2, 0, -1)), (2,)),
-#         ((2, 3), (slice(None), 1), ()),
-#         ((2, 3), (slice(None), 1), (2,)),
-#         ((2, 3), (slice(1, 2), 1), ()),
-#         ((2, 3), (slice(1, 2), 1), (1,)),
-#         ((2, 3), (0, 2), ()),
-#         ((2, 3), ([0, 1], [1, 2]), (2,)),
-#         ((2, 3), ([0, 1], [1, 2]), ()),
-#         ((4,), ([1, 3]), ()),
-#     ],
-# )
-@given(gen_setitem())
-def test_setitem(sd):
-    shape, index, value_shape = sd
+@pytest.mark.parametrize(
+    "shape, index, value_shape",
+    [
+        ((2,), slice(None), ()),
+        ((2,), slice(1, 2), ()),
+        ((2,), slice(0, 2), (2,)),
+        ((2, 3), (0, slice(None)), ()),
+        ((2, 3), (0, slice(1, 3)), ()),
+        ((2, 3), (1, slice(None)), (3,)),
+        ((2, 3), (0, slice(1, 3)), (2,)),
+        ((2, 3), (0, slice(2, 0, -1)), (2,)),
+        ((2, 3), (slice(None), 1), ()),
+        ((2, 3), (slice(None), 1), (2,)),
+        ((2, 3), (slice(1, 2), 1), ()),
+        ((2, 3), (slice(1, 2), 1), (1,)),
+    ],
+)
+def test_setitem_slice(shape, index, value_shape):
     s = sparse.random(shape, 0.5, format="dok")
     x = s.todense()
 
     value = np.random.rand(*value_shape)
+
+    s[index] = value
+    x[index] = value
+
+    assert_eq(x, s)
+
+
+@given(gen_setitem())
+def test_setitem(sd):
+    shape, index = sd
+    s = sparse.random(shape, 0.5, format="dok")
+    x = s.todense()
+
+    value = np.random.rand()
 
     s[index] = value
     x[index] = value

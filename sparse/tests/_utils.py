@@ -30,31 +30,39 @@ def gen_notimpl_err(draw):
 
 @composite
 def gen_getitem_index_err(draw):
-    n = draw(st.integers(min_value=1, max_value=3))
+    n = draw(st.integers(min_value=2, max_value=2))
     shape = draw(array_shapes(min_dims=n, max_dims=n, min_side=5, max_side=10))
     density = draw(st.floats(min_value=0, max_value=1))
-    data = array_shapes(min_dims=n, max_dims=n, min_side=n, max_side=n)
-    indices = draw(
-        st.lists(
-            st.lists(data, min_size=n, max_size=n)
-        ).map(tuple)
-    )
+    if n == 2:
+        indices = draw(
+            st.tuples(
+                st.lists(st.integers(min_value=1, max_value=3), min_size=1, max_size=2),
+                st.lists(st.integers(min_value=1, max_value=3), min_size=3, max_size=4),
+            )
+        )
+    else:
+        indices = draw(
+            st.tuples(
+                st.lists(st.integers(min_value=1, max_value=3), min_size=1, max_size=2),
+                st.lists(st.integers(min_value=1, max_value=3), min_size=1, max_size=2),
+                st.lists(st.integers(min_value=1, max_value=3), min_size=3, max_size=4),
+            )
+        )
+
     return shape, density, indices
 
 
 @composite
 def gen_setitem_val_err(draw):
-    shape = draw(array_shapes(max_dims=2, min_side=5))
+    shape = draw(array_shapes(min_dims=2, max_dims=2, min_side=4, max_side=6))
     index = draw(
-        st.lists(
-            st.lists(st.integers(), min_size=2, max_size=2), min_size=2, max_size=2
-        ).map(tuple)
+        st.tuples(
+            st.lists(st.integers(min_value=1, max_value=3), min_size=2, max_size=2),
+            st.lists(st.integers(min_value=1, max_value=3), min_size=2, max_size=2),
+        )
     )
     value_shape = draw(
-        st.one_of(
-            array_shapes(max_dims=2, min_side=1, max_side=3),
-            array_shapes(max_dims=1, min_side=1, max_side=3),
-        )
+        array_shapes(min_dims=4, max_dims=6, min_side=3, max_side=5),
     )
 
     return shape, index, value_shape
@@ -187,8 +195,18 @@ def gen_getitem(draw):
 
 @composite
 def gen_setitem(draw):
-    shape = draw()
-    index = draw()
-    value_shape = draw()
+    a = draw(st.integers(min_value=2, max_value=5))
+    shape = draw(array_shapes(min_dims=2, max_dims=2, min_side=a))
+    index = draw(array_shapes(min_dims=2, max_dims=2, max_side=a - 1))
 
-    return shape, index, value_shape
+    return shape, index
+
+
+@composite
+def gen_reshape(draw):
+    x = st.integers(min_value=1)
+    y = st.integers(min_value=1)
+    a = draw(st.tuples(x, y))
+    b = draw(st.tuples(y, x))
+
+    return a, b

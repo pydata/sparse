@@ -1,7 +1,7 @@
 import sparse
 import pytest
 from hypothesis import settings, given, strategies as st
-from _utils import gen_transpose, gen_reductions
+from _utils import gen_transpose, gen_reductions, gen_reshape
 import numpy as np
 import scipy
 
@@ -130,6 +130,15 @@ def test_ufunc_reductions_kwargs(reduction, kwargs, fill_value):
     ],
 )
 def test_reshape(a, b):
+    s = sparse.random(a, density=0.5, format="gcxs")
+    x = s.todense()
+
+    assert_eq(x.reshape(b), s.reshape(b))
+
+
+@given(gen_reshape())
+def test_reshape_2(ab):
+    a, b = ab
     s = sparse.random(a, density=0.5, format="gcxs")
     x = s.todense()
 
