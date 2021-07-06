@@ -17,10 +17,10 @@ def gen_shape_data(draw):
 
 
 @composite
-def gen_getitem_notimpl_err(draw):
+def gen_notimpl_err(draw):
     n = draw(st.integers(min_value=2, max_value=3))
     shape = draw(array_shapes(min_dims=n, max_dims=n, min_side=5, max_side=10))
-    data = array_shapes(min_dims=3, max_dims=3, max_side=4)
+    data = array_shapes(min_dims=3, max_dims=3, min_side=1, max_side=4)
     density = draw(st.floats(min_value=0, max_value=1))
     indices = draw(
         st.lists(st.lists(data), min_size=n - 1, max_size=n - 1).map(tuple),
@@ -30,29 +30,16 @@ def gen_getitem_notimpl_err(draw):
 
 @composite
 def gen_getitem_index_err(draw):
-    n = draw(st.integers(min_value=1, max_value=5))
-    shape = draw(array_shapes(max_dims=3, min_side=5))
+    n = draw(st.integers(min_value=1, max_value=3))
+    shape = draw(array_shapes(min_dims=n, max_dims=n, min_side=5, max_side=10))
     density = draw(st.floats(min_value=0, max_value=1))
+    data = array_shapes(min_dims=n, max_dims=n, min_side=n, max_side=n)
     indices = draw(
         st.lists(
-            st.lists(st.integers(min_value=1), min_size=n, max_size=n),
-            min_size=2,
-            max_size=5,
+            st.lists(data, min_size=n, max_size=n)
         ).map(tuple)
     )
     return shape, density, indices
-
-
-@composite
-def gen_setitem_notimpl_err(draw):
-    shape = draw(array_shapes(min_dims=2, max_dims=2, min_side=2, max_side=3))
-    index = draw(
-        st.lists(
-            st.lists(st.integers(min_value=0, max_value=1), min_size=2, max_size=2)
-        ).map(tuple)
-    )
-
-    return shape, index
 
 
 @composite
@@ -183,3 +170,25 @@ def gen_broadcast_shape2(draw):
     shape2 = draw(broadcastable_shapes(shape1, min_dims=2, max_dims=3))
 
     return shape1, shape2
+
+
+@composite
+def gen_getitem(draw):
+    shape = draw(
+        st.tuples(
+            st.integers(min_value=1, max_value=5), st.integers(min_value=1, max_value=5)
+        )
+    )
+    density = draw(st.floats(min_value=0, max_value=1))
+    indices = draw(st.tuples(st.slices(shape[0]), st.slices(shape[1])))
+
+    return shape, density, indices
+
+
+@composite
+def gen_setitem(draw):
+    shape = draw()
+    index = draw()
+    value_shape = draw()
+
+    return shape, index, value_shape

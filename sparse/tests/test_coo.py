@@ -800,35 +800,17 @@ def test_op_scipy_sparse(func):
     assert_eq(func(x, y), func(xs, ys))
 
 
+@pytest.mark.xfail
+@settings(deadline=None)
 @given(
     func=st.sampled_from(
         [
             operator.add,
             operator.sub,
-            pytest.param(
-                operator.mul,
-                marks=pytest.mark.xfail(
-                    reason="Scipy sparse auto-densifies in this case."
-                ),
-            ),
-            pytest.param(
-                operator.gt,
-                marks=pytest.mark.xfail(
-                    reason="Scipy sparse doesn't support this yet."
-                ),
-            ),
-            pytest.param(
-                operator.lt,
-                marks=pytest.mark.xfail(
-                    reason="Scipy sparse doesn't support this yet."
-                ),
-            ),
-            pytest.param(
-                operator.ne,
-                marks=pytest.mark.xfail(
-                    reason="Scipy sparse doesn't support this yet."
-                ),
-            ),
+            operator.mul,
+            operator.gt,
+            operator.lt,
+            operator.ne,
         ]
     )
 )
