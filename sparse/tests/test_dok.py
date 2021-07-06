@@ -335,3 +335,10 @@ def test_dok_concat_stack(func):
     x2 = s2.todense()
 
     assert_eq(func([s1, s2]), func([x1, x2]))
+
+
+def test_dok_indexing():
+    s = sparse.DOK((3, 3))
+    s[1, 2] = 0.5
+    x = s.todense()
+    assert_eq(x[1::-1], s[1::-1])
