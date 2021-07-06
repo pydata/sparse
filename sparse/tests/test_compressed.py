@@ -1,7 +1,7 @@
 import sparse
 import pytest
 from hypothesis import settings, given, strategies as st
-from _utils import gen_transpose, gen_reductions, gen_reshape
+from _utils import gen_transpose, gen_reductions, gen_reshape, gen_sparse_random
 import numpy as np
 import scipy
 
@@ -40,10 +40,9 @@ def random_sparse_small(request):
 
 
 @settings(deadline=None)
-@given(p=gen_reductions())
-def test_reductions(p, random_sparse):
+@given(p=gen_reductions(), x=gen_sparse_random((20, 30, 40)))
+def test_reductions(p, x):
     reduction, kwargs = p
-    x = random_sparse
     y = x.todense()
     xx = getattr(x, reduction)(**kwargs)
     yy = getattr(y, reduction)(**kwargs)
@@ -84,10 +83,10 @@ def test_reductions_bool(random_sparse, reduction, kwargs, axis, keepdims):
     assert_eq(xx, yy)
 
 
-@given(p=gen_reductions(function=True))
-def test_ufunc_reductions(random_sparse, p):
+@settings(deadline=None)
+@given(p=gen_reductions(function=True), x=gen_sparse_random((20, 30, 40)))
+def test_ufunc_reductions(p, x):
     reduction, kwargs = p
-    x = random_sparse
     y = x.todense()
     xx = reduction(x, **kwargs)
     yy = reduction(y, **kwargs)

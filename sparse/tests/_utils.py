@@ -83,7 +83,7 @@ def gen_transpose(draw):
 
 @composite
 def gen_sparse_random(draw, shape, **kwargs):
-    seed = draw(st.integers(min_value=0))
+    seed = draw(st.integers(min_value=0, max_value=100))
     return sparse.random(shape, random_state=seed, **kwargs)
 
 
