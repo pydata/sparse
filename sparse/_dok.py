@@ -334,43 +334,11 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
         key = normalize_index(key, self.shape)
 
-        # single element doesn't return sparse array
-        if all(isinstance(k, Integral) for k in key):
-            if key in self.data:
-                return self.data[key]
-            else:
-                return self.fill_value
+        ret = self.asformat("coo")[key]
+        if isinstance(ret, SparseArray):
+            ret = ret.asformat("dok")
 
-        slice_key = [to_slice(k) for k in key]
-        coords_array = np.asarray(list(self.data.keys()))
-        values_array = np.asarray(list(self.data.values()))
-        filtered_coords, filter_arr = self._filter_by_key(coords_array, slice_key)
-        filtered_values = values_array[filter_arr]
-
-        res_shape = []
-        keep_dims = []
-        for i, k in enumerate(key):
-            if isinstance(k, slice):
-                n_elements = ceil((k.stop - k.start) / k.step)
-                res_shape.append(n_elements)
-                keep_dims.append(i)
-
-        # none of the keys in this array make it into the slice
-        if filtered_coords.size == 0:
-            return DOK(shape=res_shape, dtype=self.dtype, fill_value=self.fill_value)
-
-        starts = np.asarray([k.start for k in slice_key])
-        steps = np.asarray([k.step for k in slice_key])
-        new_coords = (filtered_coords - starts) // steps
-        new_coords_squeezed = np.take(new_coords, keep_dims, axis=1)
-        new_data = {
-            tuple(coord): val
-            for coord, val in zip(new_coords_squeezed, filtered_values)
-        }
-
-        return DOK(
-            shape=res_shape, data=new_data, dtype=self.dtype, fill_value=self.fill_value
-        )
+        return ret
 
     def _fancy_getitem(self, key):
         """Subset of fancy indexing, when all dimensions are accessed"""
@@ -384,17 +352,6 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
             dtype=self.dtype,
             fill_value=self.fill_value,
         )
-
-    def _filter_by_key(self, coords, slice_key):
-        """Filter data coordinates to be within given slice"""
-        filter_arr = np.ones(coords.shape[0], dtype=bool)
-        for coords_in_dim, sl in zip(coords.T, slice_key):
-            filter_arr *= (
-                (coords_in_dim >= sl.start)
-                * (coords_in_dim < sl.stop)
-                * ((coords_in_dim - sl.start) % sl.step == 0)
-            )
-        return coords[filter_arr], filter_arr
 
     def __setitem__(self, key, value):
         value = np.asarray(value, dtype=self.dtype)
@@ -484,7 +441,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
                 return
             elif not isinstance(ind, Integral):
                 raise IndexError(
-                    "All indices must be slices or integers" " when setting an item."
+                    "All indices must be slices or integers when setting an item."
                 )
 
         key = tuple(key_list)
