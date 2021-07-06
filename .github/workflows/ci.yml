@@ -1,0 +1,81 @@
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python: [3.7, 3.8, 3.9]
+        include:
+          - os: macos-latest
+            python: 3.9
+          - os: windows-latest
+            python: 3.9
+    runs-on: ${{ matrix.os }}
+    env:
+      PYTHON_VERSION: ${{ matrix.python }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: sparse-dev
+          allow-softlinks: true
+          environment-file: ci/environment.yml
+          python-version: ${{ matrix.python }}
+          miniforge-variant: Mambaforge
+          use-mamba: true
+      - name: Install package
+        shell: bash -l {0}
+        run: |
+          pip install -e .[tests]
+          pip install codecov
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          pytest --pyargs sparse
+      - uses: codecov/codecov-action@v1
+        if: always()
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action/composite@v1
+        if: always()
+        with:
+          files: "**/test-*.xml"
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: sparse-dev
+          allow-softlinks: true
+          environment-file: ci/environment.yml
+          miniforge-variant: Mambaforge
+          use-mamba: true
+      - name: Install package
+        shell: bash -l {0}
+        run: |
+          pip install -e .[docs]
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          sphinx-build -W -b html docs/ _build/html
+      - uses: actions/upload-artifact@v1
+        with:
+          name: Documentation
+          path: _build/html
+on:
+  # Trigger the workflow on push or pull request,
+  # but only for the main branch
+  push:
+    branches:
+      - master
+      - vnext
+  pull_request:
+    branches:
+      - master
+      - vnext
+  # Also trigger on page_build, as well as release created events
+  page_build:
+  release:
+    types: # This configuration does not affect the page_build event above
+      - created
