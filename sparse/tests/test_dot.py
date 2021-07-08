@@ -95,6 +95,20 @@ def test_tensordot_valueerror():
         x1 @ x2
 
 
+def gen_kwargs(format):
+    from sparse._utils import convert_format
+
+    format = convert_format(format)
+    if format == "gcxs":
+        return [{"compressed_axes": c} for c in [(0,), (1,)]]
+
+    return [{}]
+
+
+def gen_for_format(format):
+    return [(format, g) for g in gen_kwargs(format)]
+
+
 @pytest.mark.parametrize(
     "a_shape, b_shape",
     [
@@ -112,23 +126,20 @@ def test_tensordot_valueerror():
     ],
 )
 @pytest.mark.parametrize(
-    "a_format, b_format",
-    [("coo", "coo"), ("coo", "gcxs"), ("gcxs", "coo"), ("gcxs", "gcxs")],
+    "a_format, a_kwargs",
+    [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 @pytest.mark.parametrize(
-    "a_comp_axes, b_comp_axes", [([0], [0]), ([0], [1]), ([1], [0]), ([1], [1])]
+    "b_format, b_kwargs",
+    [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
-def test_matmul(a_shape, b_shape, a_format, b_format, a_comp_axes, b_comp_axes):
-    if a_format == "coo" or len(a_shape) == 1:
-        a_comp_axes = None
-    if b_format == "coo" or len(b_shape) == 1:
-        b_comp_axes = None
-    sa = sparse.random(
-        a_shape, density=0.5, format=a_format, compressed_axes=a_comp_axes
-    )
-    sb = sparse.random(
-        b_shape, density=0.5, format=b_format, compressed_axes=b_comp_axes
-    )
+def test_matmul(a_shape, b_shape, a_format, b_format, a_kwargs, b_kwargs):
+    if len(a_shape) == 1:
+        a_kwargs = {}
+    if len(b_shape) == 1:
+        b_kwargs = {}
+    sa = sparse.random(a_shape, density=0.5, format=a_format, **a_kwargs)
+    sb = sparse.random(b_shape, density=0.5, format=b_format, **b_kwargs)
 
     a = sa.todense()
     b = sb.todense()
@@ -209,37 +220,35 @@ def test_matmul_nan_warnings(a, b):
     ],
 )
 @pytest.mark.parametrize(
-    "a_format, b_format",
-    [("coo", "coo"), ("coo", "gcxs"), ("gcxs", "coo"), ("gcxs", "gcxs")],
+    "a_format, a_kwargs",
+    [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 @pytest.mark.parametrize(
-    "a_comp_axes, b_comp_axes", [([0], [0]), ([0], [1]), ([1], [0]), ([1], [1])]
+    "b_format, b_kwargs",
+    [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
-def test_dot(a_shape, b_shape, a_format, b_format, a_comp_axes, b_comp_axes):
-    if a_format == "coo" or len(a_shape) == 1:
-        a_comp_axes = None
-    if b_format == "coo" or len(b_shape) == 1:
-        b_comp_axes = None
-    sa = sparse.random(
-        a_shape, density=0.5, format=a_format, compressed_axes=a_comp_axes
-    )
-    sb = sparse.random(
-        b_shape, density=0.5, format=b_format, compressed_axes=b_comp_axes
-    )
+def test_dot(a_shape, b_shape, a_format, b_format, a_kwargs, b_kwargs):
+    if len(a_shape) == 1:
+        a_kwargs = {}
+    if len(b_shape) == 1:
+        b_kwargs = {}
+    sa = sparse.random(a_shape, density=0.5, format=a_format, **a_kwargs)
+    sb = sparse.random(b_shape, density=0.5, format=b_format, **b_kwargs)
 
     a = sa.todense()
     b = sb.todense()
 
-    assert_eq(a.dot(b), sa.dot(sb))
-    assert_eq(np.dot(a, b), sparse.dot(sa, sb))
-    assert_eq(sparse.dot(sa, b), sparse.dot(a, sb))
-    assert_eq(np.dot(a, b), sparse.dot(sa, sb))
+    e = np.dot(a, b)
+    assert_eq(e, sa.dot(sb))
+    assert_eq(e, sparse.dot(sa, sb))
+    assert_eq(e, sparse.dot(a, sb))
+    assert_eq(e, sparse.dot(a, sb))
 
     # Basic equivalences
-    assert_eq(operator.matmul(a, b), operator.matmul(sa, sb))
-    # Test that COO's and np.array's combine correctly
-    # Not possible due to https://github.com/numpy/numpy/issues/9028
-    # assert_eq(eval("a @ sb"), eval("sa @ b"))
+    e = operator.matmul(a, b)
+    assert_eq(e, operator.matmul(sa, sb))
+    assert_eq(e, operator.matmul(a, sb))
+    assert_eq(e, operator.matmul(sa, b))
 
 
 @pytest.mark.parametrize(

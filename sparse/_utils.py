@@ -83,9 +83,9 @@ def random(
     random_state=None,
     data_rvs=None,
     format="coo",
-    compressed_axes=None,
     fill_value=None,
     idx_dtype=None,
+    **kwargs,
 ):
     """Generate a random sparse multidimensional array
 
@@ -161,11 +161,6 @@ def random(
             "for an array with {} total elements".format(nnz, elements)
         )
 
-    if format != "gcxs" and compressed_axes is not None:
-        raise ValueError(
-            "compressed_axes is not supported for {} format".format(format)
-        )
-
     if random_state is None:
         random_state = np.random
     elif isinstance(random_state, Integral):
@@ -203,7 +198,7 @@ def random(
                 "cannot cast array with shape {} to dtype {}.".format(shape, idx_dtype)
             )
 
-    return ar.asformat(format, compressed_axes=compressed_axes)
+    return ar.asformat(format, **kwargs)
 
 
 def isscalar(x):
@@ -493,3 +488,16 @@ def can_store(dtype, scalar):
 
 def is_unsigned_dtype(dtype):
     return not np.array(-1, dtype=dtype) == np.array(-1)
+
+
+def convert_format(format):
+    from ._sparse_array import SparseArray
+
+    if isinstance(format, type):
+        if not issubclass(format, SparseArray):
+            raise ValueError(f"Invalid format: {format}")
+        return format.__name__.lower()
+    if isinstance(format, str):
+        return format
+
+    raise ValueError(f"Invalid format: {format}")
