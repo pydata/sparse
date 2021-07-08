@@ -501,7 +501,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
                 (self.data, self.indices, self.indptr), shape=self.shape
             )
 
-    def asformat(self, format, compressed_axes=None):
+    def asformat(self, format, **kwargs):
         """
         Convert this sparse array to a given format.
         Parameters
@@ -519,21 +519,30 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         NotImplementedError
             If the format isn't supported.
         """
+        from sparse._utils import convert_format
+
+        format = convert_format(format)
+        ret = None
 
         if format == "coo":
-            return self.tocoo()
+            ret = self.tocoo()
         elif format == "dok":
-            return self.todok()
+            ret = self.todok()
         elif format == "csr":
-            return CSR(self)
+            ret = CSR(self)
         elif format == "csc":
-            return CSC(self)
+            ret = CSC(self)
         elif format == "gcxs":
-            if compressed_axes is None:
-                compressed_axes = self.compressed_axes
+            compressed_axes = kwargs.pop("compressed_axes", self.compressed_axes)
             return self.change_compressed_axes(compressed_axes)
 
-        raise NotImplementedError("The given format is not supported.")
+        if len(kwargs) != 0:
+            raise TypeError(f"Invalid keyword arguments provided: {kwargs}")
+
+        if ret is None:
+            raise NotImplementedError(f"The given format is not supported: {format}")
+
+        return ret
 
     def maybe_densify(self, max_size=1000, min_density=0.25):
         """

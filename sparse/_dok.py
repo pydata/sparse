@@ -489,7 +489,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
         return result
 
-    def asformat(self, format):
+    def asformat(self, format, **kwargs):
         """
         Convert this sparse array to a given format.
 
@@ -508,12 +508,18 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         NotImplementedError
             If the format isn't supported.
         """
-        if format == "dok" or format is DOK:
+        from sparse._utils import convert_format
+
+        format = convert_format(format)
+
+        if format == "dok":
             return self
 
-        from ._coo import COO
+        if format == "coo":
+            from ._coo import COO
 
-        if format == "coo" or format is COO:
+            if len(kwargs) != 0:
+                raise ValueError(f"Extra kwargs found: {kwargs}")
             return COO.from_iter(
                 self.data,
                 shape=self.shape,
@@ -521,7 +527,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
                 dtype=self.dtype,
             )
 
-        raise NotImplementedError("The given format is not supported.")
+        return self.asformat("coo").asformat(format, **kwargs)
 
 
 def to_slice(k):
