@@ -1283,7 +1283,7 @@ def concatenate(arrays, axis=0, compressed_axes=None):
         return gcxs_concat(arrays, axis, compressed_axes)
 
 
-def eye(N, M=None, k=0, dtype=float, format="coo", compressed_axes=None):
+def eye(N, M=None, k=0, dtype=float, format="coo", **kwargs):
     """Return a 2-D array in the specified format with ones on the diagonal and zeros elsewhere.
 
     Parameters
@@ -1300,8 +1300,6 @@ def eye(N, M=None, k=0, dtype=float, format="coo", compressed_axes=None):
         Data-type of the returned array.
     format : str, optional
         A format string.
-    compressed_axes : iterable, optional
-        The axes to compress if returning a GCXS array.
 
     Returns
     -------
@@ -1346,10 +1344,10 @@ def eye(N, M=None, k=0, dtype=float, format="coo", compressed_axes=None):
 
     return COO(
         coords, data=data, shape=(N, M), has_duplicates=False, sorted=True
-    ).asformat(format, compressed_axes=compressed_axes)
+    ).asformat(format, **kwargs)
 
 
-def full(shape, fill_value, dtype=None, format="coo", compressed_axes=None):
+def full(shape, fill_value, dtype=None, format="coo", **kwargs):
     """Return a SparseArray of given shape and type, filled with `fill_value`.
 
     Parameters
@@ -1386,8 +1384,6 @@ def full(shape, fill_value, dtype=None, format="coo", compressed_axes=None):
         dtype = np.array(fill_value).dtype
     if not isinstance(shape, tuple):
         shape = (shape,)
-    if compressed_axes is not None:
-        check_compressed_axes(shape, compressed_axes)
     data = np.empty(0, dtype=dtype)
     coords = np.empty((len(shape), 0), dtype=np.intp)
     return COO(
@@ -1397,10 +1393,10 @@ def full(shape, fill_value, dtype=None, format="coo", compressed_axes=None):
         fill_value=fill_value,
         has_duplicates=False,
         sorted=True,
-    ).asformat(format, compressed_axes=compressed_axes)
+    ).asformat(format, **kwargs)
 
 
-def full_like(a, fill_value, dtype=None, shape=None, format=None, compressed_axes=None):
+def full_like(a, fill_value, dtype=None, shape=None, format=None, **kwargs):
     """Return a full array with the same shape and type as a given array.
 
     Parameters
@@ -1437,11 +1433,11 @@ def full_like(a, fill_value, dtype=None, shape=None, format=None, compressed_axe
         fill_value,
         dtype=(a.dtype if dtype is None else dtype),
         format=format,
-        compressed_axes=compressed_axes,
+        **kwargs,
     )
 
 
-def zeros(shape, dtype=float, format="coo", compressed_axes=None):
+def zeros(shape, dtype=float, format="coo", **kwargs):
     """Return a SparseArray of given shape and type, filled with zeros.
 
     Parameters
@@ -1470,14 +1466,10 @@ def zeros(shape, dtype=float, format="coo", compressed_axes=None):
     array([[0, 0],
            [0, 0]])
     """
-    if compressed_axes is not None:
-        check_compressed_axes(shape, compressed_axes)
-    return full(shape, 0, np.dtype(dtype)).asformat(
-        format, compressed_axes=compressed_axes
-    )
+    return full(shape, 0, np.dtype(dtype)).asformat(format, **kwargs)
 
 
-def zeros_like(a, dtype=None, shape=None, format=None, compressed_axes=None):
+def zeros_like(a, dtype=None, shape=None, format=None, **kwargs):
     """Return a SparseArray of zeros with the same shape and type as ``a``.
 
     Parameters
@@ -1503,12 +1495,10 @@ def zeros_like(a, dtype=None, shape=None, format=None, compressed_axes=None):
     array([[0, 0, 0],
            [0, 0, 0]])
     """
-    return full_like(
-        a, 0, dtype=dtype, shape=shape, format=format, compressed_axes=compressed_axes
-    )
+    return full_like(a, 0, dtype=dtype, shape=shape, format=format, **kwargs)
 
 
-def ones(shape, dtype=float, format="coo", compressed_axes=None):
+def ones(shape, dtype=float, format="coo", **kwargs):
     """Return a SparseArray of given shape and type, filled with ones.
 
     Parameters
@@ -1537,14 +1527,10 @@ def ones(shape, dtype=float, format="coo", compressed_axes=None):
     array([[1, 1],
            [1, 1]])
     """
-    if compressed_axes is not None:
-        check_compressed_axes(shape, compressed_axes)
-    return full(shape, 1, np.dtype(dtype)).asformat(
-        format, compressed_axes=compressed_axes
-    )
+    return full(shape, 1, np.dtype(dtype)).asformat(format, **kwargs)
 
 
-def ones_like(a, dtype=None, shape=None, format=None, compressed_axes=None):
+def ones_like(a, dtype=None, shape=None, format=None, **kwargs):
     """Return a SparseArray of ones with the same shape and type as ``a``.
 
     Parameters
@@ -1570,9 +1556,7 @@ def ones_like(a, dtype=None, shape=None, format=None, compressed_axes=None):
     array([[1, 1, 1],
            [1, 1, 1]])
     """
-    return full_like(
-        a, 1, dtype=dtype, shape=shape, format=format, compressed_axes=compressed_axes
-    )
+    return full_like(a, 1, dtype=dtype, shape=shape, format=format, **kwargs)
 
 
 def outer(a, b, out=None):
@@ -1745,3 +1729,15 @@ def pad(array, pad_width, mode="constant", **kwargs):
     )
     new_data = array.data
     return COO(new_coords, new_data, new_shape, fill_value=array.fill_value)
+
+
+def format_to_string(format):
+    if isinstance(format, type):
+        if not issubclass(format, SparseArray):
+            raise ValueError(f"invalid format: {format}")
+        format = format.__name__.lower()
+
+    if isinstance(format, str):
+        return format
+
+    raise ValueError(f"invalid format: {format}")

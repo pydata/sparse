@@ -1412,7 +1412,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         check_zero_fill_value(self)
         return tuple(self.coords)
 
-    def asformat(self, format, compressed_axes=None):
+    def asformat(self, format, **kwargs):
         """
         Convert this sparse array to a given format.
 
@@ -1431,25 +1431,27 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         NotImplementedError
             If the format isn't supported.
         """
-        from .._compressed import GCXS
+        from sparse._utils import convert_format
 
-        if format == "gcxs" or format is GCXS:
-            return GCXS.from_coo(self, compressed_axes=compressed_axes)
+        format = convert_format(format)
 
-        elif compressed_axes is not None:
-            raise ValueError(
-                "compressed_axes is not supported for {} format".format(format)
-            )
+        if format == "gcxs":
+            from .._compressed import GCXS
 
-        if format == "coo" or format is COO:
+            return GCXS.from_coo(self, **kwargs)
+
+        elif len(kwargs) != 0:
+            raise TypeError(f"Invalid keyword arguments provided: {kwargs}")
+
+        if format == "coo":
             return self
 
-        from .._dok import DOK
+        if format == "dok":
+            from .._dok import DOK
 
-        if format == "dok" or format is DOK:
-            return DOK.from_coo(self)
+            return DOK.from_coo(self, **kwargs)
 
-        raise NotImplementedError("The given format is not supported.")
+        return self.asformat("gcxs", **kwargs).asformat(format, **kwargs)
 
 
 def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
