@@ -1,7 +1,17 @@
 import sparse
 import pytest
 from hypothesis import settings, given, strategies as st
-from _utils import gen_transpose, gen_reductions, gen_reshape, gen_sparse_random
+from _utils import (
+    gen_transpose,
+    gen_reductions,
+    gen_reshape,
+    gen_sparse_random,
+    gen_stack,
+    gen_flatten,
+    gen_pad_valid,
+    gen_pad_invalid,
+    gen_advanced_indexing,
+)
 import numpy as np
 import scipy
 
@@ -57,9 +67,10 @@ def test_reductions(p, x):
     reduction=st.sampled_from(["sum", "mean"]),
     kwargs=st.sampled_from([{"dtype": np.float16}]),
     axis=st.sampled_from([None, 0, 1, 2, (0, 2)]),
+    rs=gen_sparse_random((20, 30, 40)),
 )
-def test_reductions_float16(random_sparse, reduction, kwargs, axis):
-    x = random_sparse
+def test_reductions_float16(rs, reduction, kwargs, axis):
+    x = rs
     y = x.todense()
     xx = getattr(x, reduction)(axis=axis, **kwargs)
     yy = getattr(y, reduction)(axis=axis, **kwargs)
@@ -73,7 +84,7 @@ def test_reductions_float16(random_sparse, reduction, kwargs, axis):
     axis=st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)]),
     keepdims=st.sampled_from([True, False]),
 )
-def test_reductions_bool(random_sparse, reduction, kwargs, axis, keepdims):
+def test_reductions_bool(reduction, kwargs, axis, keepdims):
     y = np.zeros((2, 3, 4), dtype=bool)
     y[0] = True
     y[1, 1, 1] = True
@@ -135,26 +146,25 @@ def test_reshape(a, b):
     assert_eq(x.reshape(b), s.reshape(b))
 
 
-@given(gen_reshape())
-def test_reshape_2(ab):
-    a, b = ab
-    s = sparse.random(a, density=0.5, format="gcxs")
-    x = s.todense()
+# @settings(deadline=None)
+# @given(gen_reshape())
+# def test_reshape_2(ab):
+#     a, b = ab
+#     s = sparse.random(a, density=0.5, format="gcxs")
+#     x = s.todense()
 
-    assert_eq(x.reshape(b), s.reshape(b))
+#     assert_eq(x.reshape(b), s.reshape(b))
 
 
-def test_reshape_same():
-
-    s = sparse.random((3, 5), density=0.5, format="gcxs")
+@given(gen_sparse_random((3, 5), density=0.5, format="gcxs"))
+def test_reshape_same(s):
     assert s.reshape(s.shape) is s
 
 
 @settings(deadline=None)
 @given(ab=gen_transpose())
-def test_tranpose(ab):
-    a, b = ab
-    s = sparse.random(a, density=0.5, format="gcxs")
+def test_transpose(ab):
+    s, b = ab
     x = s.todense()
 
     assert_eq(x.transpose(b), s.transpose(b))
@@ -261,27 +271,9 @@ def test_slicing(index, compressed_axes):
 
 
 @settings(deadline=None)
-@given(
-    index=st.sampled_from(
-        [
-            ([1, 0], 0),
-            (1, [0, 2]),
-            (0, [1, 0], 0),
-            (1, [2, 0], 0),
-            ([True, False], slice(1, None), slice(-2, None)),
-            (slice(1, None), slice(-2, None), [True, False, True, False]),
-            ([1, 0],),
-            (Ellipsis, [2, 1, 3]),
-            (slice(None), [2, 1, 2]),
-            (1, [2, 0, 1]),
-        ]
-    ),
-    compressed_axes=st.sampled_from([(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)]),
-)
-def test_advanced_indexing(index, compressed_axes):
-    s = sparse.random(
-        (2, 3, 4), density=0.5, format="gcxs", compressed_axes=compressed_axes
-    )
+@given(gen_advanced_indexing())
+def test_advanced_indexing(arg):
+    index, s = arg
     x = s.todense()
 
     assert_eq(x[index], s[index])
@@ -302,17 +294,17 @@ def test_advanced_indexing(index, compressed_axes):
             {"potato": "kartoffel"},
             ([[0, 1]],),
         ]
-    )
+    ),
+    s=gen_sparse_random((2, 3, 4), density=0.5, format="gcxs"),
 )
-def test_slicing_errors(index):
-    s = sparse.random((2, 3, 4), density=0.5, format="gcxs")
-
+def test_slicing_errors(index, s):
     with pytest.raises(IndexError):
         s[index]
 
 
-def test_change_compressed_axes():
-    coo = sparse.random((3, 4, 5), density=0.5)
+@settings(deadline=None)
+@given(gen_sparse_random((3, 4, 5), density=0.5))
+def test_change_compressed_axes(coo):
     s = GCXS.from_coo(coo, compressed_axes=(0, 1))
     b = GCXS.from_coo(coo, compressed_axes=(1, 2))
     assert_eq(s, b)
@@ -320,23 +312,31 @@ def test_change_compressed_axes():
     assert_eq(s, b)
 
 
-def test_concatenate():
-    xx = sparse.random((2, 3, 4), density=0.5, format="gcxs")
+@settings(deadline=None)
+@given(
+    xx=gen_sparse_random((2, 3, 4), density=0.5, format="gcxs"),
+    yy=gen_sparse_random((5, 3, 4), density=0.5, format="gcxs"),
+    zz=gen_sparse_random((4, 3, 4), density=0.5, format="gcxs"),
+)
+def test_concatenate(xx, yy, zz):
     x = xx.todense()
-    yy = sparse.random((5, 3, 4), density=0.5, format="gcxs")
     y = yy.todense()
-    zz = sparse.random((4, 3, 4), density=0.5, format="gcxs")
     z = zz.todense()
 
     assert_eq(
         np.concatenate([x, y, z], axis=0), sparse.concatenate([xx, yy, zz], axis=0)
     )
 
-    xx = sparse.random((5, 3, 1), density=0.5, format="gcxs")
+
+@settings(deadline=None)
+@given(
+    xx=gen_sparse_random((5, 3, 1), density=0.5, format="gcxs"),
+    yy=gen_sparse_random((5, 3, 3), density=0.5, format="gcxs"),
+    zz=gen_sparse_random((5, 3, 2), density=0.5, format="gcxs"),
+)
+def test_concatenate_2(xx, yy, zz):
     x = xx.todense()
-    yy = sparse.random((5, 3, 3), density=0.5, format="gcxs")
     y = yy.todense()
-    zz = sparse.random((5, 3, 2), density=0.5, format="gcxs")
     z = zz.todense()
 
     assert_eq(
@@ -365,23 +365,21 @@ def test_concatenate_noarrays():
         sparse.concatenate([])
 
 
-@given(
-    shape=st.sampled_from([(5,), (2, 3, 4), (5, 2)]), axis=st.sampled_from([0, 1, -1])
-)
-def test_stack(shape, axis):
-    xx = sparse.random(shape, density=0.5, format="gcxs")
+@settings(deadline=None)
+@given(sd=gen_stack())
+def test_stack(sd):
+    shape, axis, xx, yy, zz = sd
     x = xx.todense()
-    yy = sparse.random(shape, density=0.5, format="gcxs")
     y = yy.todense()
-    zz = sparse.random(shape, density=0.5, format="gcxs")
     z = zz.todense()
 
     assert_eq(np.stack([x, y, z], axis=axis), sparse.stack([xx, yy, zz], axis=axis))
 
 
-@given(in_shape=st.sampled_from([(5, 5), 62, (3, 3, 3)]))
-def test_flatten(in_shape):
-    s = sparse.random(in_shape, format="gcxs", density=0.5)
+@settings(deadline=None)
+@given(gen_flatten())
+def test_flatten(s):
+
     x = s.todense()
 
     a = s.flatten()
@@ -396,56 +394,46 @@ def test_gcxs_valerr():
         GCXS.from_numpy(a, idx_dtype=np.int8)
 
 
-def test_upcast():
-    a = sparse.random((50, 50, 50), density=0.1, format="coo", idx_dtype=np.uint8)
+@given(a=gen_sparse_random((50, 50, 50), density=0.1, format="coo", idx_dtype=np.uint8))
+def test_upcast(a):
     b = a.asformat("gcxs")
     assert b.indices.dtype == np.uint16
 
-    a = sparse.random((8, 7, 6), density=0.5, format="gcxs", idx_dtype=np.uint8)
-    b = sparse.random((6, 6, 6), density=0.8, format="gcxs", idx_dtype=np.uint8)
+
+@settings(deadline=None)
+@given(
+    a=gen_sparse_random((8, 7, 6), density=0.5, format="gcxs", idx_dtype=np.uint8),
+    b=gen_sparse_random((6, 6, 6), density=0.8, format="gcxs", idx_dtype=np.uint8),
+)
+def test_upcast_2(a, b):
     assert sparse.concatenate((a, a)).indptr.dtype == np.uint16
     assert sparse.stack((b, b)).indptr.dtype == np.uint16
 
 
-def test_from_coo():
-    a = sparse.random((5, 5, 5), density=0.1, format="coo")
-    b = GCXS(a)
-    assert_eq(a, b)
+@settings(deadline=None)
+@given(a=gen_sparse_random((5, 5, 5)))
+def test_from_coo(a):
+    assert_eq(a, GCXS(a))
 
 
-def test_from_coo_valerr():
-    a = sparse.random((25, 25, 25), density=0.01, format="coo")
+@given(a=gen_sparse_random((25, 25, 25), format="coo"))
+def test_from_coo_valerr(a):
     with pytest.raises(ValueError):
         GCXS.from_coo(a, idx_dtype=np.int8)
 
 
-@given(
-    pad_width=st.sampled_from(
-        [
-            2,
-            (2, 1),
-            ((2), (1)),
-            ((1, 2), (4, 5), (7, 8)),
-        ]
-    ),
-    constant_values=st.sampled_from([0, 1, 150, np.nan]),
-)
-def test_pad_valid(pad_width, constant_values):
-    y = sparse.random(
-        (50, 50, 3), density=0.15, fill_value=constant_values, format="gcxs"
-    )
+@settings(deadline=None)
+@given(gen_pad_valid())
+def test_pad_valid(arg):
+    pad_width, constant_values, y = arg
     x = y.todense()
     xx = np.pad(x, pad_width=pad_width, constant_values=constant_values)
     yy = np.pad(y, pad_width=pad_width, constant_values=constant_values)
     assert_eq(xx, yy)
 
 
-@given(
-    pad_width=st.sampled_from([((2, 1), (5, 7))]),
-    constant_values=st.sampled_from([150, 2, (1, 2)]),
-    fill_value=st.floats(min_value=0, max_value=10),
-)
-def test_pad_invalid(pad_width, constant_values, fill_value):
-    y = sparse.random((50, 50, 3), density=0.15, format="gcxs", fill_value=fill_value)
+@given(gen_pad_invalid())
+def test_pad_invalid(arg):
+    pad_width, constant_values, y = arg
     with pytest.raises(ValueError):
         np.pad(y, pad_width, constant_values=constant_values)

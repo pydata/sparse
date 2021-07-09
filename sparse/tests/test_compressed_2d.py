@@ -11,6 +11,7 @@ import sparse
 from sparse import COO
 from sparse._compressed.compressed import GCXS, CSR, CSC
 from sparse._utils import assert_eq
+from _utils import gen_sparse_random
 
 
 @pytest.fixture(scope="module", params=[CSR, CSC])
@@ -68,6 +69,7 @@ def test_bad_nd_input(cls, n):
         cls(a)
 
 
+@settings(deadline=None)
 @given(source_type=st.sampled_from(["gcxs", "coo"]))
 def test_from_sparse(cls, source_type):
     gcxs = sparse.random((20, 30), density=0.25, format=source_type)
@@ -101,6 +103,7 @@ def test_to_sparse(cls_str, random_sparse):
     assert_eq(random_sparse, result)
 
 
+@settings(deadline=None)
 @given(copy=st.sampled_from([True, False]))
 def test_transpose(random_sparse, copy):
     from operator import is_, is_not

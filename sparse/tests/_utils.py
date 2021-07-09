@@ -78,7 +78,9 @@ def gen_transpose(draw):
     else:
         b = draw(st.sampled_from([(0, 3, 2, 1), (1, 0, 3, 2), (3, 2, 0, 1)]))
 
-    return a, b
+    s = draw(gen_sparse_random(a, density=0.5, format="gcxs"))
+
+    return s, b
 
 
 @composite
@@ -204,9 +206,92 @@ def gen_setitem(draw):
 
 @composite
 def gen_reshape(draw):
-    x = st.integers(min_value=1)
-    y = st.integers(min_value=1)
+    x = draw(st.integers(min_value=1, max_value=10))
+    y = draw(st.integers(min_value=1, max_value=10))
     a = draw(st.tuples(x, y))
     b = draw(st.tuples(y, x))
 
     return a, b
+
+
+@composite
+def gen_stack(draw):
+    shape = draw(st.sampled_from([(5,), (2, 3, 4), (5, 2)]))
+    axis = draw(st.sampled_from([0, 1, -1]))
+    xx = draw(gen_sparse_random(shape, format="gcxs"))
+    yy = draw(gen_sparse_random(shape, format="gcxs"))
+    zz = draw(gen_sparse_random(shape, format="gcxs"))
+
+    return shape, axis, xx, yy, zz
+
+
+@composite
+def gen_flatten(draw):
+    in_shape = draw(st.sampled_from([(5, 5), 62, (3, 3, 3)]))
+    s = draw(gen_sparse_random(in_shape, format="gcxs", density=0.5))
+
+    return s
+
+
+@composite
+def gen_pad_valid(draw):
+    pad_width = draw(
+        st.sampled_from(
+            [
+                2,
+                (2, 1),
+                ((2), (1)),
+                ((1, 2), (4, 5), (7, 8)),
+            ]
+        )
+    )
+    constant_values = draw(st.sampled_from([0, 1, 150, np.nan]))
+    y = draw(
+        gen_sparse_random(
+            (50, 50, 3), density=0.15, fill_value=constant_values, format="gcxs"
+        )
+    )
+
+    return pad_width, constant_values, y
+
+
+@composite
+def gen_pad_invalid(draw):
+    pad_width = draw(st.sampled_from([((2, 1), (5, 7))]))
+    constant_values = draw(st.sampled_from([150, 2, (1, 2)]))
+    fill_value = draw(st.floats(min_value=0, max_value=10))
+    y = draw(
+        gen_sparse_random(
+            (50, 50, 3), density=0.15, format="gcxs", fill_value=fill_value
+        )
+    )
+
+    return pad_width, constant_values, y
+
+
+@composite
+def gen_advanced_indexing(draw):
+    index = draw(
+        st.sampled_from(
+            [
+                ([1, 0], 0),
+                (1, [0, 2]),
+                (0, [1, 0], 0),
+                (1, [2, 0], 0),
+                ([True, False], slice(1, None), slice(-2, None)),
+                (slice(1, None), slice(-2, None), [True, False, True, False]),
+                ([1, 0],),
+                (Ellipsis, [2, 1, 3]),
+                (slice(None), [2, 1, 2]),
+                (1, [2, 0, 1]),
+            ]
+        )
+    )
+    compressed_axes = draw(st.sampled_from([(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)]))
+    s = draw(
+        gen_sparse_random(
+            (2, 3, 4), density=0.5, format="gcxs", compressed_axes=compressed_axes
+        )
+    )
+
+    return index, s
