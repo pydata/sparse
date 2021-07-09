@@ -1,5 +1,5 @@
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import settings, given, strategies as st
 from _utils import (
     gen_shape_data,
     gen_notimpl_err,
@@ -7,6 +7,7 @@ from _utils import (
     gen_setitem_val_err,
     gen_getitem,
     gen_setitem,
+    gen_sparse_random,
 )
 
 import numpy as np
@@ -79,6 +80,7 @@ def test_construct(sd):
     assert_eq(x, s)
 
 
+@settings(deadline=None)
 @given(
     shape=st.sampled_from([(2,), (2, 3), (2, 3, 4)]),
     density=st.sampled_from([0.1, 0.3, 0.5, 0.7]),
@@ -315,11 +317,12 @@ def test_pad_invalid(pad_width, constant_values, fill_value):
         np.pad(y, pad_width, constant_values=constant_values)
 
 
-@given(func=st.sampled_from([np.concatenate, np.stack]))
-def test_dok_concat_stack(func):
-    s1 = sparse.random((4, 4), density=0.25, format="dok")
-    s2 = sparse.random((4, 4), density=0.25, format="dok")
-
+@given(
+    func=st.sampled_from([np.concatenate, np.stack]),
+    s1=gen_sparse_random((4, 4), density=0.25, format="dok"),
+    s2=gen_sparse_random((4, 4), density=0.25, format="dok"),
+)
+def test_dok_concat_stack(func, s1, s2):
     x1 = s1.todense()
     x2 = s2.todense()
 

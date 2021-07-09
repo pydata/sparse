@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from hypothesis import settings, given, strategies as st
-from _utils import gen_matmul_warning, gen_broadcast_shape_dot
+from _utils import gen_matmul_warning, gen_broadcast_shape_dot, gen_sparse_random
 import scipy.sparse
 import scipy.stats
 
@@ -213,9 +213,10 @@ def test_dot(ab, a_format, b_format, a_comp_axes, b_comp_axes):
         (True, False, np.ndarray),
     ],
 )
-def test_dot_type(a_dense, b_dense, o_type):
-    a = sparse.random((3, 4), density=0.8)
-    b = sparse.random((4, 5), density=0.8)
+@given(
+    a=gen_sparse_random((3, 4), density=0.8), b=gen_sparse_random((4, 5), density=0.8)
+)
+def test_dot_type(a_dense, b_dense, o_type, a, b):
 
     if a_dense:
         a = a.todense()
@@ -227,9 +228,11 @@ def test_dot_type(a_dense, b_dense, o_type):
 
 
 @pytest.mark.xfail
-def test_dot_nocoercion():
-    sa = sparse.random((3, 4, 5), density=0.5)
-    sb = sparse.random((5, 6), density=0.5)
+@given(
+    sa=gen_sparse_random((3, 4, 5), density=0.5),
+    sb=gen_sparse_random((5, 6), density=0.5),
+)
+def test_dot_nocoercion(sa, sb):
 
     a = sa.todense()
     b = sb.todense()
@@ -272,10 +275,12 @@ dot_dtypes = [np.complex64, np.complex128]
     dtype2=st.sampled_from(dot_dtypes),
     format1=st.sampled_from(dot_formats),
     format2=st.sampled_from(dot_formats),
+    a=gen_sparse_random((20,), density=0.5),
+    b=gen_sparse_random((20,), density=0.5),
 )
-def test_complex(dtype1, dtype2, format1, format2):
-    s1 = format1(sparse.random((20,), density=0.5).astype(dtype1))
-    s2 = format2(sparse.random((20,), density=0.5).astype(dtype2))
+def test_complex(dtype1, dtype2, format1, format2, a, b):
+    s1 = format1(a.astype(dtype1))
+    s2 = format2(b.astype(dtype2))
 
     dense_convertor = lambda x: x.todense() if isinstance(x, sparse.SparseArray) else x
     x1, x2 = dense_convertor(s1), dense_convertor(s2)

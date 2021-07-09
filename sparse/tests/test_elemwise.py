@@ -3,7 +3,7 @@ import sparse
 import pytest
 from hypothesis import settings, given, strategies as st
 from hypothesis.strategies import composite
-from _utils import gen_broadcast_shape, gen_broadcast_shape2
+from _utils import gen_broadcast_shape, gen_broadcast_shape2, gen_sparse_random
 import operator
 import random
 from sparse import COO, DOK
@@ -366,8 +366,8 @@ def test_sparsearray_elemwise(format):
     assert_eq(fs, x + y)
 
 
-def test_ndarray_densification_fails():
-    xs = sparse.random((2, 3, 4), density=0.5)
+@given(gen_sparse_random((2, 3, 4), density=0.5))
+def test_ndarray_densification_fails(xs):
     y = np.random.rand(3, 4)
 
     with pytest.raises(ValueError):
@@ -464,9 +464,9 @@ def test_elemwise_scalar(func, scalar, convert_to_np_number, format):
     ),
     scalar=st.integers(min_value=-10, max_value=10),
     convert_to_np_number=st.sampled_from([True, False]),
+    xs=gen_sparse_random((2, 3, 4), density=0.5),
 )
-def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number):
-    xs = sparse.random((2, 3, 4), density=0.5)
+def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number, xs):
     if convert_to_np_number:
         scalar = np.float32(scalar)
     y = scalar
@@ -726,9 +726,9 @@ def test_bitwise_binary_bool(func, shape):
     assert_eq(func(xs, ys), func(x, y))
 
 
-def test_elemwise_binary_empty():
+@given(y=gen_sparse_random((10, 10), density=0.5))
+def test_elemwise_binary_empty(y):
     x = COO({}, shape=(10, 10))
-    y = sparse.random((10, 10), density=0.5)
 
     for z in [x * y, y * x]:
         assert z.nnz == 0
