@@ -115,7 +115,7 @@ def gen_broadcast_shape(draw):
             tuple
         )
     )
-    shape2 = draw(broadcastable_shapes(shape1))
+    shape2 = draw(broadcastable_shapes(shape1, min_side=3))
 
     return shape1, shape2
 
@@ -161,7 +161,7 @@ def gen_matmul_warning(draw):
 @composite
 def gen_broadcast_shape_dot(draw):
     a_shape = draw(
-        st.lists(st.integers(min_value=2, max_value=5), min_size=2, max_size=3).map(
+        st.lists(st.integers(min_value=2, max_value=5), min_size=2, max_size=5).map(
             tuple
         )
     )
@@ -171,7 +171,7 @@ def gen_broadcast_shape_dot(draw):
 
 
 @composite
-def gen_broadcast_shape2(draw):
+def gen_broadcast_to(draw):
     shape1 = draw(
         st.lists(st.integers(min_value=2, max_value=5), min_size=2, max_size=3).map(
             tuple

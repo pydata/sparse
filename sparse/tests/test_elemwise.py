@@ -3,7 +3,7 @@ import sparse
 import pytest
 from hypothesis import settings, given, strategies as st
 from hypothesis.strategies import composite
-from _utils import gen_broadcast_shape, gen_broadcast_shape2, gen_sparse_random
+from _utils import gen_broadcast_shape, gen_broadcast_to, gen_sparse_random
 import operator
 import random
 from sparse import COO, DOK
@@ -229,7 +229,7 @@ def test_binary_broadcasting(func, sd):
 
 
 @pytest.mark.xfail
-@given(sd=gen_broadcast_shape2())
+@given(sd=gen_broadcast_to())
 def test_broadcast_to(sd):
     shape1, shape2 = sd
     a = sparse.random(shape1, density=0.5)

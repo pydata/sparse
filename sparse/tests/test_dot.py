@@ -110,8 +110,8 @@ def gen_kwargs(format):
 def gen_for_format(format):
     return [(format, g) for g in gen_kwargs(format)]
 
-  
-@settings(deadline=None)
+
+# @settings(deadline=None)
 @pytest.mark.parametrize(
     "a_shape, b_shape",
     [
@@ -143,7 +143,6 @@ def test_matmul(a_shape, b_shape, a_format, b_format, a_kwargs, b_kwargs):
         b_kwargs = {}
     sa = sparse.random(a_shape, density=0.5, format=a_format, **a_kwargs)
     sb = sparse.random(b_shape, density=0.5, format=b_format, **b_kwargs)
-
 
     a = sa.todense()
     b = sb.todense()
@@ -180,6 +179,8 @@ def test_matmul_nan_warnings(ab):
         a @ b
 
 
+@settings(deadline=None)
+@given(ab=gen_broadcast_shape_dot())
 @pytest.mark.parametrize(
     "a_format, a_kwargs",
     [*gen_for_format("coo"), *gen_for_format("gcxs")],
@@ -188,14 +189,14 @@ def test_matmul_nan_warnings(ab):
     "b_format, b_kwargs",
     [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
-def test_dot(a_shape, b_shape, a_format, b_format, a_kwargs, b_kwargs):
+def test_dot(ab, a_format, b_format, a_kwargs, b_kwargs):
+    a_shape, b_shape = ab
     if len(a_shape) == 1:
         a_kwargs = {}
     if len(b_shape) == 1:
         b_kwargs = {}
     sa = sparse.random(a_shape, density=0.5, format=a_format, **a_kwargs)
     sb = sparse.random(b_shape, density=0.5, format=b_format, **b_kwargs)
-
 
     a = sa.todense()
     b = sb.todense()
