@@ -7,6 +7,30 @@ import sparse
 import scipy.sparse
 
 
+# Code copied from numpy.side_tricks module.
+# To be used till Numpy is bumped up
+def _broadcast_shape(*args):
+    """
+    Utility function broadcast_shapes()
+    """
+    # use the old-iterator because np.nditer does not handle size 0 arrays
+    # consistently
+    b = np.broadcast(*args[:32])
+    # unfortunately, it cannot handle 32 or more arguments directly
+    for pos in range(32, len(args), 31):
+        # ironically, np.broadcast does not properly handle np.broadcast
+        # objects (it treats them as scalars)
+        # use broadcasting to avoid allocating the full array
+        b = broadcast_to(0, b.shape)
+        b = np.broadcast(b, *args[pos : (pos + 31)])
+    return b.shape
+
+
+def broadcast_shapes(*args):
+    arrays = [np.empty(x, dtype=[]) for x in args]
+    return _broadcast_shape(*arrays)
+
+
 @composite
 def gen_shape_data(draw):
     shape = draw(array_shapes(max_dims=3, min_side=5))
@@ -161,11 +185,15 @@ def gen_matmul_warning(draw):
 @composite
 def gen_broadcast_shape_dot(draw):
     a_shape = draw(
-        st.lists(st.integers(min_value=2, max_value=5), min_size=2, max_size=5).map(
+        st.lists(st.integers(min_value=2, max_value=5), min_size=2, max_size=2).map(
             tuple
         )
     )
-    b_shape = draw(broadcastable_shapes(a_shape, min_dims=2, max_dims=3))
+    b_shape = draw(broadcastable_shapes(a_shape, min_dims=2, max_dims=2))
+
+    a_shape = list(a_shape)
+    a_shape[-1] = b_shape[0]
+    a_shape = tuple(a_shape)
 
     return a_shape, b_shape
 

@@ -111,7 +111,6 @@ def gen_for_format(format):
     return [(format, g) for g in gen_kwargs(format)]
 
 
-# @settings(deadline=None)
 @pytest.mark.parametrize(
     "a_shape, b_shape",
     [
