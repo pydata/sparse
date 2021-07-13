@@ -1,7 +1,12 @@
 from numbers import Rational
 from hypothesis import given, strategies as st
 from hypothesis.strategies import data, composite
-from hypothesis.extra.numpy import array_shapes, basic_indices, broadcastable_shapes
+from hypothesis.extra.numpy import (
+    array_shapes,
+    basic_indices,
+    broadcastable_shapes,
+    mutually_broadcastable_shapes,
+)
 import numpy as np
 import sparse
 import scipy.sparse
@@ -95,9 +100,9 @@ def gen_setitem_val_err(draw):
 @composite
 def gen_transpose(draw):
     a = draw(st.lists(st.integers(min_value=1, max_value=5), min_size=2, max_size=4))
-    if len(a) is 2:
+    if len(a) == 2:
         b = draw(st.sampled_from([(1, 0), (0, 1)]))
-    elif len(a) is 3:
+    elif len(a) == 3:
         b = draw(st.sampled_from([(0, 2, 1), (2, 0, 1), (1, 2, 0)]))
     else:
         b = draw(st.sampled_from([(0, 3, 2, 1), (1, 0, 3, 2), (3, 2, 0, 1)]))
@@ -133,15 +138,14 @@ def gen_reductions(draw, function=False):
 
 
 @composite
-def gen_broadcast_shape(draw):
-    shape1 = draw(
-        st.lists(st.integers(min_value=2, max_value=5), min_size=2, max_size=3).map(
-            tuple
+def gen_broadcast_shape(draw, num_shapes=2):
+    shape_1, shape_2 = draw(
+        mutually_broadcastable_shapes(
+            num_shapes=num_shapes, max_dims=2, min_side=2, max_side=5
         )
-    )
-    shape2 = draw(broadcastable_shapes(shape1, min_side=3))
+    ).input_shapes
 
-    return shape1, shape2
+    return shape_1, shape_2
 
 
 @composite
@@ -183,19 +187,17 @@ def gen_matmul_warning(draw):
 
 
 @composite
-def gen_broadcast_shape_dot(draw):
-    a_shape = draw(
-        st.lists(st.integers(min_value=2, max_value=5), min_size=2, max_size=2).map(
-            tuple
+def gen_broadcast_shape_dot(draw, max_dims=4):
+    a_shape, b_shape = draw(
+        mutually_broadcastable_shapes(
+            signature=np.matmul.signature, max_dims=2, min_side=2, max_side=5
         )
-    )
-    b_shape = draw(broadcastable_shapes(a_shape, min_dims=2, max_dims=2))
+    ).input_shapes
+    if len(a_shape) != 1 and len(b_shape) != 1:
+        a_shape = draw(array_shapes(min_side=2, max_side=5, max_dims=2)) + a_shape
+        b_shape = draw(array_shapes(min_side=2, max_side=5, max_dims=2)) + b_shape
 
-    a_shape = list(a_shape)
-    a_shape[-1] = b_shape[0]
-    a_shape = tuple(a_shape)
-
-    return a_shape, b_shape
+    return tuple(a_shape), tuple(b_shape)
 
 
 @composite
@@ -323,3 +325,18 @@ def gen_advanced_indexing(draw):
     )
 
     return index, s
+
+
+@composite
+def gen_random_seed(draw):
+    n = draw(st.integers(min_value=0, max_value=99))
+    return n
+
+
+@composite
+def gen_matmul_shapes(draw):
+    return draw(
+        mutually_broadcastable_shapes(
+            signature=np.matmul.signature, max_dims=4, min_side=2, max_side=5
+        )
+    ).input_shapes

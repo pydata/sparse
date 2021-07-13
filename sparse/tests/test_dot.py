@@ -1,7 +1,13 @@
 import numpy as np
 import pytest
 from hypothesis import settings, given, strategies as st
-from _utils import gen_matmul_warning, gen_broadcast_shape_dot, gen_sparse_random
+from _utils import (
+    gen_matmul_warning,
+    gen_broadcast_shape_dot,
+    gen_sparse_random,
+    gen_random_seed,
+    gen_matmul_shapes,
+)
 import scipy.sparse
 import scipy.stats
 
@@ -205,6 +211,29 @@ def test_dot(ab, a_format, b_format, a_kwargs, b_kwargs):
     assert_eq(e, sparse.dot(sa, sb))
     assert_eq(e, sparse.dot(a, sb))
     assert_eq(e, sparse.dot(a, sb))
+
+
+@settings(deadline=None)
+@given(ab=gen_matmul_shapes())
+@pytest.mark.parametrize(
+    "a_format, a_kwargs",
+    [*gen_for_format("coo"), *gen_for_format("gcxs")],
+)
+@pytest.mark.parametrize(
+    "b_format, b_kwargs",
+    [*gen_for_format("coo"), *gen_for_format("gcxs")],
+)
+def test_matmul_2(ab, a_format, b_format, a_kwargs, b_kwargs):
+    a_shape, b_shape = ab
+    if len(a_shape) == 1:
+        a_kwargs = {}
+    if len(b_shape) == 1:
+        b_kwargs = {}
+    sa = sparse.random(a_shape, density=0.5, format=a_format, **a_kwargs)
+    sb = sparse.random(b_shape, density=0.5, format=b_format, **b_kwargs)
+
+    a = sa.todense()
+    b = sb.todense()
 
     # Basic equivalences
     e = operator.matmul(a, b)
