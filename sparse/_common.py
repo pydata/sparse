@@ -57,7 +57,7 @@ def nan_check(*args):
 
     """
     for i in literal_unroll(args):
-        if np.isnan(np.min(np.asarray(i))):
+        if np.isnan(np.sum(np.asarray(i))):
             return True
     return False
 
