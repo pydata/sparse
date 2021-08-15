@@ -182,13 +182,15 @@ def random(
             ind[i] = j
 
     data = data_rvs(nnz)
-
-    ar = COO(
-        ind[None, :],
-        data,
-        shape=elements,
-        fill_value=fill_value,
-    ).reshape(shape)
+    if shape == ():
+        ar = COO.from_numpy(np.array(0.))
+    else:
+        ar = COO(
+            ind[None, :],
+            data,
+            shape=elements,
+            fill_value=fill_value,
+        ).reshape(shape)
 
     if idx_dtype:
         if can_store(idx_dtype, max(shape)):
