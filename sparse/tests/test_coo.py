@@ -1655,3 +1655,11 @@ def test_pad_invalid(pad_width, constant_values, fill_value=0):
     y = sparse.random((50, 50, 3), density=0.15)
     with pytest.raises(ValueError):
         np.pad(y, pad_width, constant_values=constant_values)
+
+
+@pytest.mark.parametrize("val", [0, 5])
+def test_scalar_from_numpy(val):
+    x = np.int64(val)
+    s = sparse.COO.from_numpy(x)
+    assert s.nnz == 0
+    assert_eq(x, s)

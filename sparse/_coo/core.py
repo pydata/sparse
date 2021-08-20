@@ -382,24 +382,19 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         x = np.asanyarray(x).view(type=np.ndarray)
 
         if fill_value is None:
-            fill_value = _zero_of_dtype(x.dtype)
+            fill_value = _zero_of_dtype(x.dtype) if x.shape else x
 
-        if x.shape:
-            coords = np.where(~equivalent(x, fill_value))
-            data = x[coords]
-            coords = np.vstack(coords)
-        else:
-            coords = np.empty((0, 1), dtype=np.uint8)
-            data = np.array(x, ndmin=1)
+        coords = np.atleast_2d(np.flatnonzero(~equivalent(x, fill_value)))
+        data = x.ravel()[tuple(coords)]
         return cls(
             coords,
             data,
-            shape=x.shape,
+            shape=x.size,
             has_duplicates=False,
             sorted=True,
             fill_value=fill_value,
             idx_dtype=idx_dtype,
-        )
+        ).reshape(x.shape)
 
     def todense(self):
         """
