@@ -89,17 +89,13 @@ def getitem(x, key):
     # convert all indices of compressed axes to a single array index
     # this tells us which 'rows' of the underlying csr matrix to iterate through
     rows = convert_to_flat(
-        reordered_key[: x._axisptr],
-        x._reordered_shape[: x._axisptr],
-        x.indices.dtype,
+        reordered_key[: x._axisptr], x._reordered_shape[: x._axisptr], x.indices.dtype,
     )
 
     # convert all indices of uncompressed axes to a single array index
     # this tells us which 'columns' of the underlying csr matrix to iterate through
     cols = convert_to_flat(
-        reordered_key[x._axisptr :],
-        x._reordered_shape[x._axisptr :],
-        x.indices.dtype,
+        reordered_key[x._axisptr :], x._reordered_shape[x._axisptr :], x.indices.dtype,
     )
 
     starts = x.indptr[:-1][rows]  # find the start and end of each of the rows

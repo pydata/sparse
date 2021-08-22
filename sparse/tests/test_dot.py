@@ -134,12 +134,10 @@ def gen_for_format(format):
     ],
 )
 @pytest.mark.parametrize(
-    "a_format, a_kwargs",
-    [*gen_for_format("coo"), *gen_for_format("gcxs")],
+    "a_format, a_kwargs", [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 @pytest.mark.parametrize(
-    "b_format, b_kwargs",
-    [*gen_for_format("coo"), *gen_for_format("gcxs")],
+    "b_format, b_kwargs", [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 def test_matmul(a_shape, b_shape, a_format, b_format, a_kwargs, b_kwargs):
     if len(a_shape) == 1:
@@ -187,12 +185,10 @@ def test_matmul_nan_warnings(ab):
 @settings(deadline=None)
 @given(ab=gen_broadcast_shape_dot())
 @pytest.mark.parametrize(
-    "a_format, a_kwargs",
-    [*gen_for_format("coo"), *gen_for_format("gcxs")],
+    "a_format, a_kwargs", [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 @pytest.mark.parametrize(
-    "b_format, b_kwargs",
-    [*gen_for_format("coo"), *gen_for_format("gcxs")],
+    "b_format, b_kwargs", [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 def test_dot(ab, a_format, b_format, a_kwargs, b_kwargs):
     a_shape, b_shape = ab
@@ -216,12 +212,10 @@ def test_dot(ab, a_format, b_format, a_kwargs, b_kwargs):
 @settings(deadline=None)
 @given(ab=gen_matmul_shapes())
 @pytest.mark.parametrize(
-    "a_format, a_kwargs",
-    [*gen_for_format("coo"), *gen_for_format("gcxs")],
+    "a_format, a_kwargs", [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 @pytest.mark.parametrize(
-    "b_format, b_kwargs",
-    [*gen_for_format("coo"), *gen_for_format("gcxs")],
+    "b_format, b_kwargs", [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 def test_matmul_2(ab, a_format, b_format, a_kwargs, b_kwargs):
     a_shape, b_shape = ab

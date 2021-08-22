@@ -14,7 +14,14 @@ import sparse
 from sparse import COO
 from sparse._settings import NEP18_ENABLED
 from sparse._utils import assert_eq, random_value_array, html_table
-from _utils import gen_sparse_random
+from _utils import (
+    gen_sparse_random,
+    gen_sparse_random_nan_reduction,
+    gen_sparse_random_kron_a,
+    gen_sparse_random_kron_b,
+    gen_sparse_random_three,
+    gen_sparse_random_outer
+)
 
 
 @pytest.fixture(scope="module", params=["f8", "f4", "i8", "i4"])
@@ -77,9 +84,9 @@ def test_reductions_fv(reduction, random_sparse_small, axis, keepdims, kwargs):
 @given(
     axis=st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)]),
     keepdims=st.sampled_from([True, False]),
+    x=gen_sparse_random((20, 30, 40), density=0.25),
 )
-def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
-    x = random_sparse
+def test_reductions(reduction, x, axis, keepdims, kwargs):
     y = x.todense()
     xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
@@ -175,14 +182,11 @@ def test_ufunc_reductions_kwargs(reduction, kwargs, x):
     reduction=st.sampled_from(["nansum", "nanmean", "nanprod", "nanmax", "nanmin"]),
     axis=st.sampled_from([None, 0, 1]),
     keepdims=st.sampled_from([False]),
-    fraction=st.sampled_from([0.25, 0.5, 0.75, 1.0]),
+    s=gen_sparse_random_nan_reduction((2, 3, 4), density=0.25),
 )
 @pytest.mark.filterwarnings("ignore:All-NaN")
 @pytest.mark.filterwarnings("ignore:Mean of empty slice")
-def test_nan_reductions(reduction, axis, keepdims, fraction):
-    s = sparse.random(
-        (2, 3, 4), data_rvs=random_value_array(np.nan, fraction), density=0.25
-    )
+def test_nan_reductions(reduction, axis, keepdims, s):
     x = s.todense()
     expected = getattr(np, reduction)(x, axis=axis, keepdims=keepdims)
     actual = getattr(sparse, reduction)(s, axis=axis, keepdims=keepdims)
@@ -391,8 +395,8 @@ def test_reshape_same(s):
     assert s.reshape(s.shape) is s
 
 
-def test_reshape_function():
-    s = sparse.random((5, 3), density=0.5)
+@given(gen_sparse_random((5, 3), density=0.5))
+def test_reshape_function(s):
     x = s.todense()
     shape = (3, 5)
 
@@ -414,14 +418,11 @@ def test_to_scipy_sparse(s):
     assert_eq(a, b)
 
 
-@given(a_ndim=st.sampled_from([1, 2, 3]), b_ndim=st.sampled_from([1, 2, 3]))
-def test_kron(a_ndim, b_ndim):
-    a_shape = (2, 3, 4)[:a_ndim]
-    b_shape = (5, 6, 7)[:b_ndim]
-
-    sa = sparse.random(a_shape, density=0.5)
+@given(
+    sa=gen_sparse_random_kron_a(density=0.5), sb=gen_sparse_random_kron_b(density=0.5)
+)
+def test_kron(sa, sb):
     a = sa.todense()
-    sb = sparse.random(b_shape, density=0.5)
     b = sb.todense()
 
     sol = np.kron(a, b)
@@ -1047,26 +1048,10 @@ def test_np_array():
         np.array(s)
 
 
-@given(
-    shapes=st.sampled_from(
-        [
-            [(2,), (3, 2), (4, 3, 2)],
-            [(3,), (2, 3), (2, 2, 3)],
-            [(2,), (2, 2), (2, 2, 2)],
-            [(4,), (4, 4), (4, 4, 4)],
-            [(4,), (4, 4), (4, 4, 4)],
-            [(4,), (4, 4), (4, 4, 4)],
-            [(1, 1, 2), (1, 3, 1), (4, 1, 1)],
-            [(2,), (2, 1), (2, 1, 1)],
-            [(3,), (), (2, 3)],
-            [(4, 4), (), ()],
-        ]
-    )
-)
-def test_three_arg_where(shapes):
-    cs = sparse.random(shapes[0], density=0.5).astype(np.bool_)
-    xs = sparse.random(shapes[1], density=0.5)
-    ys = sparse.random(shapes[2], density=0.5)
+@settings(deadline=None)
+@given(gen_sparse_random_three())
+def test_three_arg_where(arg):
+    cs, xs, ys = arg
 
     c = cs.todense()
     x = xs.todense()
@@ -1110,17 +1095,15 @@ def test_two_arg_where(cs, xs):
         sparse.where(cs, xs)
 
 
-@given(func=st.sampled_from([operator.imul, operator.iadd, operator.isub]))
-def test_inplace_invalid_shape(func):
-    xs = sparse.random((3, 4), density=0.5)
-    ys = sparse.random((2, 3, 4), density=0.5)
-
+@settings(deadline=None)
+@given(func=st.sampled_from([operator.imul, operator.iadd, operator.isub]), xs=gen_sparse_random((3, 4), density=0.5), ys=gen_sparse_random((2, 3, 4), density=0.5))
+def test_inplace_invalid_shape(func, xs, ys):
     with pytest.raises(ValueError):
         func(xs, ys)
 
 
-def test_nonzero():
-    s = sparse.random((2, 3, 4), density=0.5)
+@given(gen_sparse_random((2, 3, 4), density=0.5))
+def test_nonzero(s):
     x = s.todense()
 
     expected = x.nonzero()
@@ -1133,16 +1116,15 @@ def test_nonzero():
         assert_eq(e, a, compare_dtype=False)
 
 
-def test_argwhere():
-    s = sparse.random((2, 3, 4), density=0.5)
+@given(gen_sparse_random((2, 3, 4), density=0.5))
+def test_argwhere(s):
     x = s.todense()
 
     assert_eq(np.argwhere(s), np.argwhere(x), compare_dtype=False)
 
 
-@given(format=st.sampled_from(["coo", "dok"]))
-def test_asformat(format):
-    s = sparse.random((2, 3, 4), density=0.5, format="coo")
+@given(format=st.sampled_from(["coo", "dok"]), s=gen_sparse_random((2, 3, 4), density=0.5, format="coo"))
+def test_asformat(format, s):
     s2 = s.asformat(format)
 
     assert_eq(s, s2)
@@ -1163,9 +1145,8 @@ def test_as_coo(format):
     assert_eq(x, s2)
 
 
-def test_invalid_attrs_error():
-    s = sparse.random((3, 4), density=0.5, format="coo")
-
+@given(gen_sparse_random((3, 4), density=0.5, format="coo"))
+def test_invalid_attrs_error(s):
     with pytest.raises(ValueError):
         sparse.as_coo(s, shape=(2, 3))
 
@@ -1189,8 +1170,9 @@ def test_invalid_iterable_error():
         COO.from_iter(x)
 
 
-def test_prod_along_axis():
-    s1 = sparse.random((10, 10), density=0.1)
+@settings(deadline=None)
+@given(gen_sparse_random((10, 10), density=0.1))
+def test_prod_along_axis(s1):
     s2 = 1 - s1
 
     x1 = s1.todense()
@@ -1476,8 +1458,8 @@ def test_successful_densification(s):
     assert_eq(s, x)
 
 
-def test_failed_densification():
-    s = sparse.random((3, 4, 5), density=0.5)
+@given(gen_sparse_random((3, 4, 5), density=0.5))
+def test_failed_densification(s):
     with pytest.raises(RuntimeError):
         np.array(s)
 
@@ -1615,14 +1597,8 @@ def test_asnumpy():
     assert sparse.asnumpy(a) is a
 
 
-@given(
-    shape1=st.sampled_from([(2,), (2, 3), (2, 3, 4)]),
-    shape2=st.sampled_from([(2,), (2, 3), (2, 3, 4)]),
-)
-def test_outer(shape1, shape2):
-    s1 = sparse.random(shape1, density=0.5)
-    s2 = sparse.random(shape2, density=0.5)
-
+@given(s1=gen_sparse_random_outer(), s2=gen_sparse_random_outer())
+def test_outer(s1, s2):
     x1 = s1.todense()
     x2 = s2.todense()
 
@@ -1685,14 +1661,7 @@ def test_html_for_size_zero():
 
 
 @given(
-    pad_width=st.sampled_from(
-        [
-            2,
-            (2, 1),
-            ((2), (1)),
-            ((1, 2), (4, 5), (7, 8)),
-        ]
-    ),
+    pad_width=st.sampled_from([2, (2, 1), ((2), (1)), ((1, 2), (4, 5), (7, 8)),]),
     constant_values=st.sampled_from([0, 1, 150, np.nan]),
 )
 def test_pad_valid(pad_width, constant_values):
@@ -1704,11 +1673,7 @@ def test_pad_valid(pad_width, constant_values):
 
 
 @given(
-    pad_width=st.sampled_from(
-        [
-            ((2, 1), (5, 7)),
-        ]
-    ),
+    pad_width=st.sampled_from([((2, 1), (5, 7)),]),
     y=gen_sparse_random((50, 50, 3), density=0.15),
     constant_values=st.sampled_from([150, 2, (1, 2)]),
 )

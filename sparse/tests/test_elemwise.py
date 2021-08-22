@@ -81,8 +81,7 @@ def test_elemwise_inplace(func, format):
 
 
 @given(
-    shape12=gen_broadcast_shape(),
-    format=st.sampled_from([COO, GCXS, DOK]),
+    shape12=gen_broadcast_shape(), format=st.sampled_from([COO, GCXS, DOK]),
 )
 def test_elemwise_mixed(shape12, format):
     shape1, shape2 = shape12
@@ -186,13 +185,7 @@ def test_elemwise_binary_inplace(func, shape, format):
         ],
     ),
     shape=st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]),
-    formats=st.sampled_from(
-        [
-            [COO, COO, COO],
-            [GCXS, GCXS, GCXS],
-            [COO, GCXS, GCXS],
-        ]
-    ),
+    formats=st.sampled_from([[COO, COO, COO], [GCXS, GCXS, GCXS], [COO, GCXS, GCXS],]),
 )
 def test_elemwise_trinary(func, shape, formats):
     xs = sparse.random(shape, density=0.5, format=formats[0])

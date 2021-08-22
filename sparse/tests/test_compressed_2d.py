@@ -11,7 +11,7 @@ import sparse
 from sparse import COO
 from sparse._compressed.compressed import GCXS, CSR, CSC
 from sparse._utils import assert_eq
-from _utils import gen_sparse_random
+from _utils import gen_sparse_random, gen_sparse_random_from
 
 
 @pytest.fixture(scope="module", params=[CSR, CSC])
@@ -70,9 +70,8 @@ def test_bad_nd_input(cls, n):
 
 
 @settings(deadline=None)
-@given(source_type=st.sampled_from(["gcxs", "coo"]))
-def test_from_sparse(cls, source_type):
-    gcxs = sparse.random((20, 30), density=0.25, format=source_type)
+@given(gcxs=gen_sparse_random_from((20, 30), density=0.25))
+def test_from_sparse(cls, gcxs):
     result = cls(gcxs)
 
     assert_eq(result, gcxs)
@@ -96,19 +95,24 @@ def test_from_scipy_sparse(scipy_type, CLS, dtype):
 
 
 @settings(deadline=None)
-@given(cls_str=st.sampled_from(["coo", "dok", "csr", "csc", "gcxs"]))
-def test_to_sparse(cls_str, random_sparse):
-    result = random_sparse.asformat(cls_str)
+@given(
+    cls_str=st.sampled_from(["coo", "dok", "csr", "csc", "gcxs"]),
+    rs=gen_sparse_random((20, 30), density=0.25),
+)
+def test_to_sparse(cls_str, rs):
+    result = rs.asformat(cls_str)
 
-    assert_eq(random_sparse, result)
+    assert_eq(rs, result)
 
 
 @settings(deadline=None)
-@given(copy=st.sampled_from([True, False]))
-def test_transpose(random_sparse, copy):
+@given(
+    copy=st.sampled_from([True, False]), rs=gen_sparse_random((20, 30), density=0.25)
+)
+def test_transpose(copy, rs):
     from operator import is_, is_not
 
-    t = random_sparse.transpose(copy=copy)
+    t = rs.transpose(copy=copy)
     tt = t.transpose(copy=copy)
 
     # Check if a copy was made
@@ -117,16 +121,17 @@ def test_transpose(random_sparse, copy):
     else:
         check = is_
 
-    assert check(random_sparse.data, t.data)
-    assert check(random_sparse.indices, t.indices)
-    assert check(random_sparse.indptr, t.indptr)
+    assert check(rs.data, t.data)
+    assert check(rs.indices, t.indices)
+    assert check(rs.indptr, t.indptr)
 
-    assert random_sparse.shape == t.shape[::-1]
+    assert rs.shape == t.shape[::-1]
 
-    assert_eq(random_sparse, tt)
-    assert type(random_sparse) == type(tt)
+    assert_eq(rs, tt)
+    assert type(rs) == type(tt)
 
 
-def test_transpose_error(random_sparse):
+@given(rs=gen_sparse_random((20, 30), density=0.25))
+def test_transpose_error(rs):
     with pytest.raises(ValueError):
-        random_sparse.transpose(axes=1)
+        rs.transpose(axes=1)

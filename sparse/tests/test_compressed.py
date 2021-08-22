@@ -11,6 +11,7 @@ from _utils import (
     gen_pad_valid,
     gen_pad_invalid,
     gen_advanced_indexing,
+    gen_sparse_random_slicing,
 )
 import numpy as np
 import scipy
@@ -170,8 +171,8 @@ def test_transpose(ab):
     assert_eq(x.transpose(b), s.transpose(b))
 
 
-def test_to_scipy_sparse():
-    s = sparse.random((3, 5), density=0.5, format="gcxs", compressed_axes=(0,))
+@given(s=gen_sparse_random((3, 5), density=0.5, format="gcxs", compressed_axes=(0,)))
+def test_to_scipy_sparse(s):
     a = s.to_scipy_sparse()
     b = scipy.sparse.csr_matrix(s.todense())
 
@@ -184,8 +185,8 @@ def test_to_scipy_sparse():
     assert_eq(a, b)
 
 
-def test_tocoo():
-    coo = sparse.random((5, 6), density=0.5)
+@given(coo=gen_sparse_random((5, 6), density=0.5))
+def test_tocoo(coo):
     b = GCXS.from_coo(coo)
     assert_eq(b.tocoo(), coo)
 
@@ -260,12 +261,9 @@ def test_complex_methods(complex):
             (slice(0, 5, -1),),
         ]
     ),
-    compressed_axes=st.sampled_from([(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)]),
+    s=gen_sparse_random_slicing((2, 3, 4), density=0.5, format="gcxs"),
 )
-def test_slicing(index, compressed_axes):
-    s = sparse.random(
-        (2, 3, 4), density=0.5, format="gcxs", compressed_axes=compressed_axes
-    )
+def test_slicing(index, s):
     x = s.todense()
     assert_eq(x[index], s[index])
 
@@ -351,9 +349,9 @@ def test_concatenate_2(xx, yy, zz):
 @given(
     axis=st.sampled_from([0, 1]),
     func=st.sampled_from([sparse.stack, sparse.concatenate]),
+    s=gen_sparse_random((10, 10), density=0.5, format="gcxs"),
 )
-def test_concatenate_mixed(func, axis):
-    s = sparse.random((10, 10), density=0.5, format="gcxs")
+def test_concatenate_mixed(func, axis, s):
     d = s.todense()
 
     with pytest.raises(ValueError):
