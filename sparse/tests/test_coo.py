@@ -1655,3 +1655,12 @@ def test_pad_invalid(pad_width, constant_values, fill_value=0):
     y = sparse.random((50, 50, 3), density=0.15)
     with pytest.raises(ValueError):
         np.pad(y, pad_width, constant_values=constant_values)
+
+
+def test_elemwise_scalar():
+    s1 = sparse.random((), density=0.5)
+    x2 = np.random.rand(2)
+
+    x1 = s1.todense()
+
+    assert_eq(s1 * x2, x1 * x2)
