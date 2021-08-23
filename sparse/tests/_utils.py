@@ -427,3 +427,18 @@ def gen_sparse_random_outer(draw):
     seed = draw(st.integers(min_value=0, max_value=100))
     shape = draw(st.sampled_from([(2,), (2, 3), (2, 3, 4)]))
     return sparse.random(shape, density=0.5)
+
+
+@composite
+def gen_sparse_random_getitem_single(draw):
+    seed = draw(st.integers(min_value=0, max_value=100))
+    shape = draw(st.sampled_from([(2,), (2, 3), (2, 3, 4)]))
+    density = draw(st.sampled_from([0.1, 0.3, 0.5, 0.7]))
+    return sparse.random(shape, density=density, random_state=seed, format="dok")
+
+
+@composite
+def gen_sparse_random_pad_invalid(draw, shape, **kwargs):
+    seed = draw(st.integers(min_value=0, max_value=100))
+    fill_value = draw(st.floats(min_value=0, max_value=10))
+    return sparse.random(shape, random_state=seed, fill_value=fill_value, **kwargs)

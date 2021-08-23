@@ -8,6 +8,8 @@ from _utils import (
     gen_getitem,
     gen_setitem,
     gen_sparse_random,
+    gen_sparse_random_getitem_single,
+    gen_sparse_random_pad_invalid,
 )
 
 import numpy as np
@@ -31,15 +33,15 @@ def test_random_shape_nnz(shape, density):
     assert np.floor(expected_nnz) <= s.nnz <= np.ceil(expected_nnz)
 
 
-def test_convert_to_coo():
-    s1 = sparse.random((2, 3, 4), 0.5, format="dok")
+@given(gen_sparse_random((2, 3, 4), density=0.5, format="dok"))
+def test_convert_to_coo(s1):
     s2 = sparse.COO(s1)
 
     assert_eq(s1, s2)
 
 
-def test_convert_from_coo():
-    s1 = sparse.random((2, 3, 4), 0.5, format="coo")
+@given(gen_sparse_random((2, 3, 4), density=0.5, format="coo"))
+def test_convert_from_coo(s1):
     s2 = DOK(s1)
 
     assert_eq(s1, s2)
@@ -52,8 +54,8 @@ def test_convert_from_numpy():
     assert_eq(x, s)
 
 
-def test_convert_to_numpy():
-    s = sparse.random((2, 3, 4), 0.5, format="dok")
+@given(gen_sparse_random((2, 3, 4), density=0.5, format="dok"))
+def test_convert_to_numpy(s):
     x = s.todense()
 
     assert_eq(x, s)
@@ -81,17 +83,13 @@ def test_construct(sd):
 
 
 @settings(deadline=None)
-@given(
-    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4)]),
-    density=st.sampled_from([0.1, 0.3, 0.5, 0.7]),
-)
-def test_getitem_single(shape, density):
-    s = sparse.random(shape, density, format="dok")
+@given(gen_sparse_random_getitem_single())
+def test_getitem_single(s):
     x = s.todense()
 
     for _ in range(s.nnz):
-        idx = np.random.randint(np.prod(shape))
-        idx = np.unravel_index(idx, shape)
+        idx = np.random.randint(np.prod(s.shape))
+        idx = np.unravel_index(idx, s.shape)
         print(idx)
 
         assert np.isclose(s[idx], x[idx])
@@ -171,11 +169,10 @@ def test_setitem(sd):
     assert_eq(x, s)
 
 
-def test_setitem_delete():
-    shape = (2, 3)
+@given(gen_sparse_random((2, 3), density=1.0, format="dok"))
+def test_setitem_delete(s):
     index = [0, 1], [1, 2]
     value = 0
-    s = sparse.random(shape, 1.0, format="dok")
     x = s.todense()
 
     s[index] = value
@@ -185,16 +182,11 @@ def test_setitem_delete():
     assert s.nnz < s.size
 
 
-@pytest.mark.parametrize(
-    "shape, index",
-    [
-        ((2, 3), ([0, 1.5], [1, 2])),
-        ((2, 3), ([0, 1], [1])),
-        ((2, 3), ([[0], [1]], [1, 2])),
-    ],
+@given(
+    s=gen_sparse_random((2, 3), density=0.5, format="dok"),
+    index=st.sampled_from([([0, 1.5], [1, 2]), ([0, 1], [1]), ([[0], [1]], [1, 2])]),
 )
-def test_setitem_index_error(shape, index):
-    s = sparse.random(shape, 0.5, format="dok")
+def test_setitem_index_error(s, index):
     value = np.random.rand()
 
     with pytest.raises(IndexError):
@@ -273,8 +265,8 @@ def test_empty_dok_dtype():
     assert s.dtype == d.dtype
 
 
-def test_zeros_like():
-    s = sparse.random((2, 3, 4), density=0.5)
+@given(gen_sparse_random((2, 3, 4), density=0.5))
+def test_zeros_like(s):
     s2 = sparse.zeros_like(s, format="dok")
     assert s.shape == s2.shape
     assert s.dtype == s2.dtype
@@ -298,10 +290,10 @@ def test_pad_valid(pad_width, constant_values):
 @given(
     pad_width=st.sampled_from([((2, 1), (5, 7)),]),
     constant_values=st.sampled_from([150, 2, (1, 2)]),
-    fill_value=st.floats(min_value=0, max_value=10),
+    y=gen_sparse_random_pad_invalid((50, 50, 3), density=0.15, format="dok"),
 )
-def test_pad_invalid(pad_width, constant_values, fill_value):
-    y = sparse.random((50, 50, 3), density=0.15, format="dok", fill_value=fill_value)
+def test_pad_invalid(pad_width, constant_values, y):
+    # y = sparse.random( fill_value=fill_value)
     with pytest.raises(ValueError):
         np.pad(y, pad_width, constant_values=constant_values)
 

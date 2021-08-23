@@ -20,7 +20,7 @@ from _utils import (
     gen_sparse_random_kron_a,
     gen_sparse_random_kron_b,
     gen_sparse_random_three,
-    gen_sparse_random_outer
+    gen_sparse_random_outer,
 )
 
 
@@ -1096,7 +1096,11 @@ def test_two_arg_where(cs, xs):
 
 
 @settings(deadline=None)
-@given(func=st.sampled_from([operator.imul, operator.iadd, operator.isub]), xs=gen_sparse_random((3, 4), density=0.5), ys=gen_sparse_random((2, 3, 4), density=0.5))
+@given(
+    func=st.sampled_from([operator.imul, operator.iadd, operator.isub]),
+    xs=gen_sparse_random((3, 4), density=0.5),
+    ys=gen_sparse_random((2, 3, 4), density=0.5),
+)
 def test_inplace_invalid_shape(func, xs, ys):
     with pytest.raises(ValueError):
         func(xs, ys)
@@ -1123,7 +1127,10 @@ def test_argwhere(s):
     assert_eq(np.argwhere(s), np.argwhere(x), compare_dtype=False)
 
 
-@given(format=st.sampled_from(["coo", "dok"]), s=gen_sparse_random((2, 3, 4), density=0.5, format="coo"))
+@given(
+    format=st.sampled_from(["coo", "dok"]),
+    s=gen_sparse_random((2, 3, 4), density=0.5, format="coo"),
+)
 def test_asformat(format, s):
     s2 = s.asformat(format)
 
