@@ -442,3 +442,66 @@ def gen_sparse_random_pad_invalid(draw, shape, **kwargs):
     seed = draw(st.integers(min_value=0, max_value=100))
     fill_value = draw(st.floats(min_value=0, max_value=10))
     return sparse.random(shape, random_state=seed, fill_value=fill_value, **kwargs)
+
+
+@composite
+def gen_sparse_random_elemwise(draw, shape, **kwargs):
+    seed = draw(st.integers(min_value=0, max_value=100))
+    format = draw(st.sampled_from([sparse.COO, sparse.GCXS, sparse.DOK]))
+    return sparse.random(shape, random_state=seed, format=format, **kwargs), format
+
+
+@composite
+def gen_sparse_random_elemwise_mixed(draw, shape, **kwargs):
+    seed = draw(st.integers(min_value=0, max_value=100))
+    format = draw(st.sampled_from([sparse.COO, sparse.GCXS, sparse.DOK]))
+    return sparse.random(shape, random_state=seed, format=format, **kwargs)
+
+
+@composite
+def gen_sparse_random_elemwise_trinary(draw, **kwargs):
+    seed = draw(st.integers(min_value=0, max_value=100))
+    format = draw(
+        st.sampled_from(
+            [
+                [sparse.COO, sparse.COO, sparse.COO],
+                [sparse.GCXS, sparse.GCXS, sparse.GCXS],
+                [sparse.COO, sparse.GCXS, sparse.GCXS],
+            ]
+        )
+    )
+    shape = st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+    return (
+        sparse.random(shape[0], random_state=seed, format=format, **kwargs),
+        sparse.random(shape[1], random_state=seed, format=format, **kwargs),
+        sparse.random(shape[2], random_state=seed, format=format, **kwargs),
+    )
+
+
+@composite
+def gen_sparse_random_elemwise_trinary_broadcasting(draw, **kwargs):
+    seed = draw(st.integers(min_value=0, max_value=100))
+    shape = draw(st.sampled_from(
+            [
+                [(2,), (3, 2), (4, 3, 2)],
+                [(3,), (2, 3), (2, 2, 3)],
+                [(2,), (2, 2), (2, 2, 2)],
+                [(4,), (4, 4), (4, 4, 4)],
+                [(4,), (4, 4), (4, 4, 4)],
+                [(4,), (4, 4), (4, 4, 4)],
+                [(1, 1, 2), (1, 3, 1), (4, 1, 1)],
+                [(2,), (2, 1), (2, 1, 1)],
+            ]
+        )
+    )
+    args = [sparse.random(shape, random_state=seed, **kwargs)]
+    return args
+
+
+@composite
+def gen_sparse_random_elemwise_binary(draw, **kwargs):
+    seed = draw(st.integers(min_value=0, max_value=100))
+    shape = draw(st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]))
+    format = draw(st.sampled_from([sparse.COO, sparse.GCXS, sparse.DOK]))
+
+    return sparse.random(shape, random_state=seed, format=format, **kwargs)
