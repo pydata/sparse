@@ -74,3 +74,8 @@ def test_property(func):
     xx = func(x)
     yy = func(y)
     assert xx == yy
+
+
+def test_broadcast_to_scalar():
+    s = sparse.COO.from_numpy([0, 0, 1, 2])
+    np.broadcast_to(np.zeros_like(s, shape=()), (3,))
