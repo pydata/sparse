@@ -3,6 +3,36 @@ Changelog
 
 .. currentmodule:: sparse
 
+0.13.0 / 2021-08-28
+-------------------
+
+* GCXS improvements and changes. (:pr:`448`, :pr:`450`, :pr:`455`, thanks
+  :ghuser:`sayandip18`).
+* Maintainence fixes (:pr:`462`, :pr:`466`, :commit:`1ccb85da581be65a0345b399e00fd3c325700d95`,
+  :commit:`5547b4e92dc8d61492e9dc10ba00175c1a6637fa`
+  :commit:`00c0e5514de2aab8b9a0be16b5da470b091d9eb9`, :commit:`fcd3020dd08c7022a44f709173fe23969d3e8f7c`,
+  thanks :ghuser:`hameerabbasi`)
+* :obj:`sparse.DOK.from_scipy_sparse` method (:pr:`464`, :issue:`463`, thanks
+  :ghuser:`hameerabbasi`).
+* Black re-formatting (:pr:`471`, :pr:`484`, thanks :ghuser:`GenevieveBuckley`, :ghuser:`sayandip18`)
+* Add :obj:`sparse.pad` (:pr:`474`, :issue:`438`, thanks :ghuser:`H4R5H1T-007`)
+* Switch to GitHub Actions (:compare:`5547b4e92dc8d61492e9dc10ba00175c1a6637fa..a332f22c96a96e5ab9b4384342df67e8f3966f85`)
+* Fix a number of bugs in format conversion. (:pr:`504`, :issue:`503`, thanks
+  :ghuser:`hameerabbasi`)
+* Fix bug in :obj:`sparse.matmul` for higher-dimensional arrays. (:pr:`508`,
+  :issue:`506`, thanks :ghuser:`sayandip18`).
+* Fix scalar conversion to COO (:issue:`510`, :pr:`511`, thanks :ghuser:`hameerabbasi`)
+* Fix OOB memory accesses (:issue:`515`, :commit:`1e24a7e29786e888dee4c02153309986ae4b5dde`
+  thanks :ghuser:`hameerabbasi`)
+* Fixes element-wise ops with scalar COO array. (:issue:`505`, :commit:`5211441ec685233657ab7156f99eb67e660cee86`,
+  thanks :ghuser:`hameerabbasi`)
+* Fix scalar broadcast_to with ``nnz==0``. (:issue:`513`, :commit:`bfabaa0805e811884e79c4bdbfd14316986d65e4`,
+  thanks :ghuser:`hameerabbasi`)
+* Add order parameter to ``{zero, ones, full}[_like]``. (:issue:`514`, :commit:`37de1d0141c4375962ecdf18337c2dd0f667b60c`,
+  thanks :ghuser:`hameerabbasi`)
+* Fix tensordot typing bugs. (:issue:`493`, :issue:`499`, :commit:`37de1d0141c4375962ecdf18337c2dd0f667b60c`,
+  thanks :ghuser:`hameerabbasi`).
+
 0.12.0 / 2021-03-19
 -------------------
 
