@@ -89,13 +89,17 @@ def getitem(x, key):
     # convert all indices of compressed axes to a single array index
     # this tells us which 'rows' of the underlying csr matrix to iterate through
     rows = convert_to_flat(
-        reordered_key[: x._axisptr], x._reordered_shape[: x._axisptr], x.indices.dtype,
+        reordered_key[: x._axisptr],
+        x._reordered_shape[: x._axisptr],
+        x.indices.dtype,
     )
 
     # convert all indices of uncompressed axes to a single array index
     # this tells us which 'columns' of the underlying csr matrix to iterate through
     cols = convert_to_flat(
-        reordered_key[x._axisptr :], x._reordered_shape[x._axisptr :], x.indices.dtype,
+        reordered_key[x._axisptr :],
+        x._reordered_shape[x._axisptr :],
+        x.indices.dtype,
     )
 
     starts = x.indptr[:-1][rows]  # find the start and end of each of the rows
@@ -208,12 +212,14 @@ def get_slicing_selection(
             prev = 0
             size = 0
             col_count = 0
-            while col_count < col.size:
+            while col_count < len(col):
                 while (
-                    col[col_count] < current_row[size] and col_count < col.size
+                    col_count < len(col)
+                    and size < len(current_row)
+                    and col[col_count] < current_row[size]
                 ):  # skip needless searches
                     col_count += 1
-                if col_count >= col.size:  # check again because of previous loop
+                if col_count >= len(col):  # check again because of previous loop
                     break
                 if current_row[-1] < col[col_count] or current_row[size] > col[-1]:
                     break

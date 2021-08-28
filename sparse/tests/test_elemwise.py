@@ -11,7 +11,7 @@ from _utils import (
     gen_sparse_random_elemwise_mixed,
     gen_sparse_random_elemwise_binary,
     gen_sparse_random_elemwise_trinary,
-    gen_sparse_random_elemwise_trinary_broadcasting
+    gen_sparse_random_elemwise_trinary_broadcasting,
 )
 import operator
 import random
@@ -91,7 +91,8 @@ def test_elemwise_inplace(func, sf):
 
 
 @given(
-    shape12=gen_broadcast_shape(), format=st.sampled_from([COO, GCXS, DOK]),
+    shape12=gen_broadcast_shape(),
+    format=st.sampled_from([COO, GCXS, DOK]),
 )
 def test_elemwise_mixed(shape12, format):
     shape1, shape2 = shape12
@@ -189,7 +190,7 @@ def test_elemwise_binary_inplace(func, xs, ys):
             lambda x, y, z: (x + y) * z,
         ],
     ),
-    xyz=gen_sparse_random_elemwise_trinary(density=0.5)
+    xyz=gen_sparse_random_elemwise_trinary(density=0.5),
 )
 def test_elemwise_trinary(func, shape, formats):
     xs, ys, zs = xyz
@@ -220,7 +221,8 @@ def test_binary_broadcasting(func, sd):
     assert isinstance(actual, COO)
     assert_eq(expected, actual)
 
-    assert np.count_nonzero(expected) == actual.nnz
+    if not expected.ndim == 0:
+        assert np.count_nonzero(expected) == actual.nnz
 
 
 @pytest.mark.xfail
@@ -244,7 +246,7 @@ def test_broadcast_to(sd):
             lambda x, y, z: x - y + z,
         ]
     ),
-    args=gen_sparse_random_elemwise_trinary_broadcasting(density=0.5)
+    args=gen_sparse_random_elemwise_trinary_broadcasting(density=0.5),
 )
 def test_trinary_broadcasting(shapes, args):
     dense_args = [arg.todense() for arg in args]

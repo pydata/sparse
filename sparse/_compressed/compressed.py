@@ -55,7 +55,9 @@ def _from_coo(x, compressed_axes=None, idx_dtype=None):
     if idx_dtype and not can_store(idx_dtype, max(max(compressed_shape), x.nnz)):
         raise ValueError(
             "cannot store array with the compressed shape {} and nnz {} with dtype {}.".format(
-                compressed_shape, x.nnz, idx_dtype,
+                compressed_shape,
+                x.nnz,
+                idx_dtype,
             )
         )
 
@@ -234,7 +236,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         cls, x, shape=None, compressed_axes=None, fill_value=None, idx_dtype=None
     ):
         return cls.from_coo(
-            COO.from_iter(x, shape, fill_value), compressed_axes, idx_dtype,
+            COO.from_iter(x, shape, fill_value),
+            compressed_axes,
+            idx_dtype,
         )
 
     @property
@@ -838,7 +842,11 @@ class _Compressed2d(GCXS):
 
     def __str__(self):
         return "<{}: shape={}, dtype={}, nnz={}, fill_value={}>".format(
-            type(self).__name__, self.shape, self.dtype, self.nnz, self.fill_value,
+            type(self).__name__,
+            self.shape,
+            self.dtype,
+            self.nnz,
+            self.fill_value,
         )
 
     __repr__ = __str__

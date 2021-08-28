@@ -727,7 +727,8 @@ def roll(a, shift, axis=None):
         if not can_store(a.coords.dtype, max(a.shape + shift)):
             raise ValueError(
                 "cannot roll with coords.dtype {} and shift {}. Try casting coords to a larger dtype.".format(
-                    a.coords.dtype, shift,
+                    a.coords.dtype,
+                    shift,
                 )
             )
 

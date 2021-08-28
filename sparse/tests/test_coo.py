@@ -1668,7 +1668,14 @@ def test_html_for_size_zero():
 
 
 @given(
-    pad_width=st.sampled_from([2, (2, 1), ((2), (1)), ((1, 2), (4, 5), (7, 8)),]),
+    pad_width=st.sampled_from(
+        [
+            2,
+            (2, 1),
+            ((2), (1)),
+            ((1, 2), (4, 5), (7, 8)),
+        ]
+    ),
     constant_values=st.sampled_from([0, 1, 150, np.nan]),
 )
 def test_pad_valid(pad_width, constant_values):
@@ -1680,10 +1687,31 @@ def test_pad_valid(pad_width, constant_values):
 
 
 @given(
-    pad_width=st.sampled_from([((2, 1), (5, 7)),]),
+    pad_width=st.sampled_from(
+        [
+            ((2, 1), (5, 7)),
+        ]
+    ),
     y=gen_sparse_random((50, 50, 3), density=0.15),
     constant_values=st.sampled_from([150, 2, (1, 2)]),
 )
 def test_pad_invalid(pad_width, constant_values, y):
     with pytest.raises(ValueError):
         np.pad(y, pad_width, constant_values=constant_values)
+
+
+@pytest.mark.parametrize("val", [0, 5])
+def test_scalar_from_numpy(val):
+    x = np.int64(val)
+    s = sparse.COO.from_numpy(x)
+    assert s.nnz == 0
+    assert_eq(x, s)
+
+
+def test_scalar_elemwise():
+    s1 = sparse.random((), density=0.5)
+    x2 = np.random.rand(2)
+
+    x1 = s1.todense()
+
+    assert_eq(s1 * x2, x1 * x2)

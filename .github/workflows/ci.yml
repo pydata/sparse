@@ -7,15 +7,20 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python: [3.7, 3.8, 3.9]
+        numba_boundscheck: [0]
         include:
           - os: macos-latest
             python: 3.9
           - os: windows-latest
             python: 3.9
+          - os: ubuntu-latest
+            python: 3.9
+            numba_boundscheck: 1
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
       PYTHON_VERSION: ${{ matrix.python }}
+      NUMBA_BOUNDSCHECK: ${{ matrix.numba_boundscheck }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v2

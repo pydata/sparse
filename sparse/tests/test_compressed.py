@@ -104,8 +104,8 @@ def test_ufunc_reductions(p, x):
     yy = reduction(y, **kwargs)
     assert_eq(xx, yy)
     # If not a scalar/1 element array, must be a sparse array
-    if xx.size > 1:
-        assert isinstance(xx, GCXS)
+    if xx.ndim != 0:
+        assert isinstance(xx, type(x))
 
 
 @settings(deadline=None)

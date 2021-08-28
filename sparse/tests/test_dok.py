@@ -274,7 +274,14 @@ def test_zeros_like(s):
 
 
 @given(
-    pad_width=st.sampled_from([2, (2, 1), ((2), (1)), ((1, 2), (4, 5), (7, 8)),]),
+    pad_width=st.sampled_from(
+        [
+            2,
+            (2, 1),
+            ((2), (1)),
+            ((1, 2), (4, 5), (7, 8)),
+        ]
+    ),
     constant_values=st.sampled_from([0, 1, 150, np.nan]),
 )
 def test_pad_valid(pad_width, constant_values):
@@ -288,7 +295,11 @@ def test_pad_valid(pad_width, constant_values):
 
 
 @given(
-    pad_width=st.sampled_from([((2, 1), (5, 7)),]),
+    pad_width=st.sampled_from(
+        [
+            ((2, 1), (5, 7)),
+        ]
+    ),
     constant_values=st.sampled_from([150, 2, (1, 2)]),
     y=gen_sparse_random_pad_invalid((50, 50, 3), density=0.15, format="dok"),
 )

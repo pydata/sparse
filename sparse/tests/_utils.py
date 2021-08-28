@@ -53,7 +53,9 @@ def gen_notimpl_err(draw):
     shape = draw(array_shapes(min_dims=n, max_dims=n, min_side=5, max_side=10))
     data = array_shapes(min_dims=3, max_dims=3, min_side=1, max_side=4)
     density = draw(st.floats(min_value=0, max_value=1))
-    indices = draw(st.lists(st.lists(data), min_size=n - 1, max_size=n - 1).map(tuple),)
+    indices = draw(
+        st.lists(st.lists(data), min_size=n - 1, max_size=n - 1).map(tuple),
+    )
     return shape, density, indices
 
 
@@ -90,7 +92,9 @@ def gen_setitem_val_err(draw):
             st.lists(st.integers(min_value=1, max_value=3), min_size=2, max_size=2),
         )
     )
-    value_shape = draw(array_shapes(min_dims=4, max_dims=6, min_side=3, max_side=5),)
+    value_shape = draw(
+        array_shapes(min_dims=4, max_dims=6, min_side=3, max_side=5),
+    )
 
     return shape, index, value_shape
 
@@ -264,7 +268,14 @@ def gen_flatten(draw):
 @composite
 def gen_pad_valid(draw):
     pad_width = draw(
-        st.sampled_from([2, (2, 1), ((2), (1)), ((1, 2), (4, 5), (7, 8)),])
+        st.sampled_from(
+            [
+                2,
+                (2, 1),
+                ((2), (1)),
+                ((1, 2), (4, 5), (7, 8)),
+            ]
+        )
     )
     constant_values = draw(st.sampled_from([0, 1, 150, np.nan]))
     y = draw(
@@ -481,7 +492,8 @@ def gen_sparse_random_elemwise_trinary(draw, **kwargs):
 @composite
 def gen_sparse_random_elemwise_trinary_broadcasting(draw, **kwargs):
     seed = draw(st.integers(min_value=0, max_value=100))
-    shape = draw(st.sampled_from(
+    shape = draw(
+        st.sampled_from(
             [
                 [(2,), (3, 2), (4, 3, 2)],
                 [(3,), (2, 3), (2, 2, 3)],
