@@ -507,6 +507,11 @@ def _dot(a, b, return_type=None):
             return out.asformat("gcxs")
         return out
 
+    if isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
+        return np.dot(a, b)
+
+    raise TypeError("Unsupported types.")
+
 
 def _memoize_dtype(f):
     """
@@ -644,7 +649,7 @@ def _csc_ndarray_count_nnz(
 
 
 def _dot_dtype(dt1, dt2):
-    return (np.zeros((), dtype=dt1) * np.zeros((), dtype=dt1)).dtype
+    return (np.zeros((), dtype=dt1) * np.zeros((), dtype=dt2)).dtype
 
 
 @_memoize_dtype
@@ -1348,7 +1353,7 @@ def eye(N, M=None, k=0, dtype=float, format="coo", **kwargs):
     ).asformat(format, **kwargs)
 
 
-def full(shape, fill_value, dtype=None, format="coo", **kwargs):
+def full(shape, fill_value, dtype=None, format="coo", order="C", **kwargs):
     """Return a SparseArray of given shape and type, filled with `fill_value`.
 
     Parameters
@@ -1364,6 +1369,9 @@ def full(shape, fill_value, dtype=None, format="coo", **kwargs):
         A format string.
     compressed_axes : iterable, optional
         The axes to compress if returning a GCXS array.
+    order : {'C', None}
+        Values except these are not currently supported and raise a
+        NotImplementedError.
 
     Returns
     -------
@@ -1385,6 +1393,8 @@ def full(shape, fill_value, dtype=None, format="coo", **kwargs):
         dtype = np.array(fill_value).dtype
     if not isinstance(shape, tuple):
         shape = (shape,)
+    if order not in {"C", None}:
+        raise NotImplementedError("Currently, only 'C' and None are supported.")
     data = np.empty(0, dtype=dtype)
     coords = np.empty((len(shape), 0), dtype=np.intp)
     return COO(

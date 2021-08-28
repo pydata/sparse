@@ -74,3 +74,21 @@ def test_property(func):
     xx = func(x)
     yy = func(y)
     assert xx == yy
+
+
+def test_broadcast_to_scalar():
+    s = sparse.COO.from_numpy([0, 0, 1, 2])
+    actual = np.broadcast_to(np.zeros_like(s, shape=()), (3,))
+    expected = np.broadcast_to(np.zeros_like(s.todense(), shape=()), (3,))
+
+    assert isinstance(actual, sparse.COO)
+    assert_eq(actual, expected)
+
+
+def test_zeros_like_order():
+    s = sparse.COO.from_numpy([0, 0, 1, 2])
+    actual = np.zeros_like(s, order="C")
+    expected = np.zeros_like(s.todense(), order="C")
+
+    assert isinstance(actual, sparse.COO)
+    assert_eq(actual, expected)

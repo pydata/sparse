@@ -274,7 +274,9 @@ def _get_expanded_coords_data(coords, data, params, broadcast_shape):
     if first_dim != -1:
         expanded_data = data[all_idx[first_dim]]
     else:
-        expanded_coords = all_idx
+        expanded_coords = (
+            all_idx if len(data) else np.empty((0, all_idx.shape[1]), dtype=np.intp)
+        )
         expanded_data = np.repeat(data, np.prod(broadcast_shape, dtype=np.int64))
         return np.asarray(expanded_coords), np.asarray(expanded_data)
 
@@ -442,13 +444,15 @@ class _Elemwise:
             elif isscalar(arg) or isinstance(arg, np.ndarray):
                 # Faster and more reliable to pass ()-shaped ndarrays as scalars.
                 processed_args.append(np.asarray(arg))
-            elif isinstance(arg, SparseArray) and not isinstance(arg, COO):
-                processed_args.append(COO(arg))
-            elif not isinstance(arg, COO):
+            elif isinstance(arg, SparseArray):
+                if not isinstance(arg, COO):
+                    arg = arg.asformat(COO)
+                if arg.ndim == 0:
+                    arg = arg.todense()
+                processed_args.append(arg)
+            else:
                 self.args = None
                 return
-            else:
-                processed_args.append(arg)
 
         self.out_type = out_type
         self.args = tuple(processed_args)

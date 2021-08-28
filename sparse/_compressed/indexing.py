@@ -212,12 +212,14 @@ def get_slicing_selection(
             prev = 0
             size = 0
             col_count = 0
-            while col_count < col.size:
+            while col_count < len(col):
                 while (
-                    col[col_count] < current_row[size] and col_count < col.size
+                    col_count < len(col)
+                    and size < len(current_row)
+                    and col[col_count] < current_row[size]
                 ):  # skip needless searches
                     col_count += 1
-                if col_count >= col.size:  # check again because of previous loop
+                if col_count >= len(col):  # check again because of previous loop
                     break
                 if current_row[-1] < col[col_count] or current_row[size] > col[-1]:
                     break
