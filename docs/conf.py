@@ -192,4 +192,6 @@ extlinks = {
     "issue": ("https://github.com/pydata/sparse/issues/%s", "Issue #"),
     "pr": ("https://github.com/pydata/sparse/pull/%s", "PR #"),
     "ghuser": ("https://github.com/%s", "@"),
+    "commit": ("https://github.com/pydata/sparse/commit/%s", ""),
+    "compare": ("https://github.com/pydata/sparse/commit/%s", ""),
 }
