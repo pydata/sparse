@@ -442,13 +442,15 @@ class _Elemwise:
             elif isscalar(arg) or isinstance(arg, np.ndarray):
                 # Faster and more reliable to pass ()-shaped ndarrays as scalars.
                 processed_args.append(np.asarray(arg))
-            elif isinstance(arg, SparseArray) and not isinstance(arg, COO):
-                processed_args.append(COO(arg))
-            elif not isinstance(arg, COO):
+            elif isinstance(arg, SparseArray):
+                if not isinstance(arg, COO):
+                    arg = arg.asformat(COO)
+                if arg.ndim == 0:
+                    arg = arg.todense()
+                processed_args.append(arg)
+            else:
                 self.args = None
                 return
-            else:
-                processed_args.append(arg)
 
         self.out_type = out_type
         self.args = tuple(processed_args)

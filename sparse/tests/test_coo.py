@@ -1663,3 +1663,12 @@ def test_scalar_from_numpy(val):
     s = sparse.COO.from_numpy(x)
     assert s.nnz == 0
     assert_eq(x, s)
+
+
+def test_scalar_elemwise():
+    s1 = sparse.random((), density=0.5)
+    x2 = np.random.rand(2)
+
+    x1 = s1.todense()
+
+    assert_eq(s1 * x2, x1 * x2)
