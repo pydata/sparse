@@ -20,7 +20,7 @@ def convert_to_flat(inds, shape, dtype):
     increments = List()
     for i in range(len(inds)):
         increments.append((inds[i] * shape_bins[i]).astype(dtype))
-    operations = np.prod([ind.shape[0] for ind in increments[:-1]])
+    operations = np.prod([ind.shape[0] for ind in increments[:-1]], dtype=dtype)
     return compute_flat(increments, cols, operations)
 
 
@@ -44,7 +44,8 @@ def compute_flat(increments, cols, operations):  # pragma: no cover
             [increments[i][positions[i]] for i in range(len(increments) - 1)]
         ).sum()
         cols[start:end] = increments[-1] + to_add
-        positions[pos] += 1
+        if pos != -1:
+            positions[pos] += 1
         start += increments[-1].shape[0]
         end += increments[-1].shape[0]
     return cols
