@@ -507,6 +507,11 @@ def _dot(a, b, return_type=None):
             return out.asformat("gcxs")
         return out
 
+    if isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
+        return np.dot(a, b)
+
+    raise TypeError("Unsupported types.")
+
 
 def _memoize_dtype(f):
     """
@@ -644,7 +649,7 @@ def _csc_ndarray_count_nnz(
 
 
 def _dot_dtype(dt1, dt2):
-    return (np.zeros((), dtype=dt1) * np.zeros((), dtype=dt1)).dtype
+    return (np.zeros((), dtype=dt1) * np.zeros((), dtype=dt2)).dtype
 
 
 @_memoize_dtype

@@ -317,11 +317,27 @@ dot_dtypes = [np.complex64, np.complex128]
 @pytest.mark.parametrize("dtype2", dot_dtypes)
 @pytest.mark.parametrize("format1", dot_formats)
 @pytest.mark.parametrize("format2", dot_formats)
-def test_complex(dtype1, dtype2, format1, format2):
-    s1 = format1(sparse.random((20,), density=0.5).astype(dtype1))
-    s2 = format2(sparse.random((20,), density=0.5).astype(dtype2))
+@pytest.mark.parametrize("ndim1", (1, 2))
+@pytest.mark.parametrize("ndim2", (1, 2))
+def test_complex(dtype1, dtype2, format1, format2, ndim1, ndim2):
+    s1 = format1(sparse.random((20,) * ndim1, density=0.5).astype(dtype1))
+    s2 = format2(sparse.random((20,) * ndim2, density=0.5).astype(dtype2))
 
     dense_convertor = lambda x: x.todense() if isinstance(x, sparse.SparseArray) else x
     x1, x2 = dense_convertor(s1), dense_convertor(s2)
 
     assert_eq(x1 @ x2, s1 @ s2)
+
+
+@pytest.mark.parametrize("dtype1", dot_dtypes)
+@pytest.mark.parametrize("dtype2", dot_dtypes)
+@pytest.mark.parametrize("ndim1", (1, 2))
+@pytest.mark.parametrize("ndim2", (1, 2))
+def test_dot_dense(dtype1, dtype2, ndim1, ndim2):
+    a = sparse.random((20,) * ndim1, density=0.5).astype(dtype1).todense()
+    b = sparse.random((20,) * ndim2, density=0.5).astype(dtype2).todense()
+
+    assert_eq(sparse.dot(a, b), np.dot(a, b))
+    assert_eq(sparse.matmul(a, b), np.matmul(a, b))
+    if ndim1 == 2 and ndim2 == 2:
+        assert_eq(sparse.tensordot(a, b), np.tensordot(a, b))
