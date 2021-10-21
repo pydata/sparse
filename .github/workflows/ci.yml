@@ -47,11 +47,10 @@ jobs:
         run: |
           pip install -U setuptools wheel
           pip install -e .[tests]
-          pip install codecov
       - name: Run tests
         run: |
           pytest --pyargs sparse
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2
         if: always()
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action/composite@v1
@@ -80,6 +79,7 @@ jobs:
           activate-environment: sparse-dev
           allow-softlinks: true
           environment-file: ci/environment.yml
+          python-version: 3.9
           miniforge-variant: Mambaforge
           use-only-tar-bz2: true
           use-mamba: true
