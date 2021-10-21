@@ -79,6 +79,7 @@ jobs:
           activate-environment: sparse-dev
           allow-softlinks: true
           environment-file: ci/environment.yml
+          python-version: 3.9
           miniforge-variant: Mambaforge
           use-only-tar-bz2: true
           use-mamba: true
