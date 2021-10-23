@@ -1437,6 +1437,8 @@ def full_like(a, fill_value, dtype=None, shape=None, format=None, **kwargs):
         format = type(a).__name__.lower()
     elif format is None:
         format = "coo"
+
+    compressed_axes = kwargs.pop("compressed_axes", None)
     if hasattr(a, "compressed_axes") and compressed_axes is None:
         compressed_axes = a.compressed_axes
     return full(

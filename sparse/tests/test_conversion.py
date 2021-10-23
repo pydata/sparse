@@ -22,3 +22,10 @@ FORMATS = [
 def test_conversion(format, x):
     y = x.asformat(format)
     assert_eq(x, y)
+
+
+def test_extra_kwargs():
+    x = sparse.full((2, 2), 1, format="gcxs", compressed_axes=[1])
+    y = sparse.full_like(x, 1)
+
+    assert_eq(x, y)
