@@ -107,10 +107,14 @@ def test_to_sparse(cls_str, rs):
 
 @settings(deadline=None)
 @given(
-    copy=st.sampled_from([True, False]), rs=gen_sparse_random((20, 30), density=0.25)
+    cls_str=st.sampled_from(["csr", "csc"]),
+    copy=st.sampled_from([True, False]),
+    rs=gen_sparse_random((20, 30), density=0.25),
 )
-def test_transpose(copy, rs):
+def test_transpose(cls_str, copy, rs):
     from operator import is_, is_not
+
+    rs = rs.asformat(cls_str)
 
     t = rs.transpose(copy=copy)
     tt = t.transpose(copy=copy)

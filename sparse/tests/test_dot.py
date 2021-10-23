@@ -214,7 +214,7 @@ def test_dot(ab, a_format, b_format, a_kwargs, b_kwargs):
 
 
 @settings(deadline=None)
-@given(ab=gen_matmul_shapes())
+@given(ab_shape=gen_matmul_shapes())
 @pytest.mark.parametrize(
     "a_format, a_kwargs",
     [*gen_for_format("coo"), *gen_for_format("gcxs")],
@@ -223,8 +223,8 @@ def test_dot(ab, a_format, b_format, a_kwargs, b_kwargs):
     "b_format, b_kwargs",
     [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
-def test_matmul_2(ab, a_format, b_format, a_kwargs, b_kwargs):
-    a_shape, b_shape = ab
+def test_matmul_2(ab_shape, a_format, b_format, a_kwargs, b_kwargs):
+    a_shape, b_shape = ab_shape
     if len(a_shape) == 1:
         a_kwargs = {}
     if len(b_shape) == 1:

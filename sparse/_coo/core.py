@@ -758,7 +758,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         # Normalize all axes indices to positive values
         axes = normalize_axis(axes, self.ndim)
 
-        if len(np.unique(axes)) < len(axes):
+        if isinstance(axes, int):
+            axes = (axes,)
+
+        if len(set(axes)) < len(axes):
             raise ValueError("repeated axis in transpose")
 
         if not len(axes) == self.ndim:
