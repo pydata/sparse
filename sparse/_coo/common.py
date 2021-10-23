@@ -566,6 +566,7 @@ def where(condition, x=None, y=None):
     y_given = y is not None
 
     if not (x_given or y_given):
+        check_zero_fill_value(condition)
         condition = asCOO(condition, name=str(np.where))
         return tuple(condition.coords)
 
