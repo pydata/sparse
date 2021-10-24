@@ -4,7 +4,6 @@ from hypothesis import settings, given, strategies as st
 from _utils import (
     gen_transpose,
     gen_reductions,
-    gen_reshape,
     gen_sparse_random,
     gen_stack,
     gen_flatten,

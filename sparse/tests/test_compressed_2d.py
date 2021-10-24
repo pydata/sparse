@@ -3,8 +3,6 @@ from numpy.core.numeric import indices
 import pytest
 from hypothesis import settings, given, strategies as st
 import scipy.sparse
-from scipy.sparse import data
-from scipy.sparse.construct import random
 import scipy.stats
 
 import sparse

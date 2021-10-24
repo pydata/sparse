@@ -2,19 +2,18 @@ import numpy as np
 import sparse
 import pytest
 from hypothesis import settings, given, strategies as st
-from hypothesis.strategies import composite
 from _utils import (
     gen_broadcast_shape,
     gen_broadcast_to,
     gen_sparse_random,
     gen_sparse_random_elemwise,
     gen_sparse_random_elemwise_mixed,
-    gen_sparse_random_elemwise_binary,
+    gen_broadcast_shape2,
     gen_sparse_random_elemwise_trinary,
     gen_sparse_random_elemwise_trinary_broadcasting,
+    gen_sparse_random_elemwise_binary,
 )
 import operator
-import random
 from sparse import COO, DOK
 from sparse._compressed import GCXS
 from sparse._utils import assert_eq, random_value_array
@@ -91,8 +90,7 @@ def test_elemwise_inplace(func, sf):
 
 
 @given(
-    shape12=gen_broadcast_shape(),
-    format=st.sampled_from([COO, GCXS, DOK]),
+    shape12=gen_broadcast_shape2(), format=st.sampled_from([COO, GCXS, DOK]),
 )
 def test_elemwise_mixed(shape12, format):
     shape1, shape2 = shape12
@@ -145,6 +143,7 @@ def test_elemwise_mixed_broadcast(s1, s2):
     assert_eq(sparse.elemwise(func, s1, s2, x3), func(x1, x2, x3))
 
 
+@settings(deadline=None)
 @given(
     func=st.sampled_from(
         [
@@ -156,22 +155,30 @@ def test_elemwise_mixed_broadcast(s1, s2):
             operator.ne,
         ]
     ),
-    xs=gen_sparse_random_elemwise_binary(density=0.5),
-    ys=gen_sparse_random_elemwise_binary(density=0.5),
+    xy=gen_sparse_random_elemwise_binary(density=0.5),
 )
-def test_elemwise_binary(func, xs, ys):
+def test_elemwise_binary(func, xy):
+    xs, ys = xy
+
     x = xs.todense()
     y = ys.todense()
 
     assert_eq(func(xs, ys), func(x, y))
 
 
+@settings(deadline=None)
 @given(
     func=st.sampled_from([operator.imul, operator.iadd, operator.isub]),
-    xs=gen_sparse_random_elemwise_binary(density=0.5),
-    ys=gen_sparse_random_elemwise_binary(density=0.5),
+    seed=st.integers(min_value=0, max_value=100),
+    shape12=gen_broadcast_shape2(),
+    format=st.sampled_from([COO, GCXS, DOK]),
 )
-def test_elemwise_binary_inplace(func, xs, ys):
+def test_elemwise_binary_inplace(func, format, shape12, seed):
+    shape1, shape2 = shape12
+
+    xs = sparse.random(shape2, format=format, random_state=seed, density=0.5)
+    ys = sparse.random(shape1, format=format, random_state=seed, density=0.5)
+
     x = xs.todense()
     y = ys.todense()
 
@@ -181,6 +188,7 @@ def test_elemwise_binary_inplace(func, xs, ys):
     assert_eq(xs, x)
 
 
+@settings(deadline=None)
 @given(
     func=st.sampled_from(
         [
@@ -192,7 +200,7 @@ def test_elemwise_binary_inplace(func, xs, ys):
     ),
     xyz=gen_sparse_random_elemwise_trinary(density=0.5),
 )
-def test_elemwise_trinary(func, shape, formats):
+def test_elemwise_trinary(func, xyz):
     xs, ys, zs = xyz
 
     x = xs.todense()
@@ -235,6 +243,7 @@ def test_broadcast_to(sd):
     assert_eq(np.broadcast_to(x, shape2), a.broadcast_to(shape2))
 
 
+@settings(deadline=None)
 @given(
     func=st.sampled_from(
         [
@@ -248,7 +257,7 @@ def test_broadcast_to(sd):
     ),
     args=gen_sparse_random_elemwise_trinary_broadcasting(density=0.5),
 )
-def test_trinary_broadcasting(shapes, args):
+def test_trinary_broadcasting(func, args):
     dense_args = [arg.todense() for arg in args]
 
     fs = sparse.elemwise(func, *args)

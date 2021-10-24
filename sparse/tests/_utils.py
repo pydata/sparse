@@ -1,9 +1,8 @@
 from numbers import Rational
-from hypothesis import given, strategies as st
-from hypothesis.strategies import data, composite
+from hypothesis import strategies as st
+from hypothesis.strategies import composite
 from hypothesis.extra.numpy import (
     array_shapes,
-    basic_indices,
     broadcastable_shapes,
     mutually_broadcastable_shapes,
 )
@@ -53,9 +52,7 @@ def gen_notimpl_err(draw):
     shape = draw(array_shapes(min_dims=n, max_dims=n, min_side=5, max_side=10))
     data = array_shapes(min_dims=3, max_dims=3, min_side=1, max_side=4)
     density = draw(st.floats(min_value=0, max_value=1))
-    indices = draw(
-        st.lists(st.lists(data), min_size=n - 1, max_size=n - 1).map(tuple),
-    )
+    indices = draw(st.lists(st.lists(data), min_size=n - 1, max_size=n - 1).map(tuple),)
     return shape, density, indices
 
 
@@ -92,9 +89,7 @@ def gen_setitem_val_err(draw):
             st.lists(st.integers(min_value=1, max_value=3), min_size=2, max_size=2),
         )
     )
-    value_shape = draw(
-        array_shapes(min_dims=4, max_dims=6, min_side=3, max_side=5),
-    )
+    value_shape = draw(array_shapes(min_dims=4, max_dims=6, min_side=3, max_side=5),)
 
     return shape, index, value_shape
 
@@ -268,14 +263,7 @@ def gen_flatten(draw):
 @composite
 def gen_pad_valid(draw):
     pad_width = draw(
-        st.sampled_from(
-            [
-                2,
-                (2, 1),
-                ((2), (1)),
-                ((1, 2), (4, 5), (7, 8)),
-            ]
-        )
+        st.sampled_from([2, (2, 1), ((2), (1)), ((1, 2), (4, 5), (7, 8)),])
     )
     constant_values = draw(st.sampled_from([0, 1, 150, np.nan]))
     y = draw(
@@ -472,7 +460,7 @@ def gen_sparse_random_elemwise_mixed(draw, shape, **kwargs):
 @composite
 def gen_sparse_random_elemwise_trinary(draw, **kwargs):
     seed = draw(st.integers(min_value=0, max_value=100))
-    format = draw(
+    formats = draw(
         st.sampled_from(
             [
                 [sparse.COO, sparse.COO, sparse.COO],
@@ -481,11 +469,11 @@ def gen_sparse_random_elemwise_trinary(draw, **kwargs):
             ]
         )
     )
-    shape = st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
+    shape = draw(st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]))
     return (
-        sparse.random(shape[0], random_state=seed, format=format, **kwargs),
-        sparse.random(shape[1], random_state=seed, format=format, **kwargs),
-        sparse.random(shape[2], random_state=seed, format=format, **kwargs),
+        sparse.random(shape, random_state=seed, format=formats[0], **kwargs),
+        sparse.random(shape, random_state=seed, format=formats[1], **kwargs),
+        sparse.random(shape, random_state=seed, format=formats[2], **kwargs),
     )
 
 
@@ -506,14 +494,32 @@ def gen_sparse_random_elemwise_trinary_broadcasting(draw, **kwargs):
             ]
         )
     )
-    args = [sparse.random(shape, random_state=seed, **kwargs)]
+    args = [sparse.random(s, random_state=seed, **kwargs) for s in shape]
     return args
 
 
 @composite
+def gen_broadcast_shape2(draw, num_shapes=2):
+    shape_1, shape_2 = draw(
+        mutually_broadcastable_shapes(
+            num_shapes=num_shapes, min_dims=1, max_dims=2, min_side=2, max_side=5
+        )
+    ).input_shapes
+
+    return shape_1, shape_2
+
+
+@composite
 def gen_sparse_random_elemwise_binary(draw, **kwargs):
-    seed = draw(st.integers(min_value=0, max_value=100))
-    shape = draw(st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]))
+    shape_1, shape_2 = draw(
+        mutually_broadcastable_shapes(
+            num_shapes=2, min_dims=1, max_dims=2, min_side=2, max_side=5
+        )
+    ).input_shapes
+
     format = draw(st.sampled_from([sparse.COO, sparse.GCXS, sparse.DOK]))
 
-    return sparse.random(shape, random_state=seed, format=format, **kwargs)
+    xs = sparse.random(shape_1, **kwargs)
+    ys = sparse.random(shape_2, **kwargs)
+
+    return xs, ys
