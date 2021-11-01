@@ -470,10 +470,11 @@ def gen_sparse_random_elemwise_trinary(draw, **kwargs):
         )
     )
     shape = draw(st.sampled_from([(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)]))
+    shape1, shape2, shape3 = draw(mutually_broadcastable_shapes(num_shapes=3, base_shape=shape)).input_shapes
     return (
-        sparse.random(shape, random_state=seed, format=formats[0], **kwargs),
-        sparse.random(shape, random_state=seed, format=formats[1], **kwargs),
-        sparse.random(shape, random_state=seed, format=formats[2], **kwargs),
+        sparse.random(shape1, random_state=seed, format=formats[0], **kwargs),
+        sparse.random(shape2, random_state=seed, format=formats[1], **kwargs),
+        sparse.random(shape3, random_state=seed, format=formats[2], **kwargs),
     )
 
 
