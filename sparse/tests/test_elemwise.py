@@ -176,8 +176,8 @@ def test_elemwise_binary(func, xy):
 def test_elemwise_binary_inplace(func, format, shape12, seed):
     shape1, shape2 = shape12
 
-    xs = sparse.random(shape2, format=format, random_state=seed, density=0.5)
-    ys = sparse.random(shape1, format=format, random_state=seed, density=0.5)
+    xs = sparse.random(shape1, format=format, random_state=seed, density=0.5)
+    ys = sparse.random(shape2, format=format, random_state=seed, density=0.5)
 
     x = xs.todense()
     y = ys.todense()
