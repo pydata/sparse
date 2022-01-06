@@ -375,6 +375,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         GCXS
             A new instance of the input array with compression along the specified dimensions.
         """
+        if new_compressed_axes == self.compressed_axes:
+            return self
+
         if self.ndim == 1:
             raise NotImplementedError("no axes to compress for 1d array")
 
@@ -411,7 +414,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         """
         if self.ndim == 0:
             return COO(
-                np.array([])[None],
+                np.array([]),
                 self.data,
                 shape=self.shape,
                 fill_value=self.fill_value,
