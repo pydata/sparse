@@ -311,7 +311,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     @property
     def _compressed_shape(self):
         row_size = np.prod(self._reordered_shape[: self._axisptr])
-        col_size = np.prod(self._reordered_shape[self._axisptr :])
+        col_size = np.prod(self._reordered_shape[self._axisptr:])
         return (row_size, col_size)
 
     @property
@@ -411,7 +411,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         """
         if self.ndim == 0:
             return COO(
-                np.array([])[None],
+                np.array([]),
                 self.data,
                 shape=self.shape,
                 fill_value=self.fill_value,
