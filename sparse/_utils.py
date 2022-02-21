@@ -301,18 +301,18 @@ def equivalent(x, y):
 # copied from zarr
 # See https://github.com/zarr-developers/zarr-python/blob/master/zarr/util.py
 def human_readable_size(size):
-    if size < 2 ** 10:
+    if size < 2**10:
         return "%s" % size
-    elif size < 2 ** 20:
-        return "%.1fK" % (size / float(2 ** 10))
-    elif size < 2 ** 30:
-        return "%.1fM" % (size / float(2 ** 20))
-    elif size < 2 ** 40:
-        return "%.1fG" % (size / float(2 ** 30))
-    elif size < 2 ** 50:
-        return "%.1fT" % (size / float(2 ** 40))
+    elif size < 2**20:
+        return "%.1fK" % (size / float(2**10))
+    elif size < 2**30:
+        return "%.1fM" % (size / float(2**20))
+    elif size < 2**40:
+        return "%.1fG" % (size / float(2**30))
+    elif size < 2**50:
+        return "%.1fT" % (size / float(2**40))
     else:
-        return "%.1fP" % (size / float(2 ** 50))
+        return "%.1fP" % (size / float(2**50))
 
 
 def html_table(arr):
