@@ -694,10 +694,10 @@ def test_scalar_exponentiation():
     a = sparse.random((2, 3, 4), density=0.5)
     x = a.todense()
 
-    assert_eq(x ** 2, a ** 2)
-    assert_eq(x ** 0.5, a ** 0.5)
+    assert_eq(x**2, a**2)
+    assert_eq(x**0.5, a**0.5)
 
-    assert_eq(x ** -1, a ** -1)
+    assert_eq(x**-1, a**-1)
 
 
 def test_create_with_lists_of_tuples():

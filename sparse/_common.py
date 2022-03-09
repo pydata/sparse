@@ -490,13 +490,13 @@ def _dot(a, b, return_type=None):
         return out
 
     if isinstance(a, np.ndarray) and isinstance(b, COO):
-        b = b.T
         a = a.view(type=np.ndarray)
 
         if return_type is None or return_type == np.ndarray:
             return _dot_ndarray_coo_type(a.dtype, b.dtype)(
                 a, b.coords, b.data, out_shape
             )
+        b = b.T
         coords, data = _dot_ndarray_coo_type_sparse(a.dtype, b.dtype)(
             a, b.coords, b.data, out_shape
         )
@@ -1148,8 +1148,8 @@ def _dot_ndarray_coo_type(dt1, dt2):
 
         for oidx1 in range(out_shape[0]):
             for didx2 in range(len(data2)):
-                oidx2 = coords2[0, didx2]
-                out[oidx1, oidx2] += array1[oidx1, coords2[1, didx2]] * data2[didx2]
+                oidx2 = coords2[1, didx2]
+                out[oidx1, oidx2] += array1[oidx1, coords2[0, didx2]] * data2[didx2]
 
         return out
 

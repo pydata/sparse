@@ -5,7 +5,7 @@ General Guidelines
 ------------------
 
 sparse is a community-driven project on GitHub. You can find our
-`repository on GitHub <https://github.com/pydata/sparse>`_. Feel
+`repository on GitHub <:ghuser:`pydata/sparse`>`_. Feel
 free to open issues for new features or bugs, or open a pull request
 to fix a bug or add a new feature.
 
@@ -22,7 +22,7 @@ Filing Issues
 -------------
 
 If you find a bug or would like a new feature, you might want to `consider
-filing a new issue on GitHub <https://github.com/pydata/sparse/issues>`_. Before
+filing a new issue on GitHub <:ghuser:`pydata/sparse/issues`>`_. Before
 you open a new issue, please make sure of the following:
 
 * This should go without saying, but make sure what you are requesting is within
