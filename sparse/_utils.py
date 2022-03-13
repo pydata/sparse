@@ -78,11 +78,22 @@ def _zero_of_dtype(dtype):
 
 
 @numba.jit(nopython=True, nogil=True)
-def algD(n, N, random_state):
+def algD(n, N, random_state=None):
+    """
+    Random Sampling without Replacement
+    Alg D proposed by J.S. Vitter in Faster Methods for Random Sampling
+    Parameters:
+        n = sample size (nnz)
+        N = size of system (elements)
+        random_state = seed for random number generation
+    """
+
+    if random_state != None:
+        np.random.seed(random_state)
     n = np.int64(n + 1)
     N = np.int64(N)
     qu1 = N - n + 1
-    Vprime = np.exp(np.log(random_state.rand()) / n)
+    Vprime = np.exp(np.log(np.random.rand()) / n)
     a = False
     b = False
     i = 0
@@ -93,11 +104,11 @@ def algD(n, N, random_state):
         while a == False:
             while b == False:
                 X = N * (1 - Vprime)
-                S = np.floor(X)
+                S = np.int64(X)
                 if S < qu1:
                     break
-                Vprime = np.exp(np.log(random_state.rand()) / n)
-            U = random_state.rand()
+                Vprime = np.exp(np.log(np.random.rand()) / n)
+            U = np.random.rand()
             y1 = np.exp(np.log(U * N / qu1) * (1 / (n - 1)))
             Vprime = y1 * (1 - X / N) * (qu1 / (qu1 - S))
             if Vprime <= 1:
@@ -118,9 +129,9 @@ def algD(n, N, random_state):
                 bottom -= 1
                 t -= 1
             if N / (N - X) >= y1 * np.exp(np.log(y2) / (1 / (n - 1))):
-                Vprime = np.exp(np.log(random_state.rand()) * (1 / (n - 1)))
+                Vprime = np.exp(np.log(np.random.rand()) * (1 / (n - 1)))
                 break
-            Vprime = np.exp(np.log(random_state.rand()) / n)
+            Vprime = np.exp(np.log(np.random.rand()) / n)
         arr[i] = arr[i - 1] + S + 1
         i += 1
         N = N - S - 1
@@ -130,7 +141,17 @@ def algD(n, N, random_state):
 
 
 @numba.jit(nopython=True, nogil=True)
-def algA(n, N, random_state):
+def algA(n, N, random_state=None):
+    """
+    Random Sampling without Replacement
+    Alg A proposed by J.S. Vitter in Faster Methods for Random Sampling
+    Parameters:
+        n = sample size (nnz)
+        N = size of system (elements)
+        random_state = seed for random number generation
+    """
+    if random_state != None:
+        np.random.seed(random_state)
     n = np.int64(n)
     N = np.int64(N)
     arr = np.zeros(n, dtype=np.int64)
@@ -138,7 +159,7 @@ def algA(n, N, random_state):
     i = 0
     top = N - n
     while n >= 2:
-        V = random_state.rand()
+        V = np.random.rand()
         S = 0
         quot = top / N
         while quot > V:
@@ -150,7 +171,7 @@ def algA(n, N, random_state):
         i += 1
         N -= 1
         n -= 1
-    S = np.floor(N * random_state.rand())
+    S = np.int64(N * np.random.rand())
     arr[i] = arr[i - 1] + S + 1
     i += 1
     return arr
@@ -158,6 +179,12 @@ def algA(n, N, random_state):
 
 @numba.jit(nopython=True, nogil=True)
 def reverse(inv, N):
+    """
+    If density of random matrix is greater than .5, it is faster to sample states not included
+    Parameters:
+        arr = np.array(np.int64) of indices to be excluded from sample
+        N = size of the system (elements)
+    """
     N = np.int64(N)
     a = np.zeros(np.int64(N - len(inv)), dtype=np.int64)
     j = 0
@@ -223,6 +250,19 @@ def random(
 
     Examples
     --------
+    >>> from sparse import random
+    >>> from scipy import stats
+    >>> rvs = lambda x: stats.poisson(25, loc=10).rvs(x, random_state=np.random.RandomState(1))
+    >>> s = random((2, 3, 4), density=0.25, random_state=np.random.RandomState(1), data_rvs=rvs)
+    >>> s.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[[ 0,  0,  0,  34],
+            [ 0,  0,  0,  29],
+            [ 0,  0,  0,  0]],
+    <BLANKLINE>
+           [[ 0, 30,  0, 33],
+            [ 0, 34,  0, 34],
+            [ 0,  0,  0,  0]]])
+
     """
     # Copied, in large part, from scipy.sparse.random
     # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
@@ -261,14 +301,20 @@ def random(
     elif nnz > elements / 2:
         nnztemp = elements - nnz
         if elements > 10 * nnz:
-            ind = reverse(algD(nnztemp, elements, random_state), elements)
+            ind = reverse(
+                algD(nnztemp, elements, random_state.choice(np.iinfo(np.int64).max)),
+                elements,
+            )
         else:
-            ind = reverse(algA(nnztemp, elements, random_state), elements)
+            ind = reverse(
+                algA(nnztemp, elements, random_state.choice(np.iinfo(np.int64).max)),
+                elements,
+            )
     else:
         if elements > 10 * nnz:
-            ind = algD(nnz, elements, random_state)
+            ind = algD(nnz, elements, random_state.choice(np.iinfo(np.int64).max))
         else:
-            ind = algA(nnz, elements, random_state)
+            ind = algA(nnz, elements, random_state.choice(np.iinfo(np.int64).max))
 
     data = data_rvs(nnz)
 
