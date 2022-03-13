@@ -254,7 +254,9 @@ def random(
         data_rvs = random_state.rand
 
     # Use the algorithm from python's random.sample for k < mn/3.
-    if nnz == 1:
+    if nnz == elements or density >= 1:
+        ind = np.arange(elements)
+    elif nnz < 2:
         ind = random_state.choice(elements, nnz)
     elif nnz > elements / 2:
         nnztemp = elements - nnz
