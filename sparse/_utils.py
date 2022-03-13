@@ -5,6 +5,7 @@ from functools import reduce
 
 import operator
 import numpy as np
+import numba
 
 
 def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
@@ -76,6 +77,103 @@ def _zero_of_dtype(dtype):
     return np.zeros((), dtype=dtype)[()]
 
 
+@numba.jit(nopython=True, nogil=True)
+def algD(n, N, random_state):
+    n = np.int64(n + 1)
+    N = np.int64(N)
+    qu1 = N - n + 1
+    Vprime = np.exp(np.log(random_state.rand()) / n)
+    a = False
+    b = False
+    i = 0
+    arr = np.zeros(n - 1, dtype=np.int64)
+    arr[-1] = -1
+    while n > 1:
+        nmin1inv = 1 / (n - 1)
+        while a == False:
+            while b == False:
+                X = N * (1 - Vprime)
+                S = np.floor(X)
+                if S < qu1:
+                    break
+                Vprime = np.exp(np.log(random_state.rand()) / n)
+            U = random_state.rand()
+            y1 = np.exp(np.log(U * N / qu1) * (1 / (n - 1)))
+            Vprime = y1 * (1 - X / N) * (qu1 / (qu1 - S))
+            if Vprime <= 1:
+                break
+            y2 = 1
+            top = N - 1
+            if n - 1 > S:
+                bottom = N - n
+                limit = N - S
+            else:
+                bottom = N - S - 1
+                limit = qu1
+
+            t = N - 1
+            while t >= limit:
+                y2 *= top / bottom
+                top -= 1
+                bottom -= 1
+                t -= 1
+            if N / (N - X) >= y1 * np.exp(np.log(y2) / (1 / (n - 1))):
+                Vprime = np.exp(np.log(random_state.rand()) * (1 / (n - 1)))
+                break
+            Vprime = np.exp(np.log(random_state.rand()) / n)
+        arr[i] = arr[i - 1] + S + 1
+        i += 1
+        N = N - S - 1
+        n -= 1
+        qu1 = qu1 - S
+    return arr
+
+
+@numba.jit(nopython=True, nogil=True)
+def algA(n, N, random_state):
+    n = np.int64(n)
+    N = np.int64(N)
+    arr = np.zeros(n, dtype=np.int64)
+    arr[-1] = -1
+    i = 0
+    top = N - n
+    while n >= 2:
+        V = random_state.rand()
+        S = 0
+        quot = top / N
+        while quot > V:
+            S += 1
+            top -= 1
+            N -= 1
+            quot *= top / N
+        arr[i] = arr[i - 1] + S + 1
+        i += 1
+        N -= 1
+        n -= 1
+    S = np.floor(N * random_state.rand())
+    arr[i] = arr[i - 1] + S + 1
+    i += 1
+    return arr
+
+
+@numba.jit(nopython=True, nogil=True)
+def reverse(inv, N):
+    N = np.int64(N)
+    a = np.zeros(np.int64(N - len(inv)), dtype=np.int64)
+    j = 0
+    k = 0
+    for i in range(N):
+        if j == len(inv):
+            a[k:] = np.arange(i, N)
+            break
+        elif i == inv[j]:
+            j += 1
+        else:
+            a[k] = i
+            k += 1
+    return a
+
+
 def random(
     shape,
     density=None,
@@ -125,19 +223,6 @@ def random(
 
     Examples
     --------
-    >>> from sparse import random
-    >>> from scipy import stats
-    >>> rvs = lambda x: stats.poisson(25, loc=10).rvs(x, random_state=np.random.RandomState(1))
-    >>> s = random((2, 3, 4), density=0.25, random_state=np.random.RandomState(1), data_rvs=rvs)
-    >>> s.todense()  # doctest: +NORMALIZE_WHITESPACE
-    array([[[ 0,  0,  0,  0],
-            [ 0, 34,  0,  0],
-            [33, 34,  0, 29]],
-    <BLANKLINE>
-           [[30,  0,  0, 34],
-            [ 0,  0,  0,  0],
-            [ 0,  0,  0,  0]]])
-
     """
     # Copied, in large part, from scipy.sparse.random
     # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
@@ -169,17 +254,19 @@ def random(
         data_rvs = random_state.rand
 
     # Use the algorithm from python's random.sample for k < mn/3.
-    if elements < 3 * nnz:
-        ind = random_state.choice(elements, size=nnz, replace=False)
+    if nnz == 1:
+        ind = random_state.choice(elements, nnz)
+    elif nnz > elements / 2:
+        nnztemp = elements - nnz
+        if elements > 10 * nnz:
+            ind = reverse(algD(nnztemp, elements, random_state), elements)
+        else:
+            ind = reverse(algA(nnztemp, elements, random_state), elements)
     else:
-        ind = np.empty(nnz, dtype=np.min_scalar_type(elements - 1))
-        selected = set()
-        for i in range(nnz):
-            j = random_state.randint(elements)
-            while j in selected:
-                j = random_state.randint(elements)
-            selected.add(j)
-            ind[i] = j
+        if elements > 10 * nnz:
+            ind = algD(nnz, elements, random_state)
+        else:
+            ind = algA(nnz, elements, random_state)
 
     data = data_rvs(nnz)
 
