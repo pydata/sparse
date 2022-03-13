@@ -300,21 +300,21 @@ def random(
         ind = random_state.choice(elements, nnz)
     elif nnz > elements / 2:
         nnztemp = elements - nnz
-        if elements > 10 * nnz:
+        if elements > 10 * nnztemp:
             ind = reverse(
-                algD(nnztemp, elements, random_state.choice(np.iinfo(np.int64).max)),
+                algD(nnztemp, elements, random_state.choice(np.iinfo(np.int32).max)),
                 elements,
             )
         else:
             ind = reverse(
-                algA(nnztemp, elements, random_state.choice(np.iinfo(np.int64).max)),
+                algA(nnztemp, elements, random_state.choice(np.iinfo(np.int32).max)),
                 elements,
             )
     else:
         if elements > 10 * nnz:
-            ind = algD(nnz, elements, random_state.choice(np.iinfo(np.int64).max))
+            ind = algD(nnz, elements, random_state.choice(np.iinfo(np.int32).max))
         else:
-            ind = algA(nnz, elements, random_state.choice(np.iinfo(np.int64).max))
+            ind = algA(nnz, elements, random_state.choice(np.iinfo(np.int32).max))
 
     data = data_rvs(nnz)
 
