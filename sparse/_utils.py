@@ -255,12 +255,12 @@ def random(
     >>> rvs = lambda x: stats.poisson(25, loc=10).rvs(x, random_state=np.random.RandomState(1))
     >>> s = random((2, 3, 4), density=0.25, random_state=np.random.RandomState(1), data_rvs=rvs)
     >>> s.todense()  # doctest: +NORMALIZE_WHITESPACE
-    array([[[ 0,  0,  0,  34],
-            [ 0,  0,  0,  29],
+    array([[[ 0,  0,  0,   0],
+            [34,  0, 29,  30],
             [ 0,  0,  0,  0]],
     <BLANKLINE>
-           [[ 0, 30,  0, 33],
-            [ 0, 34,  0, 34],
+           [[33,  0,  0, 34],
+            [34,  0,  0,  0],
             [ 0,  0,  0,  0]]])
 
     """
