@@ -108,8 +108,7 @@ def algD(n, N, random_state=None):
                 if S < qu1:
                     break
                 Vprime = np.exp(np.log(np.random.rand()) / n)
-            U = np.random.rand()
-            y1 = np.exp(np.log(U * N / qu1) * (1 / (n - 1)))
+            y1 = np.exp(np.log(np.random.rand() * N / qu1) * nmin1inv)
             Vprime = y1 * (1 - X / N) * (qu1 / (qu1 - S))
             if Vprime <= 1:
                 break
@@ -128,8 +127,8 @@ def algD(n, N, random_state=None):
                 top -= 1
                 bottom -= 1
                 t -= 1
-            if N / (N - X) >= y1 * np.exp(np.log(y2) / (1 / (n - 1))):
-                Vprime = np.exp(np.log(np.random.rand()) * (1 / (n - 1)))
+            if N / (N - X) >= y1 * np.exp(np.log(y2) / nmin1inv):
+                Vprime = np.exp(np.log(np.random.rand()) * nmin1inv)
                 break
             Vprime = np.exp(np.log(np.random.rand()) / n)
         arr[i] = arr[i - 1] + S + 1
