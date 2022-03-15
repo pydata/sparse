@@ -94,15 +94,13 @@ def algD(n, N, random_state=None):
     N = np.int64(N)
     qu1 = N - n + 1
     Vprime = np.exp(np.log(np.random.rand()) / n)
-    a = False
-    b = False
     i = 0
     arr = np.zeros(n - 1, dtype=np.int64)
     arr[-1] = -1
     while n > 1:
         nmin1inv = 1 / (n - 1)
-        while a == False:
-            while b == False:
+        while True:
+            while True:
                 X = N * (1 - Vprime)
                 S = np.int64(X)
                 if S < qu1:
@@ -292,13 +290,16 @@ def random(
     if data_rvs is None:
         data_rvs = random_state.rand
 
-    # Use the algorithm from python's random.sample for k < mn/3.
     if nnz == elements or density >= 1:
         ind = np.arange(elements)
     elif nnz < 2:
         ind = random_state.choice(elements, nnz)
+    # Faster to find non-sampled indices and remove them for dens > .5
+    elif elements - nnz < 2:
+        ind = reverse(random_state.choice(elements, elements - nnz), elements)
     elif nnz > elements / 2:
         nnztemp = elements - nnz
+        # Using algorithm A for dens > .1
         if elements > 10 * nnztemp:
             ind = reverse(
                 algD(nnztemp, elements, random_state.choice(np.iinfo(np.int32).max)),
@@ -314,7 +315,6 @@ def random(
             ind = algD(nnz, elements, random_state.choice(np.iinfo(np.int32).max))
         else:
             ind = algA(nnz, elements, random_state.choice(np.iinfo(np.int32).max))
-
     data = data_rvs(nnz)
 
     ar = COO(
