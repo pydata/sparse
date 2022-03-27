@@ -1672,3 +1672,10 @@ def test_scalar_elemwise():
     x1 = s1.todense()
 
     assert_eq(s1 * x2, x1 * x2)
+
+
+def test_array_as_shape():
+    coords = [[0, 1, 2, 3, 4], [0, 1, 2, 3, 4]]
+    data = [10, 20, 30, 40, 50]
+
+    s = sparse.COO(coords, data, shape=np.array((5, 5)))
