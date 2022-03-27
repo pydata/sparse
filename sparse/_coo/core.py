@@ -241,12 +241,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if self.data.ndim != 1:
             raise ValueError("data must be a scalar or 1-dimensional.")
 
-        if shape and not self.coords.size:
-            self.coords = np.zeros(
-                (len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp
-            )
-
         if shape is None:
+            warnings.warn(
+                "shape should be provided. This will raise a ValueError in the future.",
+                DeprecationWarning,
+            )
             if self.coords.nbytes:
                 shape = tuple((self.coords.max(axis=1) + 1))
             else:
@@ -254,6 +253,18 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         if not isinstance(shape, Iterable):
             shape = (shape,)
+
+        if isinstance(shape, np.ndarray):
+            shape = tuple(shape)
+
+        if shape and not self.coords.size:
+            warnings.warn(
+                "coords should be an ndarray. This will raise a ValueError in the future.",
+                DeprecationWarning,
+            )
+            self.coords = np.zeros(
+                (len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp
+            )
 
         super().__init__(shape, fill_value=fill_value)
         if idx_dtype:
