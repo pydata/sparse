@@ -369,8 +369,7 @@ class SparseArray:
             )
         else:
             data = method(
-                data,
-                reduce_super_ufunc(self.fill_value, n_cols - counts),
+                data, reduce_super_ufunc(self.fill_value, n_cols - counts),
             ).astype(data.dtype)
             result_fill_value = reduce_super_ufunc(self.fill_value, n_cols)
 

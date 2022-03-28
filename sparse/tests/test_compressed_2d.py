@@ -1,15 +1,15 @@
 import numpy as np
 from numpy.core.numeric import indices
 import pytest
+from hypothesis import settings, given, strategies as st
 import scipy.sparse
-from scipy.sparse import data
-from scipy.sparse.construct import random
 import scipy.stats
 
 import sparse
 from sparse import COO
 from sparse._compressed.compressed import GCXS, CSR, CSC
 from sparse._utils import assert_eq
+from _utils import gen_sparse_random, gen_sparse_random_from
 
 
 @pytest.fixture(scope="module", params=[CSR, CSC])
@@ -60,23 +60,26 @@ def test_bad_constructor_input(cls):
         cls(arg="hello world")
 
 
-@pytest.mark.parametrize("n", [0, 1, 3])
+@given(n=st.sampled_from([0, 1, 3]))
 def test_bad_nd_input(cls, n):
     a = np.ones(shape=tuple(5 for _ in range(n)))
     with pytest.raises(ValueError, match=f"{n}-d"):
         cls(a)
 
 
-@pytest.mark.parametrize("source_type", ["gcxs", "coo"])
-def test_from_sparse(cls, source_type):
-    gcxs = sparse.random((20, 30), density=0.25, format=source_type)
+@settings(deadline=None)
+@given(gcxs=gen_sparse_random_from((20, 30), density=0.25))
+def test_from_sparse(cls, gcxs):
     result = cls(gcxs)
 
     assert_eq(result, gcxs)
 
 
-@pytest.mark.parametrize("scipy_type", ["coo", "csr", "csc", "lil"])
-@pytest.mark.parametrize("CLS", [CSR, CSC, GCXS])
+@settings(deadline=None)
+@given(
+    scipy_type=st.sampled_from(["coo", "csr", "csc", "lil"]),
+    CLS=st.sampled_from([CSR, CSC, GCXS]),
+)
 def test_from_scipy_sparse(scipy_type, CLS, dtype):
     orig = scipy.sparse.random(20, 30, density=0.2, format=scipy_type, dtype=dtype)
     ref = COO.from_scipy_sparse(orig)
@@ -89,18 +92,29 @@ def test_from_scipy_sparse(scipy_type, CLS, dtype):
     assert_eq(ref, result_via_init)
 
 
-@pytest.mark.parametrize("cls_str", ["coo", "dok", "csr", "csc", "gcxs"])
-def test_to_sparse(cls_str, random_sparse):
-    result = random_sparse.asformat(cls_str)
+@settings(deadline=None)
+@given(
+    cls_str=st.sampled_from(["coo", "dok", "csr", "csc", "gcxs"]),
+    rs=gen_sparse_random((20, 30), density=0.25),
+)
+def test_to_sparse(cls_str, rs):
+    result = rs.asformat(cls_str)
 
-    assert_eq(random_sparse, result)
+    assert_eq(rs, result)
 
 
-@pytest.mark.parametrize("copy", [True, False])
-def test_transpose(random_sparse, copy):
+@settings(deadline=None)
+@given(
+    cls_str=st.sampled_from(["csr", "csc"]),
+    copy=st.sampled_from([True, False]),
+    rs=gen_sparse_random((20, 30), density=0.25),
+)
+def test_transpose(cls_str, copy, rs):
     from operator import is_, is_not
 
-    t = random_sparse.transpose(copy=copy)
+    rs = rs.asformat(cls_str)
+
+    t = rs.transpose(copy=copy)
     tt = t.transpose(copy=copy)
 
     # Check if a copy was made
@@ -109,16 +123,17 @@ def test_transpose(random_sparse, copy):
     else:
         check = is_
 
-    assert check(random_sparse.data, t.data)
-    assert check(random_sparse.indices, t.indices)
-    assert check(random_sparse.indptr, t.indptr)
+    assert check(rs.data, t.data)
+    assert check(rs.indices, t.indices)
+    assert check(rs.indptr, t.indptr)
 
-    assert random_sparse.shape == t.shape[::-1]
+    assert rs.shape == t.shape[::-1]
 
-    assert_eq(random_sparse, tt)
-    assert type(random_sparse) == type(tt)
+    assert_eq(rs, tt)
+    assert type(rs) == type(tt)
 
 
-def test_transpose_error(random_sparse):
+@given(rs=gen_sparse_random((20, 30), density=0.25))
+def test_transpose_error(rs):
     with pytest.raises(ValueError):
-        random_sparse.transpose(axes=1)
+        rs.transpose(axes=1)

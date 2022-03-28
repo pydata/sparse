@@ -6,6 +6,7 @@ from functools import reduce
 
 import numpy as np
 import pytest
+from hypothesis import settings, given, strategies as st
 import scipy.sparse
 import scipy.stats
 
@@ -13,6 +14,14 @@ import sparse
 from sparse import COO
 from sparse._settings import NEP18_ENABLED
 from sparse._utils import assert_eq, random_value_array, html_table
+from _utils import (
+    gen_sparse_random,
+    gen_sparse_random_nan_reduction,
+    gen_sparse_random_kron_a,
+    gen_sparse_random_kron_b,
+    gen_sparse_random_three,
+    gen_sparse_random_outer,
+)
 
 
 @pytest.fixture(scope="module", params=["f8", "f4", "i8", "i4"])
@@ -41,11 +50,14 @@ def random_sparse_small(request):
     return sparse.random((20, 30, 40), density=0.25, data_rvs=data_rvs).astype(dtype)
 
 
+@settings(deadline=None)
 @pytest.mark.parametrize(
     "reduction, kwargs", [("sum", {}), ("sum", {"dtype": np.float32}), ("prod", {})]
 )
-@pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2), -3, (1, -1)])
-@pytest.mark.parametrize("keepdims", [True, False])
+@given(
+    axis=st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)]),
+    keepdims=st.sampled_from([True, False]),
+)
 def test_reductions_fv(reduction, random_sparse_small, axis, keepdims, kwargs):
     x = random_sparse_small + np.random.randint(-1, 1, dtype="i4")
     y = x.todense()
@@ -54,6 +66,7 @@ def test_reductions_fv(reduction, random_sparse_small, axis, keepdims, kwargs):
     assert_eq(xx, yy)
 
 
+@settings(deadline=None)
 @pytest.mark.parametrize(
     "reduction, kwargs",
     [
@@ -68,10 +81,12 @@ def test_reductions_fv(reduction, random_sparse_small, axis, keepdims, kwargs):
         ("var", {}),
     ],
 )
-@pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2), -3, (1, -1)])
-@pytest.mark.parametrize("keepdims", [True, False])
-def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
-    x = random_sparse
+@given(
+    axis=st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)]),
+    keepdims=st.sampled_from([True, False]),
+    x=gen_sparse_random((20, 30, 40), density=0.25),
+)
+def test_reductions(reduction, x, axis, keepdims, kwargs):
     y = x.todense()
     xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
@@ -82,22 +97,25 @@ def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
     reason=("Setting output dtype=float16 produces results " "inconsistent with numpy")
 )
 @pytest.mark.filterwarnings("ignore:overflow")
-@pytest.mark.parametrize(
-    "reduction, kwargs",
-    [("sum", {"dtype": np.float16}), ("mean", {"dtype": np.float16})],
+@given(
+    x=gen_sparse_random((20, 30, 40)),
+    reduction=st.sampled_from(["sum", "mean"]),
+    kwargs=st.sampled_from([{"dtype": np.float16}]),
+    axis=st.sampled_from([None, 0, 1, 2, (0, 2)]),
 )
-@pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2)])
-def test_reductions_float16(random_sparse, reduction, kwargs, axis):
-    x = random_sparse
+def test_reductions_float16(x, reduction, kwargs, axis):
     y = x.todense()
     xx = getattr(x, reduction)(axis=axis, **kwargs)
     yy = getattr(y, reduction)(axis=axis, **kwargs)
     assert_eq(xx, yy, atol=1e-2)
 
 
-@pytest.mark.parametrize("reduction,kwargs", [("any", {}), ("all", {})])
-@pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2), -3, (1, -1)])
-@pytest.mark.parametrize("keepdims", [True, False])
+@given(
+    reduction=st.sampled_from(["any", "all"]),
+    kwargs=st.sampled_from([{}]),
+    axis=st.sampled_from([None, 0, 1, 2, (0, 2), -3, (1, -1)]),
+    keepdims=st.sampled_from([True, False]),
+)
 def test_reductions_bool(random_sparse, reduction, kwargs, axis, keepdims):
     y = np.zeros((2, 3, 4), dtype=bool)
     y[0] = True
@@ -108,6 +126,7 @@ def test_reductions_bool(random_sparse, reduction, kwargs, axis, keepdims):
     assert_eq(xx, yy)
 
 
+@settings(deadline=None)
 @pytest.mark.parametrize(
     "reduction,kwargs",
     [
@@ -120,10 +139,12 @@ def test_reductions_bool(random_sparse, reduction, kwargs, axis, keepdims):
         (np.min, {}),
     ],
 )
-@pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2), -1, (0, -1)])
-@pytest.mark.parametrize("keepdims", [True, False])
-def test_ufunc_reductions(random_sparse, reduction, kwargs, axis, keepdims):
-    x = random_sparse
+@given(
+    x=gen_sparse_random((20, 30, 40)),
+    axis=st.sampled_from([None, 0, 1, 2, (0, 2), -1, (0, -1)]),
+    keepdims=st.sampled_from([True, False]),
+)
+def test_ufunc_reductions(x, reduction, kwargs, axis, keepdims):
     y = x.todense()
     xx = reduction(x, axis=axis, keepdims=keepdims, **kwargs)
     yy = reduction(y, axis=axis, keepdims=keepdims, **kwargs)
@@ -133,6 +154,7 @@ def test_ufunc_reductions(random_sparse, reduction, kwargs, axis, keepdims):
         assert isinstance(xx, COO)
 
 
+@settings(deadline=None)
 @pytest.mark.parametrize(
     "reduction,kwargs",
     [
@@ -144,8 +166,8 @@ def test_ufunc_reductions(random_sparse, reduction, kwargs, axis, keepdims):
         (np.minimum.reduce, {"axis": 0}),
     ],
 )
-def test_ufunc_reductions_kwargs(reduction, kwargs):
-    x = sparse.random((2, 3, 4), density=0.5)
+@given(x=gen_sparse_random((2, 3, 4), density=0.5))
+def test_ufunc_reductions_kwargs(reduction, kwargs, x):
     y = x.todense()
     xx = reduction(x, **kwargs)
     yy = reduction(y, **kwargs)
@@ -155,26 +177,26 @@ def test_ufunc_reductions_kwargs(reduction, kwargs):
         assert isinstance(xx, COO)
 
 
-@pytest.mark.parametrize(
-    "reduction", ["nansum", "nanmean", "nanprod", "nanmax", "nanmin"]
+@settings(deadline=None)
+@given(
+    reduction=st.sampled_from(["nansum", "nanmean", "nanprod", "nanmax", "nanmin"]),
+    axis=st.sampled_from([None, 0, 1]),
+    keepdims=st.sampled_from([False]),
+    s=gen_sparse_random_nan_reduction((2, 3, 4), density=0.25),
 )
-@pytest.mark.parametrize("axis", [None, 0, 1])
-@pytest.mark.parametrize("keepdims", [False])
-@pytest.mark.parametrize("fraction", [0.25, 0.5, 0.75, 1.0])
 @pytest.mark.filterwarnings("ignore:All-NaN")
 @pytest.mark.filterwarnings("ignore:Mean of empty slice")
-def test_nan_reductions(reduction, axis, keepdims, fraction):
-    s = sparse.random(
-        (2, 3, 4), data_rvs=random_value_array(np.nan, fraction), density=0.25
-    )
+def test_nan_reductions(reduction, axis, keepdims, s):
     x = s.todense()
     expected = getattr(np, reduction)(x, axis=axis, keepdims=keepdims)
     actual = getattr(sparse, reduction)(s, axis=axis, keepdims=keepdims)
     assert_eq(expected, actual)
 
 
-@pytest.mark.parametrize("reduction", ["nanmax", "nanmin", "nanmean"])
-@pytest.mark.parametrize("axis", [None, 0, 1])
+@given(
+    reduction=st.sampled_from(["nanmax", "nanmin", "nanmean"]),
+    axis=st.sampled_from([None, 0, 1]),
+)
 def test_all_nan_reduction_warning(reduction, axis):
     x = random_value_array(np.nan, 1.0)(2 * 3 * 4).reshape(2, 3, 4)
     s = COO.from_numpy(x)
@@ -183,33 +205,35 @@ def test_all_nan_reduction_warning(reduction, axis):
         getattr(sparse, reduction)(s, axis=axis)
 
 
-@pytest.mark.parametrize(
-    "axis",
-    [None, (1, 2, 0), (2, 1, 0), (0, 1, 2), (0, 1, -1), (0, -2, -1), (-3, -2, -1)],
+@given(
+    axis=st.sampled_from(
+        [None, (1, 2, 0), (2, 1, 0), (0, 1, 2), (0, 1, -1), (0, -2, -1), (-3, -2, -1)]
+    ),
+    x=gen_sparse_random((2, 3, 4), density=0.25),
 )
-def test_transpose(axis):
-    x = sparse.random((2, 3, 4), density=0.25)
+def test_transpose(axis, x):
     y = x.todense()
     xx = x.transpose(axis)
     yy = y.transpose(axis)
     assert_eq(xx, yy)
 
 
-@pytest.mark.parametrize(
-    "axis",
-    [
-        (0, 1),  # too few
-        (0, 1, 2, 3),  # too many
-        (3, 1, 0),  # axis 3 illegal
-        (0, -1, -4),  # axis -4 illegal
-        (0, 0, 1),  # duplicate axis 0
-        (0, -1, 2),  # duplicate axis -1 == 2
-        0.3,  # Invalid type in axis
-        ((0, 1, 2),),  # Iterable inside iterable
-    ],
+@given(
+    axis=st.sampled_from(
+        [
+            (0, 1),  # too few
+            (0, 1, 2, 3),  # too many
+            (3, 1, 0),  # axis 3 illegal
+            (0, -1, -4),  # axis -4 illegal
+            (0, 0, 1),  # duplicate axis 0
+            (0, -1, 2),  # duplicate axis -1 == 2
+            0.3,  # Invalid type in axis
+            ((0, 1, 2),),  # Iterable inside iterable
+        ]
+    ),
+    x=gen_sparse_random((2, 3, 4), density=0.25),
 )
-def test_transpose_error(axis):
-    x = sparse.random((2, 3, 4), density=0.25)
+def test_transpose_error(axis, x):
 
     with pytest.raises(ValueError):
         x.transpose(axis)
@@ -243,26 +267,30 @@ def test_resize(a, b):
     assert_eq(x, s)
 
 
-def test_resize_upcast():
-    s = sparse.random((10, 10, 10), density=0.5, format="coo", idx_dtype=np.uint8)
+@given(gen_sparse_random((10, 10, 10), density=0.5, format="coo", idx_dtype=np.uint8))
+def test_resize_upcast(s):
     s.resize(600)
     assert s.coords.dtype == np.uint16
 
 
-@pytest.mark.parametrize("axis1", [-3, -2, -1, 0, 1, 2])
-@pytest.mark.parametrize("axis2", [-3, -2, -1, 0, 1, 2])
-def test_swapaxes(axis1, axis2):
-    x = sparse.random((2, 3, 4), density=0.25)
+@given(
+    axis1=st.sampled_from([-3, -2, -1, 0, 1, 2]),
+    axis2=st.sampled_from([-3, -2, -1, 0, 1, 2]),
+    x=gen_sparse_random((2, 3, 4), density=0.25),
+)
+def test_swapaxes(axis1, axis2, x):
     y = x.todense()
     xx = x.swapaxes(axis1, axis2)
     yy = y.swapaxes(axis1, axis2)
     assert_eq(xx, yy)
 
 
-@pytest.mark.parametrize("axis1", [-4, 3])
-@pytest.mark.parametrize("axis2", [-4, 3, 0])
-def test_swapaxes_error(axis1, axis2):
-    x = sparse.random((2, 3, 4), density=0.25)
+@given(
+    axis1=(st.sampled_from([-4, 3])),
+    axis2=st.sampled_from([-4, 3, 0]),
+    x=gen_sparse_random((2, 3, 4), density=0.25),
+)
+def test_swapaxes_error(axis1, axis2, x):
 
     with pytest.raises(ValueError):
         x.swapaxes(axis1, axis2)
@@ -281,8 +309,8 @@ def test_swapaxes_error(axis1, axis2):
         [(0, 1, 2), (-2, -3, -1)],
     ],
 )
-def test_moveaxis(source, destination):
-    x = sparse.random((2, 3, 4, 5), density=0.25)
+@given(x=gen_sparse_random((2, 3, 4, 5), density=0.25))
+def test_moveaxis(source, destination, x):
     y = x.todense()
     xx = sparse.moveaxis(x, source, destination)
     yy = np.moveaxis(y, source, destination)
@@ -292,8 +320,8 @@ def test_moveaxis(source, destination):
 @pytest.mark.parametrize(
     "source, destination", [[0, -4], [(0, 5), (1, 2)], [(0, 1, 2), (2, 1)]]
 )
-def test_moveaxis_error(source, destination):
-    x = sparse.random((2, 3, 4), density=0.25)
+@given(x=gen_sparse_random((2, 3, 4), density=0.25))
+def test_moveaxis_error(source, destination, x):
 
     with pytest.raises(ValueError):
         sparse.moveaxis(x, source, destination)
@@ -362,14 +390,13 @@ def test_large_reshape():
     assert_eq(x, x.reshape(x.shape))
 
 
-def test_reshape_same():
-    s = sparse.random((3, 5), density=0.5)
-
+@given(s=gen_sparse_random((3, 5), density=0.5))
+def test_reshape_same(s):
     assert s.reshape(s.shape) is s
 
 
-def test_reshape_function():
-    s = sparse.random((5, 3), density=0.5)
+@given(gen_sparse_random((5, 3), density=0.5))
+def test_reshape_function(s):
     x = s.todense()
     shape = (3, 5)
 
@@ -378,28 +405,24 @@ def test_reshape_function():
     assert_eq(s2, x.reshape(shape))
 
 
-def test_reshape_upcast():
-    a = sparse.random((10, 10, 10), density=0.5, format="coo", idx_dtype=np.uint8)
+@given(gen_sparse_random((10, 10, 10), density=0.5, format="coo", idx_dtype=np.uint8))
+def test_reshape_upcast(a):
     assert a.reshape(1000).coords.dtype == np.uint16
 
 
-def test_to_scipy_sparse():
-    s = sparse.random((3, 5), density=0.5)
+@given(gen_sparse_random((3, 5), density=0.5))
+def test_to_scipy_sparse(s):
     a = s.to_scipy_sparse()
     b = scipy.sparse.coo_matrix(s.todense())
 
     assert_eq(a, b)
 
 
-@pytest.mark.parametrize("a_ndim", [1, 2, 3])
-@pytest.mark.parametrize("b_ndim", [1, 2, 3])
-def test_kron(a_ndim, b_ndim):
-    a_shape = (2, 3, 4)[:a_ndim]
-    b_shape = (5, 6, 7)[:b_ndim]
-
-    sa = sparse.random(a_shape, density=0.5)
+@given(
+    sa=gen_sparse_random_kron_a(density=0.5), sb=gen_sparse_random_kron_b(density=0.5)
+)
+def test_kron(sa, sb):
     a = sa.todense()
-    sb = sparse.random(b_shape, density=0.5)
     b = sb.todense()
 
     sol = np.kron(a, b)
@@ -411,13 +434,14 @@ def test_kron(a_ndim, b_ndim):
         assert_eq(sparse.kron(a, b), sol)
 
 
-@pytest.mark.parametrize(
-    "a_spmatrix, b_spmatrix", [(True, True), (True, False), (False, True)]
+@given(
+    a_spmatrix=st.sampled_from([True, False]),
+    b_spmatrix=st.sampled_from([True, False]),
+    sa=gen_sparse_random((3, 4), density=0.5),
+    sb=gen_sparse_random((5, 6), density=0.5),
 )
-def test_kron_spmatrix(a_spmatrix, b_spmatrix):
-    sa = sparse.random((3, 4), density=0.5)
+def test_kron_spmatrix(a_spmatrix, b_spmatrix, sa, sb):
     a = sa.todense()
-    sb = sparse.random((5, 6), density=0.5)
     b = sb.todense()
 
     if a_spmatrix:
@@ -435,7 +459,7 @@ def test_kron_spmatrix(a_spmatrix, b_spmatrix):
         assert_eq(sparse.kron(a, b), sol)
 
 
-@pytest.mark.parametrize("ndim", [1, 2, 3])
+@given(ndim=st.sampled_from([1, 2, 3]))
 def test_kron_scalar(ndim):
     if ndim:
         a_shape = (3, 4, 5)[:ndim]
@@ -450,8 +474,8 @@ def test_kron_scalar(ndim):
     assert_eq(sparse.kron(scalar, sa), sol)
 
 
-def test_gt():
-    s = sparse.random((2, 3, 4), density=0.5)
+@given(gen_sparse_random((2, 3, 4), density=0.5))
+def test_gt(s):
     x = s.todense()
 
     m = x.mean()
@@ -462,93 +486,97 @@ def test_gt():
     assert_eq(x >= m, s >= m)
 
 
-@pytest.mark.parametrize(
-    "index",
-    [
-        # Integer
-        0,
-        1,
-        -1,
-        (1, 1, 1),
-        # Pure slices
-        (slice(0, 2),),
-        (slice(None, 2), slice(None, 2)),
-        (slice(1, None), slice(1, None)),
-        (slice(None, None),),
-        (slice(None, None, -1),),
-        (slice(None, 2, -1), slice(None, 2, -1)),
-        (slice(1, None, 2), slice(1, None, 2)),
-        (slice(None, None, 2),),
-        (slice(None, 2, -1), slice(None, 2, -2)),
-        (slice(1, None, 2), slice(1, None, 1)),
-        (slice(None, None, -2),),
-        # Combinations
-        (0, slice(0, 2)),
-        (slice(0, 1), 0),
-        (None, slice(1, 3), 0),
-        (slice(0, 3), None, 0),
-        (slice(1, 2), slice(2, 4)),
-        (slice(1, 2), slice(None, None)),
-        (slice(1, 2), slice(None, None), 2),
-        (slice(1, 2, 2), slice(None, None), 2),
-        (slice(1, 2, None), slice(None, None, 2), 2),
-        (slice(1, 2, -2), slice(None, None), -2),
-        (slice(1, 2, None), slice(None, None, -2), 2),
-        (slice(1, 2, -1), slice(None, None), -1),
-        (slice(1, 2, None), slice(None, None, -1), 2),
-        (slice(2, 0, -1), slice(None, None), -1),
-        (slice(-2, None, None),),
-        (slice(-1, None, None), slice(-2, None, None)),
-        # With ellipsis
-        (Ellipsis, slice(1, 3)),
-        (1, Ellipsis, slice(1, 3)),
-        (slice(0, 1), Ellipsis),
-        (Ellipsis, None),
-        (None, Ellipsis),
-        (1, Ellipsis),
-        (1, Ellipsis, None),
-        (1, 1, 1, Ellipsis),
-        (Ellipsis, 1, None),
-        # With multi-axis advanced indexing
-        ([0, 1],) * 2,
-        ([0, 1], [0, 2]),
-        ([0, 0, 0], [0, 1, 2], [1, 2, 1]),
-        # Pathological - Slices larger than array
-        (slice(None, 1000)),
-        (slice(None), slice(None, 1000)),
-        (slice(None), slice(1000, -1000, -1)),
-        (slice(None), slice(1000, -1000, -50)),
-        # Pathological - Wrong ordering of start/stop
-        (slice(5, 0),),
-        (slice(0, 5, -1),),
-        (slice(0, 0, None),),
-    ],
+@settings(deadline=None)
+@given(
+    index=st.sampled_from(
+        [
+            # Integer
+            0,
+            1,
+            -1,
+            (1, 1, 1),
+            # Pure slices
+            (slice(0, 2),),
+            (slice(None, 2), slice(None, 2)),
+            (slice(1, None), slice(1, None)),
+            (slice(None, None),),
+            (slice(None, None, -1),),
+            (slice(None, 2, -1), slice(None, 2, -1)),
+            (slice(1, None, 2), slice(1, None, 2)),
+            (slice(None, None, 2),),
+            (slice(None, 2, -1), slice(None, 2, -2)),
+            (slice(1, None, 2), slice(1, None, 1)),
+            (slice(None, None, -2),),
+            # Combinations
+            (0, slice(0, 2)),
+            (slice(0, 1), 0),
+            (None, slice(1, 3), 0),
+            (slice(0, 3), None, 0),
+            (slice(1, 2), slice(2, 4)),
+            (slice(1, 2), slice(None, None)),
+            (slice(1, 2), slice(None, None), 2),
+            (slice(1, 2, 2), slice(None, None), 2),
+            (slice(1, 2, None), slice(None, None, 2), 2),
+            (slice(1, 2, -2), slice(None, None), -2),
+            (slice(1, 2, None), slice(None, None, -2), 2),
+            (slice(1, 2, -1), slice(None, None), -1),
+            (slice(1, 2, None), slice(None, None, -1), 2),
+            (slice(2, 0, -1), slice(None, None), -1),
+            (slice(-2, None, None),),
+            (slice(-1, None, None), slice(-2, None, None)),
+            # With ellipsis
+            (Ellipsis, slice(1, 3)),
+            (1, Ellipsis, slice(1, 3)),
+            (slice(0, 1), Ellipsis),
+            (Ellipsis, None),
+            (None, Ellipsis),
+            (1, Ellipsis),
+            (1, Ellipsis, None),
+            (1, 1, 1, Ellipsis),
+            (Ellipsis, 1, None),
+            # With multi-axis advanced indexing
+            ([0, 1],) * 2,
+            ([0, 1], [0, 2]),
+            ([0, 0, 0], [0, 1, 2], [1, 2, 1]),
+            # Pathological - Slices larger than array
+            (slice(None, 1000)),
+            (slice(None), slice(None, 1000)),
+            (slice(None), slice(1000, -1000, -1)),
+            (slice(None), slice(1000, -1000, -50)),
+            # Pathological - Wrong ordering of start/stop
+            (slice(5, 0),),
+            (slice(0, 5, -1),),
+            (slice(0, 0, None),),
+        ]
+    ),
+    s=gen_sparse_random((2, 3, 4), density=0.5),
 )
-def test_slicing(index):
-    s = sparse.random((2, 3, 4), density=0.5)
+def test_slicing(index, s):
     x = s.todense()
 
     assert_eq(x[index], s[index])
 
 
-@pytest.mark.parametrize(
-    "index",
-    [
-        ([1, 0], 0),
-        (1, [0, 2]),
-        (0, [1, 0], 0),
-        (1, [2, 0], 0),
-        (1, [], 0),
-        ([True, False], slice(1, None), slice(-2, None)),
-        (slice(1, None), slice(-2, None), [True, False, True, False]),
-        ([1, 0],),
-        (Ellipsis, [2, 1, 3]),
-        (slice(None), [2, 1, 2]),
-        (1, [2, 0, 1]),
-    ],
+@settings(deadline=None)
+@given(
+    index=st.sampled_from(
+        [
+            ([1, 0], 0),
+            (1, [0, 2]),
+            (0, [1, 0], 0),
+            (1, [2, 0], 0),
+            (1, [], 0),
+            ([True, False], slice(1, None), slice(-2, None)),
+            (slice(1, None), slice(-2, None), [True, False, True, False]),
+            ([1, 0],),
+            (Ellipsis, [2, 1, 3]),
+            (slice(None), [2, 1, 2]),
+            (1, [2, 0, 1]),
+        ]
+    ),
+    s=gen_sparse_random((2, 3, 4), density=0.5),
 )
-def test_advanced_indexing(index):
-    s = sparse.random((2, 3, 4), density=0.5)
+def test_advanced_indexing(index, s):
     x = s.todense()
 
     assert_eq(x[index], s[index])
@@ -572,35 +600,37 @@ def test_custom_dtype_slicing():
     assert_eq(x["part3"], s["part3"])
 
 
-@pytest.mark.parametrize(
-    "index",
-    [
-        (Ellipsis, Ellipsis),
-        (1, 1, 1, 1),
-        (slice(None),) * 4,
-        5,
-        -5,
-        "foo",
-        [True, False, False],
-        0.5,
-        [0.5],
-        {"potato": "kartoffel"},
-        ([[0, 1]],),
-    ],
+@given(
+    index=st.sampled_from(
+        [
+            (Ellipsis, Ellipsis),
+            (1, 1, 1, 1),
+            (slice(None),) * 4,
+            5,
+            -5,
+            "foo",
+            [True, False, False],
+            0.5,
+            [0.5],
+            {"potato": "kartoffel"},
+            ([[0, 1]],),
+        ]
+    ),
+    s=gen_sparse_random((2, 3, 4), density=0.5),
 )
-def test_slicing_errors(index):
-    s = sparse.random((2, 3, 4), density=0.5)
-
+def test_slicing_errors(index, s):
     with pytest.raises(IndexError):
         s[index]
 
 
-def test_concatenate():
-    xx = sparse.random((2, 3, 4), density=0.5)
+@given(
+    xx=gen_sparse_random((2, 3, 4), density=0.5),
+    yy=gen_sparse_random((5, 3, 4), density=0.5),
+    zz=gen_sparse_random((4, 3, 4), density=0.5),
+)
+def test_concatenate(xx, yy, zz):
     x = xx.todense()
-    yy = sparse.random((5, 3, 4), density=0.5)
     y = yy.todense()
-    zz = sparse.random((4, 3, 4), density=0.5)
     z = zz.todense()
 
     assert_eq(
@@ -623,10 +653,12 @@ def test_concatenate():
     )
 
 
-@pytest.mark.parametrize("axis", [0, 1])
-@pytest.mark.parametrize("func", [sparse.stack, sparse.concatenate])
-def test_concatenate_mixed(func, axis):
-    s = sparse.random((10, 10), density=0.5)
+@given(
+    axis=st.sampled_from([0, 1]),
+    func=st.sampled_from([sparse.stack, sparse.concatenate]),
+    s=gen_sparse_random((10, 10), density=0.5),
+)
+def test_concatenate_mixed(func, axis, s):
     d = s.todense()
 
     with pytest.raises(ValueError):
@@ -638,8 +670,9 @@ def test_concatenate_noarrays():
         sparse.concatenate([])
 
 
-@pytest.mark.parametrize("shape", [(5,), (2, 3, 4), (5, 2)])
-@pytest.mark.parametrize("axis", [0, 1, -1])
+@given(
+    shape=st.sampled_from([(5,), (2, 3, 4), (5, 2)]), axis=st.sampled_from([0, 1, -1])
+)
 def test_stack(shape, axis):
     xx = sparse.random(shape, density=0.5)
     x = xx.todense()
@@ -663,20 +696,24 @@ def test_large_concat_stack():
     assert_eq(np.concatenate((x, x)), sparse.concatenate((xs, xs)))
 
 
-def test_addition():
-    a = sparse.random((2, 3, 4), density=0.5)
+@settings(deadline=None)
+@given(
+    a=gen_sparse_random((2, 3, 4), density=0.5),
+    b=gen_sparse_random((2, 3, 4), density=0.5),
+)
+def test_addition(a, b):
     x = a.todense()
-
-    b = sparse.random((2, 3, 4), density=0.5)
     y = b.todense()
 
     assert_eq(x + y, a + b)
     assert_eq(x - y, a - b)
 
 
-@pytest.mark.parametrize("scalar", [2, 2.5, np.float32(2.0), np.int8(3)])
-def test_scalar_multiplication(scalar):
-    a = sparse.random((2, 3, 4), density=0.5)
+@given(
+    scalar=st.sampled_from([2, 2.5, np.float32(2.0), np.int8(3)]),
+    a=gen_sparse_random((2, 3, 4), density=0.5),
+)
+def test_scalar_multiplication(scalar, a):
     x = a.todense()
 
     assert_eq(x * scalar, a * scalar)
@@ -689,9 +726,9 @@ def test_scalar_multiplication(scalar):
     # division may reduce nnz.
 
 
+@given(gen_sparse_random((2, 3, 4), density=0.5))
 @pytest.mark.filterwarnings("ignore:divide by zero")
-def test_scalar_exponentiation():
-    a = sparse.random((2, 3, 4), density=0.5)
+def test_scalar_exponentiation(a):
     x = a.todense()
 
     assert_eq(x**2, a**2)
@@ -743,9 +780,13 @@ def test_scipy_sparse_interface():
     assert isinstance(xx + x, COO)
 
 
-@pytest.mark.parametrize("scipy_format", ["coo", "csr", "dok", "csc"])
-def test_scipy_sparse_interaction(scipy_format):
-    x = sparse.random((10, 20), density=0.2).todense()
+@settings(deadline=None)
+@given(
+    scipy_format=st.sampled_from(["coo", "csr", "dok", "csc"]),
+    x=gen_sparse_random((10, 20), density=0.2),
+)
+def test_scipy_sparse_interaction(scipy_format, x):
+    x = x.todense()
     sp = getattr(scipy.sparse, scipy_format + "_matrix")(x)
     coo = COO(x)
     assert isinstance(sp + coo, COO)
@@ -753,13 +794,23 @@ def test_scipy_sparse_interaction(scipy_format):
     assert_eq(sp, coo)
 
 
-@pytest.mark.parametrize(
-    "func",
-    [operator.mul, operator.add, operator.sub, operator.gt, operator.lt, operator.ne],
+@settings(deadline=None)
+@given(
+    func=st.sampled_from(
+        [
+            operator.mul,
+            operator.add,
+            operator.sub,
+            operator.gt,
+            operator.lt,
+            operator.ne,
+        ]
+    ),
+    xs=gen_sparse_random((3, 4), density=0.5),
+    y=gen_sparse_random((3, 4), density=0.5),
 )
-def test_op_scipy_sparse(func):
-    xs = sparse.random((3, 4), density=0.5)
-    y = sparse.random((3, 4), density=0.5).todense()
+def test_op_scipy_sparse(func, xs, y):
+    y = y.todense()
 
     ys = scipy.sparse.csr_matrix(y)
     x = xs.todense()
@@ -767,32 +818,24 @@ def test_op_scipy_sparse(func):
     assert_eq(func(x, y), func(xs, ys))
 
 
-@pytest.mark.parametrize(
-    "func",
-    [
-        operator.add,
-        operator.sub,
-        pytest.param(
+@pytest.mark.xfail
+@settings(deadline=None)
+@given(
+    func=st.sampled_from(
+        [
+            operator.add,
+            operator.sub,
             operator.mul,
-            marks=pytest.mark.xfail(reason="Scipy sparse auto-densifies in this case."),
-        ),
-        pytest.param(
             operator.gt,
-            marks=pytest.mark.xfail(reason="Scipy sparse doesn't support this yet."),
-        ),
-        pytest.param(
             operator.lt,
-            marks=pytest.mark.xfail(reason="Scipy sparse doesn't support this yet."),
-        ),
-        pytest.param(
             operator.ne,
-            marks=pytest.mark.xfail(reason="Scipy sparse doesn't support this yet."),
-        ),
-    ],
+        ]
+    ),
+    ys=gen_sparse_random((3, 4), density=0.5),
+    x=gen_sparse_random((3, 4), density=0.5),
 )
-def test_op_scipy_sparse_left(func):
-    ys = sparse.random((3, 4), density=0.5)
-    x = sparse.random((3, 4), density=0.5).todense()
+def test_op_scipy_sparse_left(func, ys, x):
+    x = x.todense()
 
     xs = scipy.sparse.csr_matrix(x)
     y = ys.todense()
@@ -800,8 +843,9 @@ def test_op_scipy_sparse_left(func):
     assert_eq(func(x, y), func(xs, ys))
 
 
-def test_cache_csr():
-    x = sparse.random((10, 5), density=0.5).todense()
+@given(gen_sparse_random((10, 5), density=0.5))
+def test_cache_csr(x):
+    x = x.todense()
     s = COO(x, cache=True)
 
     assert isinstance(s.tocsr(), scipy.sparse.csr_matrix)
@@ -901,8 +945,10 @@ def test_empty_reduction():
     assert_eq(x.sum(axis=(0, 2)), xs.sum(axis=(0, 2)))
 
 
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4)])
-@pytest.mark.parametrize("density", [0.1, 0.3, 0.5, 0.7])
+@given(
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4)]),
+    density=st.sampled_from([0.1, 0.3, 0.5, 0.7]),
+)
 def test_random_shape(shape, density):
     s = sparse.random(shape, density)
 
@@ -953,15 +999,17 @@ def test_two_random_same_seed():
         (lambda x: np.random.choice([True, False], size=x), np.bool_),
     ],
 )
-@pytest.mark.parametrize("shape", [(2, 4, 5), (20, 40, 50)])
-@pytest.mark.parametrize("density", [0.0, 0.01, 0.1, 0.2])
+@given(
+    shape=st.sampled_from([(2, 4, 5), (20, 40, 50)]),
+    density=st.sampled_from([0.0, 0.01, 0.1, 0.2]),
+)
 def test_random_rvs(rvs, dtype, shape, density):
     x = sparse.random(shape, density, data_rvs=rvs)
     assert x.shape == shape
     assert x.dtype == dtype
 
 
-@pytest.mark.parametrize("format", ["coo", "dok"])
+@given(format=st.sampled_from(["coo", "dok"]))
 def test_random_fv(format):
     fv = np.random.rand()
     s = sparse.random((2, 3, 4), density=0.5, format=format, fill_value=fv)
@@ -1000,25 +1048,10 @@ def test_np_array():
         np.array(s)
 
 
-@pytest.mark.parametrize(
-    "shapes",
-    [
-        [(2,), (3, 2), (4, 3, 2)],
-        [(3,), (2, 3), (2, 2, 3)],
-        [(2,), (2, 2), (2, 2, 2)],
-        [(4,), (4, 4), (4, 4, 4)],
-        [(4,), (4, 4), (4, 4, 4)],
-        [(4,), (4, 4), (4, 4, 4)],
-        [(1, 1, 2), (1, 3, 1), (4, 1, 1)],
-        [(2,), (2, 1), (2, 1, 1)],
-        [(3,), (), (2, 3)],
-        [(4, 4), (), ()],
-    ],
-)
-def test_three_arg_where(shapes):
-    cs = sparse.random(shapes[0], density=0.5).astype(np.bool_)
-    xs = sparse.random(shapes[1], density=0.5)
-    ys = sparse.random(shapes[2], density=0.5)
+@settings(deadline=None)
+@given(gen_sparse_random_three())
+def test_three_arg_where(arg):
+    cs, xs, ys = arg
 
     c = cs.todense()
     x = xs.todense()
@@ -1031,8 +1064,8 @@ def test_three_arg_where(shapes):
     assert_eq(expected, actual)
 
 
-def test_one_arg_where():
-    s = sparse.random((2, 3, 4), density=0.5)
+@given(gen_sparse_random((2, 3, 4), density=0.5))
+def test_one_arg_where(s):
     x = s.todense()
 
     expected = np.where(x)
@@ -1051,25 +1084,30 @@ def test_one_arg_where_dense():
         sparse.where(x)
 
 
-def test_two_arg_where():
-    cs = sparse.random((2, 3, 4), density=0.5).astype(np.bool_)
-    xs = sparse.random((2, 3, 4), density=0.5)
+@given(
+    cs=gen_sparse_random((2, 3, 4), density=0.5),
+    xs=gen_sparse_random((2, 3, 4), density=0.5),
+)
+def test_two_arg_where(cs, xs):
+    cs = cs.astype(np.bool_)
 
     with pytest.raises(ValueError):
         sparse.where(cs, xs)
 
 
-@pytest.mark.parametrize("func", [operator.imul, operator.iadd, operator.isub])
-def test_inplace_invalid_shape(func):
-    xs = sparse.random((3, 4), density=0.5)
-    ys = sparse.random((2, 3, 4), density=0.5)
-
+@settings(deadline=None)
+@given(
+    func=st.sampled_from([operator.imul, operator.iadd, operator.isub]),
+    xs=gen_sparse_random((3, 4), density=0.5),
+    ys=gen_sparse_random((2, 3, 4), density=0.5),
+)
+def test_inplace_invalid_shape(func, xs, ys):
     with pytest.raises(ValueError):
         func(xs, ys)
 
 
-def test_nonzero():
-    s = sparse.random((2, 3, 4), density=0.5)
+@given(gen_sparse_random((2, 3, 4), density=0.5))
+def test_nonzero(s):
     x = s.todense()
 
     expected = x.nonzero()
@@ -1082,23 +1120,27 @@ def test_nonzero():
         assert_eq(e, a, compare_dtype=False)
 
 
-def test_argwhere():
-    s = sparse.random((2, 3, 4), density=0.5)
+@given(gen_sparse_random((2, 3, 4), density=0.5))
+def test_argwhere(s):
     x = s.todense()
 
     assert_eq(np.argwhere(s), np.argwhere(x), compare_dtype=False)
 
 
-@pytest.mark.parametrize("format", ["coo", "dok"])
-def test_asformat(format):
-    s = sparse.random((2, 3, 4), density=0.5, format="coo")
+@given(
+    format=st.sampled_from(["coo", "dok"]),
+    s=gen_sparse_random((2, 3, 4), density=0.5, format="coo"),
+)
+def test_asformat(format, s):
     s2 = s.asformat(format)
 
     assert_eq(s, s2)
 
 
-@pytest.mark.parametrize(
-    "format", [sparse.COO, sparse.DOK, scipy.sparse.csr_matrix, np.asarray]
+@given(
+    format=st.sampled_from(
+        [sparse.COO, sparse.DOK, scipy.sparse.csr_matrix, np.asarray]
+    )
 )
 def test_as_coo(format):
     x = format(sparse.random((3, 4), density=0.5, format="coo").todense())
@@ -1110,9 +1152,8 @@ def test_as_coo(format):
     assert_eq(x, s2)
 
 
-def test_invalid_attrs_error():
-    s = sparse.random((3, 4), density=0.5, format="coo")
-
+@given(gen_sparse_random((3, 4), density=0.5, format="coo"))
+def test_invalid_attrs_error(s):
     with pytest.raises(ValueError):
         sparse.as_coo(s, shape=(2, 3))
 
@@ -1136,8 +1177,9 @@ def test_invalid_iterable_error():
         COO.from_iter(x)
 
 
-def test_prod_along_axis():
-    s1 = sparse.random((10, 10), density=0.1)
+@settings(deadline=None)
+@given(gen_sparse_random((10, 10), density=0.1))
+def test_prod_along_axis(s1):
     s2 = 1 - s1
 
     x1 = s1.todense()
@@ -1270,7 +1312,7 @@ def test_pickle():
     assert x2._cache is None
 
 
-@pytest.mark.parametrize("deep", [True, False])
+@given(deep=st.sampled_from([True, False]))
 def test_copy(deep):
     x = sparse.COO.from_numpy([1, 0, 0, 0, 0]).reshape((5, 1))
     # Enable caching and add some data to it
@@ -1285,7 +1327,7 @@ def test_copy(deep):
     assert x2._cache is None
 
 
-@pytest.mark.parametrize("ndim", [2, 3, 4, 5])
+@given(ndim=st.sampled_from([2, 3, 4, 5]))
 def test_initialization(ndim):
     shape = [10] * ndim
     shape[1] *= 2
@@ -1310,7 +1352,7 @@ def test_eye(N, M):
         assert_eq(sparse.eye(N, M=M, k=k, dtype="i4"), np.eye(N, M=M, k=k, dtype="i4"))
 
 
-@pytest.mark.parametrize("funcname", ["ones", "zeros"])
+@given(funcname=st.sampled_from(["ones", "zeros"]))
 def test_ones_zeros(funcname):
     sp_func = getattr(sparse, funcname)
     np_func = getattr(np, funcname)
@@ -1321,7 +1363,7 @@ def test_ones_zeros(funcname):
     assert_eq(sp_func((5, 4), dtype=None), np_func((5, 4), dtype=None))
 
 
-@pytest.mark.parametrize("funcname", ["ones_like", "zeros_like"])
+@given(funcname=st.sampled_from(["ones_like", "zeros_like"]))
 def test_ones_zeros_like(funcname):
     sp_func = getattr(sparse, funcname)
     np_func = getattr(np, funcname)
@@ -1350,7 +1392,7 @@ def test_full_like():
     )
 
 
-@pytest.mark.parametrize("complex", [True, False])
+@given(complex=st.sampled_from([True, False]))
 def test_complex_methods(complex):
     if complex:
         x = np.array([1 + 2j, 2 - 1j, 0, 1, 0])
@@ -1414,8 +1456,8 @@ def test_setting_into_numpy_slice():
         actual[:, 0] = s
 
 
-def test_successful_densification():
-    s = sparse.random((3, 4, 5), density=0.5)
+@given(gen_sparse_random((3, 4, 5), density=0.5))
+def test_successful_densification(s):
     with auto_densify():
         x = np.array(s)
 
@@ -1423,8 +1465,8 @@ def test_successful_densification():
     assert_eq(s, x)
 
 
-def test_failed_densification():
-    s = sparse.random((3, 4, 5), density=0.5)
+@given(gen_sparse_random((3, 4, 5), density=0.5))
+def test_failed_densification(s):
     with pytest.raises(RuntimeError):
         np.array(s)
 
@@ -1454,29 +1496,30 @@ def test_prune_coo():
     assert_eq(s1.todense(), s2, check_nnz=False)
 
 
-def test_diagonal():
-
-    a = sparse.random((4, 4), density=0.5)
+@settings(deadline=None)
+@given(
+    a=gen_sparse_random((4, 4), density=0.5),
+    b=gen_sparse_random((4, 5, 4, 6), density=0.5),
+)
+def test_diagonal(a, b):
 
     assert_eq(sparse.diagonal(a, offset=0), np.diagonal(a.todense(), offset=0))
     assert_eq(sparse.diagonal(a, offset=1), np.diagonal(a.todense(), offset=1))
     assert_eq(sparse.diagonal(a, offset=2), np.diagonal(a.todense(), offset=2))
 
-    a = sparse.random((4, 5, 4, 6), density=0.5)
-
     assert_eq(
-        sparse.diagonal(a, offset=0, axis1=0, axis2=2),
-        np.diagonal(a.todense(), offset=0, axis1=0, axis2=2),
+        sparse.diagonal(b, offset=0, axis1=0, axis2=2),
+        np.diagonal(b.todense(), offset=0, axis1=0, axis2=2),
     )
 
     assert_eq(
-        sparse.diagonal(a, offset=1, axis1=0, axis2=2),
-        np.diagonal(a.todense(), offset=1, axis1=0, axis2=2),
+        sparse.diagonal(b, offset=1, axis1=0, axis2=2),
+        np.diagonal(b.todense(), offset=1, axis1=0, axis2=2),
     )
 
     assert_eq(
-        sparse.diagonal(a, offset=2, axis1=0, axis2=2),
-        np.diagonal(a.todense(), offset=2, axis1=0, axis2=2),
+        sparse.diagonal(b, offset=2, axis1=0, axis2=2),
+        np.diagonal(b.todense(), offset=2, axis1=0, axis2=2),
     )
 
 
@@ -1513,8 +1556,11 @@ RESULT_TYPE_DTYPES = [
 ]
 
 
-@pytest.mark.parametrize("t1", RESULT_TYPE_DTYPES)
-@pytest.mark.parametrize("t2", RESULT_TYPE_DTYPES)
+@given(
+    t1=st.sampled_from(RESULT_TYPE_DTYPES),
+    t2=st.sampled_from(RESULT_TYPE_DTYPES),
+    data=st.sampled_from([1, [1]]),
+)
 @pytest.mark.parametrize(
     "func",
     [
@@ -1525,7 +1571,6 @@ RESULT_TYPE_DTYPES = [
         ),
     ],
 )
-@pytest.mark.parametrize("data", [1, [1]])  # Not the same outputs!
 def test_result_type(t1, t2, func, data):
     a = np.array(data, dtype=t1)
     b = np.array(data, dtype=t2)
@@ -1537,7 +1582,7 @@ def test_result_type(t1, t2, func, data):
     assert func(sparse.COO(a), b.dtype) == np.result_type(a, b.dtype)
 
 
-@pytest.mark.parametrize("in_shape", [(5, 5), 62, (3, 3, 3)])
+@given(in_shape=st.sampled_from([(5, 5), 62, (3, 3, 3)]))
 def test_flatten(in_shape):
     s = sparse.random(in_shape, density=0.5)
     x = s.todense()
@@ -1559,12 +1604,8 @@ def test_asnumpy():
     assert sparse.asnumpy(a) is a
 
 
-@pytest.mark.parametrize("shape1", [(2,), (2, 3), (2, 3, 4)])
-@pytest.mark.parametrize("shape2", [(2,), (2, 3), (2, 3, 4)])
-def test_outer(shape1, shape2):
-    s1 = sparse.random(shape1, density=0.5)
-    s2 = sparse.random(shape2, density=0.5)
-
+@given(s1=gen_sparse_random_outer(), s2=gen_sparse_random_outer())
+def test_outer(s1, s2):
     x1 = s1.todense()
     x2 = s2.todense()
 
@@ -1580,20 +1621,20 @@ def test_scalar_list_init():
     assert b.todense() == 1
 
 
-def test_raise_on_nd_data():
-    s1 = sparse.random((2, 3, 4), density=0.5)
+@given(gen_sparse_random((2, 3, 4), density=0.5))
+def test_raise_on_nd_data(s1):
     with pytest.raises(ValueError):
         sparse.COO(s1.coords, s1.data[:, None], shape=(2, 3, 4))
 
 
-def test_astype_casting():
-    s1 = sparse.random((2, 3, 4), density=0.5)
+@given(gen_sparse_random((2, 3, 4), density=0.5))
+def test_astype_casting(s1):
     with pytest.raises(TypeError):
         s1.astype(dtype=np.int64, casting="safe")
 
 
-def test_astype_no_copy():
-    s1 = sparse.random((2, 3, 4), density=0.5)
+@given(gen_sparse_random((2, 3, 4), density=0.5))
+def test_astype_no_copy(s1):
     s2 = s1.astype(s1.dtype, copy=False)
     assert s1 is s2
 
@@ -1626,16 +1667,10 @@ def test_html_for_size_zero():
     assert table == ground_truth
 
 
-@pytest.mark.parametrize(
-    "pad_width",
-    [
-        2,
-        (2, 1),
-        ((2), (1)),
-        ((1, 2), (4, 5), (7, 8)),
-    ],
+@given(
+    pad_width=st.sampled_from([2, (2, 1), ((2), (1)), ((1, 2), (4, 5), (7, 8)),]),
+    constant_values=st.sampled_from([0, 1, 150, np.nan]),
 )
-@pytest.mark.parametrize("constant_values", [0, 1, 150, np.nan])
 def test_pad_valid(pad_width, constant_values):
     y = sparse.random((50, 50, 3), density=0.15, fill_value=constant_values)
     x = y.todense()
@@ -1644,15 +1679,12 @@ def test_pad_valid(pad_width, constant_values):
     assert_eq(xx, yy)
 
 
-@pytest.mark.parametrize(
-    "pad_width",
-    [
-        ((2, 1), (5, 7)),
-    ],
+@given(
+    pad_width=st.sampled_from([((2, 1), (5, 7)),]),
+    y=gen_sparse_random((50, 50, 3), density=0.15),
+    constant_values=st.sampled_from([150, 2, (1, 2)]),
 )
-@pytest.mark.parametrize("constant_values", [150, 2, (1, 2)])
-def test_pad_invalid(pad_width, constant_values, fill_value=0):
-    y = sparse.random((50, 50, 3), density=0.15)
+def test_pad_invalid(pad_width, constant_values, y):
     with pytest.raises(ValueError):
         np.pad(y, pad_width, constant_values=constant_values)
 

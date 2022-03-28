@@ -1,5 +1,13 @@
 import numpy as np
 import pytest
+from hypothesis import settings, given, strategies as st
+from _utils import (
+    gen_matmul_warning,
+    gen_broadcast_shape_dot,
+    gen_sparse_random,
+    gen_random_seed,
+    gen_matmul_shapes,
+)
 import scipy.sparse
 import scipy.stats
 
@@ -10,6 +18,7 @@ from sparse import COO
 from sparse._utils import assert_eq
 
 
+@settings(deadline=None)
 @pytest.mark.parametrize(
     "a_shape,b_shape,axes",
     [
@@ -25,9 +34,8 @@ from sparse._utils import assert_eq
         [(4,), (4,), 0],
     ],
 )
-@pytest.mark.parametrize(
-    "a_format, b_format",
-    [("coo", "coo"), ("coo", "gcxs"), ("gcxs", "coo"), ("gcxs", "gcxs")],
+@given(
+    a_format=st.sampled_from(["coo", "gcxs"]), b_format=st.sampled_from(["coo", "gcxs"])
 )
 def test_tensordot(a_shape, b_shape, axes, a_format, b_format):
     sa = sparse.random(a_shape, density=0.5, format=a_format)
@@ -126,12 +134,10 @@ def gen_for_format(format):
     ],
 )
 @pytest.mark.parametrize(
-    "a_format, a_kwargs",
-    [*gen_for_format("coo"), *gen_for_format("gcxs")],
+    "a_format, a_kwargs", [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 @pytest.mark.parametrize(
-    "b_format, b_kwargs",
-    [*gen_for_format("coo"), *gen_for_format("gcxs")],
+    "b_format, b_kwargs", [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 def test_matmul(a_shape, b_shape, a_format, b_format, a_kwargs, b_kwargs):
     if len(a_shape) == 1:
@@ -168,66 +174,24 @@ def test_matmul_errors():
         sparse.matmul(sa, sb)
 
 
-@pytest.mark.parametrize(
-    "a, b",
-    [
-        (
-            sparse.GCXS.from_numpy(
-                np.random.choice(
-                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
-                )
-            ),
-            sparse.random((100, 100), density=0.01),
-        ),
-        (
-            sparse.COO.from_numpy(
-                np.random.choice(
-                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
-                )
-            ),
-            sparse.random((100, 100), density=0.01),
-        ),
-        (
-            sparse.GCXS.from_numpy(
-                np.random.choice(
-                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
-                )
-            ),
-            scipy.sparse.random(100, 100),
-        ),
-        (
-            np.random.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]),
-            sparse.random((100, 100), density=0.01),
-        ),
-    ],
-)
-def test_matmul_nan_warnings(a, b):
+@settings(deadline=None)
+@given(ab=gen_matmul_warning())
+def test_matmul_nan_warnings(ab):
+    a, b = ab
     with pytest.warns(RuntimeWarning):
         a @ b
 
 
+@settings(deadline=None)
+@given(ab=gen_broadcast_shape_dot())
 @pytest.mark.parametrize(
-    "a_shape, b_shape",
-    [
-        ((1, 4, 5), (3, 5, 6)),
-        ((3, 4, 5), (1, 5, 6)),
-        ((3, 4, 5), (3, 5, 6)),
-        ((3, 4, 5), (5, 6)),
-        ((4, 5), (5, 6)),
-        ((5,), (5, 6)),
-        ((4, 5), (5,)),
-        ((5,), (5,)),
-    ],
+    "a_format, a_kwargs", [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 @pytest.mark.parametrize(
-    "a_format, a_kwargs",
-    [*gen_for_format("coo"), *gen_for_format("gcxs")],
+    "b_format, b_kwargs", [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
-@pytest.mark.parametrize(
-    "b_format, b_kwargs",
-    [*gen_for_format("coo"), *gen_for_format("gcxs")],
-)
-def test_dot(a_shape, b_shape, a_format, b_format, a_kwargs, b_kwargs):
+def test_dot(ab, a_format, b_format, a_kwargs, b_kwargs):
+    a_shape, b_shape = ab
     if len(a_shape) == 1:
         a_kwargs = {}
     if len(b_shape) == 1:
@@ -244,6 +208,27 @@ def test_dot(a_shape, b_shape, a_format, b_format, a_kwargs, b_kwargs):
     assert_eq(e, sparse.dot(a, sb))
     assert_eq(e, sparse.dot(a, sb))
 
+
+@settings(deadline=None)
+@given(ab_shape=gen_matmul_shapes())
+@pytest.mark.parametrize(
+    "a_format, a_kwargs", [*gen_for_format("coo"), *gen_for_format("gcxs")],
+)
+@pytest.mark.parametrize(
+    "b_format, b_kwargs", [*gen_for_format("coo"), *gen_for_format("gcxs")],
+)
+def test_matmul_2(ab_shape, a_format, b_format, a_kwargs, b_kwargs):
+    a_shape, b_shape = ab_shape
+    if len(a_shape) == 1:
+        a_kwargs = {}
+    if len(b_shape) == 1:
+        b_kwargs = {}
+    sa = sparse.random(a_shape, density=0.5, format=a_format, **a_kwargs)
+    sb = sparse.random(b_shape, density=0.5, format=b_format, **b_kwargs)
+
+    a = sa.todense()
+    b = sb.todense()
+
     # Basic equivalences
     e = operator.matmul(a, b)
     assert_eq(e, operator.matmul(sa, sb))
@@ -259,9 +244,10 @@ def test_dot(a_shape, b_shape, a_format, b_format, a_kwargs, b_kwargs):
         (True, False, np.ndarray),
     ],
 )
-def test_dot_type(a_dense, b_dense, o_type):
-    a = sparse.random((3, 4), density=0.8)
-    b = sparse.random((4, 5), density=0.8)
+@given(
+    a=gen_sparse_random((3, 4), density=0.8), b=gen_sparse_random((4, 5), density=0.8)
+)
+def test_dot_type(a_dense, b_dense, o_type, a, b):
 
     if a_dense:
         a = a.todense()
@@ -273,9 +259,11 @@ def test_dot_type(a_dense, b_dense, o_type):
 
 
 @pytest.mark.xfail
-def test_dot_nocoercion():
-    sa = sparse.random((3, 4, 5), density=0.5)
-    sb = sparse.random((5, 6), density=0.5)
+@given(
+    sa=gen_sparse_random((3, 4, 5), density=0.5),
+    sb=gen_sparse_random((5, 6), density=0.5),
+)
+def test_dot_nocoercion(sa, sb):
 
     a = sa.todense()
     b = sb.todense()
@@ -296,8 +284,7 @@ dot_formats = [
 ]
 
 
-@pytest.mark.parametrize("format1", dot_formats)
-@pytest.mark.parametrize("format2", dot_formats)
+@given(format1=st.sampled_from(dot_formats), format2=st.sampled_from(dot_formats))
 def test_small_values(format1, format2):
     s1 = format1(sparse.COO(coords=[[0, 10]], data=[3.6e-100, 7.2e-009], shape=(20,)))
     s2 = format2(
@@ -313,12 +300,15 @@ def test_small_values(format1, format2):
 dot_dtypes = [np.complex64, np.complex128]
 
 
-@pytest.mark.parametrize("dtype1", dot_dtypes)
-@pytest.mark.parametrize("dtype2", dot_dtypes)
-@pytest.mark.parametrize("format1", dot_formats)
-@pytest.mark.parametrize("format2", dot_formats)
-@pytest.mark.parametrize("ndim1", (1, 2))
-@pytest.mark.parametrize("ndim2", (1, 2))
+@settings(deadline=None)
+@given(
+    dtype1=st.sampled_from(dot_dtypes),
+    dtype2=st.sampled_from(dot_dtypes),
+    format1=st.sampled_from(dot_formats),
+    format2=st.sampled_from(dot_formats),
+    ndim1=st.sampled_from((1, 2)),
+    ndim2=st.sampled_from((1, 2)),
+)
 def test_complex(dtype1, dtype2, format1, format2, ndim1, ndim2):
     s1 = format1(sparse.random((20,) * ndim1, density=0.5).astype(dtype1))
     s2 = format2(sparse.random((20,) * ndim2, density=0.5).astype(dtype2))
@@ -329,10 +319,13 @@ def test_complex(dtype1, dtype2, format1, format2, ndim1, ndim2):
     assert_eq(x1 @ x2, s1 @ s2)
 
 
-@pytest.mark.parametrize("dtype1", dot_dtypes)
-@pytest.mark.parametrize("dtype2", dot_dtypes)
-@pytest.mark.parametrize("ndim1", (1, 2))
-@pytest.mark.parametrize("ndim2", (1, 2))
+@settings(deadline=None)
+@given(
+    dtype1=st.sampled_from(dot_dtypes),
+    dtype2=st.sampled_from(dot_dtypes),
+    ndim1=st.sampled_from((1, 2)),
+    ndim2=st.sampled_from((1, 2)),
+)
 def test_dot_dense(dtype1, dtype2, ndim1, ndim2):
     a = sparse.random((20,) * ndim1, density=0.5).astype(dtype1).todense()
     b = sparse.random((20,) * ndim2, density=0.5).astype(dtype2).todense()

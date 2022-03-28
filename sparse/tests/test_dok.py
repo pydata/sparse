@@ -1,4 +1,16 @@
 import pytest
+from hypothesis import settings, given, strategies as st
+from _utils import (
+    gen_shape_data,
+    gen_notimpl_err,
+    gen_getitem_index_err,
+    gen_setitem_val_err,
+    gen_getitem,
+    gen_setitem,
+    gen_sparse_random,
+    gen_sparse_random_getitem_single,
+    gen_sparse_random_pad_invalid,
+)
 
 import numpy as np
 
@@ -7,8 +19,10 @@ from sparse import DOK
 from sparse._utils import assert_eq
 
 
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4)])
-@pytest.mark.parametrize("density", [0.1, 0.3, 0.5, 0.7])
+@given(
+    shape=st.sampled_from([(2,), (2, 3), (2, 3, 4)]),
+    density=st.sampled_from([0.1, 0.3, 0.5, 0.7]),
+)
 def test_random_shape_nnz(shape, density):
     s = sparse.random(shape, density, format="dok")
 
@@ -19,15 +33,15 @@ def test_random_shape_nnz(shape, density):
     assert np.floor(expected_nnz) <= s.nnz <= np.ceil(expected_nnz)
 
 
-def test_convert_to_coo():
-    s1 = sparse.random((2, 3, 4), 0.5, format="dok")
+@given(gen_sparse_random((2, 3, 4), density=0.5, format="dok"))
+def test_convert_to_coo(s1):
     s2 = sparse.COO(s1)
 
     assert_eq(s1, s2)
 
 
-def test_convert_from_coo():
-    s1 = sparse.random((2, 3, 4), 0.5, format="coo")
+@given(gen_sparse_random((2, 3, 4), density=0.5, format="coo"))
+def test_convert_from_coo(s1):
     s2 = DOK(s1)
 
     assert_eq(s1, s2)
@@ -40,8 +54,8 @@ def test_convert_from_numpy():
     assert_eq(x, s)
 
 
-def test_convert_to_numpy():
-    s = sparse.random((2, 3, 4), 0.5, format="dok")
+@given(gen_sparse_random((2, 3, 4), density=0.5, format="dok"))
+def test_convert_to_numpy(s):
     x = s.todense()
 
     assert_eq(x, s)
@@ -56,15 +70,9 @@ def test_convert_from_scipy_sparse():
     assert_eq(x, s)
 
 
-@pytest.mark.parametrize(
-    "shape, data",
-    [
-        (2, {0: 1}),
-        ((2, 3), {(0, 1): 3, (1, 2): 4}),
-        ((2, 3, 4), {(0, 1): 3, (1, 2, 3): 4, (1, 1): [6, 5, 4, 1]}),
-    ],
-)
-def test_construct(shape, data):
+@given(gen_shape_data())
+def test_construct(sd):
+    shape, data = sd
     s = DOK(shape, data)
     x = np.zeros(shape, dtype=s.dtype)
 
@@ -74,33 +82,23 @@ def test_construct(shape, data):
     assert_eq(x, s)
 
 
-@pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4)])
-@pytest.mark.parametrize("density", [0.1, 0.3, 0.5, 0.7])
-def test_getitem_single(shape, density):
-    s = sparse.random(shape, density, format="dok")
+@settings(deadline=None)
+@given(gen_sparse_random_getitem_single())
+def test_getitem_single(s):
     x = s.todense()
 
     for _ in range(s.nnz):
-        idx = np.random.randint(np.prod(shape))
-        idx = np.unravel_index(idx, shape)
+        idx = np.random.randint(np.prod(s.shape))
+        idx = np.unravel_index(idx, s.shape)
         print(idx)
 
         assert np.isclose(s[idx], x[idx])
 
 
-@pytest.mark.parametrize(
-    "shape, density, indices",
-    [
-        ((2, 3), 0.5, (slice(1),)),
-        ((5, 5), 0.2, (slice(0, 4, 2),)),
-        ((10, 10), 0.2, (slice(5), slice(0, 10, 3))),
-        ((5, 5), 0.5, (slice(0, 4, 4), slice(0, 4, 4))),
-        ((5, 5), 0.4, (1, slice(0, 4, 1))),
-        ((10, 10), 0.8, ([0, 4, 5], [3, 2, 4])),
-        ((10, 10), 0, (slice(10), slice(10))),
-    ],
-)
-def test_getitem(shape, density, indices):
+@pytest.mark.xfail
+@given(sd=gen_getitem())
+def test_getitem(sd):
+    shape, density, indices = sd
     s = sparse.random(shape, density, format="dok")
     x = s.todense()
 
@@ -110,29 +108,18 @@ def test_getitem(shape, density, indices):
     assert_eq(sparse_sliced.todense(), dense_sliced)
 
 
-@pytest.mark.parametrize(
-    "shape, density, indices",
-    [
-        ((10, 10), 0.8, ([0, 4, 5],)),
-        ((5, 5, 5), 0.5, ([1, 2, 3], [0, 2, 2])),
-    ],
-)
-def test_getitem_notimplemented_error(shape, density, indices):
+@given(gen_notimpl_err())
+def test_getitem_notimplemented_error(sd):
+    shape, density, indices = sd
     s = sparse.random(shape, density, format="dok")
 
     with pytest.raises(NotImplementedError):
         s[indices]
 
 
-@pytest.mark.parametrize(
-    "shape, density, indices",
-    [
-        ((10, 10), 0.8, ([0, 4, 5], [0, 2])),
-        ((5, 5, 5), 0.5, ([1, 2, 3], [0], [2, 3, 4])),
-        ((10,), 0.5, (5, 6)),
-    ],
-)
-def test_getitem_index_error(shape, density, indices):
+@given(gen_getitem_index_err())
+def test_getitem_index_error(sd):
+    shape, density, indices = sd
     s = sparse.random(shape, density, format="dok")
 
     with pytest.raises(IndexError):
@@ -145,7 +132,6 @@ def test_getitem_index_error(shape, density, indices):
         ((2,), slice(None), ()),
         ((2,), slice(1, 2), ()),
         ((2,), slice(0, 2), (2,)),
-        ((2,), 1, ()),
         ((2, 3), (0, slice(None)), ()),
         ((2, 3), (0, slice(1, 3)), ()),
         ((2, 3), (1, slice(None)), (3,)),
@@ -155,13 +141,9 @@ def test_getitem_index_error(shape, density, indices):
         ((2, 3), (slice(None), 1), (2,)),
         ((2, 3), (slice(1, 2), 1), ()),
         ((2, 3), (slice(1, 2), 1), (1,)),
-        ((2, 3), (0, 2), ()),
-        ((2, 3), ([0, 1], [1, 2]), (2,)),
-        ((2, 3), ([0, 1], [1, 2]), ()),
-        ((4,), ([1, 3]), ()),
     ],
 )
-def test_setitem(shape, index, value_shape):
+def test_setitem_slice(shape, index, value_shape):
     s = sparse.random(shape, 0.5, format="dok")
     x = s.todense()
 
@@ -173,11 +155,24 @@ def test_setitem(shape, index, value_shape):
     assert_eq(x, s)
 
 
-def test_setitem_delete():
-    shape = (2, 3)
+@given(gen_setitem())
+def test_setitem(sd):
+    shape, index = sd
+    s = sparse.random(shape, 0.5, format="dok")
+    x = s.todense()
+
+    value = np.random.rand()
+
+    s[index] = value
+    x[index] = value
+
+    assert_eq(x, s)
+
+
+@given(gen_sparse_random((2, 3), density=1.0, format="dok"))
+def test_setitem_delete(s):
     index = [0, 1], [1, 2]
     value = 0
-    s = sparse.random(shape, 1.0, format="dok")
     x = s.todense()
 
     s[index] = value
@@ -187,44 +182,29 @@ def test_setitem_delete():
     assert s.nnz < s.size
 
 
-@pytest.mark.parametrize(
-    "shape, index, value_shape",
-    [
-        ((2, 3), ([0, 1.5], [1, 2]), ()),
-        ((2, 3), ([0, 1], [1]), ()),
-        ((2, 3), ([[0], [1]], [1, 2]), ()),
-    ],
+@given(
+    s=gen_sparse_random((2, 3), density=0.5, format="dok"),
+    index=st.sampled_from([([0, 1.5], [1, 2]), ([0, 1], [1]), ([[0], [1]], [1, 2])]),
 )
-def test_setitem_index_error(shape, index, value_shape):
-    s = sparse.random(shape, 0.5, format="dok")
-    value = np.random.rand(*value_shape)
+def test_setitem_index_error(s, index):
+    value = np.random.rand()
 
     with pytest.raises(IndexError):
         s[index] = value
 
 
-@pytest.mark.parametrize(
-    "shape, index, value_shape",
-    [
-        ((2, 3), ([0, 1],), ()),
-    ],
-)
-def test_setitem_notimplemented_error(shape, index, value_shape):
-    s = sparse.random(shape, 0.5, format="dok")
-    value = np.random.rand(*value_shape)
+@given(gen_notimpl_err())
+def test_setitem_notimplemented_error(sd):
+    shape, density, index = sd
+    s = sparse.random(shape, density, format="dok")
+    value = np.random.rand()
     with pytest.raises(NotImplementedError):
         s[index] = value
 
 
-@pytest.mark.parametrize(
-    "shape, index, value_shape",
-    [
-        ((2, 3), ([0, 1], [1, 2]), (1, 2)),
-        ((2, 3), ([0, 1], [1, 2]), (3,)),
-        ((2,), 1, (2,)),
-    ],
-)
-def test_setitem_value_error(shape, index, value_shape):
+@given(gen_setitem_val_err())
+def test_setitem_value_error(sd):
+    shape, index, value_shape = sd
     s = sparse.random(shape, 0.5, format="dok")
     value = np.random.rand(*value_shape)
 
@@ -263,7 +243,7 @@ def test_set_zero():
     assert s.nnz == 0
 
 
-@pytest.mark.parametrize("format", ["coo", "dok"])
+@given(format=st.sampled_from(["coo", "dok"]))
 def test_asformat(format):
     s = sparse.random((2, 3, 4), density=0.5, format="dok")
     s2 = s.asformat(format)
@@ -285,24 +265,18 @@ def test_empty_dok_dtype():
     assert s.dtype == d.dtype
 
 
-def test_zeros_like():
-    s = sparse.random((2, 3, 4), density=0.5)
+@given(gen_sparse_random((2, 3, 4), density=0.5))
+def test_zeros_like(s):
     s2 = sparse.zeros_like(s, format="dok")
     assert s.shape == s2.shape
     assert s.dtype == s2.dtype
     assert isinstance(s2, sparse.DOK)
 
 
-@pytest.mark.parametrize(
-    "pad_width",
-    [
-        2,
-        (2, 1),
-        ((2), (1)),
-        ((1, 2), (4, 5), (7, 8)),
-    ],
+@given(
+    pad_width=st.sampled_from([2, (2, 1), ((2), (1)), ((1, 2), (4, 5), (7, 8)),]),
+    constant_values=st.sampled_from([0, 1, 150, np.nan]),
 )
-@pytest.mark.parametrize("constant_values", [0, 1, 150, np.nan])
 def test_pad_valid(pad_width, constant_values):
     y = sparse.random(
         (50, 50, 3), density=0.15, fill_value=constant_values, format="dok"
@@ -313,24 +287,23 @@ def test_pad_valid(pad_width, constant_values):
     assert_eq(xx, yy)
 
 
-@pytest.mark.parametrize(
-    "pad_width",
-    [
-        ((2, 1), (5, 7)),
-    ],
+@given(
+    pad_width=st.sampled_from([((2, 1), (5, 7)),]),
+    constant_values=st.sampled_from([150, 2, (1, 2)]),
+    y=gen_sparse_random_pad_invalid((50, 50, 3), density=0.15, format="dok"),
 )
-@pytest.mark.parametrize("constant_values", [150, 2, (1, 2)])
-def test_pad_invalid(pad_width, constant_values, fill_value=0):
-    y = sparse.random((50, 50, 3), density=0.15, format="dok")
+def test_pad_invalid(pad_width, constant_values, y):
+    # y = sparse.random( fill_value=fill_value)
     with pytest.raises(ValueError):
         np.pad(y, pad_width, constant_values=constant_values)
 
 
-@pytest.mark.parametrize("func", [np.concatenate, np.stack])
-def test_dok_concat_stack(func):
-    s1 = sparse.random((4, 4), density=0.25, format="dok")
-    s2 = sparse.random((4, 4), density=0.25, format="dok")
-
+@given(
+    func=st.sampled_from([np.concatenate, np.stack]),
+    s1=gen_sparse_random((4, 4), density=0.25, format="dok"),
+    s2=gen_sparse_random((4, 4), density=0.25, format="dok"),
+)
+def test_dok_concat_stack(func, s1, s2):
     x1 = s1.todense()
     x2 = s2.todense()
 
