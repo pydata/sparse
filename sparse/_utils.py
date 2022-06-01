@@ -87,13 +87,15 @@ def algD(n, N, random_state=None):
         N = size of system (elements)
         random_state = seed for random number generation
     """
-
+    _rnd = np.random.rand
+    _exp = np.exp
+    _log = np.log
     if random_state != None:
         np.random.seed(random_state)
     n = np.int64(n + 1)
     N = np.int64(N)
     qu1 = N - n + 1
-    Vprime = np.exp(np.log(np.random.rand()) / n)
+    Vprime = _exp(_log(_rnd()) / n)
     i = 0
     arr = np.zeros(n - 1, dtype=np.int64)
     arr[-1] = -1
@@ -105,8 +107,8 @@ def algD(n, N, random_state=None):
                 S = np.int64(X)
                 if S < qu1:
                     break
-                Vprime = np.exp(np.log(np.random.rand()) / n)
-            y1 = np.exp(np.log(np.random.rand() * N / qu1) * nmin1inv)
+                Vprime = _exp(_log(_rnd()) / n)
+            y1 = _exp(_log(_rnd() * N / qu1) * nmin1inv)
             Vprime = y1 * (1 - X / N) * (qu1 / (qu1 - S))
             if Vprime <= 1:
                 break
@@ -125,10 +127,10 @@ def algD(n, N, random_state=None):
                 top -= 1
                 bottom -= 1
                 t -= 1
-            if N / (N - X) >= y1 * np.exp(np.log(y2) / nmin1inv):
-                Vprime = np.exp(np.log(np.random.rand()) * nmin1inv)
+            if N / (N - X) >= y1 * _exp(_log(y2) / nmin1inv):
+                Vprime = _exp(_log(_rnd()) * nmin1inv)
                 break
-            Vprime = np.exp(np.log(np.random.rand()) / n)
+            Vprime = _exp(_log(_rnd()) / n)
         arr[i] = arr[i - 1] + S + 1
         i += 1
         N = N - S - 1
@@ -174,28 +176,34 @@ def algA(n, N, random_state=None):
     return arr
 
 
-@numba.jit(nopython=True, nogil=True)
+@numba.jit(nopython=True, nogil=True, parallel=True)
 def reverse(inv, N):
     """
-    If density of random matrix is greater than .5, it is faster to sample states not included
+    If density of random matrix is greater than .5, it is faster to sample
+    states not included
+    This function is a faster (more niche) implementation of np.delete to get
+    indices not in inv. Does not work for len(inv) < 3
     Parameters:
-        arr = np.array(np.int64) of indices to be excluded from sample
+        inv = np.array(np.int64) of indices to be excluded from sample
         N = size of the system (elements)
     """
     N = np.int64(N)
-    a = np.zeros(np.int64(N - len(inv)), dtype=np.int64)
-    j = 0
-    k = 0
-    for i in range(N):
-        if j == len(inv):
-            a[k:] = np.arange(i, N)
-            break
-        elif i == inv[j]:
-            j += 1
+    out = np.zeros(np.int64(N - len(inv)), dtype=np.int64)
+    for i in numba.prange(inv.shape[0]):
+        if i == 0 and inv[0] != 0:
+            for j in range(inv[0]):
+                out[j - i] = j
+        elif i == len(inv) - 1:
+            for j in range(inv[-2] + 1, inv[-1]):
+                out[j - i] = j
+            for j in range(inv[-1] + 1, N):
+                out[j - i - 1] = j
+        elif inv[i - 1] + 1 == inv[i]:
+            pass
         else:
-            a[k] = i
-            k += 1
-    return a
+            for j in range(inv[i - 1] + 1, inv[i]):
+                out[j - i] = j
+    return out
 
 
 def random(
@@ -294,9 +302,14 @@ def random(
         ind = np.arange(elements)
     elif nnz < 2:
         ind = random_state.choice(elements, nnz)
+
     # Faster to find non-sampled indices and remove them for dens > .5
-    elif elements - nnz < 2:
-        ind = reverse(random_state.choice(elements, elements - nnz), elements)
+    elif elements - nnz < 4:
+        ind = np.arange(elements)
+        ind = np.delete(
+            ind, np.sort(random_state.choice(elements, elements - nnz, replace=False))
+        )
+
     elif nnz > elements / 2:
         nnztemp = elements - nnz
         # Using algorithm A for dens > .1
