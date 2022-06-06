@@ -77,8 +77,8 @@ with nonzero fill values.
    data = [0, 0]
    s = COO(coords, data, fill_value=1)
 
-From :doc:`Scipy sparse matrices <reference/generated/scipy.sparse.spmatrix>`
------------------------------------------------------------------------------
+From :doc:`Scipy sparse matrices <scipy:reference/generated/scipy.sparse.spmatrix>`
+-----------------------------------------------------------------------------------
 To construct :obj:`COO` array from :obj:`spmatrix <scipy.sparse.spmatrix>`
 objects, you can use the :obj:`COO.from_scipy_sparse` method. As an
 example, if :code:`x` is a :obj:`scipy.sparse.spmatrix`, you can
@@ -88,8 +88,8 @@ do the following to get an equivalent :obj:`COO` array:
 
    s = COO.from_scipy_sparse(x)
 
-From :doc:`Numpy arrays <reference/generated/numpy.ndarray>`
-------------------------------------------------------------
+From :doc:`Numpy arrays <numpy:reference/generated/numpy.ndarray>`
+------------------------------------------------------------------
 To construct :obj:`COO` arrays from :obj:`numpy.ndarray`
 objects, you can use the :obj:`COO.from_numpy` method. As an
 example, if :code:`x` is a :obj:`numpy.ndarray`, you can
@@ -184,7 +184,7 @@ Slicing and fancy indexing will always return a new DOK array.
 
 Converting :obj:`COO` objects to other Formats
 ----------------------------------------------
-:obj:`COO` arrays can be converted to :doc:`Numpy arrays <reference/generated/numpy.ndarray>`,
+:obj:`COO` arrays can be converted to :doc:`Numpy arrays <numpy:reference/generated/numpy.ndarray>`,
 or to some :obj:`spmatrix <scipy.sparse.spmatrix>` subclasses via the following
 methods:
 

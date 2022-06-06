@@ -4,7 +4,7 @@
 .. automodule:: {{ fullname }}
 .. currentmodule:: {{ fullname }}
 
-{% if classes %}
+{%% if classes %}
 .. rubric:: Classes
 .. autosummary::
     :toctree:
