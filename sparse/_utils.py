@@ -176,36 +176,6 @@ def algA(n, N, random_state=None):
     return arr
 
 
-@numba.jit(nopython=True, nogil=True, parallel=True)
-def reverse(inv, N):
-    """
-    If density of random matrix is greater than .5, it is faster to sample
-    states not included
-    This function is a faster (more niche) implementation of np.delete to get
-    indices not in inv. Does not work for len(inv) < 3
-    Parameters:
-        inv = np.array(np.int64) of indices to be excluded from sample
-        N = size of the system (elements)
-    """
-    N = np.int64(N)
-    out = np.zeros(np.int64(N - len(inv)), dtype=np.int64)
-    for i in numba.prange(inv.shape[0]):
-        if i == 0 and inv[0] != 0:
-            for j in range(inv[0]):
-                out[j - i] = j
-        elif i == len(inv) - 1:
-            for j in range(inv[-2] + 1, inv[-1]):
-                out[j - i] = j
-            for j in range(inv[-1] + 1, N):
-                out[j - i - 1] = j
-        elif inv[i - 1] + 1 == inv[i]:
-            pass
-        else:
-            for j in range(inv[i - 1] + 1, inv[i]):
-                out[j - i] = j
-    return out
-
-
 def random(
     shape,
     density=None,
@@ -314,15 +284,18 @@ def random(
         nnztemp = elements - nnz
         # Using algorithm A for dens > .1
         if elements > 10 * nnztemp:
-            ind = reverse(
-                algD(nnztemp, elements, random_state.choice(np.iinfo(np.int32).max)),
-                elements,
+            indtemp = algD(
+                nnztemp, elements, random_state.choice(np.iinfo(np.int32).max)
             )
         else:
-            ind = reverse(
-                algA(nnztemp, elements, random_state.choice(np.iinfo(np.int32).max)),
-                elements,
+            indtemp = algA(
+                nnztemp, elements, random_state.choice(np.iinfo(np.int32).max)
             )
+
+        boolmask = np.ones(elements, dtype=bool)
+        boolmask[indtemp] = False
+        ind = np.arange(elements)[boolmask]
+
     else:
         if elements > 10 * nnz:
             ind = algD(nnz, elements, random_state.choice(np.iinfo(np.int32).max))
