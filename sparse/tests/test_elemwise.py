@@ -705,3 +705,9 @@ def test_elemwise_binary_empty():
         assert z.nnz == 0
         assert z.coords.shape == (2, 0)
         assert z.data.shape == (0,)
+
+
+def test_nanmean_regression():
+    array = np.array([0.0 + 0.0j, 0.0 + np.nan * 1j], dtype=np.complex64)
+    sparray = sparse.COO.from_numpy(array)
+    assert_eq(array, sparray)

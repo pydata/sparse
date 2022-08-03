@@ -397,7 +397,10 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
     assert out is None
     x = asCOO(x, name="nanmean")
 
-    if not np.issubdtype(x.dtype, np.floating):
+    if not (
+        np.issubdtype(x.dtype, np.floating)
+        or np.issubdtype(x.dtype, np.complexfloating)
+    ):
         return x.mean(axis=axis, keepdims=keepdims, dtype=dtype)
 
     mask = np.isnan(x)
@@ -420,7 +423,7 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
     with np.errstate(invalid="ignore", divide="ignore"):
         if num.ndim:
             return np.true_divide(num, den, casting="unsafe")
-        return (num / den).astype(dtype)
+        return (num / den).astype(dtype if dtype is not None else x.dtype)
 
 
 def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
