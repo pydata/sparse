@@ -1,7 +1,9 @@
+import sys
 import platform
-import numpy.distutils.system_info as sysinfo
+
+is_64bits = sys.maxsize > 2**32
 
 
 def pytest_cmdline_preparse(args):
-    if platform.system() != "Windows" and sysinfo.platform_bits != 32:
+    if platform.system() != "Windows" and not is_64bits:
         args.append("--doctest-modules")
