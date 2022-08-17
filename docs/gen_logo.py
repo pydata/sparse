@@ -7,7 +7,7 @@ def transform(a, b, c, d, e, f):
 
 def fill(rs):
     """Generates opacity at random, weighted a bit toward 0 and 1"""
-    x = rs.choice(np.arange(4), p=[0.3, 0.2, 0.2, 0.3]) / 4
+    x = rs.choice(np.arange(5), p=[0.3, 0.2, 0.0, 0.2, 0.3]) / 4
     return f"fill-opacity:{x:.1f}"
 
 
