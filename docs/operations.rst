@@ -9,7 +9,7 @@ Operators
 ---------
 
 :obj:`COO` and :obj:`GCXS` objects support a number of operations. They interact with scalars,
-:doc:`Numpy arrays <reference/generated/numpy.ndarray>`, other :obj:`COO` and :obj:`GCXS` objects,
+:doc:`Numpy arrays <numpy:reference/generated/numpy.ndarray>`, other :obj:`COO` and :obj:`GCXS` objects,
 and :obj:`scipy.sparse.spmatrix` objects, all following standard Python and Numpy
 conventions.
 
@@ -50,7 +50,7 @@ For example, the following will add two arrays:
 Auto-Densification
 ~~~~~~~~~~~~~~~~~~
 Operations that would result in dense matrices, such as
-operations with :doc:`Numpy arrays <reference/generated/numpy.ndarray>`
+operations with :doc:`Numpy arrays <numpy:reference/generated/numpy.ndarray>`
 raises a :obj:`ValueError`. For example, the following will raise a
 :obj:`ValueError` if :code:`x` is a :obj:`numpy.ndarray`:
 
@@ -121,7 +121,7 @@ on :obj:`COO` or :obj:`GCXS`, as long as it is to the right of the operator.
 
 Broadcasting
 ------------
-All binary operators support :doc:`broadcasting <user/basics.broadcasting>`.
+All binary operators support :doc:`broadcasting <numpy:user/basics.broadcasting>`.
 This means that (under certain conditions) you can perform binary operations
 on arrays with unequal shape. Namely, when the shape is missing a dimension,
 or when a dimension is :code:`1`. For example, performing a binary operation
@@ -154,7 +154,7 @@ To illustrate, the following are all possible, and will produce another
 
 As above, in the last three cases, an array with a nonzero fill value will be produced.
 
-Notice that you can apply any unary or binary :doc:`numpy.ufunc <reference/ufuncs>` to :obj:`COO`
+Notice that you can apply any unary or binary :doc:`numpy.ufunc <numpy:reference/ufuncs>` to :obj:`COO`
 arrays, and :obj:`numpy.ndarray` objects and scalars and it will work so
 long as the result is not dense. When applying to :obj:`numpy.ndarray` objects,
 we check that operating on the array with zero would always produce a zero.
@@ -177,7 +177,7 @@ currently work:
 
 :obj:`SparseArray.reduce`
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-This method can take an arbitrary :doc:`numpy.ufunc <reference/ufuncs>` and performs a
+This method can take an arbitrary :doc:`numpy.ufunc <numpy:reference/ufuncs>` and performs a
 reduction using that method. For example, the following will perform
 a sum:
 
@@ -194,7 +194,7 @@ a sum:
 
 Partial List of Supported Reductions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Although any binary :doc:`numpy.ufunc <reference/ufuncs>` should work for reductions, when calling
+Although any binary :doc:`numpy.ufunc <numpy:reference/ufuncs>` should work for reductions, when calling
 in the form :code:`x.reduction()`, the following reductions are supported:
 
 * :obj:`COO.sum`
