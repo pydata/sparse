@@ -949,7 +949,7 @@ def test_two_random_same_seed():
     "rvs, dtype",
     [
         (None, np.float64),
-        (scipy.stats.poisson(25, loc=10).rvs, np.int_),
+        (scipy.stats.poisson(25, loc=10).rvs, np.int64),
         (lambda x: np.random.choice([True, False], size=x), np.bool_),
     ],
 )
