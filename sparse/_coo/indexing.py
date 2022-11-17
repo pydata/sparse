@@ -55,6 +55,9 @@ def getitem(x, index):
             sorted=True,
             fill_value=fill_value,
         )
+    if index == () and x.shape == ():
+        # x[()] returns a scalar if x is zero dimensional
+        return x.todense()[()]
 
     # Otherwise, convert into a tuple.
     if not isinstance(index, tuple):
