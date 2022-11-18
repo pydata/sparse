@@ -1,8 +1,9 @@
 import numpy as np
 import numba
 import scipy.sparse
-from functools import wraps
+from functools import wraps, reduce
 from itertools import chain
+from operator import mul
 from collections.abc import Iterable
 from scipy.sparse import spmatrix
 from numba import literal_unroll
@@ -1209,6 +1210,142 @@ def _dot_ndarray_coo_type_sparse(dt1, dt2):
         return np.array(out_coords).T, np.array(out_data)
 
     return _dot_ndarray_coo
+
+
+def _einsum_single(lhs, rhs, operand):
+    """Perform a single term einsum, i.e. any combination of transposes, sums
+    and traces of dimensions.
+
+    Parameters
+    ----------
+    lhs : str
+        The indices of the input array.``
+    rhs : str
+        The indices of the output array.
+    operand : SparseArray
+        The array to perform the einsum on.
+
+    Returns
+    -------
+    output : SparseArray
+    """
+    operand = asCOO(operand)
+
+    if lhs == rhs:
+        # XXX: take copy?
+        return operand
+
+    # check if repeated / 'trace' indices mean we are only taking a subset
+    where = {}
+    for i, ix in enumerate(lhs):
+        where.setdefault(ix, []).append(i)
+
+    selector = None
+    for ix, locs in where.items():
+        loc0, *rlocs = locs
+        if rlocs:
+            # repeated index - only select data where all indices match
+            loc0, *locs = locs
+            subselector = (operand.coords[loc0] == operand.coords[rlocs]).all(axis=0)
+            if selector is None:
+                selector = subselector
+            else:
+                selector &= subselector
+
+    # indices that are removed (i.e. not in the output / `perm`)
+    # are handled by `has_duplicates=True` below
+    perm = [lhs.index(ix) for ix in rhs]
+    new_shape = tuple(operand.shape[i] for i in perm)
+
+    # select the new COO data
+    if selector is not None:
+        new_coords = operand.coords[:, selector][perm]
+        new_data = operand.data[selector]
+    else:
+        new_coords = operand.coords[perm]
+        new_data = operand.data
+
+    if not rhs:
+        # scalar output - match numpy behaviour
+        return new_data.sum()
+
+    return operand.__class__(new_coords, new_data, shape=new_shape, has_duplicates=True)
+
+
+def einsum(subscripts, *operands):
+    """
+    Perform the equivalent of :obj:`numpy.einsum`.
+
+    Parameters
+    ----------
+    subscripts : str
+        Specifies the subscripts for summation as comma separated list of
+        subscript labels. An implicit (classical Einstein summation)
+        calculation is performed unless the explicit indicator '->' is
+        included as well as subscript labels of the precise output form.
+    operands : sequence of SparseArray
+        These are the arrays for the operation.
+
+    Returns
+    -------
+    output : SparseArray
+        The calculation based on the Einstein summation convention.
+    """
+    if "->" not in subscripts:
+        # from opt_einsum: calc the output autmatically
+        lhs = subscripts
+        tmp_subscripts = lhs.replace(",", "")
+        rhs = "".join(
+            # sorted sequence of indices
+            s
+            for s in sorted(set(tmp_subscripts))
+            # that appear exactly once
+            if tmp_subscripts.count(s) == 1
+        )
+    else:
+        lhs, rhs = subscripts.split("->")
+
+    if len(operands) == 1:
+        return _einsum_single(lhs, rhs, operands[0])
+
+    # if multiple arrays: align, broadcast multiply and then use single einsum
+    # for example:
+    #     "aab,cbd->dac"
+    # we first perform single term reductions and align:
+    #     aab -> ab..
+    #     cbd -> .bcd
+    # (where dots represent broadcastable size 1 dimensions), then multiply all
+    # to form the 'minimal outer product' and do a final single term einsum:
+    #     abcd -> dab
+
+    # get ordered union of indices from all terms, indicies that only appear
+    # in a single term will be removed in the 'preparation' step below
+    terms = lhs.split(",")
+    total = {}
+    for t, term in enumerate((*terms, rhs)):
+        for ix in term:
+            total.setdefault(ix, set()).add(t)
+    aligned_term = "".join(ix for ix, apps in total.items() if len(apps) > 1)
+
+    # NB: if every index appears exactly twice,
+    # we could identify and dispatch to tensordot here?
+
+    parrays = []
+    for term, array in zip(terms, operands):
+        # calc the target indices for this term
+        pterm = "".join(ix for ix in aligned_term if ix in term)
+        if pterm != term:
+            # perform necessary transpose and reductions
+            array = _einsum_single(term, pterm, array)
+        # calc broadcastable shape
+        shape = [
+            array.shape[pterm.index(ix)] if ix in pterm else 1 for ix in aligned_term
+        ]
+        parrays.append(array.reshape(shape))
+
+    aligned_array = reduce(mul, parrays)
+
+    return _einsum_single(aligned_term, rhs, aligned_array)
 
 
 def stack(arrays, axis=0, compressed_axes=None):
