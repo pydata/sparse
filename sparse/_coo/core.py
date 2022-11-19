@@ -257,7 +257,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if isinstance(shape, np.ndarray):
             shape = tuple(shape)
 
-        if shape is not None and not self.coords.size:
+        if shape and not self.coords.size:
             warnings.warn(
                 "coords should be an ndarray. This will raise a ValueError in the future.",
                 DeprecationWarning,
