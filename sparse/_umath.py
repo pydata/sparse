@@ -533,7 +533,8 @@ class _Elemwise:
         from ._coo import COO
 
         zero_args = tuple(
-            arg.fill_value[...] if isinstance(arg, COO) else arg for arg in self.args
+            np.array(arg.fill_value) if isinstance(arg, COO) else arg
+            for arg in self.args
         )
 
         # Some elemwise functions require a dtype argument, some abhorr it.
