@@ -17,7 +17,7 @@ from numba.extending import (
 from numba.core.imputils import impl_ret_borrowed, lower_constant, lower_builtin
 from numba.core.typing.typeof import typeof_impl
 from numba.core import cgutils, types
-from sparse._utils import _zero_of_dtype
+from .._utils import _zero_of_dtype
 import contextlib
 
 from . import COO

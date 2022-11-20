@@ -508,7 +508,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         NotImplementedError
             If the format isn't supported.
         """
-        from sparse._utils import convert_format
+        from ._utils import convert_format
 
         format = convert_format(format)
 

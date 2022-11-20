@@ -1323,7 +1323,7 @@ def eye(N, M=None, k=0, dtype=float, format="coo", **kwargs):
            [0., 0., 1.],
            [0., 0., 0.]])
     """
-    from sparse import COO
+    from ._coo import COO
 
     if M is None:
         M = N
@@ -1595,7 +1595,8 @@ def outer(a, b, out=None):
            [0, 2, 4, 6],
            [0, 3, 6, 9]])
     """
-    from sparse import SparseArray, COO
+    from ._sparse_array import SparseArray
+    from ._coo import COO
 
     if isinstance(a, SparseArray):
         a = COO(a)
