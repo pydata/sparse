@@ -103,7 +103,7 @@ autosummary_generate_overwrite = False
 # a list of builtin themes.
 #
 html_theme = "sphinx_rtd_theme"
-html_logo = "logo.png"
+html_logo = "logo.svg"
 html_favicon = "logo.png"
 
 # Theme options are theme-specific and customize the look and feel of a theme
