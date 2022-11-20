@@ -74,6 +74,7 @@ einsum_cases = [
     "bbd,bda,fc,db->acf",
     "dba,ead,cad->bce",
     "aef,fbc,dca->bde",
+    "abab->ba",
 ]
 
 

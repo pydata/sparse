@@ -1219,7 +1219,7 @@ def _einsum_single(lhs, rhs, operand):
     Parameters
     ----------
     lhs : str
-        The indices of the input array.``
+        The indices of the input array.
     rhs : str
         The indices of the output array.
     operand : SparseArray
@@ -1266,7 +1266,7 @@ def _einsum_single(lhs, rhs, operand):
         new_data = operand.data
 
     if not rhs:
-        # scalar output - match numpy behaviour
+        # scalar output - match numpy behaviour by not wrapping as array
         return new_data.sum()
 
     return operand.__class__(new_coords, new_data, shape=new_shape, has_duplicates=True)
@@ -1292,7 +1292,7 @@ def einsum(subscripts, *operands):
         The calculation based on the Einstein summation convention.
     """
     if "->" not in subscripts:
-        # from opt_einsum: calc the output autmatically
+        # from opt_einsum: calc the output automatically
         lhs = subscripts
         tmp_subscripts = lhs.replace(",", "")
         rhs = "".join(
@@ -1316,7 +1316,7 @@ def einsum(subscripts, *operands):
     #     cbd -> .bcd
     # (where dots represent broadcastable size 1 dimensions), then multiply all
     # to form the 'minimal outer product' and do a final single term einsum:
-    #     abcd -> dab
+    #     abcd -> dac
 
     # get ordered union of indices from all terms, indicies that only appear
     # in a single term will be removed in the 'preparation' step below
