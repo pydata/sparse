@@ -40,9 +40,11 @@ def compute_flat(increments, cols, operations):  # pragma: no cover
             pos -= 1
             positions[pos] += 1
         pos = len(increments) - 2
-        to_add = np.array(
-            [increments[i][positions[i]] for i in range(len(increments) - 1)]
-        ).sum()
+
+        to_add = 0
+        for i in range(len(increments) - 1):
+            to_add += increments[i][positions[i]]
+
         cols[start:end] = increments[-1] + to_add
         if pos != -1:
             positions[pos] += 1
@@ -60,7 +62,7 @@ def transform_shape(shape):  # pragma: no cover
     """
     shape_bins = np.empty(len(shape), dtype=np.intp)
     shape_bins[-1] = 1
-    for i in range(len(shape) - 2, -1, -1):
+    for i in range(len(shape) - 1):
         shape_bins[i] = np.prod(shape[i + 1 :])
     return shape_bins
 
