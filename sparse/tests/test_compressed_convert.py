@@ -29,14 +29,13 @@ def make_increments(shape):
 )
 def test_compute_flat(shape, expected_subsample, subsample):
     increments = make_increments(shape)
-    operations = np.prod(
-        [inc.shape[0] for inc in increments[:-1]], dtype=increments[0].dtype
-    )
-    cols = np.empty(increments[-1].size * operations, dtype=increments[0].dtype)
+    dtype = increments[0].dtype
+    operations = np.prod([inc.shape[0] for inc in increments[:-1]], dtype=dtype)
+    cols = np.empty(increments[-1].size * operations, dtype=dtype)
 
     assert_eq(
         convert.compute_flat(increments, cols, operations)[::subsample],
-        expected_subsample,
+        expected_subsample.astype(dtype),
     )
 
 
