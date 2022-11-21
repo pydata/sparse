@@ -1254,8 +1254,11 @@ def _einsum_single(lhs, rhs, operand):
     for ix, locs in where.items():
         loc0, *rlocs = locs
         if rlocs:
-            # repeated index - only select data where all indices match
-            loc0, *locs = locs
+            # repeated index
+            if len({operand.shape[loc] for loc in locs}) > 1:
+                raise ValueError("Repeated indices must have the same dimension.")
+
+            # only select data where all indices match
             subselector = (operand.coords[loc0] == operand.coords[rlocs]).all(axis=0)
             if selector is None:
                 selector = subselector
@@ -1333,12 +1336,18 @@ def einsum(subscripts, *operands):
     #     abcd -> dac
 
     # get ordered union of indices from all terms, indicies that only appear
-    # in a single term will be removed in the 'preparation' step below
+    # on a single term will be removed in the 'preparation' step below
     terms = lhs.split(",")
     total = {}
-    for t, term in enumerate((*terms, rhs)):
-        for ix in term:
+    sizes = {}
+    for t, term in enumerate(terms):
+        shape = operands[t].shape
+        for ix, d in zip(term, shape):
+            if d != sizes.setdefault(ix, d):
+                raise ValueError(f"Inconsistent shape for index '{ix}'.")
             total.setdefault(ix, set()).add(t)
+    for ix in rhs:
+        total[ix].add(-1)
     aligned_term = "".join(ix for ix, apps in total.items() if len(apps) > 1)
 
     # NB: if every index appears exactly twice,

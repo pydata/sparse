@@ -14,7 +14,6 @@ einsum_cases = [
     "ea,fb,abcd,gc,hd->efgh",
     "abcd,ea,fb,gc,hd->efgh",
     "acdf,jbje,gihb,hfac,gfac,gifabc,hfac",
-    "acdf,jbje,gihb,hfac,gfac,gifabc,hfac",
     "cd,bdhe,aidb,hgca,gc,hgibcd,hgac",
     "abhe,hidj,jgba,hiab,gab",
     "bde,cdh,agdb,hica,ibd,hgicd,hiac",
@@ -83,9 +82,7 @@ einsum_cases = [
 def test_einsum(subscripts, density):
     d = 4
     terms = subscripts.split("->")[0].split(",")
-    arrays = [
-        sparse.random((d,) * len(term), density=density) for term in terms
-    ]
+    arrays = [sparse.random((d,) * len(term), density=density) for term in terms]
     sparse_out = sparse.einsum(subscripts, *arrays)
     numpy_out = np.einsum(subscripts, *(s.todense() for s in arrays))
 
@@ -144,3 +141,12 @@ def test_einsum_format(formats, expected):
         sparse.GCXS: "gcxs",
         np.ndarray: "dense",
     }[out.__class__] == expected
+
+
+def test_einsum_shape_check():
+    x = sparse.random((2, 3, 4), density=0.5)
+    with pytest.raises(ValueError):
+        sparse.einsum("aab", x)
+    y = sparse.random((2, 3, 4), density=0.5)
+    with pytest.raises(ValueError):
+        sparse.einsum("abc,acb", x, y)
