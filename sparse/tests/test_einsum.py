@@ -82,14 +82,65 @@ einsum_cases = [
 @pytest.mark.parametrize("density", [0.1, 1.0])
 def test_einsum(subscripts, density):
     d = 4
-
     terms = subscripts.split("->")[0].split(",")
-    arrays = [sparse.random((d,) * len(term), density=density) for term in terms]
+    arrays = [
+        sparse.random((d,) * len(term), density=density) for term in terms
+    ]
     sparse_out = sparse.einsum(subscripts, *arrays)
     numpy_out = np.einsum(subscripts, *(s.todense() for s in arrays))
 
-    if hasattr(sparse_out, "todense"):
-        # scalar output is not a sparse array
-        sparse_out = sparse_out.todense()
+    if not numpy_out.shape:
+        # scalar output
+        assert np.allclose(numpy_out, sparse_out)
+    else:
+        # array output
+        assert np.allclose(numpy_out, sparse_out.todense())
 
-    assert np.allclose(sparse_out, numpy_out)
+
+def test_einsum_input_fill_value():
+    x = sparse.random(shape=(2,), density=0.5, format="coo", fill_value=2)
+    with pytest.raises(ValueError):
+        sparse.einsum("cba", x)
+
+
+format_test_cases = [
+    (("coo",), "coo"),
+    (("dok",), "dok"),
+    (("gcxs",), "gcxs"),
+    (("dense",), "dense"),
+    (("coo", "coo"), "coo"),
+    (("dok", "coo"), "coo"),
+    (("coo", "dok"), "coo"),
+    (("coo", "dense"), "coo"),
+    (("dense", "coo"), "coo"),
+    (("dok", "dense"), "dok"),
+    (("dense", "dok"), "dok"),
+    (("gcxs", "dense"), "gcxs"),
+    (("dense", "gcxs"), "gcxs"),
+    (("dense", "dense"), "dense"),
+    (("dense", "dok", "gcxs"), "coo"),
+]
+
+
+@pytest.mark.parametrize("formats,expected", format_test_cases)
+def test_einsum_format(formats, expected):
+    inputs = [
+        np.random.randn(2, 2, 2)
+        if format == "dense"
+        else sparse.random((2, 2, 2), density=0.5, format=format)
+        for format in formats
+    ]
+    if len(inputs) == 1:
+        eq = "abc->bc"
+    elif len(inputs) == 2:
+        eq = "abc,cda->abd"
+    elif len(inputs) == 3:
+        eq = "abc,cad,dea->abe"
+
+    out = sparse.einsum(eq, *inputs)
+    assert {
+        sparse.COO: "coo",
+        sparse.DOK: "dok",
+        sparse.GCXS: "gcxs",
+        np.ndarray: "dense",
+    }[out.__class__] == expected

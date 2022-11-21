@@ -1229,11 +1229,21 @@ def _einsum_single(lhs, rhs, operand):
     -------
     output : SparseArray
     """
-    operand = asCOO(operand)
+    from ._coo import COO
 
     if lhs == rhs:
-        # XXX: take copy?
+        if not rhs:
+            # ensure scalar output
+            return operand.sum()
         return operand
+
+    if not isinstance(operand, SparseArray):
+        # just use numpy for dense input
+        return np.einsum(f"{lhs}->{rhs}", operand)
+
+    # else require COO for operations, but check if should convert back
+    to_output_format = getattr(operand, "from_coo", lambda x: x)
+    operand = asCOO(operand)
 
     # check if repeated / 'trace' indices mean we are only taking a subset
     where = {}
@@ -1269,7 +1279,9 @@ def _einsum_single(lhs, rhs, operand):
         # scalar output - match numpy behaviour by not wrapping as array
         return new_data.sum()
 
-    return operand.__class__(new_coords, new_data, shape=new_shape, has_duplicates=True)
+    return to_output_format(
+        COO(new_coords, new_data, shape=new_shape, has_duplicates=True)
+    )
 
 
 def einsum(subscripts, *operands):
@@ -1291,6 +1303,8 @@ def einsum(subscripts, *operands):
     output : SparseArray
         The calculation based on the Einstein summation convention.
     """
+    check_zero_fill_value(*operands)
+
     if "->" not in subscripts:
         # from opt_einsum: calc the output automatically
         lhs = subscripts
@@ -1338,10 +1352,10 @@ def einsum(subscripts, *operands):
             # perform necessary transpose and reductions
             array = _einsum_single(term, pterm, array)
         # calc broadcastable shape
-        shape = [
+        shape = tuple(
             array.shape[pterm.index(ix)] if ix in pterm else 1 for ix in aligned_term
-        ]
-        parrays.append(array.reshape(shape))
+        )
+        parrays.append(array.reshape(shape) if array.shape != shape else array)
 
     aligned_array = reduce(mul, parrays)
 

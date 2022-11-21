@@ -264,7 +264,7 @@ memory than an equivalent desne array, set the environment variable
 Other Operations
 ----------------
 :obj:`COO` and :obj:`GCXS` arrays support a number of other common operations. Among them are
-:obj:`dot`, :obj:`tensordot`, :obj:`concatenate`
+:obj:`dot`, :obj:`tensordot`, :obj:`einsum`, :obj:`concatenate`
 and :obj:`stack`, :obj:`transpose <COO.transpose>` and :obj:`reshape <COO.reshape>`.
 You can view the full list on the :doc:`API reference page <generated/sparse>`.
 
