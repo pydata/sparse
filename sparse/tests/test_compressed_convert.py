@@ -8,49 +8,36 @@ from sparse._utils import assert_eq
 
 
 def make_increments(shape):
-    inds = [np.arange(1, a // 2) for a in shape]
+    inds = [np.arange(1, a - 1) for a in shape]
     shape_bins = convert.transform_shape(np.asarray(shape))
     increments = List([inds[i] * shape_bins[i] for i in range(len(shape))])
     return increments
 
 
 @pytest.mark.parametrize(
-    "shape, expected_p100",
+    "shape, expected_subsample, subsample",
     [
-        [(5, 6, 7, 8, 9), np.array([3610])],
-        [
-            (13, 12, 12, 9, 7),
-            np.array([9899, 12244, 19923, 28043, 30388, 38067, 46187, 48532]),
-        ],
+        [(5, 6, 7, 8, 9), np.array([3610, 6892, 10338]), 1000],
+        [(13, 12, 12, 9, 7), np.array([9899, 34441, 60635, 86703]), 10000],
         [
             (12, 15, 7, 14, 9),
-            np.array(
-                [
-                    14248,
-                    16166,
-                    18786,
-                    29278,
-                    31898,
-                    41754,
-                    44380,
-                    54866,
-                    57486,
-                    68050,
-                    69968,
-                ]
-            ),
+            np.array([14248, 36806, 61382, 85956, 110532, 135106]),
+            10000,
         ],
-        [(9, 9, 12, 7, 12), np.array([10177, 12193, 20257, 28321, 30337])],
+        [(9, 9, 12, 7, 12), np.array([10177, 34369, 60577]), 10000],
     ],
 )
-def test_compute_flat(shape, expected_p100):
+def test_compute_flat(shape, expected_subsample, subsample):
     increments = make_increments(shape)
     operations = np.prod(
         [inc.shape[0] for inc in increments[:-1]], dtype=increments[0].dtype
     )
     cols = np.empty(increments[-1].size * operations, dtype=increments[0].dtype)
 
-    assert_eq(convert.compute_flat(increments, cols, operations)[::100], expected_p100)
+    assert_eq(
+        convert.compute_flat(increments, cols, operations)[::subsample],
+        expected_subsample,
+    )
 
 
 @pytest.mark.parametrize(
