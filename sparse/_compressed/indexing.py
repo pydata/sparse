@@ -1,5 +1,6 @@
 import numpy as np
 import numba
+from numba.typed import List
 from numbers import Integral
 from itertools import zip_longest
 from collections.abc import Iterable
@@ -80,10 +81,13 @@ def getitem(x, key):
     # convert all ints and slices to iterables before flattening
     for i, ind in enumerate(reordered_key):
         if isinstance(ind, Integral):
-            reordered_key[i] = [ind]
+            reordered_key[i] = np.array([ind])
         elif isinstance(ind, slice):
             reordered_key[i] = np.arange(ind.start, ind.stop, ind.step)
+        elif isinstance(ind, np.ndarray) and ind.ndim > 1:
+            raise IndexError("Only one-dimensional iterable indices supported.")
 
+    reordered_key = List(reordered_key)
     shape = np.array(shape)
 
     # convert all indices of compressed axes to a single array index
