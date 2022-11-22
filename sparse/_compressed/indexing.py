@@ -87,6 +87,8 @@ def getitem(x, key):
         elif isinstance(ind, np.ndarray) and ind.ndim > 1:
             raise IndexError("Only one-dimensional iterable indices supported.")
 
+        reordered_key[i] = reordered_key[i].astype(x.indices.dtype, copy=True)
+
     reordered_key = List(reordered_key)
     shape = np.array(shape)
 
