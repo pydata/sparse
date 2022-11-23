@@ -35,11 +35,11 @@ def compute_flat(increments, cols, operations):  # pragma: no cover
     positions = np.zeros(len(increments) - 1, dtype=np.intp)
     pos = len(increments) - 2
     for i in range(operations):
-        if i != 0 and positions[pos] == increments[pos].shape[0]:
+        while i != 0 and positions[pos] == increments[pos].shape[0]:
             positions[pos] = 0
             pos -= 1
             positions[pos] += 1
-            pos += 1
+        pos = len(increments) - 2
         to_add = np.array(
             [increments[i][positions[i]] for i in range(len(increments) - 1)]
         ).sum()
