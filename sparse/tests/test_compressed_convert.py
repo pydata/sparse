@@ -7,11 +7,38 @@ import sparse._compressed.convert as convert
 from sparse._utils import assert_eq
 
 
+def make_inds(shape):
+    return [np.arange(1, a - 1) for a in shape]
+
+
 def make_increments(shape):
-    inds = [np.arange(1, a - 1) for a in shape]
+    inds = make_inds(shape)
     shape_bins = convert.transform_shape(np.asarray(shape))
     increments = List([inds[i] * shape_bins[i] for i in range(len(shape))])
     return increments
+
+
+@pytest.mark.parametrize(
+    "shape, expected_subsample, subsample",
+    [
+        [(5, 6, 7, 8, 9), np.array([3610, 6892, 10338]), 1000],
+        [(13, 12, 12, 9, 7), np.array([9899, 34441, 60635, 86703]), 10000],
+        [
+            (12, 15, 7, 14, 9),
+            np.array([14248, 36806, 61382, 85956, 110532, 135106]),
+            10000,
+        ],
+        [(9, 9, 12, 7, 12), np.array([10177, 34369, 60577]), 10000],
+    ],
+)
+def test_convert_to_flat(shape, expected_subsample, subsample):
+    inds = make_inds(shape)
+    dtype = inds[0].dtype
+
+    assert_eq(
+        convert.convert_to_flat(inds, shape, dtype)[::subsample],
+        expected_subsample.astype(dtype),
+    )
 
 
 @pytest.mark.parametrize(
@@ -31,7 +58,7 @@ def test_compute_flat(shape, expected_subsample, subsample):
     increments = make_increments(shape)
     dtype = increments[0].dtype
     operations = np.prod([inc.shape[0] for inc in increments[:-1]], dtype=dtype)
-    cols = np.empty(increments[-1].size * operations, dtype=dtype)
+    cols = np.tile(increments[-1], operations)
 
     assert_eq(
         convert.compute_flat(increments, cols, operations)[::subsample],
