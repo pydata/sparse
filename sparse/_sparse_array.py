@@ -192,8 +192,8 @@ class SparseArray:
             If the format isn't supported.
         """
 
-    @property
     @classmethod
+    @property
     def format(cls):
         """
         The storage format of this array.
