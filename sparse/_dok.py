@@ -91,6 +91,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
     >>> s6
     <DOK: shape=(5, 5, 5), dtype=int64, nnz=1, fill_value=0.0>
     """
+    format = self.format()
 
     def __init__(self, shape, data=None, dtype=None, fill_value=None):
         from ._coo import COO
