@@ -192,29 +192,6 @@ class SparseArray:
             If the format isn't supported.
         """
 
-    @classmethod
-    def format(cls):
-        """
-        The storage format of this array.
-        Returns
-        -------
-        str
-            The storage format of this array.
-        See Also
-        -------
-        scipy.sparse.dok_matrix.format : The Scipy equivalent property.
-        Examples
-        -------
-        >>> import sparse
-        >>> s = sparse.random((5,5), density=0.2, format='dok')
-        >>> s.format
-        'dok'
-        >>> t = sparse.random((5,5), density=0.2, format='coo')
-        >>> t.format
-        'coo'
-        """
-        return cls.__name__.lower()
-
     @abstractmethod
     def todense(self):
         """
