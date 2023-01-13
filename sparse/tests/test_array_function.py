@@ -96,4 +96,4 @@ def test_zeros_like_order():
 @pytest.mark.parametrize("format", ["dok", "gcxs", "coo"])
 def test_format(func):
     s = sparse.random((5, 5), density=0.2, format=format)
-    assert s.format = format
+    assert s.format == format
