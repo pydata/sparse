@@ -276,15 +276,12 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
     def format(self):
         """
         The storage format of this array.
-
         Returns
         -------
         str
             The storage format of this array.
         See Also
         -------
-        COO.format : Equivalent :obj:`COO` array property.
-        GCXS.format : Equivalent :obj:`GCXS` array property.
         scipy.sparse.dok_matrix.format : The Scipy equivalent property.
         Examples
         -------
@@ -292,6 +289,9 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         >>> s = sparse.random((5,5), density=0.2, format='dok')
         >>> s.format
         'dok'
+        >>> t = sparse.random((5,5), density=0.2, format='coo')
+        >>> t.format
+        'coo'
         """
         return "dok"
 
