@@ -193,7 +193,6 @@ class SparseArray:
         """
 
     @classmethod
-    @property
     def format(cls):
         """
         The storage format of this array.
