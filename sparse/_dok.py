@@ -245,29 +245,6 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         return ar
 
     @property
-    def format(self):
-        """
-        The storage format of this array.
-        Returns
-        -------
-        str
-            The storage format of this array.
-        See Also
-        -------
-        scipy.sparse.dok_matrix.format : The Scipy equivalent property.
-        Examples
-        -------
-        >>> import sparse
-        >>> s = sparse.random((5,5), density=0.2, format='dok')
-        >>> s.format
-        'dok'
-        >>> t = sparse.random((5,5), density=0.2, format='coo')
-        >>> t.format
-        'coo'
-        """
-        return "dok"
-
-    @property
     def nnz(self):
         """
         The number of nonzero elements in this array.
@@ -294,6 +271,29 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         1
         """
         return len(self.data)
+
+    @property
+    def format(self):
+        """
+        The storage format of this array.
+        Returns
+        -------
+        str
+            The storage format of this array.
+        See Also
+        -------
+        scipy.sparse.dok_matrix.format : The Scipy equivalent property.
+        Examples
+        -------
+        >>> import sparse
+        >>> s = sparse.random((5,5), density=0.2, format='dok')
+        >>> s.format
+        'dok'
+        >>> t = sparse.random((5,5), density=0.2, format='coo')
+        >>> t.format
+        'coo'
+        """
+        return "dok"
 
     @property
     def nbytes(self):
