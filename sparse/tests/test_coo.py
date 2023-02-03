@@ -1608,16 +1608,18 @@ def test_random_idx_dtype():
     with pytest.raises(ValueError):
         sparse.random((300,), density=0.1, format="coo", idx_dtype=np.int8)
 
+
 def test_nnz_for_zero_dimensional_array():
-    a = np.array(1)
+    a = sparse.COO.from_numpy(np.array(1))
     assert a.shape == ()
     assert a.ndim == 0
     assert a.nnz == 1
 
-    a = sparse.COO.from_numpy(np.array(()))
+    a = sparse.COO.from_numpy(np.array(0))
     assert a.shape == ()
     assert a.ndim == 0
     assert a.nnz == 0
+
 
 def test_html_for_size_zero():
     arr = sparse.COO.from_numpy(np.array(()))
