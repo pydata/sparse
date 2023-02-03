@@ -7,20 +7,28 @@ from functools import reduce
 from numba.typed import List
 
 
+@numba.jit(nopython=True, nogil=True)
 def convert_to_flat(inds, shape, dtype):
     """
     Converts the indices of either the compressed or uncompressed axes
     into a linearized form. Prepares the inputs for compute_flat.
     """
-    inds = [np.array(ind) for ind in inds]
-    if any(ind.ndim > 1 for ind in inds):
-        raise IndexError("Only one-dimensional iterable indices supported.")
-    cols = np.empty(np.prod([ind.size for ind in inds]), dtype=dtype)
     shape_bins = transform_shape(np.asarray(shape))
     increments = List()
     for i in range(len(inds)):
         increments.append((inds[i] * shape_bins[i]).astype(dtype))
-    operations = np.prod([ind.shape[0] for ind in increments[:-1]], dtype=dtype)
+
+    operations = 1
+    for inc in increments[:-1]:
+        operations *= inc.shape[0]
+
+    if operations == 0:
+        return np.empty(0, dtype=dtype)
+
+    cols = increments[-1].repeat(operations).reshape((-1, operations)).T.flatten()
+    if len(increments) == 1:
+        return cols
+
     return compute_flat(increments, cols, operations)
 
 
@@ -35,19 +43,21 @@ def compute_flat(increments, cols, operations):  # pragma: no cover
     positions = np.zeros(len(increments) - 1, dtype=np.intp)
     pos = len(increments) - 2
     for i in range(operations):
-        if i != 0 and positions[pos] == increments[pos].shape[0]:
-            positions[pos] = 0
-            pos -= 1
-            positions[pos] += 1
-            pos += 1
-        to_add = np.array(
-            [increments[i][positions[i]] for i in range(len(increments) - 1)]
-        ).sum()
-        cols[start:end] = increments[-1] + to_add
-        if pos != -1:
-            positions[pos] += 1
+        to_add = 0
+        for j in range(len(increments) - 1):
+            to_add += increments[j][positions[j]]
+
+        cols[start:end] += to_add
         start += increments[-1].shape[0]
         end += increments[-1].shape[0]
+
+        for j in range(pos, -1, -1):
+            positions[j] += 1
+            if positions[j] == increments[j].shape[0]:
+                positions[j] = 0
+            else:
+                break
+
     return cols
 
 
@@ -60,7 +70,7 @@ def transform_shape(shape):  # pragma: no cover
     """
     shape_bins = np.empty(len(shape), dtype=np.intp)
     shape_bins[-1] = 1
-    for i in range(len(shape) - 2, -1, -1):
+    for i in range(len(shape) - 1):
         shape_bins[i] = np.prod(shape[i + 1 :])
     return shape_bins
 

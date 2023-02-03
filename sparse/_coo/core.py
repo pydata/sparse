@@ -627,6 +627,29 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         return self.coords.shape[1]
 
     @property
+    def format(self):
+        """
+        The storage format of this array.
+        Returns
+        -------
+        str
+            The storage format of this array.
+        See Also
+        -------
+        scipy.sparse.dok_matrix.format : The Scipy equivalent property.
+        Examples
+        -------
+        >>> import sparse
+        >>> s = sparse.random((5,5), density=0.2, format='dok')
+        >>> s.format
+        'dok'
+        >>> t = sparse.random((5,5), density=0.2, format='coo')
+        >>> t.format
+        'coo'
+        """
+        return "coo"
+
+    @property
     def nbytes(self):
         """
         The number of bytes taken up by this object. Note that for small arrays,
@@ -1440,7 +1463,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         NotImplementedError
             If the format isn't supported.
         """
-        from sparse._utils import convert_format
+        from .._utils import convert_format
 
         format = convert_format(format)
 
