@@ -621,6 +621,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         >>> np.count_nonzero(x) == s.nnz
         True
         """
+        if self.shape == ():
+            return len(self.data)
         return self.coords.shape[1]
 
     @property
