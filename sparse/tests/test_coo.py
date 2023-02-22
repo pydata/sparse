@@ -389,7 +389,7 @@ def test_reshape_upcast():
 def test_reshape_errors(format):
     s = sparse.random((5, 3), density=0.5, format=format)
     with pytest.raises(NotImplementedError):
-        s.reshape((3, 5, 1), order='F')
+        s.reshape((3, 5, 1), order="F")
 
 
 def test_to_scipy_sparse():
