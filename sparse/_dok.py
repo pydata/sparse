@@ -563,6 +563,9 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
                [15, 16, 17, 18, 19],
                [20, 21, 22, 23, 24]])
         """
+        if order not in {"C", None}:
+            raise NotImplementedError("The 'order' parameter is not supported")
+
         return DOK.from_coo(self.to_coo().reshape(shape))
 
 
