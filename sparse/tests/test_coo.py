@@ -10,7 +10,7 @@ import scipy.sparse
 import scipy.stats
 
 import sparse
-from sparse import COO
+from sparse import COO, DOK
 from sparse._settings import NEP18_ENABLED
 from sparse._utils import assert_eq, random_value_array, html_table
 
@@ -341,8 +341,9 @@ def test_resize(a, b):
         [(), ()],
     ],
 )
-def test_reshape(a, b):
-    s = sparse.random(a, density=0.5)
+@pytest.mark.parametrize("format", ["coo", "dok"])
+def test_reshape(a, b, format):
+    s = sparse.random(a, density=0.5, format=format)
     x = s.todense()
 
     assert_eq(x.reshape(b), s.reshape(b))
@@ -368,19 +369,27 @@ def test_reshape_same():
     assert s.reshape(s.shape) is s
 
 
-def test_reshape_function():
-    s = sparse.random((5, 3), density=0.5)
+@pytest.mark.parametrize("format", [COO, DOK])
+def test_reshape_function(format):
+    s = sparse.random((5, 3), density=0.5, format=format)
     x = s.todense()
     shape = (3, 5)
 
     s2 = np.reshape(s, shape)
-    assert isinstance(s2, COO)
+    assert isinstance(s2, format)
     assert_eq(s2, x.reshape(shape))
 
 
 def test_reshape_upcast():
     a = sparse.random((10, 10, 10), density=0.5, format="coo", idx_dtype=np.uint8)
     assert a.reshape(1000).coords.dtype == np.uint16
+
+
+@pytest.mark.parametrize("format", [COO, DOK])
+def test_reshape_errors(format):
+    s = sparse.random((5, 3), density=0.5, format=format)
+    with pytest.raises(NotImplementedError):
+        s.reshape((3, 5, 1), order="F")
 
 
 def test_to_scipy_sparse():
@@ -1148,7 +1157,6 @@ def test_prod_along_axis():
 
 
 class TestRoll:
-
     # test on 1d array #
     @pytest.mark.parametrize("shift", [0, 2, -2, 20, -20])
     def test_1d(self, shift):
@@ -1455,7 +1463,6 @@ def test_prune_coo():
 
 
 def test_diagonal():
-
     a = sparse.random((4, 4), density=0.5)
 
     assert_eq(sparse.diagonal(a, offset=0), np.diagonal(a.todense(), offset=0))
@@ -1481,7 +1488,6 @@ def test_diagonal():
 
 
 def test_diagonalize():
-
     assert_eq(sparse.diagonalize(np.ones(3)), sparse.eye(3))
 
     assert_eq(

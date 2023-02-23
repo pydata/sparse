@@ -24,7 +24,6 @@ from .indexing import getitem
 
 
 def _from_coo(x, compressed_axes=None, idx_dtype=None):
-
     if x.ndim == 0:
         if compressed_axes is not None:
             raise ValueError("no axes to compress for 0d array")
@@ -147,7 +146,6 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         fill_value=0,
         idx_dtype=None,
     ):
-
         if isinstance(arg, ss.spmatrix):
             arg = self.from_scipy_sparse(arg)
 
@@ -491,7 +489,6 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         return self.tocoo().todense()
 
     def todok(self):
-
         from .. import DOK
 
         return DOK.from_coo(self.tocoo())  # probably a temporary solution
