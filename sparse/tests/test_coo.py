@@ -1157,7 +1157,6 @@ def test_prod_along_axis():
 
 
 class TestRoll:
-
     # test on 1d array #
     @pytest.mark.parametrize("shift", [0, 2, -2, 20, -20])
     def test_1d(self, shift):
@@ -1464,7 +1463,6 @@ def test_prune_coo():
 
 
 def test_diagonal():
-
     a = sparse.random((4, 4), density=0.5)
 
     assert_eq(sparse.diagonal(a, offset=0), np.diagonal(a.todense(), offset=0))
@@ -1490,7 +1488,6 @@ def test_diagonal():
 
 
 def test_diagonalize():
-
     assert_eq(sparse.diagonalize(np.ones(3)), sparse.eye(3))
 
     assert_eq(

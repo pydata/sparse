@@ -158,7 +158,6 @@ def _1d_reshape(x, shape, compressed_axes):
 
 
 def _resize(x, shape, compressed_axes):
-
     from .compressed import GCXS
 
     check_compressed_axes(shape, compressed_axes)
@@ -314,7 +313,6 @@ def _convert_coords(
     new_compressed_shape,
     transpose,
 ):  # pragma: no cover
-
     if transpose == True:
         for i, n in enumerate(linear):
             # c ordering
