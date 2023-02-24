@@ -1212,13 +1212,12 @@ def _dot_ndarray_coo_type_sparse(dt1, dt2):
     return _dot_ndarray_coo
 
 
+# Copied from : https://github.com/numpy/numpy/blob/59fec4619403762a5d785ad83fcbde5a230416fc/numpy/core/einsumfunc.py#L523 
+# under BSD-3-Clause license : https://github.com/numpy/numpy/blob/v1.24.0/LICENSE.txt
 def _parse_einsum_input(operands):
     """
     A copy of the numpy parse_einsum_input that 
     does not cast the operands to numpy array.
-    
-    Copied from : https://github.com/numpy/numpy/blob/main/numpy/core/einsumfunc.py
-    under BSD-3-Clause license : https://github.com/numpy/numpy/blob/main/LICENSE.txt
     
     Returns
     -------
