@@ -6,11 +6,11 @@ build:
     python: "3.10"
 
 sphinx:
-   configuration: docs/conf.py
+  configuration: docs/conf.py
 
 python:
-   install:
-   - method: pip
-      path: .
-      extra_requirements:
-        - docs
+  install:
+  - method: pip
+    path: .
+    extra_requirements:
+      - docs
