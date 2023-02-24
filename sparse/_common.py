@@ -1216,6 +1216,10 @@ def _parse_einsum_input(operands):
     """
     A copy of the numpy parse_einsum_input that 
     does not cast the operands to numpy array.
+    
+    Copied from : https://github.com/numpy/numpy/blob/main/numpy/core/einsumfunc.py
+    under BSD-3-Clause license : https://github.com/numpy/numpy/blob/main/LICENSE.txt
+    
     Returns
     -------
     input_strings : str
@@ -1477,20 +1481,6 @@ def einsum(*operands):
     lhs, rhs, operands = _parse_einsum_input(operands)  # Parse input
     
     check_zero_fill_value(*operands)
-
-    if "->" not in subscripts:
-        # from opt_einsum: calc the output automatically
-        lhs = subscripts
-        tmp_subscripts = lhs.replace(",", "")
-        rhs = "".join(
-            # sorted sequence of indices
-            s
-            for s in sorted(set(tmp_subscripts))
-            # that appear exactly once
-            if tmp_subscripts.count(s) == 1
-        )
-    else:
-        lhs, rhs = subscripts.split("->")
 
     if len(operands) == 1:
         return _einsum_single(lhs, rhs, operands[0])
