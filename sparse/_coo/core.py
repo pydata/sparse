@@ -217,6 +217,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if cache:
             self.enable_caching()
 
+        if not isinstance(coords, np.ndarray):
+            warnings.warn(
+                "coords should be an ndarray. This will raise a ValueError in the future.",
+                DeprecationWarning,
+            )
+
         if data is None:
             arr = as_coo(
                 coords, shape=shape, fill_value=fill_value, idx_dtype=idx_dtype
@@ -258,10 +264,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             shape = tuple(shape)
 
         if shape and not self.coords.size:
-            warnings.warn(
-                "coords should be an ndarray. This will raise a ValueError in the future.",
-                DeprecationWarning,
-            )
             self.coords = np.zeros(
                 (len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp
             )
