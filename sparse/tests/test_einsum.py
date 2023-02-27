@@ -145,13 +145,6 @@ def test_einsum_type_error(subscript):
         sparse.einsum(subscript, x, y)
 
 
-#
-# def test_einsum_type_error_nosubscript():
-#     x = sparse.random(shape=(2, 2), density=0.5, format="coo")
-#     with pytest.raises(ValueError):
-#         sparse.einsum(x, [[0, 1.0], [0]])
-
-
 format_test_cases = [
     (("coo",), "coo"),
     (("dok",), "dok"),
