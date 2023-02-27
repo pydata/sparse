@@ -1212,13 +1212,13 @@ def _dot_ndarray_coo_type_sparse(dt1, dt2):
     return _dot_ndarray_coo
 
 
-# Copied from : https://github.com/numpy/numpy/blob/59fec4619403762a5d785ad83fcbde5a230416fc/numpy/core/einsumfunc.py#L523 
+# Copied from : https://github.com/numpy/numpy/blob/59fec4619403762a5d785ad83fcbde5a230416fc/numpy/core/einsumfunc.py#L523
 # under BSD-3-Clause license : https://github.com/numpy/numpy/blob/v1.24.0/LICENSE.txt
 def _parse_einsum_input(operands):
     """
-    A copy of the numpy parse_einsum_input that 
+    A copy of the numpy parse_einsum_input that
     does not cast the operands to numpy array.
-    
+
     Returns
     -------
     input_strings : str
@@ -1273,7 +1273,10 @@ def _parse_einsum_input(operands):
                     try:
                         s = index(s)
                     except TypeError as e:
-                        raise TypeError("For this input type lists must contain " "either int or Ellipsis") from e
+                        raise TypeError(
+                            "For this input type lists must contain "
+                            "either int or Ellipsis"
+                        ) from e
                     subscripts += np.core.einsumfunc.einsum_symbols[s]
             if num != last:
                 subscripts += ","
@@ -1287,7 +1290,10 @@ def _parse_einsum_input(operands):
                     try:
                         s = index(s)
                     except TypeError as e:
-                        raise TypeError("For this input type lists must contain " "either int or Ellipsis") from e
+                        raise TypeError(
+                            "For this input type lists must contain "
+                            "either int or Ellipsis"
+                        ) from e
                     subscripts += np.core.einsumfunc.einsum_symbols[s]
     # Check for proper "->"
     if ("-" in subscripts) or (">" in subscripts):
@@ -1375,11 +1381,11 @@ def _parse_einsum_input(operands):
 
     # Make sure number operands is equivalent to the number of terms
     if len(input_subscripts.split(",")) != len(operands):
-        raise ValueError("Number of einsum subscripts must be equal to the " "number of operands.")
+        raise ValueError(
+            "Number of einsum subscripts must be equal to the " "number of operands."
+        )
 
     return (input_subscripts, output_subscript, operands)
-
-
 
 
 def _einsum_single(lhs, rhs, operand):
@@ -1476,9 +1482,9 @@ def einsum(*operands):
     output : SparseArray
         The calculation based on the Einstein summation convention.
     """
-    
+
     lhs, rhs, operands = _parse_einsum_input(operands)  # Parse input
-    
+
     check_zero_fill_value(*operands)
 
     if len(operands) == 1:
