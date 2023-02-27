@@ -74,6 +74,10 @@ einsum_cases = [
     "dba,ead,cad->bce",
     "aef,fbc,dca->bde",
     "abab->ba",
+    "...ab,...ab",
+    "...ab,...b->...a",
+    "a...,a...",
+    "a...,a...",
 ]
 
 
@@ -94,10 +98,51 @@ def test_einsum(subscripts, density):
         assert np.allclose(numpy_out, sparse_out.todense())
 
 
+@pytest.mark.parametrize(
+    "input", [[[0, 0]], [[0, Ellipsis]], [[Ellipsis, 1], [Ellipsis]], [[0, 1], [0]]]
+)
+@pytest.mark.parametrize("density", [0.1, 1.0])
+def test_einsum_nosubscript(input, density):
+    d = 4
+    arrays = [sparse.random((d, d), density=density)]
+    sparse_out = sparse.einsum(*arrays, *input)
+    numpy_out = np.einsum(*(s.todense() for s in arrays), *input)
+
+    if not numpy_out.shape:
+        # scalar output
+        assert np.allclose(numpy_out, sparse_out)
+    else:
+        # array output
+        assert np.allclose(numpy_out, sparse_out.todense())
+
+
 def test_einsum_input_fill_value():
     x = sparse.random(shape=(2,), density=0.5, format="coo", fill_value=2)
     with pytest.raises(ValueError):
         sparse.einsum("cba", x)
+
+
+def test_einsum_no_input():
+    with pytest.raises(ValueError):
+        sparse.einsum()
+
+
+@pytest.mark.parametrize(
+    "subscript", ["a+b->c", "i->&", "i->ij", "ij->jij", "a..,a...", ".i...", "a,a->->"]
+)
+def test_einsum_invalid_input(subscript):
+    x = sparse.random(shape=(2,), density=0.5, format="coo")
+    y = sparse.random(shape=(2,), density=0.5, format="coo")
+    with pytest.raises(ValueError):
+        sparse.einsum(subscript, x, y)
+
+
+@pytest.mark.parametrize("subscript", [0, [0, 0]])
+def test_einsum_type_error(subscript):
+    x = sparse.random(shape=(2,), density=0.5, format="coo")
+    y = sparse.random(shape=(2,), density=0.5, format="coo")
+    with pytest.raises(TypeError):
+        sparse.einsum(subscript, x, y)
 
 
 format_test_cases = [
