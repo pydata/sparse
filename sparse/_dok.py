@@ -276,15 +276,12 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
     def format(self):
         """
         The storage format of this array.
-
         Returns
         -------
         str
             The storage format of this array.
         See Also
         -------
-        COO.format : Equivalent :obj:`COO` array property.
-        GCXS.format : Equivalent :obj:`GCXS` array property.
         scipy.sparse.dok_matrix.format : The Scipy equivalent property.
         Examples
         -------
@@ -292,6 +289,9 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         >>> s = sparse.random((5,5), density=0.2, format='dok')
         >>> s.format
         'dok'
+        >>> t = sparse.random((5,5), density=0.2, format='coo')
+        >>> t.format
+        'coo'
         """
         return "dok"
 
@@ -528,6 +528,45 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
             )
 
         return self.asformat("coo").asformat(format, **kwargs)
+
+    def reshape(self, shape, order="C"):
+        """
+        Returns a new :obj:`DOK` array that is a reshaped version of this array.
+
+        Parameters
+        ----------
+        shape : tuple[int]
+            The desired shape of the output array.
+
+        Returns
+        -------
+        DOK
+            The reshaped output array.
+
+        See Also
+        --------
+        numpy.ndarray.reshape : The equivalent Numpy function.
+
+        Notes
+        -----
+        The :code:`order` parameter is provided just for compatibility with
+        Numpy and isn't actually supported.
+
+        Examples
+        --------
+        >>> s = DOK.from_numpy(np.arange(25))
+        >>> s2 = s.reshape((5, 5))
+        >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
+        array([[ 0,  1,  2,  3,  4],
+               [ 5,  6,  7,  8,  9],
+               [10, 11, 12, 13, 14],
+               [15, 16, 17, 18, 19],
+               [20, 21, 22, 23, 24]])
+        """
+        if order not in {"C", None}:
+            raise NotImplementedError("The 'order' parameter is not supported")
+
+        return DOK.from_coo(self.to_coo().reshape(shape))
 
 
 def to_slice(k):

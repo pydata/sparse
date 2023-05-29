@@ -160,7 +160,6 @@ def test_reshape(a, b):
 
 
 def test_reshape_same():
-
     s = sparse.random((3, 5), density=0.5, format="gcxs")
     assert s.reshape(s.shape) is s
 

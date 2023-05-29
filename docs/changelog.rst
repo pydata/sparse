@@ -3,6 +3,14 @@ Changelog
 
 .. currentmodule:: sparse
 
+0.14.0 / 2023-02-24
+-------------------
+* :obj:`sparse.einsum` support (:pr:`564` thanks
+  :ghuser:`jcmgray`)
+* Some bug-fixes (:pr:`524`, :pr:`527`, :pr:`555` thanks :ghuser:`hameerabbasi`, :pr:`569`, thanks :ghuser:`jamestwebber`, :pr:`534`, thanks :ghuser:`sarveshbhatnagar`)
+* Some performance improvements (:pr:`570`, thanks :ghuser:`jamestwebber`, :pr:`540`, thanks :ghuser:`smldub`).
+* Miscellaneous maintenance fixes.
+
 0.13.0 / 2021-08-28
 -------------------
 

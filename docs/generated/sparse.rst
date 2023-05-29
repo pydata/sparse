@@ -39,6 +39,8 @@ API
 
     dot
 
+    einsum
+
     elemwise
 
     eye
@@ -56,7 +58,7 @@ API
     load_npz
 
     matmul
-    
+
     moveaxis
 
     nanmax

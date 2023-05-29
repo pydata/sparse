@@ -1,8 +1,9 @@
 import numpy as np
 import numba
 import scipy.sparse
-from functools import wraps
+from functools import wraps, reduce
 from itertools import chain
+from operator import mul, index
 from collections.abc import Iterable
 from scipy.sparse import spmatrix
 from numba import literal_unroll
@@ -1209,6 +1210,330 @@ def _dot_ndarray_coo_type_sparse(dt1, dt2):
         return np.array(out_coords).T, np.array(out_data)
 
     return _dot_ndarray_coo
+
+
+# Copied from : https://github.com/numpy/numpy/blob/59fec4619403762a5d785ad83fcbde5a230416fc/numpy/core/einsumfunc.py#L523
+# under BSD-3-Clause license : https://github.com/numpy/numpy/blob/v1.24.0/LICENSE.txt
+def _parse_einsum_input(operands):
+    """
+    A copy of the numpy parse_einsum_input that
+    does not cast the operands to numpy array.
+
+    Returns
+    -------
+    input_strings : str
+        Parsed input strings
+    output_string : str
+        Parsed output string
+    operands : list of array_like
+        The operands to use in the numpy contraction
+    Examples
+    --------
+    The operand list is simplified to reduce printing:
+    >>> np.random.seed(123)
+    >>> a = np.random.rand(4, 4)
+    >>> b = np.random.rand(4, 4, 4)
+    >>> _parse_einsum_input(('...a,...a->...', a, b))
+    ('za,xza', 'xz', [a, b]) # may vary
+    >>> _parse_einsum_input((a, [Ellipsis, 0], b, [Ellipsis, 0]))
+    ('za,xza', 'xz', [a, b]) # may vary
+    """
+
+    if len(operands) == 0:
+        raise ValueError("No input operands")
+
+    if isinstance(operands[0], str):
+        subscripts = operands[0].replace(" ", "")
+        operands = [v for v in operands[1:]]
+
+        # Ensure all characters are valid
+        for s in subscripts:
+            if s in ".,->":
+                continue
+            if s not in np.core.einsumfunc.einsum_symbols:
+                raise ValueError("Character %s is not a valid symbol." % s)
+
+    else:
+        tmp_operands = list(operands)
+        operand_list = []
+        subscript_list = []
+        for p in range(len(operands) // 2):
+            operand_list.append(tmp_operands.pop(0))
+            subscript_list.append(tmp_operands.pop(0))
+
+        output_list = tmp_operands[-1] if len(tmp_operands) else None
+        operands = [v for v in operand_list]
+        subscripts = ""
+        last = len(subscript_list) - 1
+        for num, sub in enumerate(subscript_list):
+            for s in sub:
+                if s is Ellipsis:
+                    subscripts += "..."
+                else:
+                    try:
+                        s = index(s)
+                    except TypeError as e:
+                        raise TypeError(
+                            "For this input type lists must contain "
+                            "either int or Ellipsis"
+                        ) from e
+                    subscripts += np.core.einsumfunc.einsum_symbols[s]
+            if num != last:
+                subscripts += ","
+
+        if output_list is not None:
+            subscripts += "->"
+            for s in output_list:
+                if s is Ellipsis:
+                    subscripts += "..."
+                else:
+                    try:
+                        s = index(s)
+                    except TypeError as e:
+                        raise TypeError(
+                            "For this input type lists must contain "
+                            "either int or Ellipsis"
+                        ) from e
+                    subscripts += np.core.einsumfunc.einsum_symbols[s]
+    # Check for proper "->"
+    if ("-" in subscripts) or (">" in subscripts):
+        invalid = (subscripts.count("-") > 1) or (subscripts.count(">") > 1)
+        if invalid or (subscripts.count("->") != 1):
+            raise ValueError("Subscripts can only contain one '->'.")
+
+    # Parse ellipses
+    if "." in subscripts:
+        used = subscripts.replace(".", "").replace(",", "").replace("->", "")
+        unused = list(np.core.einsumfunc.einsum_symbols_set - set(used))
+        ellipse_inds = "".join(unused)
+        longest = 0
+
+        if "->" in subscripts:
+            input_tmp, output_sub = subscripts.split("->")
+            split_subscripts = input_tmp.split(",")
+            out_sub = True
+        else:
+            split_subscripts = subscripts.split(",")
+            out_sub = False
+
+        for num, sub in enumerate(split_subscripts):
+            if "." in sub:
+                if (sub.count(".") != 3) or (sub.count("...") != 1):
+                    raise ValueError("Invalid Ellipses.")
+
+                # Take into account numerical values
+                if operands[num].shape == ():
+                    ellipse_count = 0
+                else:
+                    ellipse_count = max(operands[num].ndim, 1)
+                    ellipse_count -= len(sub) - 3
+
+                if ellipse_count > longest:
+                    longest = ellipse_count
+
+                if ellipse_count < 0:
+                    raise ValueError("Ellipses lengths do not match.")
+                elif ellipse_count == 0:
+                    split_subscripts[num] = sub.replace("...", "")
+                else:
+                    rep_inds = ellipse_inds[-ellipse_count:]
+                    split_subscripts[num] = sub.replace("...", rep_inds)
+
+        subscripts = ",".join(split_subscripts)
+        if longest == 0:
+            out_ellipse = ""
+        else:
+            out_ellipse = ellipse_inds[-longest:]
+
+        if out_sub:
+            subscripts += "->" + output_sub.replace("...", out_ellipse)
+        else:
+            # Special care for outputless ellipses
+            output_subscript = ""
+            tmp_subscripts = subscripts.replace(",", "")
+            for s in sorted(set(tmp_subscripts)):
+                if s not in (np.core.einsumfunc.einsum_symbols):
+                    raise ValueError("Character %s is not a valid symbol." % s)
+                if tmp_subscripts.count(s) == 1:
+                    output_subscript += s
+            normal_inds = "".join(sorted(set(output_subscript) - set(out_ellipse)))
+
+            subscripts += "->" + out_ellipse + normal_inds
+
+    # Build output string if does not exist
+    if "->" in subscripts:
+        input_subscripts, output_subscript = subscripts.split("->")
+    else:
+        input_subscripts = subscripts
+        # Build output subscripts
+        tmp_subscripts = subscripts.replace(",", "")
+        output_subscript = ""
+        for s in sorted(set(tmp_subscripts)):
+            if s not in np.core.einsumfunc.einsum_symbols:
+                raise ValueError("Character %s is not a valid symbol." % s)
+            if tmp_subscripts.count(s) == 1:
+                output_subscript += s
+
+    # Make sure output subscripts are in the input
+    for char in output_subscript:
+        if char not in input_subscripts:
+            raise ValueError("Output character %s did not appear in the input" % char)
+
+    # Make sure number operands is equivalent to the number of terms
+    if len(input_subscripts.split(",")) != len(operands):
+        raise ValueError(
+            "Number of einsum subscripts must be equal to the " "number of operands."
+        )
+
+    return (input_subscripts, output_subscript, operands)
+
+
+def _einsum_single(lhs, rhs, operand):
+    """Perform a single term einsum, i.e. any combination of transposes, sums
+    and traces of dimensions.
+
+    Parameters
+    ----------
+    lhs : str
+        The indices of the input array.
+    rhs : str
+        The indices of the output array.
+    operand : SparseArray
+        The array to perform the einsum on.
+
+    Returns
+    -------
+    output : SparseArray
+    """
+    from ._coo import COO
+
+    if lhs == rhs:
+        if not rhs:
+            # ensure scalar output
+            return operand.sum()
+        return operand
+
+    if not isinstance(operand, SparseArray):
+        # just use numpy for dense input
+        return np.einsum(f"{lhs}->{rhs}", operand)
+
+    # else require COO for operations, but check if should convert back
+    to_output_format = getattr(operand, "from_coo", lambda x: x)
+    operand = asCOO(operand)
+
+    # check if repeated / 'trace' indices mean we are only taking a subset
+    where = {}
+    for i, ix in enumerate(lhs):
+        where.setdefault(ix, []).append(i)
+
+    selector = None
+    for ix, locs in where.items():
+        loc0, *rlocs = locs
+        if rlocs:
+            # repeated index
+            if len({operand.shape[loc] for loc in locs}) > 1:
+                raise ValueError("Repeated indices must have the same dimension.")
+
+            # only select data where all indices match
+            subselector = (operand.coords[loc0] == operand.coords[rlocs]).all(axis=0)
+            if selector is None:
+                selector = subselector
+            else:
+                selector &= subselector
+
+    # indices that are removed (i.e. not in the output / `perm`)
+    # are handled by `has_duplicates=True` below
+    perm = [lhs.index(ix) for ix in rhs]
+    new_shape = tuple(operand.shape[i] for i in perm)
+
+    # select the new COO data
+    if selector is not None:
+        new_coords = operand.coords[:, selector][perm]
+        new_data = operand.data[selector]
+    else:
+        new_coords = operand.coords[perm]
+        new_data = operand.data
+
+    if not rhs:
+        # scalar output - match numpy behaviour by not wrapping as array
+        return new_data.sum()
+
+    return to_output_format(
+        COO(new_coords, new_data, shape=new_shape, has_duplicates=True)
+    )
+
+
+def einsum(*operands):
+    """
+    Perform the equivalent of :obj:`numpy.einsum`.
+
+    Parameters
+    ----------
+    subscripts : str
+        Specifies the subscripts for summation as comma separated list of
+        subscript labels. An implicit (classical Einstein summation)
+        calculation is performed unless the explicit indicator '->' is
+        included as well as subscript labels of the precise output form.
+    operands : sequence of SparseArray
+        These are the arrays for the operation.
+
+    Returns
+    -------
+    output : SparseArray
+        The calculation based on the Einstein summation convention.
+    """
+
+    lhs, rhs, operands = _parse_einsum_input(operands)  # Parse input
+
+    check_zero_fill_value(*operands)
+
+    if len(operands) == 1:
+        return _einsum_single(lhs, rhs, operands[0])
+
+    # if multiple arrays: align, broadcast multiply and then use single einsum
+    # for example:
+    #     "aab,cbd->dac"
+    # we first perform single term reductions and align:
+    #     aab -> ab..
+    #     cbd -> .bcd
+    # (where dots represent broadcastable size 1 dimensions), then multiply all
+    # to form the 'minimal outer product' and do a final single term einsum:
+    #     abcd -> dac
+
+    # get ordered union of indices from all terms, indicies that only appear
+    # on a single term will be removed in the 'preparation' step below
+    terms = lhs.split(",")
+    total = {}
+    sizes = {}
+    for t, term in enumerate(terms):
+        shape = operands[t].shape
+        for ix, d in zip(term, shape):
+            if d != sizes.setdefault(ix, d):
+                raise ValueError(f"Inconsistent shape for index '{ix}'.")
+            total.setdefault(ix, set()).add(t)
+    for ix in rhs:
+        total[ix].add(-1)
+    aligned_term = "".join(ix for ix, apps in total.items() if len(apps) > 1)
+
+    # NB: if every index appears exactly twice,
+    # we could identify and dispatch to tensordot here?
+
+    parrays = []
+    for term, array in zip(terms, operands):
+        # calc the target indices for this term
+        pterm = "".join(ix for ix in aligned_term if ix in term)
+        if pterm != term:
+            # perform necessary transpose and reductions
+            array = _einsum_single(term, pterm, array)
+        # calc broadcastable shape
+        shape = tuple(
+            array.shape[pterm.index(ix)] if ix in pterm else 1 for ix in aligned_term
+        )
+        parrays.append(array.reshape(shape) if array.shape != shape else array)
+
+    aligned_array = reduce(mul, parrays)
+
+    return _einsum_single(aligned_term, rhs, aligned_array)
 
 
 def stack(arrays, axis=0, compressed_axes=None):

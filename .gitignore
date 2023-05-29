@@ -74,3 +74,6 @@ default.profraw
 
 # Sandbox
 sandbox.py
+
+# macOS
+*.DS_Store

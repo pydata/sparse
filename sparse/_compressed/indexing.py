@@ -157,7 +157,7 @@ def getitem(x, key):
             indptr = np.empty(shape[0] + 1, dtype=x.indptr.dtype)
             indptr[0] = 0
             np.cumsum(np.bincount(uncompressed, minlength=shape[0]), out=indptr[1:])
-            indices = indices % size
+            indices %= size
 
     arg = (data, indices, indptr)
 

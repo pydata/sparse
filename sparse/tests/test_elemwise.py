@@ -712,3 +712,11 @@ def test_nanmean_regression(dtype):
     array = np.array([0.0 + 0.0j, 0.0 + np.nan * 1j], dtype=dtype)
     sparray = sparse.COO.from_numpy(array)
     assert_eq(array, sparray)
+
+
+# Regression test for gh-580
+@pytest.mark.filterwarnings("error")
+def test_no_deprecation_warning():
+    a = np.array([1, 2])
+    s = sparse.COO(a, a, shape=(3,))
+    s == s
