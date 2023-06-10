@@ -2,11 +2,11 @@ jobs:
   test:
     defaults:  
       run:
-        shell: bash -l {0}
+        shell: bash -el {0}
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python: ['3.8', '3.9', '3.10']
+        python: ['3.8', '3.9', '3.10', '3.11']
         numba_boundscheck: [0]
         include:
           - os: macos-latest
@@ -23,9 +23,9 @@ jobs:
       NUMBA_BOUNDSCHECK: ${{ matrix.numba_boundscheck }}
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Cache conda
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         env:
           # Increase this value to reset cache if ci/environment.yml has not changed
           CACHE_NUMBER: 0
@@ -45,12 +45,11 @@ jobs:
           use-mamba: true
       - name: Install package
         run: |
-          pip install -U setuptools wheel
           pip install -e .[tests]
       - name: Run tests
         run: |
           pytest --pyargs sparse
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v3
         if: always()
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action/composite@v1
@@ -60,13 +59,13 @@ jobs:
   docs:
     defaults:  
       run:
-        shell: bash -l {0}
+        shell: bash -el {0}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Cache conda
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         env:
           # Increase this value to reset cache if ci/environment.yml has not changed
           CACHE_NUMBER: 0
@@ -85,7 +84,6 @@ jobs:
           use-mamba: true
       - name: Install package
         run: |
-          pip install -U setuptools wheel
           pip install -e .[docs]
       - name: Run tests
         run: |
