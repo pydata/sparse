@@ -217,6 +217,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if cache:
             self.enable_caching()
 
+        if not isinstance(coords, np.ndarray):
+            warnings.warn(
+                "coords should be an ndarray. This will raise a ValueError in the future.",
+                DeprecationWarning,
+            )
+
         if data is None:
             arr = as_coo(
                 coords, shape=shape, fill_value=fill_value, idx_dtype=idx_dtype
@@ -258,10 +264,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             shape = tuple(shape)
 
         if shape and not self.coords.size:
-            warnings.warn(
-                "coords should be an ndarray. This will raise a ValueError in the future.",
-                DeprecationWarning,
-            )
             self.coords = np.zeros(
                 (len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp
             )
@@ -622,6 +624,29 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         True
         """
         return self.coords.shape[1]
+
+    @property
+    def format(self):
+        """
+        The storage format of this array.
+        Returns
+        -------
+        str
+            The storage format of this array.
+        See Also
+        -------
+        scipy.sparse.dok_matrix.format : The Scipy equivalent property.
+        Examples
+        -------
+        >>> import sparse
+        >>> s = sparse.random((5,5), density=0.2, format='dok')
+        >>> s.format
+        'dok'
+        >>> t = sparse.random((5,5), density=0.2, format='coo')
+        >>> t.format
+        'coo'
+        """
+        return "coo"
 
     @property
     def nbytes(self):
@@ -1437,7 +1462,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         NotImplementedError
             If the format isn't supported.
         """
-        from sparse._utils import convert_format
+        from .._utils import convert_format
 
         format = convert_format(format)
 

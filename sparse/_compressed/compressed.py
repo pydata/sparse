@@ -24,7 +24,6 @@ from .indexing import getitem
 
 
 def _from_coo(x, compressed_axes=None, idx_dtype=None):
-
     if x.ndim == 0:
         if compressed_axes is not None:
             raise ValueError("no axes to compress for 0d array")
@@ -147,7 +146,6 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         fill_value=0,
         idx_dtype=None,
     ):
-
         if isinstance(arg, ss.spmatrix):
             arg = self.from_scipy_sparse(arg)
 
@@ -276,6 +274,29 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         scipy.sparse.csr_matrix.nnz : The Scipy equivalent property.
         """
         return self.data.shape[0]
+
+    @property
+    def format(self):
+        """
+        The storage format of this array.
+        Returns
+        -------
+        str
+            The storage format of this array.
+        See Also
+        -------
+        scipy.sparse.dok_matrix.format : The Scipy equivalent property.
+        Examples
+        -------
+        >>> import sparse
+        >>> s = sparse.random((5,5), density=0.2, format='dok')
+        >>> s.format
+        'dok'
+        >>> t = sparse.random((5,5), density=0.2, format='coo')
+        >>> t.format
+        'coo'
+        """
+        return "gcxs"
 
     @property
     def nbytes(self):
@@ -468,7 +489,6 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         return self.tocoo().todense()
 
     def todok(self):
-
         from .. import DOK
 
         return DOK.from_coo(self.tocoo())  # probably a temporary solution
@@ -522,7 +542,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         NotImplementedError
             If the format isn't supported.
         """
-        from sparse._utils import convert_format
+        from .._utils import convert_format
 
         format = convert_format(format)
         ret = None

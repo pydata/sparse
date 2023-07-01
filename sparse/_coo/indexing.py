@@ -145,7 +145,6 @@ def _mask(coords, indices, shape):
 
     if len(adv_idx) != 0:
         if len(adv_idx) != 1:
-
             # Ensure if multiple advanced indices are passed, all are of the same length
             # Also check each advanced index to ensure each is only a one-dimensional iterable
             adv_ix_len = len(adv_idx[0])
