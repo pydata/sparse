@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sparse"
+dynamic = ["version", "dependencies"]
+description = "Sparse n-dimensional arrays for the PyData ecosystem."
+
+requires-python = ">=3.8,<4"
+keywords = [
+    "sparse",
+    "numpy",
+    "scipy",
+    "dask",
+]
+license = {file = "LICENSE"}
+maintainers = [
+  {name = "Hameer Abbasi", email = "hameerabbasi@yahoo.com"},
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3 :: Only",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+]
+
+[project.urls]
+Homepage = "https://github.com/pydata/sparse/"
+Documentation = "https://sparse.pydata.org/"
+Source = "https://github.com/pydata/sparse/"
+Tracker = "https://github.com/pydata/sparse/issues"
+
+[tool.setuptools_scm]
+write_to = "sparse/_version.py"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sparse", "sparse.*"]
+namespaces = true
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[project.optional-dependencies]
+docs = ["sphinx", "sphinx_rtd_theme"]
+tests = ["dask[array]", "pytest>=3.5", "pytest-black", "pytest-cov"]
+tox = ["sparse[tests]", "tox"]
+all = ["sparse[docs, tests, tox]"]
+
+[project.entry-points.numba_extensions]
+init = "sparse._numba_extension:_init_extension"
+
+[tool.black]
+exclude = "sparse/_version.py"
