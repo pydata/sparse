@@ -289,6 +289,17 @@ class SparseArray:
             )
 
         if out is not None:
+            test_args = [
+                np.empty(1, dtype=a.dtype) if hasattr(a, "dtype") else [a]
+                for a in inputs
+            ]
+            test_kwargs = kwargs.copy()
+            if method == "reduce":
+                test_kwargs["axis"] = None
+            test_out = tuple(np.empty(1, dtype=a.dtype) for a in out)
+            if len(test_out) == 1:
+                test_out = test_out[0]
+            getattr(ufunc, method)(*test_args, out=test_out, **test_kwargs)
             kwargs["dtype"] = out[0].dtype
 
         if method == "outer":

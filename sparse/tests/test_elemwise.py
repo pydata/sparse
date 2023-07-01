@@ -720,3 +720,10 @@ def test_no_deprecation_warning():
     a = np.array([1, 2])
     s = sparse.COO(a, a, shape=(3,))
     s == s
+
+
+# Regression test for gh-587
+def test_no_out_upcast():
+    a = sparse.COO([[0, 1], [0, 1]], [1, 1], shape=(2, 2))
+    with pytest.raises(TypeError):
+        a *= 0.5
