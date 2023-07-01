@@ -4,6 +4,7 @@ from numbers import Integral
 from typing import Callable
 import operator
 from functools import reduce
+import warnings
 
 import numpy as np
 import scipy.sparse as ss
