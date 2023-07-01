@@ -1,9 +1,8 @@
-import pytest
 import numpy as np
+import pytest
 
 import sparse
-
-from sparse import save_npz, load_npz
+from sparse import load_npz, save_npz
 from sparse._utils import assert_eq
 
 

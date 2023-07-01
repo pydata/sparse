@@ -142,7 +142,7 @@ DOK arrays also support fancy indexing assignment if and only if all dimensions 
 
 Alongside indexing assignment and retrieval, :obj:`DOK` arrays support any arbitrary broadcasting function
 to any number of arguments where the arguments can be :obj:`SparseArray` objects, :obj:`scipy.sparse.spmatrix`
-objects, or :obj:`numpy.ndarrays`. 
+objects, or :obj:`numpy.ndarrays`.
 
 .. code-block:: python
 
@@ -161,7 +161,7 @@ and return a new boolean :obj:`DOK` array.
    y = np.random.random((10, 10))
    x == y
 
-:obj:`DOK` arrays are returned from elemwise functions and standard ufuncs if and only if all 
+:obj:`DOK` arrays are returned from elemwise functions and standard ufuncs if and only if all
 :obj:`SparseArray` objects are obj:`DOK` arrays. Otherwise, a :obj:`COO` array or dense array are returned.
 
 At the end, you can convert the :obj:`DOK` array to a :obj:`COO` arrays.

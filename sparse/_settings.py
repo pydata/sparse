@@ -1,6 +1,6 @@
 import os
-import numpy
 
+import numpy as np
 
 AUTO_DENSIFY = bool(int(os.environ.get("SPARSE_AUTO_DENSIFY", "0")))
 WARN_ON_TOO_DENSE = bool(int(os.environ.get("SPARSE_WARN_ON_TOO_DENSE", "0")))
@@ -12,7 +12,7 @@ def _is_nep18_enabled():
             return True
 
     try:
-        return numpy.concatenate([A()])
+        return np.concatenate([A()])
     except ValueError:
         return False
 

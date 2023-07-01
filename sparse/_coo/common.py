@@ -1,20 +1,20 @@
-from functools import reduce
 import operator
 import warnings
 from collections.abc import Iterable
+from functools import reduce
 
+import numba
 import numpy as np
 import scipy.sparse
-import numba
 
-from .._sparse_array import SparseArray
-from .._utils import (
-    isscalar,
-    is_unsigned_dtype,
-    normalize_axis,
-    check_zero_fill_value,
-    check_consistent_fill_value,
+from sparse._sparse_array import SparseArray
+from sparse._utils import (
     can_store,
+    check_consistent_fill_value,
+    check_zero_fill_value,
+    is_unsigned_dtype,
+    isscalar,
+    normalize_axis,
 )
 
 
@@ -43,9 +43,9 @@ def asCOO(x, name="asCOO", check=True):
     """
     from .core import COO
 
-    if check and not isinstance(x, (SparseArray, scipy.sparse.spmatrix)):
+    if check and not isinstance(x, SparseArray | scipy.sparse.spmatrix):
         raise ValueError(
-            "Performing this operation would produce a dense result: %s" % name
+            "Performing this operation would produce a dense result: %s" % name,
         )
 
     if not isinstance(x, COO):
@@ -94,19 +94,20 @@ def kron(a, b):
            [0, 0, 0, 1, 2, 3, 0, 0, 0],
            [0, 0, 0, 0, 0, 0, 1, 2, 3]], dtype=int64)
     """
+    from sparse._umath import _cartesian_product
+
     from .core import COO
-    from .._umath import _cartesian_product
 
     check_zero_fill_value(a, b)
 
-    a_sparse = isinstance(a, (SparseArray, scipy.sparse.spmatrix))
-    b_sparse = isinstance(b, (SparseArray, scipy.sparse.spmatrix))
+    a_sparse = isinstance(a, SparseArray | scipy.sparse.spmatrix)
+    b_sparse = isinstance(b, SparseArray | scipy.sparse.spmatrix)
     a_ndim = np.ndim(a)
     b_ndim = np.ndim(b)
 
     if not (a_sparse or b_sparse):
         raise ValueError(
-            "Performing this operation would produce a dense " "result: kron"
+            "Performing this operation would produce a dense result: kron",
         )
 
     if a_ndim == 0 or b_ndim == 0:
@@ -285,7 +286,7 @@ def triu(x, k=0):
 
     if not x.ndim >= 2:
         raise NotImplementedError(
-            "sparse.triu is not implemented for scalars or 1-D arrays."
+            "sparse.triu is not implemented for scalars or 1-D arrays.",
         )
 
     mask = x.coords[-2] + k <= x.coords[-1]
@@ -328,7 +329,7 @@ def tril(x, k=0):
 
     if not x.ndim >= 2:
         raise NotImplementedError(
-            "sparse.tril is not implemented for scalars or 1-D arrays."
+            "sparse.tril is not implemented for scalars or 1-D arrays.",
         )
 
     mask = x.coords[-2] + k >= x.coords[-1]
@@ -563,7 +564,7 @@ def where(condition, x=None, y=None):
     --------
     numpy.where : Equivalent Numpy function.
     """
-    from .._umath import elemwise
+    from sparse._umath import elemwise
 
     x_given = x is not None
     y_given = y is not None
@@ -695,8 +696,9 @@ def roll(a, shift, axis=None):
     res : ndarray
         Output array, with the same shape as a.
     """
-    from .core import COO, as_coo
     from numpy.core._exceptions import UFuncTypeError
+
+    from .core import COO, as_coo
 
     a = as_coo(a)
 
@@ -725,7 +727,7 @@ def roll(a, shift, axis=None):
         # check if dimensions are consistent
         if len(axis) != len(shift):
             raise ValueError(
-                "If 'shift' is a 1D sequence, " "'axis' must have equal length."
+                "If 'shift' is a 1D sequence, 'axis' must have equal length.",
             )
 
         if not can_store(a.coords.dtype, max(a.shape + shift)):
@@ -733,7 +735,7 @@ def roll(a, shift, axis=None):
                 "cannot roll with coords.dtype {} and shift {}. Try casting coords to a larger dtype.".format(
                     a.coords.dtype,
                     shift,
-                )
+                ),
             )
 
         # shift elements
@@ -746,8 +748,8 @@ def roll(a, shift, axis=None):
             if is_unsigned_dtype(coords.dtype):
                 raise ValueError(
                     "rolling with coords.dtype as {} is not safe. Try using a signed dtype.".format(
-                        coords.dtype
-                    )
+                        coords.dtype,
+                    ),
                 )
 
         return COO(
@@ -874,7 +876,7 @@ def diagonalize(a, axis=0):
 
     a = as_coo(a)
 
-    diag_shape = a.shape + (a.shape[axis],)
+    diag_shape = (*a.shape, a.shape[axis])
     diag_coords = np.vstack([a.coords, a.coords[axis]])
 
     return COO(diag_coords, a.data, diag_shape)
@@ -973,7 +975,7 @@ def _diagonal_idx(coordlist, axis1, axis2, offset):
             i
             for i in range(len(coordlist[axis1]))
             if coordlist[axis1][i] + offset == coordlist[axis2][i]
-        ]
+        ],
     )
 
 

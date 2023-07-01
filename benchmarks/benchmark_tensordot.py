@@ -1,4 +1,5 @@
 import numpy as np
+
 import sparse
 
 
@@ -33,7 +34,10 @@ class TensordotSuiteSparseSparse:
 
     def time_dense(self):
         sparse.tensordot(
-            self.s1, self.s2, axes=([0, 1], [0, 2]), return_type=np.ndarray
+            self.s1,
+            self.s2,
+            axes=([0, 1], [0, 2]),
+            return_type=np.ndarray,
         )
 
     def time_sparse(self):

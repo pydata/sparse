@@ -1,7 +1,7 @@
-import pytest
 import numpy as np
-import sparse
+import pytest
 
+import sparse
 
 einsum_cases = [
     "a,->a",
@@ -99,7 +99,8 @@ def test_einsum(subscripts, density):
 
 
 @pytest.mark.parametrize(
-    "input", [[[0, 0]], [[0, Ellipsis]], [[Ellipsis, 1], [Ellipsis]], [[0, 1], [0]]]
+    "input",
+    [[[0, 0]], [[0, Ellipsis]], [[Ellipsis, 1], [Ellipsis]], [[0, 1], [0]]],
 )
 @pytest.mark.parametrize("density", [0.1, 1.0])
 def test_einsum_nosubscript(input, density):
@@ -128,7 +129,8 @@ def test_einsum_no_input():
 
 
 @pytest.mark.parametrize(
-    "subscript", ["a+b->c", "i->&", "i->ij", "ij->jij", "a..,a...", ".i...", "a,a->->"]
+    "subscript",
+    ["a+b->c", "i->&", "i->ij", "ij->jij", "a..,a...", ".i...", "a,a->->"],
 )
 def test_einsum_invalid_input(subscript):
     x = sparse.random(shape=(2,), density=0.5, format="coo")
@@ -164,7 +166,7 @@ format_test_cases = [
 ]
 
 
-@pytest.mark.parametrize("formats,expected", format_test_cases)
+@pytest.mark.parametrize(("formats", "expected"), format_test_cases)
 def test_einsum_format(formats, expected):
     inputs = [
         np.random.randn(2, 2, 2)

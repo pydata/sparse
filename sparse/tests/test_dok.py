@@ -1,6 +1,5 @@
-import pytest
-
 import numpy as np
+import pytest
 
 import sparse
 from sparse import DOK
@@ -57,7 +56,7 @@ def test_convert_from_scipy_sparse():
 
 
 @pytest.mark.parametrize(
-    "shape, data",
+    ("shape", "data"),
     [
         (2, {0: 1}),
         ((2, 3), {(0, 1): 3, (1, 2): 4}),
@@ -89,7 +88,7 @@ def test_getitem_single(shape, density):
 
 
 @pytest.mark.parametrize(
-    "shape, density, indices",
+    ("shape", "density", "indices"),
     [
         ((2, 3), 0.5, (slice(1),)),
         ((5, 5), 0.2, (slice(0, 4, 2),)),
@@ -111,7 +110,7 @@ def test_getitem(shape, density, indices):
 
 
 @pytest.mark.parametrize(
-    "shape, density, indices",
+    ("shape", "density", "indices"),
     [
         ((10, 10), 0.8, ([0, 4, 5],)),
         ((5, 5, 5), 0.5, ([1, 2, 3], [0, 2, 2])),
@@ -125,7 +124,7 @@ def test_getitem_notimplemented_error(shape, density, indices):
 
 
 @pytest.mark.parametrize(
-    "shape, density, indices",
+    ("shape", "density", "indices"),
     [
         ((10, 10), 0.8, ([0, 4, 5], [0, 2])),
         ((5, 5, 5), 0.5, ([1, 2, 3], [0], [2, 3, 4])),
@@ -140,7 +139,7 @@ def test_getitem_index_error(shape, density, indices):
 
 
 @pytest.mark.parametrize(
-    "shape, index, value_shape",
+    ("shape", "index", "value_shape"),
     [
         ((2,), slice(None), ()),
         ((2,), slice(1, 2), ()),
@@ -188,7 +187,7 @@ def test_setitem_delete():
 
 
 @pytest.mark.parametrize(
-    "shape, index, value_shape",
+    ("shape", "index", "value_shape"),
     [
         ((2, 3), ([0, 1.5], [1, 2]), ()),
         ((2, 3), ([0, 1], [1]), ()),
@@ -204,7 +203,7 @@ def test_setitem_index_error(shape, index, value_shape):
 
 
 @pytest.mark.parametrize(
-    "shape, index, value_shape",
+    ("shape", "index", "value_shape"),
     [
         ((2, 3), ([0, 1],), ()),
     ],
@@ -217,7 +216,7 @@ def test_setitem_notimplemented_error(shape, index, value_shape):
 
 
 @pytest.mark.parametrize(
-    "shape, index, value_shape",
+    ("shape", "index", "value_shape"),
     [
         ((2, 3), ([0, 1], [1, 2]), (1, 2)),
         ((2, 3), ([0, 1], [1, 2]), (3,)),
@@ -305,7 +304,10 @@ def test_zeros_like():
 @pytest.mark.parametrize("constant_values", [0, 1, 150, np.nan])
 def test_pad_valid(pad_width, constant_values):
     y = sparse.random(
-        (50, 50, 3), density=0.15, fill_value=constant_values, format="dok"
+        (50, 50, 3),
+        density=0.15,
+        fill_value=constant_values,
+        format="dok",
     )
     x = y.todense()
     xx = np.pad(x, pad_width=pad_width, constant_values=constant_values)

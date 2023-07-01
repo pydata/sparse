@@ -1,26 +1,27 @@
 import copy as _copy
 import operator
-from collections.abc import Iterable, Iterator, Sized
-from collections import defaultdict, deque
-from functools import reduce
 import warnings
+from collections import defaultdict, deque
+from collections.abc import Iterable, Iterator, Sized
+from functools import reduce
 
-import numpy as np
 import numba
+import numpy as np
 import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
-from .._common import dot, matmul
-from .indexing import getitem
-from .._umath import elemwise, broadcast_to
-from .._sparse_array import SparseArray, _reduce_super_ufunc
-from .._utils import (
-    normalize_axis,
-    equivalent,
-    check_zero_fill_value,
+from sparse._common import dot, matmul
+from sparse._sparse_array import SparseArray
+from sparse._umath import broadcast_to
+from sparse._utils import (
     _zero_of_dtype,
     can_store,
+    check_zero_fill_value,
+    equivalent,
+    normalize_axis,
 )
+
+from .indexing import getitem
 
 
 class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
@@ -225,7 +226,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         if data is None:
             arr = as_coo(
-                coords, shape=shape, fill_value=fill_value, idx_dtype=idx_dtype
+                coords,
+                shape=shape,
+                fill_value=fill_value,
+                idx_dtype=idx_dtype,
             )
             self._make_shallow_copy_of(arr)
             if cache:
@@ -252,10 +256,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 "shape should be provided. This will raise a ValueError in the future.",
                 DeprecationWarning,
             )
-            if self.coords.nbytes:
-                shape = tuple((self.coords.max(axis=1) + 1))
-            else:
-                shape = ()
+            shape = tuple(self.coords.max(axis=1) + 1) if self.coords.nbytes else ()
 
         if not isinstance(shape, Iterable):
             shape = (shape,)
@@ -265,7 +266,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         if shape and not self.coords.size:
             self.coords = np.zeros(
-                (len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp
+                (len(shape) if isinstance(shape, Iterable) else 1, 0),
+                dtype=np.intp,
             )
 
         super().__init__(shape, fill_value=fill_value)
@@ -273,8 +275,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             if not can_store(idx_dtype, max(shape)):
                 raise ValueError(
                     "cannot cast array with shape {} to dtype {}.".format(
-                        shape, idx_dtype
-                    )
+                        shape,
+                        idx_dtype,
+                    ),
                 )
             self.coords = self.coords.astype(idx_dtype)
 
@@ -292,10 +295,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                     "(and coords.shape={})"
                 )
                 raise ValueError(
-                    msg.format(len(shape), self.coords.shape[0], self.coords.shape)
+                    msg.format(len(shape), self.coords.shape[0], self.coords.shape),
                 )
 
-        from .._settings import WARN_ON_TOO_DENSE
+        from sparse._settings import WARN_ON_TOO_DENSE
 
         if WARN_ON_TOO_DENSE and self.nbytes >= self.size * self.data.itemsize:
             warnings.warn(
@@ -326,7 +329,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         from dask.base import normalize_token
 
         return normalize_token(
-            (type(self), self.coords, self.data, self.shape, self.fill_value)
+            (type(self), self.coords, self.data, self.shape, self.fill_value),
         )
 
     def copy(self, deep=True):
@@ -703,7 +706,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     def __str__(self):
         return "<COO: shape={!s}, dtype={!s}, nnz={:d}, fill_value={!s}>".format(
-            self.shape, self.dtype, self.nnz, self.fill_value
+            self.shape,
+            self.dtype,
+            self.nnz,
+            self.fill_value,
         )
 
     __repr__ = __str__
@@ -718,7 +724,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             (
                 np.prod([self.shape[d] for d in neg_axis], dtype=np.intp),
                 np.prod([self.shape[d] for d in axis], dtype=np.intp),
-            )
+            ),
         )
         data, inv_idx, counts = _grouped_reduce(a.data, a.coords[0], method, **kwargs)
         n_cols = a.shape[1]
@@ -894,7 +900,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         """
         # Normalize all axis1, axis2 to positive values
         axis1, axis2 = normalize_axis(
-            (axis1, axis2), self.ndim
+            (axis1, axis2),
+            self.ndim,
         )  # checks if axis1,2 are in range + raises ValueError
         axes = list(range(self.ndim))
         axes[axis1], axes[axis2] = axes[axis2], axes[axis1]
@@ -997,7 +1004,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         """
         if order not in {"C", None}:
-            raise NotImplementedError("The `order` parameter is not" "supported.")
+            raise NotImplementedError("The `order` parameter is notsupported.")
 
         return self.reshape(-1)
 
@@ -1035,10 +1042,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                [15, 16, 17, 18, 19],
                [20, 21, 22, 23, 24]])
         """
-        if isinstance(shape, Iterable):
-            shape = tuple(shape)
-        else:
-            shape = (shape,)
+        shape = tuple(shape) if isinstance(shape, Iterable) else (shape,)
 
         if order not in {"C", None}:
             raise NotImplementedError("The `order` parameter is not supported")
@@ -1051,7 +1055,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         if self.size != reduce(operator.mul, shape, 1):
             raise ValueError(
-                "cannot reshape array of size {} into shape {}".format(self.size, shape)
+                f"cannot reshape array of size {self.size} into shape {shape}",
             )
 
         if self._cache is not None:
@@ -1099,7 +1103,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         """
         warnings.warn(
-            "resize is deprecated on all SpraseArray objects.", DeprecationWarning
+            "resize is deprecated on all SpraseArray objects.",
+            DeprecationWarning,
         )
         if len(args) == 1 and isinstance(args[0], tuple):
             shape = args[0]
@@ -1158,11 +1163,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         if self.ndim != 2:
             raise ValueError(
-                "Can only convert a 2-dimensional array to a Scipy sparse matrix."
+                "Can only convert a 2-dimensional array to a Scipy sparse matrix.",
             )
 
         result = scipy.sparse.coo_matrix(
-            (self.data, (self.coords[0], self.coords[1])), shape=self.shape
+            (self.data, (self.coords[0], self.coords[1])),
+            shape=self.shape,
         )
         result.has_canonical_format = True
         return result
@@ -1170,7 +1176,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     def _tocsr(self):
         if self.ndim != 2:
             raise ValueError(
-                "This array must be two-dimensional for this conversion " "to work."
+                "This array must be two-dimensional for this conversion to work.",
             )
         row, col = self.coords
 
@@ -1413,7 +1419,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             return self.todense()
         else:
             raise ValueError(
-                "Operation would require converting " "large sparse array to dense"
+                "Operation would require converting large sparse array to dense",
             )
 
     def nonzero(self):
@@ -1462,12 +1468,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         NotImplementedError
             If the format isn't supported.
         """
-        from .._utils import convert_format
+        from sparse._utils import convert_format
 
         format = convert_format(format)
 
         if format == "gcxs":
-            from .._compressed import GCXS
+            from sparse._compressed import GCXS
 
             return GCXS.from_coo(self, **kwargs)
 
@@ -1478,7 +1484,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             return self
 
         if format == "dok":
-            from .._dok import DOK
+            from sparse._dok import DOK
 
             return DOK.from_coo(self, **kwargs)
 
@@ -1515,13 +1521,13 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
     if hasattr(x, "shape") and shape is not None:
         raise ValueError(
             "Cannot provide a shape in combination with something "
-            "that already has a shape."
+            "that already has a shape.",
         )
 
     if hasattr(x, "fill_value") and fill_value is not None:
         raise ValueError(
             "Cannot provide a fill-value in combination with something "
-            "that already has a fill-value."
+            "that already has a fill-value.",
         )
 
     if isinstance(x, SparseArray):
@@ -1533,12 +1539,12 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
     if isinstance(x, scipy.sparse.spmatrix):
         return COO.from_scipy_sparse(x)
 
-    if isinstance(x, (Iterable, Iterator)):
+    if isinstance(x, Iterable | Iterator):
         return COO.from_iter(x, shape=shape, fill_value=fill_value)
 
     raise NotImplementedError(
         "Format not supported for conversion. Supplied type is "
-        "%s, see help(sparse.as_coo) for supported formats." % type(x)
+        "%s, see help(sparse.as_coo) for supported formats." % type(x),
     )
 
 

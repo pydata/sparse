@@ -1,5 +1,6 @@
 import numpy as np
-from .._utils import check_consistent_fill_value, normalize_axis, can_store
+
+from sparse._utils import can_store, check_consistent_fill_value, normalize_axis
 
 
 def concatenate(arrays, axis=0, compressed_axes=None):
@@ -22,7 +23,7 @@ def concatenate(arrays, axis=0, compressed_axes=None):
     if compressed_axes is None:
         compressed_axes = (axis,)
     if arrays[0].ndim == 1:
-        from .._coo.common import concatenate as coo_concat
+        from sparse._coo.common import concatenate as coo_concat
 
         arrays = [arr.tocoo() for arr in arrays]
         return coo_concat(arrays, axis=axis)
@@ -72,7 +73,7 @@ def stack(arrays, axis=0, compressed_axes=None):
     if compressed_axes is None:
         compressed_axes = (axis,)
     if arrays[0].ndim == 1:
-        from .._coo.common import stack as coo_stack
+        from sparse._coo.common import stack as coo_stack
 
         arrays = [arr.tocoo() for arr in arrays]
         return coo_stack(arrays, axis=axis)

@@ -1,11 +1,14 @@
-import numpy as np
-import numba
-from numba.typed import List
-from numbers import Integral
-from itertools import zip_longest
 from collections.abc import Iterable
-from .._slicing import normalize_index
-from .convert import convert_to_flat, uncompress_dimension, is_sorted
+from itertools import zip_longest
+from numbers import Integral
+
+import numba
+import numpy as np
+from numba.typed import List
+
+from sparse._slicing import normalize_index
+
+from .convert import convert_to_flat, is_sorted, uncompress_dimension
 
 
 def getitem(x, key):
@@ -74,9 +77,8 @@ def getitem(x, key):
         if isinstance(ind, slice):
             if ind.step < 0:
                 pos_slice = False
-        elif isinstance(ind, Iterable):
-            if not is_sorted(ind):
-                pos_slice = False
+        elif isinstance(ind, Iterable) and not is_sorted(ind):
+            pos_slice = False
 
     # convert all ints and slices to iterables before flattening
     for i, ind in enumerate(reordered_key):
@@ -147,7 +149,8 @@ def getitem(x, key):
             indptr = np.empty(shape[0] + 1, dtype=x.indptr.dtype)
             indptr[0] = 0
             np.cumsum(
-                np.bincount(uncompressed // size, minlength=shape[0]), out=indptr[1:]
+                np.bincount(uncompressed // size, minlength=shape[0]),
+                out=indptr[1:],
             )
     if not np.any(compressed_inds):
         if len(shape) == 1:
@@ -176,13 +179,21 @@ def getitem(x, key):
         compressed_axes = None
 
     return GCXS(
-        arg, shape=shape, compressed_axes=compressed_axes, fill_value=x.fill_value
+        arg,
+        shape=shape,
+        compressed_axes=compressed_axes,
+        fill_value=x.fill_value,
     )
 
 
 @numba.jit(nopython=True, nogil=True)
 def get_slicing_selection(
-    arr_data, arr_indices, indptr, starts, ends, col
+    arr_data,
+    arr_indices,
+    indptr,
+    starts,
+    ends,
+    col,
 ):  # pragma: no cover
     """
     When the requested elements come in a strictly ascending order, as is the
@@ -249,7 +260,12 @@ def get_slicing_selection(
 
 @numba.jit(nopython=True, nogil=True)
 def get_array_selection(
-    arr_data, arr_indices, indptr, starts, ends, col
+    arr_data,
+    arr_indices,
+    indptr,
+    starts,
+    ends,
+    col,
 ):  # pragma: no cover
     """
     This is a very general algorithm to be used when more optimized methods don't apply.

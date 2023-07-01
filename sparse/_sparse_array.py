@@ -1,16 +1,16 @@
-from abc import ABCMeta, abstractmethod
-from collections.abc import Iterable
-from numbers import Integral
-from typing import Callable
+import contextlib
 import operator
-from functools import reduce
 import warnings
+from abc import ABCMeta, abstractmethod
+from collections.abc import Callable, Iterable
+from functools import reduce
+from numbers import Integral
 
 import numpy as np
 import scipy.sparse as ss
 
 from ._umath import elemwise
-from ._utils import _zero_of_dtype, html_table, equivalent, normalize_axis
+from ._utils import _zero_of_dtype, equivalent, html_table, normalize_axis
 
 _reduce_super_ufunc = {np.add: np.multiply, np.multiply: np.power}
 
@@ -36,7 +36,7 @@ class SparseArray:
         if not all(isinstance(l, Integral) and int(l) >= 0 for l in shape):
             raise ValueError(
                 "shape must be an non-negative integer or a tuple "
-                "of non-negative integers."
+                "of non-negative integers.",
             )
 
         self.shape = tuple(int(l) for l in shape)
@@ -229,7 +229,7 @@ class SparseArray:
         if not AUTO_DENSIFY:
             raise RuntimeError(
                 "Cannot convert a sparse array to dense automatically. "
-                "To manually densify, use the todense method."
+                "To manually densify, use the todense method.",
             )
 
         return np.asarray(self.todense(), *args, **kwargs)
@@ -248,10 +248,8 @@ class SparseArray:
         else:
             return sparse_func(*args, **kwargs)
 
-        try:
+        with contextlib.suppress(AttributeError):
             sparse_func = getattr(type(self), func.__name__)
-        except AttributeError:
-            pass
 
         if (
             not isinstance(sparse_func, Callable)
@@ -285,7 +283,10 @@ class SparseArray:
 
         if getattr(ufunc, "signature", None) is not None:
             return self.__array_function__(
-                ufunc, (np.ndarray, type(self)), inputs, kwargs
+                ufunc,
+                (np.ndarray, type(self)),
+                inputs,
+                kwargs,
             )
 
         if out is not None:
@@ -313,8 +314,11 @@ class SparseArray:
             (out,) = out
             if out.shape != result.shape:
                 raise ValueError(
-                    "non-broadcastable output operand with shape %s "
-                    "doesn't match the broadcast shape %s" % (out.shape, result.shape)
+                    "non-broadcastable output operand with shape {} "
+                    "doesn't match the broadcast shape {}".format(
+                        out.shape,
+                        result.shape,
+                    ),
                 )
 
             out._make_shallow_copy_of(result)
@@ -353,7 +357,7 @@ class SparseArray:
             if reduce_super_ufunc is None:
                 raise ValueError(
                     "Performing this reduction operation would produce "
-                    "a dense result: %s" % str(method)
+                    "a dense result: %s" % str(method),
                 )
 
         if not isinstance(axis, tuple):
@@ -366,7 +370,9 @@ class SparseArray:
         if reduce_super_ufunc is None:
             missing_counts = counts != n_cols
             data[missing_counts] = method(
-                data[missing_counts], self.fill_value, **kwargs
+                data[missing_counts],
+                self.fill_value,
+                **kwargs,
             )
         else:
             data = method(
@@ -540,7 +546,11 @@ class SparseArray:
         :obj:`numpy.prod` : Equivalent numpy function.
         """
         return np.multiply.reduce(
-            self, out=out, axis=axis, keepdims=keepdims, dtype=dtype
+            self,
+            out=out,
+            axis=axis,
+            keepdims=keepdims,
+            dtype=dtype,
         )
 
     def round(self, decimals=0, out=None):
@@ -558,7 +568,11 @@ class SparseArray:
         if out is not None and not isinstance(out, tuple):
             out = (out,)
         return self.__array_ufunc__(
-            np.round, "__call__", self, decimals=decimals, out=out
+            np.round,
+            "__call__",
+            self,
+            decimals=decimals,
+            out=out,
         )
 
     round_ = round
@@ -580,7 +594,12 @@ class SparseArray:
         if out is not None and not isinstance(out, tuple):
             out = (out,)
         return self.__array_ufunc__(
-            np.clip, "__call__", self, a_min=min, a_max=max, out=out
+            np.clip,
+            "__call__",
+            self,
+            a_min=min,
+            a_max=max,
+            out=out,
         )
 
     def astype(self, dtype, casting="unsafe", copy=True):
@@ -601,7 +620,12 @@ class SparseArray:
         if self.dtype == dtype and not copy:
             return self
         return self.__array_ufunc__(
-            np.ndarray.astype, "__call__", self, dtype=dtype, copy=copy, casting=casting
+            np.ndarray.astype,
+            "__call__",
+            self,
+            dtype=dtype,
+            copy=copy,
+            casting=casting,
         )
 
     def mean(self, axis=None, keepdims=False, dtype=None, out=None):
@@ -674,7 +698,7 @@ class SparseArray:
         den = reduce(operator.mul, (self.shape[i] for i in axis), 1)
 
         if dtype is None:
-            if issubclass(self.dtype.type, (np.integer, np.bool_)):
+            if issubclass(self.dtype.type, np.integer | np.bool_):
                 dtype = inter_dtype = np.dtype("f8")
             else:
                 dtype = self.dtype
@@ -768,7 +792,7 @@ class SparseArray:
             warnings.warn("Degrees of freedom <= 0 for slice", RuntimeWarning)
 
         # Cast bool, unsigned int, and int to float64 by default
-        if dtype is None and issubclass(self.dtype.type, (np.integer, np.bool_)):
+        if dtype is None and issubclass(self.dtype.type, np.integer | np.bool_):
             dtype = np.dtype("f8")
 
         arrmean = self.sum(axis, dtype=dtype, keepdims=True)
@@ -854,8 +878,7 @@ class SparseArray:
         """
         ret = self.var(axis=axis, dtype=dtype, out=out, ddof=ddof, keepdims=keepdims)
 
-        ret = np.sqrt(ret)
-        return ret
+        return np.sqrt(ret)
 
     @property
     def real(self):

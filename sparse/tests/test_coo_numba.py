@@ -1,8 +1,7 @@
-import pytest
 import numba
+import numpy as np
 
 import sparse
-import numpy as np
 
 
 @numba.njit

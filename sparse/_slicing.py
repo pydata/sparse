@@ -59,8 +59,7 @@ def normalize_index(idx, shape):
     idx = tuple(map(sanitize_index, idx))
     idx = tuple(map(replace_none, idx, none_shape))
     idx = posify_index(none_shape, idx)
-    idx = tuple(map(clip_slice, idx, none_shape))
-    return idx
+    return tuple(map(clip_slice, idx, none_shape))
 
 
 def replace_ellipsis(n, index):
@@ -116,23 +115,23 @@ def check_index(ind, dimension):
             np.issubdtype(x.dtype, np.integer)
             and ((x >= dimension) | (x < -dimension)).any()
         ):
-            raise IndexError("Index out of bounds for dimension {:d}".format(dimension))
+            raise IndexError(f"Index out of bounds for dimension {dimension:d}")
         elif x.dtype == bool and len(x) != dimension:
             raise IndexError(
                 "boolean index did not match indexed array; dimension is {:d} "
-                "but corresponding boolean dimension is {:d}".format(dimension, len(x))
+                "but corresponding boolean dimension is {:d}".format(dimension, len(x)),
             )
     elif isinstance(ind, slice):
         return
     elif not isinstance(ind, Integral):
         raise IndexError(
             "only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and "
-            "integer or boolean arrays are valid indices"
+            "integer or boolean arrays are valid indices",
         )
 
     elif ind >= dimension:
         raise IndexError(
-            "Index is not smaller than dimension {:d} >= {:d}".format(ind, dimension)
+            f"Index is not smaller than dimension {ind:d} >= {dimension:d}",
         )
 
     elif ind < -dimension:
@@ -182,7 +181,7 @@ def sanitize_index(ind):
     else:
         raise IndexError(
             "only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and "
-            "integer or boolean arrays are valid indices"
+            "integer or boolean arrays are valid indices",
         )
 
 
@@ -214,7 +213,7 @@ def posify_index(shape, ind):
             return ind + shape
         else:
             return ind
-    if isinstance(ind, (np.ndarray, list)) and not math.isnan(shape):
+    if isinstance(ind, np.ndarray | list) and not math.isnan(shape):
         ind = np.asanyarray(ind)
         return np.where(ind < 0, ind + shape, ind)
     if isinstance(ind, slice):

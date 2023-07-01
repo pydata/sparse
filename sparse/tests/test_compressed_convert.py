@@ -1,9 +1,8 @@
-import sparse
-import pytest
 import numpy as np
+import pytest
 from numba.typed import List
 
-import sparse._compressed.convert as convert
+from sparse._compressed import convert
 from sparse._utils import assert_eq
 
 
@@ -14,12 +13,11 @@ def make_inds(shape):
 def make_increments(shape):
     inds = make_inds(shape)
     shape_bins = convert.transform_shape(np.asarray(shape))
-    increments = List([inds[i] * shape_bins[i] for i in range(len(shape))])
-    return increments
+    return List([inds[i] * shape_bins[i] for i in range(len(shape))])
 
 
 @pytest.mark.parametrize(
-    "shape, expected_subsample, subsample",
+    ("shape", "expected_subsample", "subsample"),
     [
         [(5, 6, 7, 8, 9), np.array([3610, 6892, 10338]), 1000],
         [(13, 12, 12, 9, 7), np.array([9899, 34441, 60635, 86703]), 10000],
@@ -42,7 +40,7 @@ def test_convert_to_flat(shape, expected_subsample, subsample):
 
 
 @pytest.mark.parametrize(
-    "shape, expected_subsample, subsample",
+    ("shape", "expected_subsample", "subsample"),
     [
         [(5, 6, 7, 8, 9), np.array([3610, 6892, 10338]), 1000],
         [(13, 12, 12, 9, 7), np.array([9899, 34441, 60635, 86703]), 10000],
@@ -67,7 +65,7 @@ def test_compute_flat(shape, expected_subsample, subsample):
 
 
 @pytest.mark.parametrize(
-    "shape, expected_shape",
+    ("shape", "expected_shape"),
     [
         [(5, 6, 7, 8, 9), np.array([3024, 504, 72, 9, 1])],
         [(13, 12, 12, 9, 7), np.array([9072, 756, 63, 7, 1])],
@@ -85,5 +83,7 @@ def test_compute_flat(shape, expected_subsample, subsample):
 )
 def test_transform_shape(shape, expected_shape):
     assert_eq(
-        convert.transform_shape(np.asarray(shape)), expected_shape, compare_dtype=False
+        convert.transform_shape(np.asarray(shape)),
+        expected_shape,
+        compare_dtype=False,
     )

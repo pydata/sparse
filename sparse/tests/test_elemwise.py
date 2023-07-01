@@ -1,7 +1,9 @@
-import numpy as np
-import sparse
-import pytest
 import operator
+
+import numpy as np
+import pytest
+
+import sparse
 from sparse import COO, DOK
 from sparse._compressed import GCXS
 from sparse._utils import assert_eq, random_value_array
@@ -74,7 +76,7 @@ def test_elemwise_inplace(func, format):
 
 
 @pytest.mark.parametrize(
-    "shape1, shape2",
+    ("shape1", "shape2"),
     [
         ((2, 3, 4), (3, 4)),
         ((3, 4), (2, 3, 4)),
@@ -202,7 +204,7 @@ def test_elemwise_trinary(func, shape, formats):
 
 @pytest.mark.parametrize("func", [operator.add, operator.mul])
 @pytest.mark.parametrize(
-    "shape1,shape2",
+    ("shape1", "shape2"),
     [
         ((2, 3, 4), (3, 4)),
         ((3, 4), (2, 3, 4)),
@@ -236,7 +238,7 @@ def test_binary_broadcasting(func, shape1, shape2):
 
 
 @pytest.mark.parametrize(
-    "shape1,shape2",
+    ("shape1", "shape2"),
     [((3, 4), (2, 3, 4)), ((3, 1, 4), (3, 2, 4)), ((3, 4, 1), (3, 4, 2))],
 )
 def test_broadcast_to(shape1, shape2):
@@ -281,7 +283,7 @@ def test_trinary_broadcasting(shapes, func):
 
 
 @pytest.mark.parametrize(
-    "shapes, func",
+    ("shapes", "func"),
     [
         ([(2,), (3, 2), (4, 3, 2)], lambda x, y, z: (x + y) * z),
         ([(3,), (2, 3), (2, 2, 3)], lambda x, y, z: x * (y + z)),
@@ -320,7 +322,9 @@ def test_sparse_broadcasting(monkeypatch):
         return result
 
     monkeypatch.setattr(
-        sparse._umath._Elemwise, "_get_func_coords_data", mock_unmatch_coo
+        sparse._umath._Elemwise,
+        "_get_func_coords_data",
+        mock_unmatch_coo,
     )
 
     xs * ys
@@ -344,7 +348,9 @@ def test_dense_broadcasting(monkeypatch):
         return result
 
     monkeypatch.setattr(
-        sparse._umath._Elemwise, "_get_func_coords_data", mock_unmatch_coo
+        sparse._umath._Elemwise,
+        "_get_func_coords_data",
+        mock_unmatch_coo,
     )
 
     xs + ys
@@ -417,7 +423,7 @@ def test_nonzero_outout_fv_ufunc(func, format):
 
 
 @pytest.mark.parametrize(
-    "func, scalar",
+    ("func", "scalar"),
     [
         (operator.mul, 5),
         (operator.add, 0),
@@ -452,7 +458,7 @@ def test_elemwise_scalar(func, scalar, convert_to_np_number, format):
 
 
 @pytest.mark.parametrize(
-    "func, scalar",
+    ("func", "scalar"),
     [
         (operator.mul, 5),
         (operator.add, 0),
@@ -482,7 +488,7 @@ def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number):
 
 
 @pytest.mark.parametrize(
-    "func, scalar",
+    ("func", "scalar"),
     [
         (operator.add, 5),
         (operator.sub, -5),

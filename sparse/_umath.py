@@ -1,12 +1,11 @@
 import itertools
+from itertools import zip_longest
 
 import numba
 import numpy as np
 import scipy.sparse
 
-from itertools import zip_longest
-
-from ._utils import isscalar, equivalent, _zero_of_dtype
+from ._utils import _zero_of_dtype, equivalent, isscalar
 
 
 def elemwise(func, *args, **kwargs):
@@ -118,7 +117,7 @@ def _get_nary_broadcast_shape(*shapes):
         except ValueError:
             shapes_str = ", ".join(str(shape) for shape in shapes)
             raise ValueError(
-                "operands could not be broadcast together with shapes %s" % shapes_str
+                "operands could not be broadcast together with shapes %s" % shapes_str,
             )
 
     return result_shape
@@ -151,16 +150,13 @@ def _get_broadcast_shape(shape1, shape2, is_result=False):
         for l1, l2 in zip(shape1[::-1], shape2[::-1])
     ):
         raise ValueError(
-            "operands could not be broadcast together with shapes %s, %s"
-            % (shape1, shape2)
+            f"operands could not be broadcast together with shapes {shape1}, {shape2}",
         )
 
-    result_shape = tuple(
+    return tuple(
         l1 if l1 != 1 else l2
         for l1, l2 in zip_longest(shape1[::-1], shape2[::-1], fillvalue=1)
     )[::-1]
-
-    return result_shape
 
 
 def _get_broadcast_parameters(shape, broadcast_shape):
@@ -180,12 +176,10 @@ def _get_broadcast_parameters(shape, broadcast_shape):
         A list containing None if the dimension isn't in the original array, False if
         it needs to be broadcast, and True if it doesn't.
     """
-    params = [
+    return [
         None if l1 is None else l1 == l2
         for l1, l2 in zip_longest(shape[::-1], broadcast_shape[::-1], fillvalue=None)
     ][::-1]
-
-    return params
 
 
 def _get_reduced_coords(coords, params):
@@ -226,9 +220,7 @@ def _get_reduced_shape(shape, params):
     reduced_coords : np.ndarray
         The reduced coordinates.
     """
-    reduced_shape = tuple(l for l, p in zip(shape, params) if p)
-
-    return reduced_shape
+    return tuple(l for l, p in zip(shape, params) if p)
 
 
 def _get_expanded_coords_data(coords, data, params, broadcast_shape):
@@ -421,10 +413,10 @@ class _Elemwise:
         **kwargs : dict
             Extra arguments to pass to the function.
         """
-        from ._coo import COO
-        from ._sparse_array import SparseArray
         from ._compressed import GCXS
+        from ._coo import COO
         from ._dok import DOK
+        from ._sparse_array import SparseArray
 
         processed_args = []
         out_type = GCXS
@@ -490,7 +482,7 @@ class _Elemwise:
         coords_list = []
 
         for mask in itertools.product(
-            *[[True, False] if isinstance(arg, COO) else [None] for arg in self.args]
+            *[[True, False] if isinstance(arg, COO) else [None] for arg in self.args],
         ):
             if not any(mask):
                 continue
@@ -539,11 +531,14 @@ class _Elemwise:
         # Some elemwise functions require a dtype argument, some abhorr it.
         try:
             fill_value_array = self.func(
-                *np.broadcast_arrays(*zero_args), dtype=self.dtype, **self.kwargs
+                *np.broadcast_arrays(*zero_args),
+                dtype=self.dtype,
+                **self.kwargs,
             )
         except TypeError:
             fill_value_array = self.func(
-                *np.broadcast_arrays(*zero_args), **self.kwargs
+                *np.broadcast_arrays(*zero_args),
+                **self.kwargs,
             )
 
         try:
@@ -559,7 +554,7 @@ class _Elemwise:
         if not equivalent_fv and self.shape != self.ndarray_shape:
             raise ValueError(
                 "Performing a mixed sparse-dense operation that would result in a dense array. "
-                "Please make sure that func(sparse_fill_values, ndarrays) is a constant array."
+                "Please make sure that func(sparse_fill_values, ndarrays) is a constant array.",
             )
         elif not equivalent_fv:
             self._dense_result = True
@@ -584,10 +579,10 @@ class _Elemwise:
 
         full_shape = _get_nary_broadcast_shape(*tuple(arg.shape for arg in self.args))
         non_ndarray_shape = _get_nary_broadcast_shape(
-            *tuple(arg.shape for arg in self.args if isinstance(arg, COO))
+            *tuple(arg.shape for arg in self.args if isinstance(arg, COO)),
         )
         ndarray_shape = _get_nary_broadcast_shape(
-            *tuple(arg.shape for arg in self.args if isinstance(arg, np.ndarray))
+            *tuple(arg.shape for arg in self.args if isinstance(arg, np.ndarray)),
         )
 
         self.shape = full_shape
@@ -617,11 +612,13 @@ class _Elemwise:
         ndarray_args = [arg for arg, m in zip(self.args, mask) if m is None]
 
         matched_broadcast_shape = _get_nary_broadcast_shape(
-            *tuple(arg.shape for arg in itertools.chain(matched_args, ndarray_args))
+            *tuple(arg.shape for arg in itertools.chain(matched_args, ndarray_args)),
         )
 
         matched_arrays = self._match_coo(
-            *matched_args, cache=self.cache, broadcast_shape=matched_broadcast_shape
+            *matched_args,
+            cache=self.cache,
+            broadcast_shape=matched_broadcast_shape,
         )
 
         func_args = []
@@ -632,7 +629,7 @@ class _Elemwise:
                 func_args.append(
                     np.broadcast_to(arg, matched_broadcast_shape)[
                         tuple(matched_arrays[0].coords)
-                    ]
+                    ],
                 )
                 continue
 
@@ -664,7 +661,10 @@ class _Elemwise:
         if matched_arrays[0].shape != self.shape:
             params = _get_broadcast_parameters(matched_arrays[0].shape, self.shape)
             func_coords, func_data = _get_expanded_coords_data(
-                func_coords, func_data, params, self.shape
+                func_coords,
+                func_data,
+                params,
+                self.shape,
             )
 
         if all(m is None or m for m in mask):
@@ -672,7 +672,11 @@ class _Elemwise:
 
         # Not really sorted but we need the sortedness.
         func_array = COO(
-            func_coords, func_data, self.shape, has_duplicates=False, sorted=True
+            func_coords,
+            func_data,
+            self.shape,
+            has_duplicates=False,
+            sorted=True,
         )
 
         unmatched_mask = np.ones(func_array.nnz, dtype=np.bool_)
@@ -719,11 +723,11 @@ class _Elemwise:
         broadcast_shape = kwargs.pop("broadcast_shape", None)
 
         if kwargs:
-            raise ValueError("Unknown kwargs: {}".format(kwargs.keys()))
+            raise ValueError(f"Unknown kwargs: {kwargs.keys()}")
 
         if return_midx and (len(args) != 2 or cache is not None):
             raise NotImplementedError(
-                "Matching indices only supported for two args, and no cache."
+                "Matching indices only supported for two args, and no cache.",
             )
 
         matched_arrays = [args[0]]
@@ -742,7 +746,8 @@ class _Elemwise:
             ]
             reduced_params = [all(p) for p in zip(*params)]
             reduced_shape = _get_reduced_shape(
-                arg2.shape, _rev_idx(reduced_params, arg2.ndim)
+                arg2.shape,
+                _rev_idx(reduced_params, arg2.ndim),
             )
 
             reduced_coords = [
@@ -756,10 +761,7 @@ class _Elemwise:
             matched_idx = _match_arrays(*linear)
 
             if return_midx:
-                matched_idx = [
-                    sidx[midx] for sidx, midx in zip(sorted_idx, matched_idx)
-                ]
-                return matched_idx
+                return [sidx[midx] for sidx, midx in zip(sorted_idx, matched_idx)]
 
             coords = [arg.coords[:, s] for arg, s in zip(cargs, sorted_idx)]
             mcoords = [c[:, idx] for c, idx in zip(coords, matched_idx)]

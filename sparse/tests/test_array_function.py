@@ -1,9 +1,9 @@
-import sparse
-from sparse._settings import NEP18_ENABLED
-from sparse._utils import assert_eq
 import numpy as np
 import pytest
 
+import sparse
+from sparse._settings import NEP18_ENABLED
+from sparse._utils import assert_eq
 
 if not NEP18_ENABLED:
     pytest.skip("NEP18 is not enabled", allow_module_level=True)

@@ -1,12 +1,11 @@
+from itertools import zip_longest
 from numbers import Integral
 
 import numba
 import numpy as np
 
-from itertools import zip_longest
-
-from .._slicing import normalize_index
-from .._utils import _zero_of_dtype, equivalent
+from sparse._slicing import normalize_index
+from sparse._utils import _zero_of_dtype, equivalent
 
 
 def getitem(x, index):
@@ -151,7 +150,7 @@ def _mask(coords, indices, shape):
             for ai in adv_idx:
                 if len(ai) != adv_ix_len:
                     raise IndexError(
-                        "shape mismatch: indexing arrays could not be broadcast together. Ensure all indexing arrays are of the same length."
+                        "shape mismatch: indexing arrays could not be broadcast together. Ensure all indexing arrays are of the same length.",
                     )
                 if ai.ndim != 1:
                     raise IndexError("Only one-dimensional iterable indices supported.")
@@ -172,7 +171,10 @@ def _mask(coords, indices, shape):
                 raise IndexError("Only one-dimensional iterable indices supported.")
 
             mask, aidxs = _compute_multi_mask(
-                coords, _ind_ar_from_indices(indices), adv_idx, adv_idx_pos
+                coords,
+                _ind_ar_from_indices(indices),
+                adv_idx,
+                adv_idx_pos,
             )
             return mask, _AdvIdxInfo(aidxs, adv_idx_pos, len(adv_idx))
 
@@ -298,7 +300,10 @@ def _separate_adv_indices(indices):
 
 @numba.jit(nopython=True, nogil=True)
 def _compute_multi_axis_multi_mask(
-    coords, indices, adv_idx, adv_idx_pos
+    coords,
+    indices,
+    adv_idx,
+    adv_idx_pos,
 ):  # pragma: no cover
     """
     Computes a mask with the advanced index, and also returns the advanced index
@@ -473,7 +478,6 @@ def _compute_mask(coords, indices):  # pragma: no cover
         # Guesstimate whether working with pairs is more efficient or
         # working with the mask directly.
         # One side is the estimate of time taken for binary searches
-        # (n_searches * log(avg_length))
         # The other is an estimated time of a linear filter for the mask.
         n_pairs = len(starts)
         n_current_slices = (

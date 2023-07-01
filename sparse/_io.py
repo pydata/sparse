@@ -1,7 +1,7 @@
 import numpy as np
 
-from ._coo.core import COO
 from ._compressed import GCXS
+from ._coo.core import COO
 
 
 def save_npz(filename, matrix, compressed=True):
@@ -130,5 +130,5 @@ def load_npz(filename):
             )
         except KeyError:
             raise RuntimeError(
-                "The file {!s} does not contain a valid sparse matrix".format(filename)
+                f"The file {filename!s} does not contain a valid sparse matrix",
             )

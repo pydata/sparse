@@ -1,11 +1,11 @@
 import functools
-from collections.abc import Iterable
-from numbers import Integral
-from functools import reduce
-
 import operator
-import numpy as np
+from collections.abc import Iterable
+from functools import reduce
+from numbers import Integral
+
 import numba
+import numpy as np
 
 
 def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
@@ -88,7 +88,7 @@ def algD(n, N, random_state=None):
         random_state = seed for random number generation
     """
 
-    if random_state != None:
+    if random_state is not None:
         np.random.seed(random_state)
     n = np.int64(n + 1)
     N = np.int64(N)
@@ -103,7 +103,7 @@ def algD(n, N, random_state=None):
             while True:
                 X = N * (1 - Vprime)
                 S = np.int64(X)
-                if S < qu1:
+                if qu1 > S:
                     break
                 Vprime = np.exp(np.log(np.random.rand()) / n)
             y1 = np.exp(np.log(np.random.rand() * N / qu1) * nmin1inv)
@@ -147,7 +147,7 @@ def algA(n, N, random_state=None):
         N = size of system (elements)
         random_state = seed for random number generation
     """
-    if random_state != None:
+    if random_state is not None:
         np.random.seed(random_state)
     n = np.int64(n)
     N = np.int64(N)
@@ -271,7 +271,7 @@ def random(
     if density is None:
         density = 0.01
     if not (0 <= density <= 1):
-        raise ValueError("density {} is not in the unit interval".format(density))
+        raise ValueError(f"density {density} is not in the unit interval")
 
     elements = np.prod(shape, dtype=np.intp)
 
@@ -280,7 +280,7 @@ def random(
     if not (0 <= nnz <= elements):
         raise ValueError(
             "cannot generate {} nonzero elements "
-            "for an array with {} total elements".format(nnz, elements)
+            "for an array with {} total elements".format(nnz, elements),
         )
 
     if random_state is None:
@@ -329,7 +329,7 @@ def random(
             ar.coords = ar.coords.astype(idx_dtype)
         else:
             raise ValueError(
-                "cannot cast array with shape {} to dtype {}.".format(shape, idx_dtype)
+                f"cannot cast array with shape {shape} to dtype {idx_dtype}.",
             )
 
     return ar.asformat(format, **kwargs)
@@ -428,7 +428,6 @@ def equivalent(x, y):
 
     # Can contain NaNs
     # FIXME: Complex floats and np.void with multiple values can't be compared properly.
-    # lgtm [py/comparison-of-identical-expressions]
     return (x == y) | ((x != x) & (y != y))
 
 
@@ -476,7 +475,7 @@ def html_table(arr):
             % (
                 np.float_(arr.nbytes)
                 / np.float_(reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize)
-            )
+            ),
         )
 
     # compressed_axes
@@ -487,9 +486,9 @@ def html_table(arr):
     for h, i in zip(headings, info):
         table += (
             "<tr>"
-            '<th style="text-align: left">%s</th>'
-            '<td style="text-align: left">%s</td>'
-            "</tr>" % (h, i)
+            '<th style="text-align: left">{}</th>'
+            '<td style="text-align: left">{}</td>'
+            "</tr>".format(h, i)
         )
     table += "</tbody>"
     table += "</table>"
@@ -556,11 +555,12 @@ def check_zero_fill_value(*args):
     """
     for i, arg in enumerate(args):
         if hasattr(arg, "fill_value") and not equivalent(
-            arg.fill_value, _zero_of_dtype(arg.dtype)
+            arg.fill_value,
+            _zero_of_dtype(arg.dtype),
         ):
             raise ValueError(
                 "This operation requires zero fill values, "
-                "but argument {:d} had a fill value of {!s}.".format(i, arg.fill_value)
+                "but argument {:d} had a fill value of {!s}.".format(i, arg.fill_value),
             )
 
 
@@ -605,7 +605,7 @@ def check_consistent_fill_value(arrays):
                 "This operation requires consistent fill-values, "
                 "but argument {:d} had a fill value of {!s}, which "
                 "is different from a fill_value of {!s} in the first "
-                "argument.".format(i, arg.fill_value, fv)
+                "argument.".format(i, arg.fill_value, fv),
             )
 
 
@@ -621,7 +621,7 @@ def can_store(dtype, scalar):
 
 
 def is_unsigned_dtype(dtype):
-    return not np.array(-1, dtype=dtype) == np.array(-1)
+    return np.array(-1, dtype=dtype) != np.array(-1)
 
 
 def convert_format(format):

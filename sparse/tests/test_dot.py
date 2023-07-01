@@ -1,17 +1,18 @@
+import operator
+
 import numpy as np
 import pytest
 import scipy.sparse
 import scipy.stats
 
-import operator
 import sparse
-from sparse._compressed import GCXS
 from sparse import COO
+from sparse._compressed import GCXS
 from sparse._utils import assert_eq
 
 
 @pytest.mark.parametrize(
-    "a_shape,b_shape,axes",
+    ("a_shape", "b_shape", "axes"),
     [
         [(3, 4), (4, 3), (1, 0)],
         [(3, 4), (4, 3), (0, 1)],
@@ -26,7 +27,7 @@ from sparse._utils import assert_eq
     ],
 )
 @pytest.mark.parametrize(
-    "a_format, b_format",
+    ("a_format", "b_format"),
     [("coo", "coo"), ("coo", "gcxs"), ("gcxs", "coo"), ("gcxs", "gcxs")],
 )
 def test_tensordot(a_shape, b_shape, axes, a_format, b_format):
@@ -110,7 +111,7 @@ def gen_for_format(format):
 
 
 @pytest.mark.parametrize(
-    "a_shape, b_shape",
+    ("a_shape", "b_shape"),
     [
         ((3, 1, 6, 5), (2, 1, 4, 5, 6)),
         ((2, 1, 4, 5, 6), (3, 1, 6, 5)),
@@ -126,11 +127,11 @@ def gen_for_format(format):
     ],
 )
 @pytest.mark.parametrize(
-    "a_format, a_kwargs",
+    ("a_format", "a_kwargs"),
     [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 @pytest.mark.parametrize(
-    "b_format, b_kwargs",
+    ("b_format", "b_kwargs"),
     [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 def test_matmul(a_shape, b_shape, a_format, b_format, a_kwargs, b_kwargs):
@@ -169,29 +170,35 @@ def test_matmul_errors():
 
 
 @pytest.mark.parametrize(
-    "a, b",
+    ("a", "b"),
     [
         (
             sparse.GCXS.from_numpy(
                 np.random.choice(
-                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
-                )
+                    [0, np.nan, 2],
+                    size=[100, 100],
+                    p=[0.99, 0.001, 0.009],
+                ),
             ),
             sparse.random((100, 100), density=0.01),
         ),
         (
             sparse.COO.from_numpy(
                 np.random.choice(
-                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
-                )
+                    [0, np.nan, 2],
+                    size=[100, 100],
+                    p=[0.99, 0.001, 0.009],
+                ),
             ),
             sparse.random((100, 100), density=0.01),
         ),
         (
             sparse.GCXS.from_numpy(
                 np.random.choice(
-                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
-                )
+                    [0, np.nan, 2],
+                    size=[100, 100],
+                    p=[0.99, 0.001, 0.009],
+                ),
             ),
             scipy.sparse.random(100, 100),
         ),
@@ -207,7 +214,7 @@ def test_matmul_nan_warnings(a, b):
 
 
 @pytest.mark.parametrize(
-    "a_shape, b_shape",
+    ("a_shape", "b_shape"),
     [
         ((1, 4, 5), (3, 5, 6)),
         ((3, 4, 5), (1, 5, 6)),
@@ -220,11 +227,11 @@ def test_matmul_nan_warnings(a, b):
     ],
 )
 @pytest.mark.parametrize(
-    "a_format, a_kwargs",
+    ("a_format", "a_kwargs"),
     [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 @pytest.mark.parametrize(
-    "b_format, b_kwargs",
+    ("b_format", "b_kwargs"),
     [*gen_for_format("coo"), *gen_for_format("gcxs")],
 )
 def test_dot(a_shape, b_shape, a_format, b_format, a_kwargs, b_kwargs):
@@ -252,7 +259,7 @@ def test_dot(a_shape, b_shape, a_format, b_format, a_kwargs, b_kwargs):
 
 
 @pytest.mark.parametrize(
-    "a_dense, b_dense, o_type",
+    ("a_dense", "b_dense", "o_type"),
     [
         (False, False, sparse.SparseArray),
         (False, True, np.ndarray),
@@ -272,7 +279,7 @@ def test_dot_type(a_dense, b_dense, o_type):
     assert isinstance(sparse.dot(a, b), o_type)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail()
 def test_dot_nocoercion():
     sa = sparse.random((3, 4, 5), density=0.5)
     sb = sparse.random((5, 6), density=0.5)
@@ -301,10 +308,12 @@ dot_formats = [
 def test_small_values(format1, format2):
     s1 = format1(sparse.COO(coords=[[0, 10]], data=[3.6e-100, 7.2e-009], shape=(20,)))
     s2 = format2(
-        sparse.COO(coords=[[0, 0], [4, 28]], data=[3.8e-25, 4.5e-225], shape=(20, 50))
+        sparse.COO(coords=[[0, 0], [4, 28]], data=[3.8e-25, 4.5e-225], shape=(20, 50)),
     )
 
-    dense_convertor = lambda x: x.todense() if isinstance(x, sparse.SparseArray) else x
+    def dense_convertor(x):
+        return x.todense() if isinstance(x, sparse.SparseArray) else x
+
     x1, x2 = dense_convertor(s1), dense_convertor(s2)
 
     assert_eq(x1 @ x2, s1 @ s2)
@@ -323,7 +332,9 @@ def test_complex(dtype1, dtype2, format1, format2, ndim1, ndim2):
     s1 = format1(sparse.random((20,) * ndim1, density=0.5).astype(dtype1))
     s2 = format2(sparse.random((20,) * ndim2, density=0.5).astype(dtype2))
 
-    dense_convertor = lambda x: x.todense() if isinstance(x, sparse.SparseArray) else x
+    def dense_convertor(x):
+        return x.todense() if isinstance(x, sparse.SparseArray) else x
+
     x1, x2 = dense_convertor(s1), dense_convertor(s2)
 
     assert_eq(x1 @ x2, s1 @ s2)

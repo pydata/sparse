@@ -1,8 +1,8 @@
-import sparse
-import pytest
 import numpy as np
+import pytest
 import scipy
 
+import sparse
 from sparse._compressed import GCXS
 from sparse._utils import assert_eq
 
@@ -18,7 +18,10 @@ def random_sparse(request):
     else:
         data_rvs = None
     return sparse.random(
-        (20, 30, 40), density=0.25, format="gcxs", data_rvs=data_rvs
+        (20, 30, 40),
+        density=0.25,
+        format="gcxs",
+        data_rvs=data_rvs,
     ).astype(dtype)
 
 
@@ -33,12 +36,15 @@ def random_sparse_small(request):
     else:
         data_rvs = None
     return sparse.random(
-        (20, 30, 40), density=0.25, format="gcxs", data_rvs=data_rvs
+        (20, 30, 40),
+        density=0.25,
+        format="gcxs",
+        data_rvs=data_rvs,
     ).astype(dtype)
 
 
 @pytest.mark.parametrize(
-    "reduction, kwargs",
+    ("reduction", "kwargs"),
     [
         ("sum", {}),
         ("sum", {"dtype": np.float32}),
@@ -62,11 +68,11 @@ def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
 
 
 @pytest.mark.xfail(
-    reason=("Setting output dtype=float16 produces results " "inconsistent with numpy")
+    reason=("Setting output dtype=float16 produces results inconsistent with numpy"),
 )
 @pytest.mark.filterwarnings("ignore:overflow")
 @pytest.mark.parametrize(
-    "reduction, kwargs",
+    ("reduction", "kwargs"),
     [("sum", {"dtype": np.float16}), ("mean", {"dtype": np.float16})],
 )
 @pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2)])
@@ -78,7 +84,7 @@ def test_reductions_float16(random_sparse, reduction, kwargs, axis):
     assert_eq(xx, yy, atol=1e-2)
 
 
-@pytest.mark.parametrize("reduction,kwargs", [("any", {}), ("all", {})])
+@pytest.mark.parametrize(("reduction", "kwargs"), [("any", {}), ("all", {})])
 @pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2), -3, (1, -1)])
 @pytest.mark.parametrize("keepdims", [True, False])
 def test_reductions_bool(random_sparse, reduction, kwargs, axis, keepdims):
@@ -92,7 +98,7 @@ def test_reductions_bool(random_sparse, reduction, kwargs, axis, keepdims):
 
 
 @pytest.mark.parametrize(
-    "reduction,kwargs",
+    ("reduction", "kwargs"),
     [
         (np.max, {}),
         (np.sum, {}),
@@ -117,7 +123,7 @@ def test_ufunc_reductions(random_sparse, reduction, kwargs, axis, keepdims):
 
 
 @pytest.mark.parametrize(
-    "reduction,kwargs",
+    ("reduction", "kwargs"),
     [
         (np.max, {}),
         (np.sum, {"axis": 0}),
@@ -138,7 +144,7 @@ def test_ufunc_reductions_kwargs(reduction, kwargs, fill_value):
 
 
 @pytest.mark.parametrize(
-    "a,b",
+    ("a", "b"),
     [
         [(3, 4), (3, 4)],
         [(12,), (3, 4)],
@@ -165,7 +171,7 @@ def test_reshape_same():
 
 
 @pytest.mark.parametrize(
-    "a,b",
+    ("a", "b"),
     [
         [(3, 4, 5), (2, 1, 0)],
         [(12,), None],
@@ -204,10 +210,7 @@ def test_tocoo():
 
 @pytest.mark.parametrize("complex", [True, False])
 def test_complex_methods(complex):
-    if complex:
-        x = np.array([1 + 2j, 2 - 1j, 0, 1, 0])
-    else:
-        x = np.array([1, 2, 0, 0, 0])
+    x = np.array([1 + 2j, 2 - 1j, 0, 1, 0]) if complex else np.array([1, 2, 0, 0, 0])
     s = GCXS.from_numpy(x)
     assert_eq(s.imag, x.imag)
     assert_eq(s.real, x.real)
@@ -274,7 +277,10 @@ def test_complex_methods(complex):
 @pytest.mark.parametrize("compressed_axes", [(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)])
 def test_slicing(index, compressed_axes):
     s = sparse.random(
-        (2, 3, 4), density=0.5, format="gcxs", compressed_axes=compressed_axes
+        (2, 3, 4),
+        density=0.5,
+        format="gcxs",
+        compressed_axes=compressed_axes,
     )
     x = s.todense()
     assert_eq(x[index], s[index])
@@ -298,7 +304,10 @@ def test_slicing(index, compressed_axes):
 @pytest.mark.parametrize("compressed_axes", [(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)])
 def test_advanced_indexing(index, compressed_axes):
     s = sparse.random(
-        (2, 3, 4), density=0.5, format="gcxs", compressed_axes=compressed_axes
+        (2, 3, 4),
+        density=0.5,
+        format="gcxs",
+        compressed_axes=compressed_axes,
     )
     x = s.todense()
 
@@ -346,7 +355,8 @@ def test_concatenate():
     z = zz.todense()
 
     assert_eq(
-        np.concatenate([x, y, z], axis=0), sparse.concatenate([xx, yy, zz], axis=0)
+        np.concatenate([x, y, z], axis=0),
+        sparse.concatenate([xx, yy, zz], axis=0),
     )
 
     xx = sparse.random((5, 3, 1), density=0.5, format="gcxs")
@@ -357,11 +367,13 @@ def test_concatenate():
     z = zz.todense()
 
     assert_eq(
-        np.concatenate([x, y, z], axis=2), sparse.concatenate([xx, yy, zz], axis=2)
+        np.concatenate([x, y, z], axis=2),
+        sparse.concatenate([xx, yy, zz], axis=2),
     )
 
     assert_eq(
-        np.concatenate([x, y, z], axis=-1), sparse.concatenate([xx, yy, zz], axis=-1)
+        np.concatenate([x, y, z], axis=-1),
+        sparse.concatenate([xx, yy, zz], axis=-1),
     )
 
 
@@ -445,7 +457,10 @@ def test_from_coo_valerr():
 @pytest.mark.parametrize("constant_values", [0, 1, 150, np.nan])
 def test_pad_valid(pad_width, constant_values):
     y = sparse.random(
-        (50, 50, 3), density=0.15, fill_value=constant_values, format="gcxs"
+        (50, 50, 3),
+        density=0.15,
+        fill_value=constant_values,
+        format="gcxs",
     )
     x = y.todense()
     xx = np.pad(x, pad_width=pad_width, constant_values=constant_values)

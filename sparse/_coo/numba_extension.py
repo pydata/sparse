@@ -3,22 +3,24 @@ Numba support for COO objects.
 
 For now, this just supports attribute access
 """
-import numpy as np
+import contextlib
+
 import numba
+import numpy as np
+from numba.core import cgutils, types
+from numba.core.imputils import impl_ret_borrowed, lower_builtin, lower_constant
+from numba.core.typing.typeof import typeof_impl
 from numba.extending import (
+    NativeValue,
+    box,
+    make_attribute_wrapper,
     models,
     register_model,
-    box,
-    unbox,
-    NativeValue,
-    make_attribute_wrapper,
     type_callable,
+    unbox,
 )
-from numba.core.imputils import impl_ret_borrowed, lower_constant, lower_builtin
-from numba.core.typing.typeof import typeof_impl
-from numba.core import cgutils, types
-from .._utils import _zero_of_dtype
-import contextlib
+
+from sparse._utils import _zero_of_dtype
 
 from . import COO
 
@@ -34,8 +36,10 @@ class COOType(types.Type):
         self.ndim = ndim
         super().__init__(
             name="COOType[{!r}, {!r}, {!r}]".format(
-                numba.from_dtype(data_dtype), numba.from_dtype(coords_dtype), ndim
-            )
+                numba.from_dtype(data_dtype),
+                numba.from_dtype(coords_dtype),
+                ndim,
+            ),
         )
 
     @property
@@ -63,7 +67,9 @@ class COOType(types.Type):
 @typeof_impl.register(COO)
 def _typeof_COO(val: COO, c) -> COOType:
     return COOType(
-        data_dtype=val.data.dtype, coords_dtype=val.coords.dtype, ndim=val.ndim
+        data_dtype=val.data.dtype,
+        coords_dtype=val.coords.dtype,
+        ndim=val.ndim,
     )
 
 
@@ -101,7 +107,9 @@ def impl_COO(context, builder, sig, args):
     coo.data = data
     coo.shape = shape
     coo.fill_value = context.get_constant_generic(
-        builder, typ.fill_value_type, _zero_of_dtype(typ.data_dtype)
+        builder,
+        typ.fill_value_type,
+        _zero_of_dtype(typ.data_dtype),
     )
     return impl_ret_borrowed(context, builder, sig.return_type, coo._getvalue())
 
@@ -112,7 +120,9 @@ def lower_constant_COO(context, builder, typ, pyval):
     data = context.get_constant_generic(builder, typ.data_type, pyval.data)
     shape = context.get_constant_generic(builder, typ.shape_type, pyval.shape)
     fill_value = context.get_constant_generic(
-        builder, typ.fill_value_type, pyval.fill_value
+        builder,
+        typ.fill_value_type,
+        pyval.fill_value,
     )
     return impl_ret_borrowed(
         context,

@@ -1,7 +1,7 @@
-import sparse
 import pytest
-from sparse._utils import assert_eq
 
+import sparse
+from sparse._utils import assert_eq
 
 FORMATS_ND = [
     sparse.COO,

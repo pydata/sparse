@@ -52,7 +52,7 @@ dependencies = {file = ["requirements.txt"]}
 
 [project.optional-dependencies]
 docs = ["sphinx", "sphinx_rtd_theme"]
-tests = ["dask[array]", "pytest>=3.5", "pytest-black", "pytest-cov"]
+tests = ["dask[array]", "pytest>=3.5", "pytest-cov", "pre-commit"]
 tox = ["sparse[tests]", "tox"]
 all = ["sparse[docs, tests, tox]"]
 
@@ -61,3 +61,8 @@ init = "sparse._numba_extension:_init_extension"
 
 [tool.black]
 exclude = "sparse/_version.py"
+
+[tool.ruff]
+select = ["E", "F", "W", "I", "UP", "YTT", "BLE", "FBT", "B", "A", "COM", "C4", "T10", "ISC", "ICN", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SLOT", "SIM", "TID", "INT", "ARG", "PTH", "TD", "FIX", "ERA", "PL", "PLE", "PLR", "PLW", "TRY", "FLY", "NPY", "PERF", "RUF"]
+line-length = 88
+target-version = "py310"
