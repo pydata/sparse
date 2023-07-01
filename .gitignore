@@ -77,3 +77,6 @@ sandbox.py
 
 # macOS
 *.DS_Store
+
+# setuptools_scm
+sparse/_version.py
