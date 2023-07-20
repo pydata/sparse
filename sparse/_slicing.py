@@ -40,7 +40,7 @@ def normalize_index(idx, shape):
             continue
         else:
             n_sliced_dims += 1
-    idx = idx + (slice(None),) * (len(shape) - n_sliced_dims)
+    idx += (slice(None),) * (len(shape) - n_sliced_dims)
     if len([i for i in idx if i is not None]) > len(shape):
         raise IndexError("Too many indices for array")
 

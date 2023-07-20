@@ -3,7 +3,6 @@ from .._utils import check_consistent_fill_value, normalize_axis, can_store
 
 
 def concatenate(arrays, axis=0, compressed_axes=None):
-
     from .compressed import GCXS
 
     check_consistent_fill_value(arrays)
@@ -57,7 +56,6 @@ def concatenate(arrays, axis=0, compressed_axes=None):
 
 
 def stack(arrays, axis=0, compressed_axes=None):
-
     from .compressed import GCXS
 
     check_consistent_fill_value(arrays)

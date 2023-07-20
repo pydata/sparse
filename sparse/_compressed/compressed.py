@@ -25,7 +25,6 @@ from .indexing import getitem
 
 
 def _from_coo(x, compressed_axes=None, idx_dtype=None):
-
     if x.ndim == 0:
         if compressed_axes is not None:
             raise ValueError("no axes to compress for 0d array")
@@ -97,7 +96,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     For arrays with ndim >2, any combination of axes can be compressed,
     significantly reducing storage.
 
-    Let the 3 arrays be RO, CO and VL. The first element
+    GCXS consists of 3 arrays. Let the 3 arrays be RO, CO and VL. The first element
     of array RO is the integer 0 and later elements are the number of
     cumulative non-zero elements in each row for GCRS, column for
     GCCS. CO stores column indexes of non-zero elements at each row for GCRS, column for GCCS.
@@ -148,7 +147,6 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         fill_value=None,
         idx_dtype=None,
     ):
-
         if isinstance(arg, ss.spmatrix):
             arg = self.from_scipy_sparse(arg)
 
@@ -281,6 +279,29 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         return self.data.shape[0]
 
     @property
+    def format(self):
+        """
+        The storage format of this array.
+        Returns
+        -------
+        str
+            The storage format of this array.
+        See Also
+        -------
+        scipy.sparse.dok_matrix.format : The Scipy equivalent property.
+        Examples
+        -------
+        >>> import sparse
+        >>> s = sparse.random((5,5), density=0.2, format='dok')
+        >>> s.format
+        'dok'
+        >>> t = sparse.random((5,5), density=0.2, format='coo')
+        >>> t.format
+        'coo'
+        """
+        return "gcxs"
+
+    @property
     def nbytes(self):
         """
         The number of bytes taken up by this object. Note that for small arrays,
@@ -378,6 +399,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         GCXS
             A new instance of the input array with compression along the specified dimensions.
         """
+        if new_compressed_axes == self.compressed_axes:
+            return self
+
         if self.ndim == 1:
             raise NotImplementedError("no axes to compress for 1d array")
 
@@ -414,7 +438,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         """
         if self.ndim == 0:
             return COO(
-                np.array([])[None],
+                np.array([]),
                 self.data,
                 shape=self.shape,
                 fill_value=self.fill_value,
@@ -468,7 +492,6 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         return self.tocoo().todense()
 
     def todok(self):
-
         from .. import DOK
 
         return DOK.from_coo(self.tocoo())  # probably a temporary solution
@@ -504,7 +527,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
                 (self.data, self.indices, self.indptr), shape=self.shape
             )
 
-    def asformat(self, format, compressed_axes=None):
+    def asformat(self, format, **kwargs):
         """
         Convert this sparse array to a given format.
         Parameters
@@ -522,21 +545,30 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         NotImplementedError
             If the format isn't supported.
         """
+        from .._utils import convert_format
+
+        format = convert_format(format)
+        ret = None
 
         if format == "coo":
-            return self.tocoo()
+            ret = self.tocoo()
         elif format == "dok":
-            return self.todok()
+            ret = self.todok()
         elif format == "csr":
-            return CSR(self)
+            ret = CSR(self)
         elif format == "csc":
-            return CSC(self)
+            ret = CSC(self)
         elif format == "gcxs":
-            if compressed_axes is None:
-                compressed_axes = self.compressed_axes
+            compressed_axes = kwargs.pop("compressed_axes", self.compressed_axes)
             return self.change_compressed_axes(compressed_axes)
 
-        raise NotImplementedError("The given format is not supported.")
+        if len(kwargs) != 0:
+            raise TypeError(f"Invalid keyword arguments provided: {kwargs}")
+
+        if ret is None:
+            raise NotImplementedError(f"The given format is not supported: {format}")
+
+        return ret
 
     def maybe_densify(self, max_size=1000, min_density=0.25):
         """

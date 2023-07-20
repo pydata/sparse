@@ -39,6 +39,8 @@ API
 
     dot
 
+    einsum
+
     elemwise
 
     eye
@@ -56,7 +58,7 @@ API
     load_npz
 
     matmul
-    
+
     moveaxis
 
     nanmax
@@ -76,6 +78,8 @@ API
     ones_like
 
     outer
+
+    pad
 
     random
 

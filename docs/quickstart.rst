@@ -46,7 +46,7 @@ Compute
 -------
 
 Many of the normal Numpy operations work on :obj:`COO` objects just like on :obj:`numpy.ndarray` objects.
-This includes arithmetic, :doc:`numpy.ufunc <reference/ufuncs>` operations, or functions like tensordot and transpose.
+This includes arithmetic, :doc:`numpy.ufunc <numpy:reference/ufuncs>` operations, or functions like tensordot and transpose.
 
 .. code-block:: python
 

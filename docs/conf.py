@@ -81,7 +81,7 @@ release = __version__
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -103,7 +103,7 @@ autosummary_generate_overwrite = False
 # a list of builtin themes.
 #
 html_theme = "sphinx_rtd_theme"
-html_logo = "logo.png"
+html_logo = "logo.svg"
 html_favicon = "logo.png"
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -183,13 +183,15 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3/", None),
-    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://docs.scipy.org/doc/numpy", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy", None),
 }
 
 extlinks = {
-    "issue": ("https://github.com/pydata/sparse/issues/%s", "Issue #"),
-    "pr": ("https://github.com/pydata/sparse/pull/%s", "PR #"),
-    "ghuser": ("https://github.com/%s", "@"),
+    "issue": ("https://github.com/pydata/sparse/issues/%s", "Issue #%s"),
+    "pr": ("https://github.com/pydata/sparse/pull/%s", "PR #%s"),
+    "ghuser": ("https://github.com/%s", "@%s"),
+    "commit": ("https://github.com/pydata/sparse/commit/%s", "%s"),
+    "compare": ("https://github.com/pydata/sparse/commit/%s", "%s"),
 }

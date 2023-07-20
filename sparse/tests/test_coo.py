@@ -10,7 +10,7 @@ import scipy.sparse
 import scipy.stats
 
 import sparse
-from sparse import COO
+from sparse import COO, DOK
 from sparse._settings import NEP18_ENABLED
 from sparse._utils import assert_eq, random_value_array, html_table
 
@@ -341,8 +341,9 @@ def test_resize(a, b):
         [(), ()],
     ],
 )
-def test_reshape(a, b):
-    s = sparse.random(a, density=0.5)
+@pytest.mark.parametrize("format", ["coo", "dok"])
+def test_reshape(a, b, format):
+    s = sparse.random(a, density=0.5, format=format)
     x = s.todense()
 
     assert_eq(x.reshape(b), s.reshape(b))
@@ -368,19 +369,27 @@ def test_reshape_same():
     assert s.reshape(s.shape) is s
 
 
-def test_reshape_function():
-    s = sparse.random((5, 3), density=0.5)
+@pytest.mark.parametrize("format", [COO, DOK])
+def test_reshape_function(format):
+    s = sparse.random((5, 3), density=0.5, format=format)
     x = s.todense()
     shape = (3, 5)
 
     s2 = np.reshape(s, shape)
-    assert isinstance(s2, COO)
+    assert isinstance(s2, format)
     assert_eq(s2, x.reshape(shape))
 
 
 def test_reshape_upcast():
     a = sparse.random((10, 10, 10), density=0.5, format="coo", idx_dtype=np.uint8)
     assert a.reshape(1000).coords.dtype == np.uint16
+
+
+@pytest.mark.parametrize("format", [COO, DOK])
+def test_reshape_errors(format):
+    s = sparse.random((5, 3), density=0.5, format=format)
+    with pytest.raises(NotImplementedError):
+        s.reshape((3, 5, 1), order="F")
 
 
 def test_to_scipy_sparse():
@@ -694,10 +703,10 @@ def test_scalar_exponentiation():
     a = sparse.random((2, 3, 4), density=0.5)
     x = a.todense()
 
-    assert_eq(x ** 2, a ** 2)
-    assert_eq(x ** 0.5, a ** 0.5)
+    assert_eq(x**2, a**2)
+    assert_eq(x**0.5, a**0.5)
 
-    assert_eq(x ** -1, a ** -1)
+    assert_eq(x**-1, a**-1)
 
 
 def test_create_with_lists_of_tuples():
@@ -949,7 +958,7 @@ def test_two_random_same_seed():
     "rvs, dtype",
     [
         (None, np.float64),
-        (scipy.stats.poisson(25, loc=10).rvs, np.int_),
+        (scipy.stats.poisson(25, loc=10).rvs, np.int64),
         (lambda x: np.random.choice([True, False], size=x), np.bool_),
     ],
 )
@@ -1148,7 +1157,6 @@ def test_prod_along_axis():
 
 
 class TestRoll:
-
     # test on 1d array #
     @pytest.mark.parametrize("shift", [0, 2, -2, 20, -20])
     def test_1d(self, shift):
@@ -1455,7 +1463,6 @@ def test_prune_coo():
 
 
 def test_diagonal():
-
     a = sparse.random((4, 4), density=0.5)
 
     assert_eq(sparse.diagonal(a, offset=0), np.diagonal(a.todense(), offset=0))
@@ -1481,7 +1488,6 @@ def test_diagonal():
 
 
 def test_diagonalize():
-
     assert_eq(sparse.diagonalize(np.ones(3)), sparse.eye(3))
 
     assert_eq(
@@ -1624,3 +1630,58 @@ def test_html_for_size_zero():
 
     table = html_table(arr)
     assert table == ground_truth
+
+
+@pytest.mark.parametrize(
+    "pad_width",
+    [
+        2,
+        (2, 1),
+        ((2), (1)),
+        ((1, 2), (4, 5), (7, 8)),
+    ],
+)
+@pytest.mark.parametrize("constant_values", [0, 1, 150, np.nan])
+def test_pad_valid(pad_width, constant_values):
+    y = sparse.random((50, 50, 3), density=0.15, fill_value=constant_values)
+    x = y.todense()
+    xx = np.pad(x, pad_width=pad_width, constant_values=constant_values)
+    yy = np.pad(y, pad_width=pad_width, constant_values=constant_values)
+    assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize(
+    "pad_width",
+    [
+        ((2, 1), (5, 7)),
+    ],
+)
+@pytest.mark.parametrize("constant_values", [150, 2, (1, 2)])
+def test_pad_invalid(pad_width, constant_values, fill_value=0):
+    y = sparse.random((50, 50, 3), density=0.15)
+    with pytest.raises(ValueError):
+        np.pad(y, pad_width, constant_values=constant_values)
+
+
+@pytest.mark.parametrize("val", [0, 5])
+def test_scalar_from_numpy(val):
+    x = np.int64(val)
+    s = sparse.COO.from_numpy(x)
+    assert s.nnz == 0
+    assert_eq(x, s)
+
+
+def test_scalar_elemwise():
+    s1 = sparse.random((), density=0.5)
+    x2 = np.random.rand(2)
+
+    x1 = s1.todense()
+
+    assert_eq(s1 * x2, x1 * x2)
+
+
+def test_array_as_shape():
+    coords = [[0, 1, 2, 3, 4], [0, 1, 2, 3, 4]]
+    data = [10, 20, 30, 40, 50]
+
+    s = sparse.COO(coords, data, shape=np.array((5, 5)))

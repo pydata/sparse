@@ -217,6 +217,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if cache:
             self.enable_caching()
 
+        if not isinstance(coords, np.ndarray):
+            warnings.warn(
+                "coords should be an ndarray. This will raise a ValueError in the future.",
+                DeprecationWarning,
+            )
+
         if data is None:
             arr = as_coo(
                 coords, shape=shape, fill_value=fill_value, idx_dtype=idx_dtype
@@ -241,12 +247,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if self.data.ndim != 1:
             raise ValueError("data must be a scalar or 1-dimensional.")
 
-        if shape and not self.coords.size:
-            self.coords = np.zeros(
-                (len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp
-            )
-
         if shape is None:
+            warnings.warn(
+                "shape should be provided. This will raise a ValueError in the future.",
+                DeprecationWarning,
+            )
             if self.coords.nbytes:
                 shape = tuple((self.coords.max(axis=1) + 1))
             else:
@@ -254,6 +259,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         if not isinstance(shape, Iterable):
             shape = (shape,)
+
+        if isinstance(shape, np.ndarray):
+            shape = tuple(shape)
+
+        if shape and not self.coords.size:
+            self.coords = np.zeros(
+                (len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp
+            )
 
         super().__init__(shape, fill_value=fill_value)
         if idx_dtype:
@@ -382,24 +395,19 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         x = np.asanyarray(x).view(type=np.ndarray)
 
         if fill_value is None:
-            fill_value = _zero_of_dtype(x.dtype)
+            fill_value = _zero_of_dtype(x.dtype) if x.shape else x
 
-        if x.shape:
-            coords = np.where(~equivalent(x, fill_value))
-            data = x[coords]
-            coords = np.vstack(coords)
-        else:
-            coords = np.empty((0, 1), dtype=np.uint8)
-            data = np.array(x, ndmin=1)
+        coords = np.atleast_2d(np.flatnonzero(~equivalent(x, fill_value)))
+        data = x.ravel()[tuple(coords)]
         return cls(
             coords,
             data,
-            shape=x.shape,
+            shape=x.size,
             has_duplicates=False,
             sorted=True,
             fill_value=fill_value,
             idx_dtype=idx_dtype,
-        )
+        ).reshape(x.shape)
 
     def todense(self):
         """
@@ -616,6 +624,29 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         True
         """
         return self.coords.shape[1]
+
+    @property
+    def format(self):
+        """
+        The storage format of this array.
+        Returns
+        -------
+        str
+            The storage format of this array.
+        See Also
+        -------
+        scipy.sparse.dok_matrix.format : The Scipy equivalent property.
+        Examples
+        -------
+        >>> import sparse
+        >>> s = sparse.random((5,5), density=0.2, format='dok')
+        >>> s.format
+        'dok'
+        >>> t = sparse.random((5,5), density=0.2, format='coo')
+        >>> t.format
+        'coo'
+        """
+        return "coo"
 
     @property
     def nbytes(self):
@@ -1412,7 +1443,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         check_zero_fill_value(self)
         return tuple(self.coords)
 
-    def asformat(self, format, compressed_axes=None):
+    def asformat(self, format, **kwargs):
         """
         Convert this sparse array to a given format.
 
@@ -1431,25 +1462,27 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         NotImplementedError
             If the format isn't supported.
         """
-        from .._compressed import GCXS
+        from .._utils import convert_format
 
-        if format == "gcxs" or format is GCXS:
-            return GCXS.from_coo(self, compressed_axes=compressed_axes)
+        format = convert_format(format)
 
-        elif compressed_axes is not None:
-            raise ValueError(
-                "compressed_axes is not supported for {} format".format(format)
-            )
+        if format == "gcxs":
+            from .._compressed import GCXS
 
-        if format == "coo" or format is COO:
+            return GCXS.from_coo(self, **kwargs)
+
+        elif len(kwargs) != 0:
+            raise TypeError(f"Invalid keyword arguments provided: {kwargs}")
+
+        if format == "coo":
             return self
 
-        from .._dok import DOK
+        if format == "dok":
+            from .._dok import DOK
 
-        if format == "dok" or format is DOK:
-            return DOK.from_coo(self)
+            return DOK.from_coo(self, **kwargs)
 
-        raise NotImplementedError("The given format is not supported.")
+        return self.asformat("gcxs", **kwargs).asformat(format, **kwargs)
 
 
 def as_coo(x, shape=None, fill_value=None, idx_dtype=None):

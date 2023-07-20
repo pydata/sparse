@@ -766,3 +766,25 @@ def test_elemwise_binary_empty():
         assert z.nnz == 0
         assert z.coords.shape == (2, 0)
         assert z.data.shape == (0,)
+
+
+@pytest.mark.parametrize("dtype", [np.complex64, np.complex128])
+def test_nanmean_regression(dtype):
+    array = np.array([0.0 + 0.0j, 0.0 + np.nan * 1j], dtype=dtype)
+    sparray = sparse.COO.from_numpy(array)
+    assert_eq(array, sparray)
+
+
+# Regression test for gh-580
+@pytest.mark.filterwarnings("error")
+def test_no_deprecation_warning():
+    a = np.array([1, 2])
+    s = sparse.COO(a, a, shape=(3,))
+    s == s
+
+
+# Regression test for gh-587
+def test_no_out_upcast():
+    a = sparse.COO([[0, 1], [0, 1]], [1, 1], shape=(2, 2))
+    with pytest.raises(TypeError):
+        a *= 0.5

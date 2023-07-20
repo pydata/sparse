@@ -3,6 +3,7 @@ from numbers import Integral
 from collections.abc import Iterable
 
 import numpy as np
+import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from ._slicing import normalize_index
@@ -106,6 +107,11 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
             self._make_shallow_copy_of(ar)
             return
 
+        if isinstance(shape, scipy.sparse.spmatrix):
+            ar = DOK.from_scipy_sparse(shape)
+            self._make_shallow_copy_of(ar)
+            return
+
         self.dtype = np.dtype(dtype)
 
         if not data:
@@ -126,6 +132,32 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
                 self[c] = d
         else:
             raise ValueError("data must be a dict.")
+
+    @classmethod
+    def from_scipy_sparse(cls, x):
+        """
+        Create a :obj:`DOK` array from a :obj:`scipy.sparse.spmatrix`.
+
+        Parameters
+        ----------
+        x : scipy.sparse.spmatrix
+            The matrix to convert.
+
+        Returns
+        -------
+        DOK
+            The equivalent :obj:`DOK` array.
+
+        Examples
+        --------
+        >>> x = scipy.sparse.rand(6, 3, density=0.2)
+        >>> s = DOK.from_scipy_sparse(x)
+        >>> np.array_equal(x.todense(), s.todense())
+        True
+        """
+        from sparse import COO
+
+        return COO.from_scipy_sparse(x).asformat(cls)
 
     @classmethod
     def from_coo(cls, x):
@@ -244,15 +276,12 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
     def format(self):
         """
         The storage format of this array.
-
         Returns
         -------
         str
             The storage format of this array.
         See Also
         -------
-        COO.format : Equivalent :obj:`COO` array property.
-        GCXS.format : Equivalent :obj:`GCXS` array property.
         scipy.sparse.dok_matrix.format : The Scipy equivalent property.
         Examples
         -------
@@ -260,6 +289,9 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         >>> s = sparse.random((5,5), density=0.2, format='dok')
         >>> s.format
         'dok'
+        >>> t = sparse.random((5,5), density=0.2, format='coo')
+        >>> t.format
+        'coo'
         """
         return "dok"
 
@@ -288,17 +320,10 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         return self.nnz * self.dtype.itemsize
 
     def __getitem__(self, key):
-
-        # 1D fancy indexing
-        if (
-            self.ndim == 1
-            and isinstance(key, Iterable)
-            and all(isinstance(i, (int, np.integer)) for i in key)
-            and len(key) > 1
-        ):
+        if not isinstance(key, tuple):
             key = (key,)
 
-        if isinstance(key, tuple) and all(isinstance(k, Iterable) for k in key):
+        if all(isinstance(k, Iterable) for k in key):
             if len(key) != self.ndim:
                 raise NotImplementedError(
                     f"Index sequences for all {self.ndim} array dimensions needed!"
@@ -309,43 +334,11 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
         key = normalize_index(key, self.shape)
 
-        # single element doesn't return sparse array
-        if all(isinstance(k, Integral) for k in key):
-            if key in self.data:
-                return self.data[key]
-            else:
-                return self.fill_value
+        ret = self.asformat("coo")[key]
+        if isinstance(ret, SparseArray):
+            ret = ret.asformat("dok")
 
-        slice_key = [to_slice(k) for k in key]
-        coords_array = np.asarray(list(self.data.keys()))
-        values_array = np.asarray(list(self.data.values()))
-        filtered_coords, filter_arr = self._filter_by_key(coords_array, slice_key)
-        filtered_values = values_array[filter_arr]
-
-        res_shape = []
-        keep_dims = []
-        for i, k in enumerate(key):
-            if isinstance(k, slice):
-                n_elements = ceil((k.stop - k.start) / k.step)
-                res_shape.append(n_elements)
-                keep_dims.append(i)
-
-        # none of the keys in this array make it into the slice
-        if filtered_coords.size == 0:
-            return DOK(shape=res_shape, dtype=self.dtype, fill_value=self.fill_value)
-
-        starts = np.asarray([k.start for k in slice_key])
-        steps = np.asarray([k.step for k in slice_key])
-        new_coords = (filtered_coords - starts) // steps
-        new_coords_squeezed = np.take(new_coords, keep_dims, axis=1)
-        new_data = {
-            tuple(coord): val
-            for coord, val in zip(new_coords_squeezed, filtered_values)
-        }
-
-        return DOK(
-            shape=res_shape, data=new_data, dtype=self.dtype, fill_value=self.fill_value
-        )
+        return ret
 
     def _fancy_getitem(self, key):
         """Subset of fancy indexing, when all dimensions are accessed"""
@@ -359,17 +352,6 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
             dtype=self.dtype,
             fill_value=self.fill_value,
         )
-
-    def _filter_by_key(self, coords, slice_key):
-        """Filter data coordinates to be within given slice """
-        filter_arr = np.ones(coords.shape[0], dtype=bool)
-        for coords_in_dim, sl in zip(coords.T, slice_key):
-            filter_arr *= (
-                (coords_in_dim >= sl.start)
-                * (coords_in_dim < sl.stop)
-                * ((coords_in_dim - sl.start) % sl.step == 0)
-            )
-        return coords[filter_arr], filter_arr
 
     def __setitem__(self, key, value):
         value = np.asarray(value, dtype=self.dtype)
@@ -459,7 +441,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
                 return
             elif not isinstance(ind, Integral):
                 raise IndexError(
-                    "All indices must be slices or integers" " when setting an item."
+                    "All indices must be slices or integers when setting an item."
                 )
 
         key = tuple(key_list)
@@ -507,7 +489,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
         return result
 
-    def asformat(self, format):
+    def asformat(self, format, **kwargs):
         """
         Convert this sparse array to a given format.
 
@@ -526,12 +508,18 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         NotImplementedError
             If the format isn't supported.
         """
-        if format == "dok" or format is DOK:
+        from ._utils import convert_format
+
+        format = convert_format(format)
+
+        if format == "dok":
             return self
 
-        from ._coo import COO
+        if format == "coo":
+            from ._coo import COO
 
-        if format == "coo" or format is COO:
+            if len(kwargs) != 0:
+                raise ValueError(f"Extra kwargs found: {kwargs}")
             return COO.from_iter(
                 self.data,
                 shape=self.shape,
@@ -539,7 +527,46 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
                 dtype=self.dtype,
             )
 
-        raise NotImplementedError("The given format is not supported.")
+        return self.asformat("coo").asformat(format, **kwargs)
+
+    def reshape(self, shape, order="C"):
+        """
+        Returns a new :obj:`DOK` array that is a reshaped version of this array.
+
+        Parameters
+        ----------
+        shape : tuple[int]
+            The desired shape of the output array.
+
+        Returns
+        -------
+        DOK
+            The reshaped output array.
+
+        See Also
+        --------
+        numpy.ndarray.reshape : The equivalent Numpy function.
+
+        Notes
+        -----
+        The :code:`order` parameter is provided just for compatibility with
+        Numpy and isn't actually supported.
+
+        Examples
+        --------
+        >>> s = DOK.from_numpy(np.arange(25))
+        >>> s2 = s.reshape((5, 5))
+        >>> s2.todense()  # doctest: +NORMALIZE_WHITESPACE
+        array([[ 0,  1,  2,  3,  4],
+               [ 5,  6,  7,  8,  9],
+               [10, 11, 12, 13, 14],
+               [15, 16, 17, 18, 19],
+               [20, 21, 22, 23, 24]])
+        """
+        if order not in {"C", None}:
+            raise NotImplementedError("The 'order' parameter is not supported")
+
+        return DOK.from_coo(self.to_coo().reshape(shape))
 
 
 def to_slice(k):

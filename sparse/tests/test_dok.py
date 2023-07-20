@@ -47,6 +47,15 @@ def test_convert_to_numpy():
     assert_eq(x, s)
 
 
+def test_convert_from_scipy_sparse():
+    import scipy.sparse
+
+    x = scipy.sparse.rand(6, 3, density=0.2)
+    s = DOK(x)
+
+    assert_eq(x, s)
+
+
 @pytest.mark.parametrize(
     "shape, data",
     [
@@ -120,6 +129,7 @@ def test_getitem_notimplemented_error(shape, density, indices):
     [
         ((10, 10), 0.8, ([0, 4, 5], [0, 2])),
         ((5, 5, 5), 0.5, ([1, 2, 3], [0], [2, 3, 4])),
+        ((10,), 0.5, (5, 6)),
     ],
 )
 def test_getitem_index_error(shape, density, indices):
@@ -281,3 +291,54 @@ def test_zeros_like():
     assert s.shape == s2.shape
     assert s.dtype == s2.dtype
     assert isinstance(s2, sparse.DOK)
+
+
+@pytest.mark.parametrize(
+    "pad_width",
+    [
+        2,
+        (2, 1),
+        ((2), (1)),
+        ((1, 2), (4, 5), (7, 8)),
+    ],
+)
+@pytest.mark.parametrize("constant_values", [0, 1, 150, np.nan])
+def test_pad_valid(pad_width, constant_values):
+    y = sparse.random(
+        (50, 50, 3), density=0.15, fill_value=constant_values, format="dok"
+    )
+    x = y.todense()
+    xx = np.pad(x, pad_width=pad_width, constant_values=constant_values)
+    yy = np.pad(y, pad_width=pad_width, constant_values=constant_values)
+    assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize(
+    "pad_width",
+    [
+        ((2, 1), (5, 7)),
+    ],
+)
+@pytest.mark.parametrize("constant_values", [150, 2, (1, 2)])
+def test_pad_invalid(pad_width, constant_values, fill_value=0):
+    y = sparse.random((50, 50, 3), density=0.15, format="dok")
+    with pytest.raises(ValueError):
+        np.pad(y, pad_width, constant_values=constant_values)
+
+
+@pytest.mark.parametrize("func", [np.concatenate, np.stack])
+def test_dok_concat_stack(func):
+    s1 = sparse.random((4, 4), density=0.25, format="dok")
+    s2 = sparse.random((4, 4), density=0.25, format="dok")
+
+    x1 = s1.todense()
+    x2 = s2.todense()
+
+    assert_eq(func([s1, s2]), func([x1, x2]))
+
+
+def test_dok_indexing():
+    s = sparse.DOK((3, 3))
+    s[1, 2] = 0.5
+    x = s.todense()
+    assert_eq(x[1::-1], s[1::-1])

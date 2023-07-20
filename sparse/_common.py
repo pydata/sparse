@@ -1,12 +1,22 @@
 import numpy as np
 import numba
 import scipy.sparse
-from functools import wraps
+from functools import wraps, reduce
 from itertools import chain
+from operator import mul, index
 from collections.abc import Iterable
+from scipy.sparse import spmatrix
+from numba import literal_unroll
+import warnings
 
 from ._sparse_array import SparseArray
-from ._utils import check_compressed_axes, normalize_axis, check_zero_fill_value
+from ._utils import (
+    check_compressed_axes,
+    normalize_axis,
+    check_zero_fill_value,
+    equivalent,
+    _zero_of_dtype,
+)
 
 from ._umath import elemwise
 from ._coo.common import (
@@ -33,13 +43,58 @@ from ._coo.common import (
 )
 
 
+@numba.njit
+def nan_check(*args):
+    """
+    Check for the NaN values in Numpy Arrays
+
+    Parameters
+    ----------
+    Union[Numpy Array, Integer, Float]
+
+    Returns
+    -------
+    Boolean Whether Numpy Array Contains NaN
+
+    """
+    for i in literal_unroll(args):
+        ia = np.asarray(i)
+        if ia.size != 0 and np.isnan(np.min(ia)):
+            return True
+    return False
+
+
+def check_class_nan(test):
+    """
+    Check NaN for Sparse Arrays
+
+    Parameters
+    ----------
+    test : Union[sparse.COO, sparse.GCXS, scipy.sparse.spmatrix, Numpy Ndarrays]
+
+    Returns
+    -------
+    Boolean Whether Sparse Array Contains NaN
+
+    """
+    from ._compressed import GCXS
+    from ._coo import COO
+
+    if isinstance(test, (GCXS, COO)):
+        return nan_check(test.fill_value, test.data)
+    elif isinstance(test, spmatrix):
+        return nan_check(test.data)
+    else:
+        return nan_check(test)
+
+
 def tensordot(a, b, axes=2, *, return_type=None):
     """
     Perform the equivalent of :obj:`numpy.tensordot`.
 
     Parameters
     ----------
-    a, b : Union[COO, np.ndarray, scipy.sparse.spmatrix]
+    a, b : Union[SparseArray, np.ndarray, scipy.sparse.spmatrix]
         The arrays to perform the :code:`tensordot` operation on.
     axes : tuple[Union[int, tuple[int], Union[int, tuple[int]], optional
         The axes to match when performing the sum.
@@ -48,7 +103,7 @@ def tensordot(a, b, axes=2, *, return_type=None):
 
     Returns
     -------
-    Union[COO, numpy.ndarray]
+    Union[SparseArray, numpy.ndarray]
         The result of the operation.
 
     Raises
@@ -150,12 +205,12 @@ def matmul(a, b):
 
     Parameters
     ----------
-    a, b : Union[COO, np.ndarray, scipy.sparse.spmatrix]
+    a, b : Union[SparseArray, np.ndarray, scipy.sparse.spmatrix]
         The arrays to perform the :code:`matmul` operation on.
 
     Returns
     -------
-    Union[COO, numpy.ndarray]
+    Union[SparseArray, numpy.ndarray]
         The result of the operation.
 
     Raises
@@ -172,6 +227,11 @@ def matmul(a, b):
     if not hasattr(a, "ndim") or not hasattr(b, "ndim"):
         raise TypeError(
             "Cannot perform dot product on types %s, %s" % (type(a), type(b))
+        )
+
+    if check_class_nan(a) or check_class_nan(b):
+        warnings.warn(
+            "Nan will not be propagated in matrix multiplication", RuntimeWarning
         )
 
     # When b is 2-d, it is equivalent to dot
@@ -228,12 +288,12 @@ def dot(a, b):
 
     Parameters
     ----------
-    a, b : Union[COO, np.ndarray, scipy.sparse.spmatrix]
+    a, b : Union[SparseArray, np.ndarray, scipy.sparse.spmatrix]
         The arrays to perform the :code:`dot` operation on.
 
     Returns
     -------
-    Union[COO, numpy.ndarray]
+    Union[SparseArray, numpy.ndarray]
         The result of the operation.
 
     Raises
@@ -431,13 +491,13 @@ def _dot(a, b, return_type=None):
         return out
 
     if isinstance(a, np.ndarray) and isinstance(b, COO):
-        b = b.T
         a = a.view(type=np.ndarray)
 
         if return_type is None or return_type == np.ndarray:
             return _dot_ndarray_coo_type(a.dtype, b.dtype)(
                 a, b.coords, b.data, out_shape
             )
+        b = b.T
         coords, data = _dot_ndarray_coo_type_sparse(a.dtype, b.dtype)(
             a, b.coords, b.data, out_shape
         )
@@ -447,6 +507,11 @@ def _dot(a, b, return_type=None):
         if return_type == GCXS:
             return out.asformat("gcxs")
         return out
+
+    if isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
+        return np.dot(a, b)
+
+    raise TypeError("Unsupported types.")
 
 
 def _memoize_dtype(f):
@@ -585,7 +650,7 @@ def _csc_ndarray_count_nnz(
 
 
 def _dot_dtype(dt1, dt2):
-    return (np.zeros((), dtype=dt1) * np.zeros((), dtype=dt1)).dtype
+    return (np.zeros((), dtype=dt1) * np.zeros((), dtype=dt2)).dtype
 
 
 @_memoize_dtype
@@ -786,6 +851,7 @@ def _dot_csc_ndarray_type_sparse(dt1, dt2):
         sums = np.zeros(a_shape[0])
         mask = np.full(a_shape[0], -1)
         nnz = 0
+        indptr[0] = 0
         for i in range(b_shape[1]):
             head = -2
             length = 0
@@ -1084,8 +1150,8 @@ def _dot_ndarray_coo_type(dt1, dt2):
 
         for oidx1 in range(out_shape[0]):
             for didx2 in range(len(data2)):
-                oidx2 = coords2[0, didx2]
-                out[oidx1, oidx2] += array1[oidx1, coords2[1, didx2]] * data2[didx2]
+                oidx2 = coords2[1, didx2]
+                out[oidx1, oidx2] += array1[oidx1, coords2[0, didx2]] * data2[didx2]
 
         return out
 
@@ -1147,6 +1213,330 @@ def _dot_ndarray_coo_type_sparse(dt1, dt2):
     return _dot_ndarray_coo
 
 
+# Copied from : https://github.com/numpy/numpy/blob/59fec4619403762a5d785ad83fcbde5a230416fc/numpy/core/einsumfunc.py#L523
+# under BSD-3-Clause license : https://github.com/numpy/numpy/blob/v1.24.0/LICENSE.txt
+def _parse_einsum_input(operands):
+    """
+    A copy of the numpy parse_einsum_input that
+    does not cast the operands to numpy array.
+
+    Returns
+    -------
+    input_strings : str
+        Parsed input strings
+    output_string : str
+        Parsed output string
+    operands : list of array_like
+        The operands to use in the numpy contraction
+    Examples
+    --------
+    The operand list is simplified to reduce printing:
+    >>> np.random.seed(123)
+    >>> a = np.random.rand(4, 4)
+    >>> b = np.random.rand(4, 4, 4)
+    >>> _parse_einsum_input(('...a,...a->...', a, b))
+    ('za,xza', 'xz', [a, b]) # may vary
+    >>> _parse_einsum_input((a, [Ellipsis, 0], b, [Ellipsis, 0]))
+    ('za,xza', 'xz', [a, b]) # may vary
+    """
+
+    if len(operands) == 0:
+        raise ValueError("No input operands")
+
+    if isinstance(operands[0], str):
+        subscripts = operands[0].replace(" ", "")
+        operands = [v for v in operands[1:]]
+
+        # Ensure all characters are valid
+        for s in subscripts:
+            if s in ".,->":
+                continue
+            if s not in np.core.einsumfunc.einsum_symbols:
+                raise ValueError("Character %s is not a valid symbol." % s)
+
+    else:
+        tmp_operands = list(operands)
+        operand_list = []
+        subscript_list = []
+        for p in range(len(operands) // 2):
+            operand_list.append(tmp_operands.pop(0))
+            subscript_list.append(tmp_operands.pop(0))
+
+        output_list = tmp_operands[-1] if len(tmp_operands) else None
+        operands = [v for v in operand_list]
+        subscripts = ""
+        last = len(subscript_list) - 1
+        for num, sub in enumerate(subscript_list):
+            for s in sub:
+                if s is Ellipsis:
+                    subscripts += "..."
+                else:
+                    try:
+                        s = index(s)
+                    except TypeError as e:
+                        raise TypeError(
+                            "For this input type lists must contain "
+                            "either int or Ellipsis"
+                        ) from e
+                    subscripts += np.core.einsumfunc.einsum_symbols[s]
+            if num != last:
+                subscripts += ","
+
+        if output_list is not None:
+            subscripts += "->"
+            for s in output_list:
+                if s is Ellipsis:
+                    subscripts += "..."
+                else:
+                    try:
+                        s = index(s)
+                    except TypeError as e:
+                        raise TypeError(
+                            "For this input type lists must contain "
+                            "either int or Ellipsis"
+                        ) from e
+                    subscripts += np.core.einsumfunc.einsum_symbols[s]
+    # Check for proper "->"
+    if ("-" in subscripts) or (">" in subscripts):
+        invalid = (subscripts.count("-") > 1) or (subscripts.count(">") > 1)
+        if invalid or (subscripts.count("->") != 1):
+            raise ValueError("Subscripts can only contain one '->'.")
+
+    # Parse ellipses
+    if "." in subscripts:
+        used = subscripts.replace(".", "").replace(",", "").replace("->", "")
+        unused = list(np.core.einsumfunc.einsum_symbols_set - set(used))
+        ellipse_inds = "".join(unused)
+        longest = 0
+
+        if "->" in subscripts:
+            input_tmp, output_sub = subscripts.split("->")
+            split_subscripts = input_tmp.split(",")
+            out_sub = True
+        else:
+            split_subscripts = subscripts.split(",")
+            out_sub = False
+
+        for num, sub in enumerate(split_subscripts):
+            if "." in sub:
+                if (sub.count(".") != 3) or (sub.count("...") != 1):
+                    raise ValueError("Invalid Ellipses.")
+
+                # Take into account numerical values
+                if operands[num].shape == ():
+                    ellipse_count = 0
+                else:
+                    ellipse_count = max(operands[num].ndim, 1)
+                    ellipse_count -= len(sub) - 3
+
+                if ellipse_count > longest:
+                    longest = ellipse_count
+
+                if ellipse_count < 0:
+                    raise ValueError("Ellipses lengths do not match.")
+                elif ellipse_count == 0:
+                    split_subscripts[num] = sub.replace("...", "")
+                else:
+                    rep_inds = ellipse_inds[-ellipse_count:]
+                    split_subscripts[num] = sub.replace("...", rep_inds)
+
+        subscripts = ",".join(split_subscripts)
+        if longest == 0:
+            out_ellipse = ""
+        else:
+            out_ellipse = ellipse_inds[-longest:]
+
+        if out_sub:
+            subscripts += "->" + output_sub.replace("...", out_ellipse)
+        else:
+            # Special care for outputless ellipses
+            output_subscript = ""
+            tmp_subscripts = subscripts.replace(",", "")
+            for s in sorted(set(tmp_subscripts)):
+                if s not in (np.core.einsumfunc.einsum_symbols):
+                    raise ValueError("Character %s is not a valid symbol." % s)
+                if tmp_subscripts.count(s) == 1:
+                    output_subscript += s
+            normal_inds = "".join(sorted(set(output_subscript) - set(out_ellipse)))
+
+            subscripts += "->" + out_ellipse + normal_inds
+
+    # Build output string if does not exist
+    if "->" in subscripts:
+        input_subscripts, output_subscript = subscripts.split("->")
+    else:
+        input_subscripts = subscripts
+        # Build output subscripts
+        tmp_subscripts = subscripts.replace(",", "")
+        output_subscript = ""
+        for s in sorted(set(tmp_subscripts)):
+            if s not in np.core.einsumfunc.einsum_symbols:
+                raise ValueError("Character %s is not a valid symbol." % s)
+            if tmp_subscripts.count(s) == 1:
+                output_subscript += s
+
+    # Make sure output subscripts are in the input
+    for char in output_subscript:
+        if char not in input_subscripts:
+            raise ValueError("Output character %s did not appear in the input" % char)
+
+    # Make sure number operands is equivalent to the number of terms
+    if len(input_subscripts.split(",")) != len(operands):
+        raise ValueError(
+            "Number of einsum subscripts must be equal to the " "number of operands."
+        )
+
+    return (input_subscripts, output_subscript, operands)
+
+
+def _einsum_single(lhs, rhs, operand):
+    """Perform a single term einsum, i.e. any combination of transposes, sums
+    and traces of dimensions.
+
+    Parameters
+    ----------
+    lhs : str
+        The indices of the input array.
+    rhs : str
+        The indices of the output array.
+    operand : SparseArray
+        The array to perform the einsum on.
+
+    Returns
+    -------
+    output : SparseArray
+    """
+    from ._coo import COO
+
+    if lhs == rhs:
+        if not rhs:
+            # ensure scalar output
+            return operand.sum()
+        return operand
+
+    if not isinstance(operand, SparseArray):
+        # just use numpy for dense input
+        return np.einsum(f"{lhs}->{rhs}", operand)
+
+    # else require COO for operations, but check if should convert back
+    to_output_format = getattr(operand, "from_coo", lambda x: x)
+    operand = asCOO(operand)
+
+    # check if repeated / 'trace' indices mean we are only taking a subset
+    where = {}
+    for i, ix in enumerate(lhs):
+        where.setdefault(ix, []).append(i)
+
+    selector = None
+    for ix, locs in where.items():
+        loc0, *rlocs = locs
+        if rlocs:
+            # repeated index
+            if len({operand.shape[loc] for loc in locs}) > 1:
+                raise ValueError("Repeated indices must have the same dimension.")
+
+            # only select data where all indices match
+            subselector = (operand.coords[loc0] == operand.coords[rlocs]).all(axis=0)
+            if selector is None:
+                selector = subselector
+            else:
+                selector &= subselector
+
+    # indices that are removed (i.e. not in the output / `perm`)
+    # are handled by `has_duplicates=True` below
+    perm = [lhs.index(ix) for ix in rhs]
+    new_shape = tuple(operand.shape[i] for i in perm)
+
+    # select the new COO data
+    if selector is not None:
+        new_coords = operand.coords[:, selector][perm]
+        new_data = operand.data[selector]
+    else:
+        new_coords = operand.coords[perm]
+        new_data = operand.data
+
+    if not rhs:
+        # scalar output - match numpy behaviour by not wrapping as array
+        return new_data.sum()
+
+    return to_output_format(
+        COO(new_coords, new_data, shape=new_shape, has_duplicates=True)
+    )
+
+
+def einsum(*operands):
+    """
+    Perform the equivalent of :obj:`numpy.einsum`.
+
+    Parameters
+    ----------
+    subscripts : str
+        Specifies the subscripts for summation as comma separated list of
+        subscript labels. An implicit (classical Einstein summation)
+        calculation is performed unless the explicit indicator '->' is
+        included as well as subscript labels of the precise output form.
+    operands : sequence of SparseArray
+        These are the arrays for the operation.
+
+    Returns
+    -------
+    output : SparseArray
+        The calculation based on the Einstein summation convention.
+    """
+
+    lhs, rhs, operands = _parse_einsum_input(operands)  # Parse input
+
+    check_zero_fill_value(*operands)
+
+    if len(operands) == 1:
+        return _einsum_single(lhs, rhs, operands[0])
+
+    # if multiple arrays: align, broadcast multiply and then use single einsum
+    # for example:
+    #     "aab,cbd->dac"
+    # we first perform single term reductions and align:
+    #     aab -> ab..
+    #     cbd -> .bcd
+    # (where dots represent broadcastable size 1 dimensions), then multiply all
+    # to form the 'minimal outer product' and do a final single term einsum:
+    #     abcd -> dac
+
+    # get ordered union of indices from all terms, indicies that only appear
+    # on a single term will be removed in the 'preparation' step below
+    terms = lhs.split(",")
+    total = {}
+    sizes = {}
+    for t, term in enumerate(terms):
+        shape = operands[t].shape
+        for ix, d in zip(term, shape):
+            if d != sizes.setdefault(ix, d):
+                raise ValueError(f"Inconsistent shape for index '{ix}'.")
+            total.setdefault(ix, set()).add(t)
+    for ix in rhs:
+        total[ix].add(-1)
+    aligned_term = "".join(ix for ix, apps in total.items() if len(apps) > 1)
+
+    # NB: if every index appears exactly twice,
+    # we could identify and dispatch to tensordot here?
+
+    parrays = []
+    for term, array in zip(terms, operands):
+        # calc the target indices for this term
+        pterm = "".join(ix for ix in aligned_term if ix in term)
+        if pterm != term:
+            # perform necessary transpose and reductions
+            array = _einsum_single(term, pterm, array)
+        # calc broadcastable shape
+        shape = tuple(
+            array.shape[pterm.index(ix)] if ix in pterm else 1 for ix in aligned_term
+        )
+        parrays.append(array.reshape(shape) if array.shape != shape else array)
+
+    aligned_array = reduce(mul, parrays)
+
+    return _einsum_single(aligned_term, rhs, aligned_array)
+
+
 def stack(arrays, axis=0, compressed_axes=None):
     """
     Stack the input arrays along the given dimension.
@@ -1174,9 +1564,9 @@ def stack(arrays, axis=0, compressed_axes=None):
     --------
     numpy.stack : NumPy equivalent function
     """
-    from ._coo import COO
+    from ._compressed import GCXS
 
-    if any(isinstance(arr, COO) for arr in arrays):
+    if not all(isinstance(arr, GCXS) for arr in arrays):
         from ._coo import stack as coo_stack
 
         return coo_stack(arrays, axis)
@@ -1213,9 +1603,9 @@ def concatenate(arrays, axis=0, compressed_axes=None):
     --------
     numpy.concatenate : NumPy equivalent function
     """
-    from ._coo import COO
+    from ._compressed import GCXS
 
-    if any(isinstance(arr, COO) for arr in arrays):
+    if not all(isinstance(arr, GCXS) for arr in arrays):
         from ._coo import concatenate as coo_concat
 
         return coo_concat(arrays, axis)
@@ -1225,7 +1615,7 @@ def concatenate(arrays, axis=0, compressed_axes=None):
         return gcxs_concat(arrays, axis, compressed_axes)
 
 
-def eye(N, M=None, k=0, dtype=float, format="coo", compressed_axes=None):
+def eye(N, M=None, k=0, dtype=float, format="coo", **kwargs):
     """Return a 2-D array in the specified format with ones on the diagonal and zeros elsewhere.
 
     Parameters
@@ -1242,8 +1632,6 @@ def eye(N, M=None, k=0, dtype=float, format="coo", compressed_axes=None):
         Data-type of the returned array.
     format : str, optional
         A format string.
-    compressed_axes : iterable, optional
-        The axes to compress if returning a GCXS array.
 
     Returns
     -------
@@ -1261,7 +1649,7 @@ def eye(N, M=None, k=0, dtype=float, format="coo", compressed_axes=None):
            [0., 0., 1.],
            [0., 0., 0.]])
     """
-    from sparse import COO
+    from ._coo import COO
 
     if M is None:
         M = N
@@ -1288,10 +1676,10 @@ def eye(N, M=None, k=0, dtype=float, format="coo", compressed_axes=None):
 
     return COO(
         coords, data=data, shape=(N, M), has_duplicates=False, sorted=True
-    ).asformat(format, compressed_axes=compressed_axes)
+    ).asformat(format, **kwargs)
 
 
-def full(shape, fill_value, dtype=None, format="coo", compressed_axes=None):
+def full(shape, fill_value, dtype=None, format="coo", order="C", **kwargs):
     """Return a SparseArray of given shape and type, filled with `fill_value`.
 
     Parameters
@@ -1307,6 +1695,9 @@ def full(shape, fill_value, dtype=None, format="coo", compressed_axes=None):
         A format string.
     compressed_axes : iterable, optional
         The axes to compress if returning a GCXS array.
+    order : {'C', None}
+        Values except these are not currently supported and raise a
+        NotImplementedError.
 
     Returns
     -------
@@ -1328,8 +1719,8 @@ def full(shape, fill_value, dtype=None, format="coo", compressed_axes=None):
         dtype = np.array(fill_value).dtype
     if not isinstance(shape, tuple):
         shape = (shape,)
-    if compressed_axes is not None:
-        check_compressed_axes(shape, compressed_axes)
+    if order not in {"C", None}:
+        raise NotImplementedError("Currently, only 'C' and None are supported.")
     data = np.empty(0, dtype=dtype)
     coords = np.empty((len(shape), 0), dtype=np.intp)
     return COO(
@@ -1339,10 +1730,10 @@ def full(shape, fill_value, dtype=None, format="coo", compressed_axes=None):
         fill_value=fill_value,
         has_duplicates=False,
         sorted=True,
-    ).asformat(format, compressed_axes=compressed_axes)
+    ).asformat(format, **kwargs)
 
 
-def full_like(a, fill_value, dtype=None, shape=None, format=None, compressed_axes=None):
+def full_like(a, fill_value, dtype=None, shape=None, format=None, **kwargs):
     """Return a full array with the same shape and type as a given array.
 
     Parameters
@@ -1372,6 +1763,8 @@ def full_like(a, fill_value, dtype=None, shape=None, format=None, compressed_axe
         format = type(a).__name__.lower()
     elif format is None:
         format = "coo"
+
+    compressed_axes = kwargs.pop("compressed_axes", None)
     if hasattr(a, "compressed_axes") and compressed_axes is None:
         compressed_axes = a.compressed_axes
     return full(
@@ -1379,11 +1772,11 @@ def full_like(a, fill_value, dtype=None, shape=None, format=None, compressed_axe
         fill_value,
         dtype=(a.dtype if dtype is None else dtype),
         format=format,
-        compressed_axes=compressed_axes,
+        **kwargs,
     )
 
 
-def zeros(shape, dtype=float, format="coo", compressed_axes=None):
+def zeros(shape, dtype=float, format="coo", **kwargs):
     """Return a SparseArray of given shape and type, filled with zeros.
 
     Parameters
@@ -1412,14 +1805,10 @@ def zeros(shape, dtype=float, format="coo", compressed_axes=None):
     array([[0, 0],
            [0, 0]])
     """
-    if compressed_axes is not None:
-        check_compressed_axes(shape, compressed_axes)
-    return full(shape, 0, np.dtype(dtype)).asformat(
-        format, compressed_axes=compressed_axes
-    )
+    return full(shape, 0, np.dtype(dtype)).asformat(format, **kwargs)
 
 
-def zeros_like(a, dtype=None, shape=None, format=None, compressed_axes=None):
+def zeros_like(a, dtype=None, shape=None, format=None, **kwargs):
     """Return a SparseArray of zeros with the same shape and type as ``a``.
 
     Parameters
@@ -1445,12 +1834,10 @@ def zeros_like(a, dtype=None, shape=None, format=None, compressed_axes=None):
     array([[0, 0, 0],
            [0, 0, 0]])
     """
-    return full_like(
-        a, 0, dtype=dtype, shape=shape, format=format, compressed_axes=compressed_axes
-    )
+    return full_like(a, 0, dtype=dtype, shape=shape, format=format, **kwargs)
 
 
-def ones(shape, dtype=float, format="coo", compressed_axes=None):
+def ones(shape, dtype=float, format="coo", **kwargs):
     """Return a SparseArray of given shape and type, filled with ones.
 
     Parameters
@@ -1479,14 +1866,10 @@ def ones(shape, dtype=float, format="coo", compressed_axes=None):
     array([[1, 1],
            [1, 1]])
     """
-    if compressed_axes is not None:
-        check_compressed_axes(shape, compressed_axes)
-    return full(shape, 1, np.dtype(dtype)).asformat(
-        format, compressed_axes=compressed_axes
-    )
+    return full(shape, 1, np.dtype(dtype)).asformat(format, **kwargs)
 
 
-def ones_like(a, dtype=None, shape=None, format=None, compressed_axes=None):
+def ones_like(a, dtype=None, shape=None, format=None, **kwargs):
     """Return a SparseArray of ones with the same shape and type as ``a``.
 
     Parameters
@@ -1512,9 +1895,7 @@ def ones_like(a, dtype=None, shape=None, format=None, compressed_axes=None):
     array([[1, 1, 1],
            [1, 1, 1]])
     """
-    return full_like(
-        a, 1, dtype=dtype, shape=shape, format=format, compressed_axes=compressed_axes
-    )
+    return full_like(a, 1, dtype=dtype, shape=shape, format=format, **kwargs)
 
 
 def outer(a, b, out=None):
@@ -1540,7 +1921,8 @@ def outer(a, b, out=None):
            [0, 2, 4, 6],
            [0, 3, 6, 9]])
     """
-    from sparse import SparseArray, COO
+    from ._sparse_array import SparseArray
+    from ._coo import COO
 
     if isinstance(a, SparseArray):
         a = COO(a)
@@ -1578,7 +1960,7 @@ def moveaxis(a, source, destination):
 
     Parameters
     ----------
-    a : COO
+    a : SparseArray
         The array whose axes should be reordered.
     source : int or List[int]
         Original positions of the axes to move. These must be unique.
@@ -1587,7 +1969,7 @@ def moveaxis(a, source, destination):
 
     Returns
     -------
-    COO
+    SparseArray
         Array with moved axes.
 
     Examples
@@ -1620,3 +2002,82 @@ def moveaxis(a, source, destination):
 
     result = a.transpose(order)
     return result
+
+
+def pad(array, pad_width, mode="constant", **kwargs):
+    """
+    Performs the equivalent of :obj:`numpy.pad` for :obj:`SparseArray`. Note that
+    this function returns a new array instead of a view.
+
+    Parameters
+    ----------
+    array : SparseArray
+        Sparse array which is to be padded.
+
+    pad_width : {sequence, array_like, int}
+        Number of values padded to the edges of each axis. ((before_1, after_1), … (before_N, after_N)) unique pad widths for each axis. ((before, after),) yields same before and after pad for each axis. (pad,) or int is a shortcut for before = after = pad width for all axes.
+
+    mode : str
+        Pads to a constant value which is fill value. Currently only constant mode is implemented
+
+    constant_values : int
+        The values to set the padded values for each axis. Default is 0. This must be same as fill value.
+
+    Returns
+    -------
+    SparseArray
+        The padded sparse array.
+
+    Raises
+    ------
+    NotImplementedError
+        If mode != 'constant' or there are unknown arguments.
+
+    ValueError
+        If constant_values != self.fill_value
+
+    See Also
+    --------
+    :obj:`numpy.pad` : NumPy equivalent function
+
+    """
+    if not isinstance(array, SparseArray):
+        raise NotImplementedError("Input array is not compatible.")
+
+    if mode.lower() != "constant":
+        raise NotImplementedError(f"Mode '{mode}' is not yet supported.")
+
+    if not equivalent(
+        kwargs.pop("constant_values", _zero_of_dtype(array.dtype)), array.fill_value
+    ):
+        raise ValueError("constant_values can only be equal to fill value.")
+
+    if kwargs:
+        raise NotImplementedError("Additional Unknown arguments present.")
+
+    from ._coo import COO
+
+    array = array.asformat("coo")
+
+    pad_width = np.broadcast_to(pad_width, (len(array.shape), 2))
+    new_coords = array.coords + pad_width[:, 0:1]
+    new_shape = tuple(
+        [
+            array.shape[i] + pad_width[i, 0] + pad_width[i, 1]
+            for i in range(len(array.shape))
+        ]
+    )
+    new_data = array.data
+    return COO(new_coords, new_data, new_shape, fill_value=array.fill_value)
+
+
+def format_to_string(format):
+    if isinstance(format, type):
+        if not issubclass(format, SparseArray):
+            raise ValueError(f"invalid format: {format}")
+        format = format.__name__.lower()
+
+    if isinstance(format, str):
+        return format
+
+    raise ValueError(f"invalid format: {format}")

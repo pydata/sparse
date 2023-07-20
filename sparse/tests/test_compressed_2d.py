@@ -3,7 +3,7 @@ from numpy.core.numeric import indices
 import pytest
 import scipy.sparse
 from scipy.sparse import data
-from scipy.sparse.construct import random
+from scipy.sparse import random
 import scipy.stats
 
 import sparse

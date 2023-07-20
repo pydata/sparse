@@ -5,6 +5,7 @@ from functools import reduce
 
 import operator
 import numpy as np
+import numba
 
 
 def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
@@ -76,6 +77,127 @@ def _zero_of_dtype(dtype):
     return np.zeros((), dtype=dtype)[()]
 
 
+@numba.jit(nopython=True, nogil=True)
+def algD(n, N, random_state=None):
+    """
+    Random Sampling without Replacement
+    Alg D proposed by J.S. Vitter in Faster Methods for Random Sampling
+    Parameters:
+        n = sample size (nnz)
+        N = size of system (elements)
+        random_state = seed for random number generation
+    """
+
+    if random_state != None:
+        np.random.seed(random_state)
+    n = np.int64(n + 1)
+    N = np.int64(N)
+    qu1 = N - n + 1
+    Vprime = np.exp(np.log(np.random.rand()) / n)
+    i = 0
+    arr = np.zeros(n - 1, dtype=np.int64)
+    arr[-1] = -1
+    while n > 1:
+        nmin1inv = 1 / (n - 1)
+        while True:
+            while True:
+                X = N * (1 - Vprime)
+                S = np.int64(X)
+                if S < qu1:
+                    break
+                Vprime = np.exp(np.log(np.random.rand()) / n)
+            y1 = np.exp(np.log(np.random.rand() * N / qu1) * nmin1inv)
+            Vprime = y1 * (1 - X / N) * (qu1 / (qu1 - S))
+            if Vprime <= 1:
+                break
+            y2 = 1
+            top = N - 1
+            if n - 1 > S:
+                bottom = N - n
+                limit = N - S
+            else:
+                bottom = N - S - 1
+                limit = qu1
+
+            t = N - 1
+            while t >= limit:
+                y2 *= top / bottom
+                top -= 1
+                bottom -= 1
+                t -= 1
+            if N / (N - X) >= y1 * np.exp(np.log(y2) / nmin1inv):
+                Vprime = np.exp(np.log(np.random.rand()) * nmin1inv)
+                break
+            Vprime = np.exp(np.log(np.random.rand()) / n)
+        arr[i] = arr[i - 1] + S + 1
+        i += 1
+        N = N - S - 1
+        n -= 1
+        qu1 = qu1 - S
+    return arr
+
+
+@numba.jit(nopython=True, nogil=True)
+def algA(n, N, random_state=None):
+    """
+    Random Sampling without Replacement
+    Alg A proposed by J.S. Vitter in Faster Methods for Random Sampling
+    Parameters:
+        n = sample size (nnz)
+        N = size of system (elements)
+        random_state = seed for random number generation
+    """
+    if random_state != None:
+        np.random.seed(random_state)
+    n = np.int64(n)
+    N = np.int64(N)
+    arr = np.zeros(n, dtype=np.int64)
+    arr[-1] = -1
+    i = 0
+    top = N - n
+    while n >= 2:
+        V = np.random.rand()
+        S = 0
+        quot = top / N
+        while quot > V:
+            S += 1
+            top -= 1
+            N -= 1
+            quot *= top / N
+        arr[i] = arr[i - 1] + S + 1
+        i += 1
+        N -= 1
+        n -= 1
+    S = np.int64(N * np.random.rand())
+    arr[i] = arr[i - 1] + S + 1
+    i += 1
+    return arr
+
+
+@numba.jit(nopython=True, nogil=True)
+def reverse(inv, N):
+    """
+    If density of random matrix is greater than .5, it is faster to sample states not included
+    Parameters:
+        arr = np.array(np.int64) of indices to be excluded from sample
+        N = size of the system (elements)
+    """
+    N = np.int64(N)
+    a = np.zeros(np.int64(N - len(inv)), dtype=np.int64)
+    j = 0
+    k = 0
+    for i in range(N):
+        if j == len(inv):
+            a[k:] = np.arange(i, N)
+            break
+        elif i == inv[j]:
+            j += 1
+        else:
+            a[k] = i
+            k += 1
+    return a
+
+
 def random(
     shape,
     density=None,
@@ -83,9 +205,9 @@ def random(
     random_state=None,
     data_rvs=None,
     format="coo",
-    compressed_axes=None,
     fill_value=None,
     idx_dtype=None,
+    **kwargs,
 ):
     """Generate a random sparse multidimensional array
 
@@ -130,12 +252,12 @@ def random(
     >>> rvs = lambda x: stats.poisson(25, loc=10).rvs(x, random_state=np.random.RandomState(1))
     >>> s = random((2, 3, 4), density=0.25, random_state=np.random.RandomState(1), data_rvs=rvs)
     >>> s.todense()  # doctest: +NORMALIZE_WHITESPACE
-    array([[[ 0,  0,  0,  0],
-            [ 0, 34,  0,  0],
-            [33, 34,  0, 29]],
+    array([[[ 0,  0,  0,   0],
+            [34,  0, 29,  30],
+            [ 0,  0,  0,  0]],
     <BLANKLINE>
-           [[30,  0,  0, 34],
-            [ 0,  0,  0,  0],
+           [[33,  0,  0, 34],
+            [34,  0,  0,  0],
             [ 0,  0,  0,  0]]])
 
     """
@@ -161,11 +283,6 @@ def random(
             "for an array with {} total elements".format(nnz, elements)
         )
 
-    if format != "gcxs" and compressed_axes is not None:
-        raise ValueError(
-            "compressed_axes is not supported for {} format".format(format)
-        )
-
     if random_state is None:
         random_state = np.random
     elif isinstance(random_state, Integral):
@@ -173,19 +290,31 @@ def random(
     if data_rvs is None:
         data_rvs = random_state.rand
 
-    # Use the algorithm from python's random.sample for k < mn/3.
-    if elements < 3 * nnz:
-        ind = random_state.choice(elements, size=nnz, replace=False)
+    if nnz == elements or density >= 1:
+        ind = np.arange(elements)
+    elif nnz < 2:
+        ind = random_state.choice(elements, nnz)
+    # Faster to find non-sampled indices and remove them for dens > .5
+    elif elements - nnz < 2:
+        ind = reverse(random_state.choice(elements, elements - nnz), elements)
+    elif nnz > elements / 2:
+        nnztemp = elements - nnz
+        # Using algorithm A for dens > .1
+        if elements > 10 * nnztemp:
+            ind = reverse(
+                algD(nnztemp, elements, random_state.choice(np.iinfo(np.int32).max)),
+                elements,
+            )
+        else:
+            ind = reverse(
+                algA(nnztemp, elements, random_state.choice(np.iinfo(np.int32).max)),
+                elements,
+            )
     else:
-        ind = np.empty(nnz, dtype=np.min_scalar_type(elements - 1))
-        selected = set()
-        for i in range(nnz):
-            j = random_state.randint(elements)
-            while j in selected:
-                j = random_state.randint(elements)
-            selected.add(j)
-            ind[i] = j
-
+        if elements > 10 * nnz:
+            ind = algD(nnz, elements, random_state.choice(np.iinfo(np.int32).max))
+        else:
+            ind = algA(nnz, elements, random_state.choice(np.iinfo(np.int32).max))
     data = data_rvs(nnz)
 
     ar = COO(
@@ -203,7 +332,7 @@ def random(
                 "cannot cast array with shape {} to dtype {}.".format(shape, idx_dtype)
             )
 
-    return ar.asformat(format, compressed_axes=compressed_axes)
+    return ar.asformat(format, **kwargs)
 
 
 def isscalar(x):
@@ -306,18 +435,18 @@ def equivalent(x, y):
 # copied from zarr
 # See https://github.com/zarr-developers/zarr-python/blob/master/zarr/util.py
 def human_readable_size(size):
-    if size < 2 ** 10:
+    if size < 2**10:
         return "%s" % size
-    elif size < 2 ** 20:
-        return "%.1fK" % (size / float(2 ** 10))
-    elif size < 2 ** 30:
-        return "%.1fM" % (size / float(2 ** 20))
-    elif size < 2 ** 40:
-        return "%.1fG" % (size / float(2 ** 30))
-    elif size < 2 ** 50:
-        return "%.1fT" % (size / float(2 ** 40))
+    elif size < 2**20:
+        return "%.1fK" % (size / float(2**10))
+    elif size < 2**30:
+        return "%.1fM" % (size / float(2**20))
+    elif size < 2**40:
+        return "%.1fG" % (size / float(2**30))
+    elif size < 2**50:
+        return "%.1fT" % (size / float(2**40))
     else:
-        return "%.1fP" % (size / float(2 ** 50))
+        return "%.1fP" % (size / float(2**50))
 
 
 def html_table(arr):
@@ -493,3 +622,16 @@ def can_store(dtype, scalar):
 
 def is_unsigned_dtype(dtype):
     return not np.array(-1, dtype=dtype) == np.array(-1)
+
+
+def convert_format(format):
+    from ._sparse_array import SparseArray
+
+    if isinstance(format, type):
+        if not issubclass(format, SparseArray):
+            raise ValueError(f"Invalid format: {format}")
+        return format.__name__.lower()
+    if isinstance(format, str):
+        return format
+
+    raise ValueError(f"Invalid format: {format}")

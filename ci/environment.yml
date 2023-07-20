@@ -1,0 +1,5 @@
+name: sparse-dev
+channels:
+  - conda-forge
+dependencies:
+  - pip
