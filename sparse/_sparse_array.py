@@ -170,7 +170,40 @@ class SparseArray:
         Diagnostic report about this array.
         Renders in Jupyter.
         """
-        return html_table(self)
+        try:
+            from matrepr import to_html
+            from matrepr.adapters.sparse_driver import PyDataSparseDriver
+            return to_html(PyDataSparseDriver.adapt(self), notebook=True)
+        except ImportError:
+            return html_table(self)
+
+    def _str_impl(self, summary):
+        """
+        A human-readable representation of this array, including a metadata summary
+        and a tabular view of the array values.
+
+        Values view only included if `matrepr` is available.
+
+        Parameters
+        ----------
+        summary
+            A type-specific summary of this array, used as the first line of return value.
+
+        Returns
+        -------
+        str
+            A human-readable representation of this array.
+        """
+        try:
+            from matrepr import to_str
+            from matrepr.adapters.sparse_driver import PyDataSparseDriver
+            values =  to_str(PyDataSparseDriver.adapt(self),
+                             title=False,  # disable matrepr description
+                             width_str=0,  # autodetect terminal width
+                             max_cols=9999)
+            return "\n".join([summary, values])
+        except ImportError:
+            return summary
 
     @abstractmethod
     def asformat(self, format):
