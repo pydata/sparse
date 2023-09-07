@@ -702,9 +702,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     __getitem__ = getitem
 
     def __str__(self):
-        return "<COO: shape={!s}, dtype={!s}, nnz={:d}, fill_value={!s}>".format(
+        summary = "<COO: shape={!s}, dtype={!s}, nnz={:d}, fill_value={!s}>".format(
             self.shape, self.dtype, self.nnz, self.fill_value
         )
+        return self._str_impl(summary)
 
     __repr__ = __str__
 

@@ -451,9 +451,10 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
             del self.data[key]
 
     def __str__(self):
-        return "<DOK: shape={!s}, dtype={!s}, nnz={:d}, fill_value={!s}>".format(
+        summary = "<DOK: shape={!s}, dtype={!s}, nnz={:d}, fill_value={!s}>".format(
             self.shape, self.dtype, self.nnz, self.fill_value
         )
+        return self._str_impl(summary)
 
     __repr__ = __str__
 
