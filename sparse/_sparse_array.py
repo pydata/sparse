@@ -173,6 +173,7 @@ class SparseArray:
         try:
             from matrepr import to_html
             from matrepr.adapters.sparse_driver import PyDataSparseDriver
+
             return to_html(PyDataSparseDriver.adapt(self), notebook=True)
         except ImportError:
             return html_table(self)
@@ -197,10 +198,13 @@ class SparseArray:
         try:
             from matrepr import to_str
             from matrepr.adapters.sparse_driver import PyDataSparseDriver
-            values =  to_str(PyDataSparseDriver.adapt(self),
-                             title=False,  # disable matrepr description
-                             width_str=0,  # autodetect terminal width
-                             max_cols=9999)
+
+            values = to_str(
+                PyDataSparseDriver.adapt(self),
+                title=False,  # disable matrepr description
+                width_str=0,  # autodetect terminal width
+                max_cols=9999,
+            )
             return "\n".join([summary, values])
         except ImportError:
             return summary
