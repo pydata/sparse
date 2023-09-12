@@ -16,6 +16,7 @@ from .._utils import (
     can_store,
     check_zero_fill_value,
     check_compressed_axes,
+    _zero_of_dtype,
     equivalent,
 )
 from .._coo.core import COO
@@ -143,7 +144,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         shape=None,
         compressed_axes=None,
         prune=False,
-        fill_value=0,
+        fill_value=None,
         idx_dtype=None,
     ):
         if isinstance(arg, ss.spmatrix):
@@ -169,6 +170,10 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
                 arg.fill_value,
             )
 
+        self.data, self.indices, self.indptr = arg
+
+        if fill_value is None:
+            fill_value = _zero_of_dtype(self.data.dtype)
         if shape is None:
             raise ValueError("missing `shape` argument")
 
@@ -176,8 +181,6 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         if len(shape) == 1:
             compressed_axes = None
-
-        self.data, self.indices, self.indptr = arg
 
         if self.data.ndim != 1:
             raise ValueError("data must be a scalar or 1-dimensional.")
@@ -846,7 +849,12 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
 class _Compressed2d(GCXS):
     def __init__(
-        self, arg, shape=None, compressed_axes=None, prune=False, fill_value=0
+        self,
+        arg,
+        shape=None,
+        compressed_axes=None,
+        prune=False,
+        fill_value=None,
     ):
         if not hasattr(arg, "shape") and shape is None:
             raise ValueError("missing `shape` argument")
@@ -890,7 +898,7 @@ class CSR(_Compressed2d):
     Sparse supports 2-D CSR.
     """
 
-    def __init__(self, arg, shape=None, prune=False, fill_value=0):
+    def __init__(self, arg, shape=None, prune=False, fill_value=None):
         super().__init__(arg, shape=shape, compressed_axes=(0,), fill_value=fill_value)
 
     @classmethod
@@ -915,7 +923,7 @@ class CSC(_Compressed2d):
     Sparse supports 2-D CSC.
     """
 
-    def __init__(self, arg, shape=None, prune=False, fill_value=0):
+    def __init__(self, arg, shape=None, prune=False, fill_value=None):
         super().__init__(arg, shape=shape, compressed_axes=(1,), fill_value=fill_value)
 
     @classmethod

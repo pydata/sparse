@@ -407,6 +407,48 @@ def broadcast_to(x, shape):
     )
 
 
+# TODO: Figure out the right way to type this
+# TODO: Figure out how to do 1d COO + CSR or CSC
+def _resolve_result_type(args: "list[ArrayLike]") -> "Type":
+    from ._compressed import GCXS, CSR, CSC
+    from ._coo import COO
+    from ._dok import DOK
+    from ._sparse_array import SparseArray
+    from ._compressed.compressed import _Compressed2d
+
+    args = [arg for arg in args if isinstance(arg, SparseArray)]
+
+    if all(isinstance(arg, DOK) for arg in args):
+        out_type = DOK
+    elif all(isinstance(arg, CSR) for arg in args):
+        out_type = CSR
+    elif all(isinstance(arg, CSC) for arg in args):
+        out_type = CSC
+    elif all(isinstance(arg, _Compressed2d) for arg in args):
+        out_type = CSR
+    elif all(isinstance(arg, GCXS) for arg in args):
+        out_type = GCXS
+    else:
+        out_type = COO
+    return out_type
+
+
+def _from_scipy_sparse(a):
+    from ._compressed import CSR, CSC
+    from ._coo import COO
+    from ._dok import DOK
+
+    assert isinstance(a, scipy.sparse.spmatrix)
+    if isinstance(a, scipy.sparse.csr_matrix):
+        return CSR(a)
+    elif isinstance(a, scipy.sparse.csc_matrix):
+        return CSC(a)
+    elif isinstance(a, scipy.sparse.dok_matrix):
+        return DOK(a.shape, data=dict(a))
+    else:
+        return COO(a)
+
+
 class _Elemwise:
     def __init__(self, func, *args, **kwargs):
         """
@@ -423,24 +465,26 @@ class _Elemwise:
         """
         from ._coo import COO
         from ._sparse_array import SparseArray
-        from ._compressed import GCXS
+        from ._compressed import GCXS, CSR, CSC
+        from ._compressed.compressed import _Compressed2d
         from ._dok import DOK
 
+        args = [
+            arg
+            if not isinstance(arg, scipy.sparse.spmatrix)
+            else _from_scipy_sparse(arg)
+            for arg in args
+        ]
+
         processed_args = []
-        out_type = GCXS
 
-        sparse_args = [arg for arg in args if isinstance(arg, SparseArray)]
-
-        if all(isinstance(arg, DOK) for arg in sparse_args):
-            out_type = DOK
-        elif all(isinstance(arg, GCXS) for arg in sparse_args):
-            out_type = GCXS
-        else:
-            out_type = COO
-
+        self.out_type = _resolve_result_type(args)
+        # Should this happen before dispatch?
+        # Hmm, this may need major major changes.
+        # Case to consider: CSR or CSC + 1d COO
         for arg in args:
-            if isinstance(arg, scipy.sparse.spmatrix):
-                processed_args.append(COO.from_scipy_sparse(arg))
+            if self.out_type != COO and isinstance(arg, _Compressed2d):
+                processed_args.append(arg)
             elif isscalar(arg) or isinstance(arg, np.ndarray):
                 # Faster and more reliable to pass ()-shaped ndarrays as scalars.
                 processed_args.append(np.asarray(arg))
@@ -454,7 +498,6 @@ class _Elemwise:
                 self.args = None
                 return
 
-        self.out_type = out_type
         self.args = tuple(processed_args)
         self.func = func
         self.dtype = kwargs.pop("dtype", None)
@@ -467,13 +510,18 @@ class _Elemwise:
 
     def get_result(self):
         from ._coo import COO
+        from ._sparse_array import SparseArray
+        from ._compressed.compressed import _Compressed2d
 
         if self.args is None:
             return NotImplemented
 
         if self._dense_result:
-            args = [a.todense() if isinstance(a, COO) else a for a in self.args]
+            args = [a.todense() if isinstance(a, SparseArray) else a for a in self.args]
             return self.func(*args, **self.kwargs)
+
+        if issubclass(self.out_type, _Compressed2d):
+            return self._get_result_compressed_2d()
 
         if any(s == 0 for s in self.shape):
             data = np.empty((0,), dtype=self.fill_value.dtype)
@@ -521,6 +569,29 @@ class _Elemwise:
             fill_value=self.fill_value,
         ).asformat(self.out_type)
 
+    def _get_result_compressed_2d(self):
+        from ._compressed import elemwise as elemwise2d
+        from ._compressed.compressed import _Compressed2d
+
+        if len(self.args) == 1:
+            result = elemwise2d.op_unary(self.func, self.args[0])
+
+        processed_args = []
+        for arg in self.args:
+            if isinstance(arg, self.out_type):
+                processed_args.append(arg)
+            elif isinstance(arg, _Compressed2d):
+                processed_args.append(self.out_type(arg))
+            elif isinstance(arg, np.ndarray):
+                processed_args.append(np.broadcast_to(arg, self.shape))
+            else:
+                raise NotImplementedError()
+
+        if len(processed_args) == 2:
+            result = elemwise2d.binary_op(self.func, *processed_args)
+
+        return result
+
     def _get_fill_value(self):
         """
         A function that finds and returns the fill-value.
@@ -530,10 +601,11 @@ class _Elemwise:
         ValueError
             If the fill-value is inconsistent.
         """
-        from ._coo import COO
+        from ._sparse_array import SparseArray
 
         zero_args = tuple(
-            arg.fill_value[...] if isinstance(arg, COO) else arg for arg in self.args
+            arg.fill_value[...] if isinstance(arg, SparseArray) else arg
+            for arg in self.args
         )
 
         # Some elemwise functions require a dtype argument, some abhorr it.
@@ -550,7 +622,9 @@ class _Elemwise:
             fill_value = fill_value_array[(0,) * fill_value_array.ndim]
         except IndexError:
             zero_args = tuple(
-                arg.fill_value if isinstance(arg, COO) else _zero_of_dtype(arg.dtype)
+                arg.fill_value
+                if isinstance(arg, SparseArray)
+                else _zero_of_dtype(arg.dtype)
                 for arg in self.args
             )
             fill_value = self.func(*zero_args, **self.kwargs)[()]
