@@ -1370,7 +1370,9 @@ def test_complex_methods(x):
     s = sparse.COO.from_numpy(x)
     assert_eq(s.imag, x.imag)
     assert_eq(s.real, x.real)
-    assert_eq(s.conj(), x.conj())
+
+    if np.issubdtype(s.dtype, np.number):
+        assert_eq(s.conj(), x.conj())
 
 
 def test_np_matrix():
