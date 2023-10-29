@@ -1358,12 +1358,15 @@ def test_full_like():
     )
 
 
-@pytest.mark.parametrize("complex", [True, False])
-def test_complex_methods(complex):
-    if complex:
-        x = np.array([1 + 2j, 2 - 1j, 0, 1, 0])
-    else:
-        x = np.array([1, 2, 0, 0, 0])
+@pytest.mark.parametrize(
+    "x",
+    [
+        np.array([1, 2, 0, 0, 0]),
+        np.array([1 + 2j, 2 - 1j, 0, 1, 0]),
+        np.array(["a", "b", "c"]),
+    ],
+)
+def test_complex_methods(x):
     s = sparse.COO.from_numpy(x)
     assert_eq(s.imag, x.imag)
     assert_eq(s.real, x.real)
