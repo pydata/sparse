@@ -533,7 +533,8 @@ class _Elemwise:
         from ._coo import COO
 
         zero_args = tuple(
-            arg.fill_value[...] if isinstance(arg, COO) else arg for arg in self.args
+            np.asarray(arg.fill_value, like=arg.data) if isinstance(arg, COO) else arg
+            for arg in self.args
         )
 
         # Some elemwise functions require a dtype argument, some abhorr it.

@@ -18,7 +18,8 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
 
     check_equal = (
         np.array_equal
-        if np.issubdtype(x.dtype, np.integer) and np.issubdtype(y.dtype, np.integer)
+        if (np.issubdtype(x.dtype, np.integer) and np.issubdtype(y.dtype, np.integer))
+        or (np.issubdtype(x.dtype, np.flexible) and np.issubdtype(y.dtype, np.flexible))
         else functools.partial(np.allclose, equal_nan=True)
     )
 
