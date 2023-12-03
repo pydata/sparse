@@ -724,7 +724,11 @@ def _dot_csr_csr_type(dt1, dt2):
                 sums[temp] = 0
 
             indptr[i + 1] = nnz
-        return data, indices, indptr
+
+        ordered_data = data[::-1]
+        ordered_indices = indices[::-1]
+
+        return ordered_data, ordered_indices, indptr
 
     return _dot_csr_csr
 
