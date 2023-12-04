@@ -48,6 +48,13 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
         yy = y
     assert check_equal(xx, yy, **kwargs)
 
+    # tests for good slicing
+    assert np.array_equal(x[0].data, y[0])
+
+    # inverting indices and data to cause slicing error
+    x.indices = x.indices[::-1]
+    x.data = x.data[::-1]
+    assert not np.array_equal(x[0].data, y[0])
 
 def assert_nnz(s, x):
     fill_value = s.fill_value if hasattr(s, "fill_value") else _zero_of_dtype(s.dtype)
