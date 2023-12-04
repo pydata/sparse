@@ -74,6 +74,7 @@ def test_tensordot(a_shape, b_shape, axes, a_format, b_format):
     # tests for return_type=np.ndarray
     sa_sb = sparse.tensordot(sa, sb, axes, return_type=np.ndarray)
 
+    assert_eq(a_b, sa_sb)
     assert isinstance(sa_sb, np.ndarray)
 
 
