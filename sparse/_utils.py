@@ -50,14 +50,14 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
 
 
 def assert_gcxs_slicing(s, x):
-    '''
+    """
     Util function to test slicing of GCXS matrices after product multiplication.
     For simplicity, it tests only tensors with number of dimension = 3.
     Parameters
     ----------
     s: sparse product matrix
     x: dense product matrix
-    '''
+    """
     row = np.random.randint(s.shape[s.ndim - 2])
     assert np.allclose(s[0][row].data, [num for num in x[0][row] if num != 0])
 
