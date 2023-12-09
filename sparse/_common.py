@@ -725,10 +725,13 @@ def _dot_csr_csr_type(dt1, dt2):
 
             indptr[i + 1] = nnz
 
-        ordered_data = data[::-1]
-        ordered_indices = indices[::-1]
-
-        return ordered_data, ordered_indices, indptr
+        if len(indices) == (n_col * n_row):
+            for i in range(len(indices) // n_col):
+                j = n_col * i
+                k = n_col * (1 + i)
+                data[j:k] = data[j:k][::-1]
+                indices[j:k] = indices[j:k][::-1]
+        return data, indices, indptr
 
     return _dot_csr_csr
 
