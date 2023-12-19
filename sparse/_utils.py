@@ -49,8 +49,31 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
     assert check_equal(xx, yy, **kwargs)
 
 
+def assert_gcxs_slicing(s, x):
+    """
+    Util function to test slicing of GCXS matrices after product multiplication.
+    For simplicity, it tests only tensors with number of dimension = 3.
+    Parameters
+    ----------
+    s: sparse product matrix
+    x: dense product matrix
+    """
+    row = np.random.randint(s.shape[s.ndim - 2])
+    assert np.allclose(s[0][row].data, [num for num in x[0][row] if num != 0])
+
+    # regression test
+    col = s.shape[s.ndim - 1]
+    for i in range(len(s.indices) // col):
+        j = col * i
+        k = col * (1 + i)
+        s.data[j:k] = s.data[j:k][::-1]
+        s.indices[j:k] = s.indices[j:k][::-1]
+    assert np.array_equal(s[0][row].data, np.array([]))
+
+
 def assert_nnz(s, x):
     fill_value = s.fill_value if hasattr(s, "fill_value") else _zero_of_dtype(s.dtype)
+
     assert np.sum(~equivalent(x, fill_value)) == s.nnz
 
 

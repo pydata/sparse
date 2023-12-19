@@ -7,7 +7,7 @@ import operator
 import sparse
 from sparse._compressed import GCXS
 from sparse import COO
-from sparse._utils import assert_eq
+from sparse._utils import assert_eq, assert_gcxs_slicing
 
 
 @pytest.mark.parametrize(
@@ -341,3 +341,64 @@ def test_dot_dense(dtype1, dtype2, ndim1, ndim2):
     assert_eq(sparse.matmul(a, b), np.matmul(a, b))
     if ndim1 == 2 and ndim2 == 2:
         assert_eq(sparse.tensordot(a, b), np.tensordot(a, b))
+
+
+@pytest.mark.parametrize(
+    "a_shape, b_shape",
+    [((3, 4, 5), (5, 6)), ((2, 8, 6), (6, 3))],
+)
+def test_dot_GCXS_slicing(a_shape, b_shape):
+    sa = sparse.random(shape=a_shape, density=1, format="gcxs")
+    sb = sparse.random(shape=b_shape, density=1, format="gcxs")
+
+    a = sa.todense()
+    b = sb.todense()
+
+    # tests dot
+    sa_sb = sparse.dot(sa, sb)
+    a_b = np.dot(a, b)
+
+    assert_gcxs_slicing(sa_sb, a_b)
+
+
+@pytest.mark.parametrize(
+    "a_shape,b_shape,axes",
+    [
+        [(3, 4, 5), (4, 3), (1, 0)],
+        [(3, 4), (5, 4, 3), (1, 1)],
+        [(5, 9), (9, 5, 6), (0, 1)],
+    ],
+)
+def test_tensordot_GCXS_slicing(a_shape, b_shape, axes):
+    sa = sparse.random(shape=a_shape, density=1, format="gcxs")
+    sb = sparse.random(shape=b_shape, density=1, format="gcxs")
+
+    a = sa.todense()
+    b = sb.todense()
+
+    sa_sb = sparse.tensordot(sa, sb, axes)
+    a_b = np.tensordot(a, b, axes)
+
+    assert_gcxs_slicing(sa_sb, a_b)
+
+
+@pytest.mark.parametrize(
+    "a_shape, b_shape",
+    [
+        [(1, 1, 5), (3, 5, 6)],
+        [(3, 4, 5), (1, 5, 6)],
+        [(3, 4, 5), (3, 5, 6)],
+        [(3, 4, 5), (5, 6)],
+    ],
+)
+def test_matmul_GCXS_slicing(a_shape, b_shape):
+    sa = sparse.random(shape=a_shape, density=1, format="gcxs")
+    sb = sparse.random(shape=b_shape, density=1, format="gcxs")
+
+    a = sa.todense()
+    b = sb.todense()
+
+    sa_sb = sparse.matmul(sa, sb)
+    a_b = np.matmul(a, b)
+
+    assert_gcxs_slicing(sa_sb, a_b)

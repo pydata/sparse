@@ -724,6 +724,13 @@ def _dot_csr_csr_type(dt1, dt2):
                 sums[temp] = 0
 
             indptr[i + 1] = nnz
+
+        if len(indices) == (n_col * n_row):
+            for i in range(len(indices) // n_col):
+                j = n_col * i
+                k = n_col * (1 + i)
+                data[j:k] = data[j:k][::-1]
+                indices[j:k] = indices[j:k][::-1]
         return data, indices, indptr
 
     return _dot_csr_csr
