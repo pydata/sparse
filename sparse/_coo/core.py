@@ -1485,6 +1485,36 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         return self.asformat("gcxs", **kwargs).asformat(format, **kwargs)
 
+    def isinf(self):
+        """
+        Tests each element ``x_i`` of the array to determine if equal to positive or negative infinity.
+        """
+        new_fill_value = True if np.isinf(self.fill_value) else False
+        new_data = np.isinf(self.data)
+
+        return COO(
+            self.coords,
+            new_data,
+            shape=self.shape,
+            fill_value=new_fill_value,
+            prune=True,
+        )
+
+    def isnan(self):
+        """
+        Tests each element ``x_i`` of the array to determine whether the element is ``NaN``.
+        """
+        new_fill_value = True if np.isnan(self.fill_value) else False
+        new_data = np.isnan(self.data)
+
+        return COO(
+            self.coords,
+            new_data,
+            shape=self.shape,
+            fill_value=new_fill_value,
+            prune=True,
+        )
+
 
 def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
     """
@@ -1528,7 +1558,7 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
     if isinstance(x, SparseArray):
         return x.asformat("coo")
 
-    if isinstance(x, np.ndarray):
+    if isinstance(x, np.ndarray) or np.isscalar(x):
         return COO.from_numpy(x, fill_value=fill_value, idx_dtype=idx_dtype)
 
     if isinstance(x, scipy.sparse.spmatrix):
