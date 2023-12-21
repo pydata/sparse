@@ -205,7 +205,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     @classmethod
     def from_numpy(cls, x, compressed_axes=None, fill_value=0, idx_dtype=None):
-        coo = COO(x, fill_value=fill_value, idx_dtype=idx_dtype)
+        coo = COO.from_numpy(x, fill_value=fill_value, idx_dtype=idx_dtype)
         return cls.from_coo(coo, compressed_axes, idx_dtype)
 
     @classmethod
@@ -842,6 +842,16 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             self.indptr = indptr
         else:
             self.indices = self.indices[mask]
+
+    def isinf(self):
+        return (
+            self.tocoo().isinf().asformat("gcxs", compressed_axes=self.compressed_axes)
+        )
+
+    def isnan(self):
+        return (
+            self.tocoo().isnan().asformat("gcxs", compressed_axes=self.compressed_axes)
+        )
 
 
 class _Compressed2d(GCXS):

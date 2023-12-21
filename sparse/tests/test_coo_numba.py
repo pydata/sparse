@@ -22,7 +22,7 @@ def identity_constant(x):
 
 def assert_coo_equal(c1, c2):
     assert c1.shape == c2.shape
-    assert c1 == c2
+    assert sparse.all(c1 == c2)
     assert c1.data.dtype == c2.data.dtype
     assert c1.fill_value == c2.fill_value
 

@@ -3,6 +3,7 @@ from sparse._settings import NEP18_ENABLED
 from sparse._utils import assert_eq
 import numpy as np
 import pytest
+import scipy
 
 
 if not NEP18_ENABLED:
@@ -98,3 +99,44 @@ def test_zeros_like_order():
 def test_format(format):
     s = sparse.random((5, 5), density=0.2, format=format)
     assert s.format == format
+
+
+class TestAsarray:
+    np_eye = np.eye(5)
+
+    @pytest.mark.parametrize(
+        "input",
+        [
+            np_eye,
+            scipy.sparse.csr_matrix(np_eye),
+            scipy.sparse.csc_matrix(np_eye),
+            4,
+            np.array(5),
+            np.arange(12).reshape((2, 3, 2)),
+            sparse.COO.from_numpy(np_eye),
+            sparse.GCXS.from_numpy(np_eye),
+            sparse.DOK.from_numpy(np_eye),
+        ],
+    )
+    @pytest.mark.parametrize("dtype", [np.int64, np.float64, np.complex128])
+    @pytest.mark.parametrize("format", ["dok", "gcxs", "coo"])
+    def test_asarray(self, input, dtype, format):
+        s = sparse.asarray(input, dtype=dtype, format=format)
+
+        actual = s.todense() if hasattr(s, "todense") else s
+        expected = input.todense() if hasattr(input, "todense") else np.asarray(input)
+
+        np.testing.assert_equal(actual, expected)
+
+    def test_asarray_special_cases(self):
+        with pytest.raises(ValueError, match="Taco not yet supported."):
+            sparse.asarray(self.np_eye, backend="taco")
+
+        with pytest.raises(ValueError, match="<class 'list'> not supported."):
+            sparse.asarray([1, 2, 3])
+
+        with pytest.raises(ValueError, match="any backend not supported."):
+            sparse.asarray(self.np_eye, backend="any")
+
+        with pytest.raises(ValueError, match="any format not supported."):
+            sparse.asarray(self.np_eye, format="any")

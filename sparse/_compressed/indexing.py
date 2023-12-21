@@ -18,8 +18,10 @@ def getitem(x, key):
     from .compressed import GCXS
 
     if x.ndim == 1:
-        coo = x.tocoo()[key]
-        return GCXS.from_coo(coo)
+        result = x.tocoo()[key]
+        if np.isscalar(result):
+            return result
+        return GCXS.from_coo(result)
 
     key = list(normalize_index(key, x.shape))
 
@@ -283,6 +285,7 @@ def get_single_element(x, key):
     A convience function for indexing when returning
     a single element.
     """
+
     key = np.array(key)[x._axis_order]  # reordering the input
     ind = np.ravel_multi_index(key, x._reordered_shape)
     row, col = np.unravel_index(ind, x._compressed_shape)

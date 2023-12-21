@@ -2,6 +2,7 @@ from functools import reduce
 import operator
 import warnings
 from collections.abc import Iterable
+from typing import Callable, Optional
 
 import numpy as np
 import scipy.sparse
@@ -159,6 +160,9 @@ def concatenate(arrays, axis=0):
     from .core import COO
 
     check_consistent_fill_value(arrays)
+
+    if axis is None:
+        arrays = [x.flatten() for x in arrays]
 
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
     axis = normalize_axis(axis, arrays[0].ndim)
@@ -590,7 +594,7 @@ def argwhere(a):
 
     Returns
     -------
-    index_array: numpy.ndarray
+    index_array : numpy.ndarray
 
     See Also
     --------
@@ -607,6 +611,125 @@ def argwhere(a):
            [1, 2]])
     """
     return np.transpose(a.nonzero())
+
+
+def _arg_minmax_common(
+    x: SparseArray,
+    axis: Optional[int],
+    keepdims: bool,
+    comp_op: Callable,
+    np_arg_func: Callable,
+):
+    """ """
+    assert comp_op in (operator.lt, operator.gt)
+    assert np_arg_func in (np.argmax, np.argmin)
+
+    if not isinstance(axis, (int, type(None))):
+        raise ValueError(f"axis must be int or None, but it's: {type(axis)}")
+
+    if isinstance(axis, int) and axis >= x.ndim:
+        raise ValueError(
+            f"axis {axis} is out of bounds for array of dimension {x.ndim}"
+        )
+
+    if x.fill_value != 0.0:
+        raise ValueError(
+            f"Only 0.0 fill value is supported, but found: {x.fill_value}."
+        )
+
+    if np.any(comp_op(x.data, 0.0)):
+        raise ValueError(
+            f"None of the non-zero values can be {comp_op.__name__} the fill value."
+        )
+
+    # fast path
+    if axis is None or x.ndim == 1:
+        x_flat = x.reshape(-1)
+        result = x_flat.coords[0, np_arg_func(x_flat.data)]
+        return np.array(result).reshape([1] * x.ndim) if keepdims else result
+
+    # search for min/max value & index for each retained axis
+    minmax_indexes = {}
+    minmax_values = {}
+
+    for idx, coord in enumerate(x.coords.T):
+        coord = list(coord)
+        axis_index = coord[axis]
+        coord[axis] = 0
+        coord = tuple(coord)
+        if not coord in minmax_values or comp_op(minmax_values[coord], x.data[idx]):
+            minmax_values[coord] = x.data[idx]
+            minmax_indexes[coord] = axis_index
+
+    new_shape = list(x.shape)
+    new_shape[axis] = 1
+    new_shape = tuple(new_shape)
+
+    result = np.zeros(shape=new_shape, dtype=np.intp)
+    for idx, minmax_index in minmax_indexes.items():
+        result[idx] = minmax_index
+
+    return result if keepdims else result.squeeze()
+
+
+def argmax(x, /, *, axis=None, keepdims=False):
+    """
+    Returns the indices of the maximum values along a specified axis.
+    When the maximum value occurs multiple times, only the indices
+    corresponding to the first occurrence are returned.
+    Parameters
+    ----------
+    x : SparseArray
+        Input array. The fill value must be ``0.0`` and all non-zero values
+        must be greater than ``0.0``.
+    axis : int, optional
+        Axis along which to search. If ``None``, the function must return
+        the index of the maximum value of the flattened array. Default: ``None``.
+    keepdims : bool, optional
+        If ``True``, the reduced axes (dimensions) must be included in the result
+        as singleton dimensions, and, accordingly, the result must be compatible
+        with the input array. Otherwise, if ``False``, the reduced axes (dimensions)
+        must not be included in the result. Default: ``False``.
+    Returns
+    -------
+    out : numpy.ndarray
+        If ``axis`` is ``None``, a zero-dimensional array containing the index of
+        the first occurrence of the maximum value. Otherwise, a non-zero-dimensional
+        array containing the indices of the maximum values.
+    """
+    return _arg_minmax_common(
+        x, axis=axis, keepdims=keepdims, comp_op=operator.lt, np_arg_func=np.argmax
+    )
+
+
+def argmin(x, /, *, axis=None, keepdims=False):
+    """
+    Returns the indices of the minimum values along a specified axis.
+    When the minimum value occurs multiple times, only the indices
+    corresponding to the first occurrence are returned.
+    Parameters
+    ----------
+    x : SparseArray
+        Input array. The fill value must be ``0.0`` and all non-zero values
+        must be less than ``0.0``.
+    axis : int, optional
+        Axis along which to search. If ``None``, the function must return
+        the index of the minimum value of the flattened array. Default: ``None``.
+    keepdims : bool, optional
+        If ``True``, the reduced axes (dimensions) must be included in the result
+        as singleton dimensions, and, accordingly, the result must be compatible
+        with the input array. Otherwise, if ``False``, the reduced axes (dimensions)
+        must not be included in the result. Default: ``False``.
+    Returns
+    -------
+    out : numpy.ndarray
+        If ``axis`` is ``None``, a zero-dimensional array containing the index of
+        the first occurrence of the minimum value. Otherwise, a non-zero-dimensional
+        array containing the indices of the minimum values.
+    """
+    return _arg_minmax_common(
+        x, axis=axis, keepdims=keepdims, comp_op=operator.gt, np_arg_func=np.argmin
+    )
 
 
 def _replace_nan(array, value):

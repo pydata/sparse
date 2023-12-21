@@ -986,3 +986,36 @@ class SparseArray:
         numpy.conj : NumPy equivalent function.
         """
         return np.conj(self)
+
+    def __bool__(self):
+        """ """
+        return self._to_scalar(bool)
+
+    def __float__(self):
+        """ """
+        return self._to_scalar(float)
+
+    def __int__(self):
+        """ """
+        return self._to_scalar(int)
+
+    def __index__(self):
+        """ """
+        return self._to_scalar(int)
+
+    def __complex__(self):
+        """ """
+        return self._to_scalar(complex)
+
+    def _to_scalar(self, builtin):
+        if self.size != 1 or self.shape != ():
+            raise ValueError(f"{builtin} can be computed for one-element arrays only.")
+        return builtin(self.todense().flatten()[0])
+
+    @abstractmethod
+    def isinf(self):
+        """ """
+
+    @abstractmethod
+    def isnan(self):
+        """ """
