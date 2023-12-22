@@ -1086,6 +1086,59 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             self._cache["reshape"].append((shape, result))
         return result
 
+    def squeeze(self, axis=None):
+        """
+        Removes singleton dimensions (axes) from ``x``.
+        Parameters
+        ----------
+        axis : Union[None, int, Tuple[int, ...]]
+            The axis (or axes) to squeeze. If a specified axis has a size greater than one,
+            a `ValueError` is raised. ``axis=None`` removes all singleton dimensions.
+            Default: ``None``.
+        Returns
+        -------
+        COO
+            The output array without ``axis`` dimensions.
+        Examples
+        --------
+        >>> s = COO.from_numpy(np.eye(2)).reshape((2, 1, 2, 1))
+        >>> s.squeeze().shape
+        (2, 2)
+        >>> s.squeeze(axis=1).shape
+        (2, 2, 1)
+        """
+        squeezable_dims = tuple([d for d in range(self.ndim) if self.shape[d] == 1])
+
+        if axis is None:
+            axis = squeezable_dims
+        if isinstance(axis, int):
+            axis = (axis,)
+        elif isinstance(axis, Iterable):
+            axis = tuple(axis)
+        else:
+            raise ValueError(f"Invalid axis parameter: `{axis}`.")
+
+        for d in axis:
+            if not d in squeezable_dims:
+                raise ValueError(
+                    f"Specified axis `{d}` has a size greater than one: {self.shape[d]}"
+                )
+
+        retained_dims = [d for d in range(self.ndim) if not d in axis]
+
+        coords = self.coords[retained_dims, :]
+        shape = tuple([s for idx, s in enumerate(self.shape) if idx in retained_dims])
+
+        return COO(
+            coords,
+            self.data,
+            shape,
+            has_duplicates=False,
+            sorted=True,
+            cache=self._cache is not None,
+            fill_value=self.fill_value,
+        )
+
     def resize(self, *args, refcheck=True, coords_dtype=np.intp):
         """
         This method changes the shape and size of an array in-place.
