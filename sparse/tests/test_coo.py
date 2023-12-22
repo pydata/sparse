@@ -1694,42 +1694,51 @@ def test_array_as_shape():
 
 @pytest.mark.parametrize(
     "arr",
-    [np.array([[0, 3, 0], [1, 2, 0]]), np.array([[[0, 0], [1, 0]], [[5, 0], [0, 3]]])],
+    [np.array([[0, 3, 0], [1, 2, 0]]), np.array([[[0, 0], [1, 0]], [[5, 0], [0, -3]]])],
 )
 @pytest.mark.parametrize("axis", [None, 0, 1])
 @pytest.mark.parametrize("keepdims", [True, False])
 @pytest.mark.parametrize(
-    "mode",
-    [(sparse.argmax, np.argmax, lambda x: x), (sparse.argmin, np.argmin, lambda x: -x)],
+    "mode", [(sparse.argmax, np.argmax), (sparse.argmin, np.argmin)]
 )
 def test_argmax_argmin(arr, axis, keepdims, mode):
-    sparse_func, np_func, transform = mode
-    arr = transform(arr)
+    sparse_func, np_func = mode
 
     s_arr = sparse.COO.from_numpy(arr)
 
-    result = sparse_func(s_arr, axis=axis, keepdims=keepdims)
+    result = sparse_func(s_arr, axis=axis, keepdims=keepdims).todense()
     expected = np_func(arr, axis=axis, keepdims=keepdims)
 
     np.testing.assert_equal(result, expected)
 
 
-@pytest.mark.parametrize("func", [np.argmax, np.argmin])
-def test_argmax_argmin_value_constraint(func):
+@pytest.mark.parametrize("axis", [None, 0, 1, 2])
+@pytest.mark.parametrize(
+    "mode", [(sparse.argmax, np.argmax), (sparse.argmin, np.argmin)]
+)
+def test_argmax_argmin_3D(axis, mode):
+    sparse_func, np_func = mode
+
+    s_arr = sparse.zeros(shape=(1000, 550, 3), format="dok")
+    s_arr[100, 100, 0] = 3
+    s_arr[100, 100, 1] = 3
+    s_arr[100, 99, 0] = -2
+    s_arr = s_arr.to_coo()
+
+    result = sparse_func(s_arr, axis=axis).todense()
+    expected = np_func(s_arr.todense(), axis=axis)
+
+    np.testing.assert_equal(result, expected)
+
+
+@pytest.mark.parametrize("func", [sparse.argmax, sparse.argmin])
+def test_argmax_argmin_constraint(func):
     s = sparse.COO.from_numpy(np.full((2, 2), 2), fill_value=2)
 
     with pytest.raises(
-        ValueError, match="Only 0.0 fill value is supported, but found: 2."
+        ValueError, match="axis 2 is out of bounds for array of dimension 2"
     ):
-        func(s)
-
-    arr = np.array([[-2, 0], [0, 2]])
-    s = sparse.COO.from_numpy(arr)
-
-    with pytest.raises(
-        ValueError, match=r"None of the non-zero values can be (lt|gt) the fill value"
-    ):
-        func(s, axis=0)
+        func(s, axis=2)
 
 
 @pytest.mark.parametrize("config", [(np.inf, "isinf"), (np.nan, "isnan")])
