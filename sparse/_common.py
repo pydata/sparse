@@ -2250,6 +2250,11 @@ def astype(x, dtype, /, *, copy=True):
 
 
 @_support_numpy
+def squeeze(x, /, axis=None):
+    return x.squeeze(axis=axis)
+
+
+@_support_numpy
 def broadcast_to(x, /, shape):
     return x.broadcast_to(shape)
 

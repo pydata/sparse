@@ -2,7 +2,7 @@ from functools import reduce
 import operator
 import warnings
 from collections.abc import Iterable
-from typing import Callable, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import scipy.sparse
@@ -1099,8 +1099,8 @@ def _compute_minmax_args(
     result_data = []
 
     # we iterate through each trace
-    for idx in np.nditer(result_indices):
-        mask = index_coords == idx
+    for result_index in np.nditer(result_indices):
+        mask = index_coords == result_index
         masked_reduce_coords = reduce_coords[mask]
         masked_data = data[mask]
 
