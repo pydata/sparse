@@ -1743,3 +1743,43 @@ def test_isinf_isnan(config):
     expected = getattr(np, func_name)(arr)
 
     np.testing.assert_equal(result, expected)
+
+
+class TestSqueeze:
+    eye_arr = np.eye(2).reshape(1, 2, 1, 2)
+
+    @pytest.mark.parametrize(
+        "arr_and_axis",
+        [
+            (eye_arr, None),
+            (eye_arr, 0),
+            (eye_arr, 2),
+            (eye_arr, (0, 2)),
+            (np.zeros((5,)), None),
+        ],
+    )
+    def test_squeeze(self, arr_and_axis):
+        arr, axis = arr_and_axis
+
+        s_arr = sparse.COO.from_numpy(arr)
+
+        result_1 = sparse.squeeze(s_arr, axis=axis).todense()
+        result_2 = s_arr.squeeze(axis=axis).todense()
+        expected = np.squeeze(arr, axis=axis)
+
+        np.testing.assert_equal(result_1, result_2)
+        np.testing.assert_equal(result_1, expected)
+
+    def test_squeeze_validation(self):
+        s_arr = sparse.COO.from_numpy(np.eye(3))
+
+        with pytest.raises(IndexError, match="tuple index out of range"):
+            s_arr.squeeze(3)
+
+        with pytest.raises(ValueError, match="Invalid axis parameter: `1.1`."):
+            s_arr.squeeze(1.1)
+
+        with pytest.raises(
+            ValueError, match="Specified axis `0` has a size greater than one: 3"
+        ):
+            s_arr.squeeze(0)
