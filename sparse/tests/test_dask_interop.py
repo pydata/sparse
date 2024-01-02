@@ -1,5 +1,6 @@
-from dask.base import tokenize
 import sparse
+
+from dask.base import tokenize
 
 
 def test_deterministic_token():

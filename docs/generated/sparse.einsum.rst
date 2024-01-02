@@ -1,4 +1,4 @@
-﻿einsum
+einsum
 ======
 
 .. currentmodule:: sparse

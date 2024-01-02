@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # sparse documentation build configuration file, created by
 # sphinx-quickstart on Fri Dec 29 20:58:03 2017.
@@ -49,9 +48,7 @@ extensions = [
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
-mathjax_path = (
-    "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
-)
+mathjax_path = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -154,9 +151,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (master_doc, "sparse.tex", "sparse Documentation", "Sparse Developers", "manual")
-]
+latex_documents = [(master_doc, "sparse.tex", "sparse Documentation", "Sparse Developers", "manual")]
 
 # -- Options for manual page output ---------------------------------------
 

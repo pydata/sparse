@@ -1,13 +1,15 @@
-import numpy as np
+import operator
+
+import sparse
+from sparse import COO
+from sparse._compressed import GCXS
+from sparse._utils import assert_eq, assert_gcxs_slicing
+
 import pytest
+
+import numpy as np
 import scipy.sparse
 import scipy.stats
-
-import operator
-import sparse
-from sparse._compressed import GCXS
-from sparse import COO
-from sparse._utils import assert_eq, assert_gcxs_slicing
 
 
 @pytest.mark.parametrize(
@@ -172,27 +174,15 @@ def test_matmul_errors():
     "a, b",
     [
         (
-            sparse.GCXS.from_numpy(
-                np.random.choice(
-                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
-                )
-            ),
+            sparse.GCXS.from_numpy(np.random.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009])),
             sparse.random((100, 100), density=0.01),
         ),
         (
-            sparse.COO.from_numpy(
-                np.random.choice(
-                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
-                )
-            ),
+            sparse.COO.from_numpy(np.random.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009])),
             sparse.random((100, 100), density=0.01),
         ),
         (
-            sparse.GCXS.from_numpy(
-                np.random.choice(
-                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
-                )
-            ),
+            sparse.GCXS.from_numpy(np.random.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009])),
             scipy.sparse.random(100, 100),
         ),
         (
@@ -300,9 +290,7 @@ dot_formats = [
 @pytest.mark.parametrize("format2", dot_formats)
 def test_small_values(format1, format2):
     s1 = format1(sparse.COO(coords=[[0, 10]], data=[3.6e-100, 7.2e-009], shape=(20,)))
-    s2 = format2(
-        sparse.COO(coords=[[0, 0], [4, 28]], data=[3.8e-25, 4.5e-225], shape=(20, 50))
-    )
+    s2 = format2(sparse.COO(coords=[[0, 0], [4, 28]], data=[3.8e-25, 4.5e-225], shape=(20, 50)))
 
     dense_convertor = lambda x: x.todense() if isinstance(x, sparse.SparseArray) else x
     x1, x2 = dense_convertor(s1), dense_convertor(s2)

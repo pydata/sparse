@@ -1,6 +1,6 @@
 import os
-import numpy
 
+import numpy
 
 AUTO_DENSIFY = bool(int(os.environ.get("SPARSE_AUTO_DENSIFY", "0")))
 WARN_ON_TOO_DENSE = bool(int(os.environ.get("SPARSE_WARN_ON_TOO_DENSE", "0")))

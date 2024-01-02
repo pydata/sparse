@@ -1,10 +1,13 @@
-import numpy as np
-import numba
 import operator
-from .._utils import check_compressed_axes, get_out_dtype
-from .._coo.common import linear_loc
 from functools import reduce
+
+import numba
 from numba.typed import List
+
+import numpy as np
+
+from .._coo.common import linear_loc
+from .._utils import check_compressed_axes, get_out_dtype
 
 
 @numba.jit(nopython=True, nogil=True)
@@ -195,9 +198,7 @@ def _resize(x, shape, compressed_axes):
 
 
 @numba.jit(nopython=True, nogil=True)
-def _c_ordering(
-    linear, c_linear, reordered_shape, sorted_axis_order, shape
-):  # pragma: no cover
+def _c_ordering(linear, c_linear, reordered_shape, sorted_axis_order, shape):  # pragma: no cover
     for i, n in enumerate(linear):
         # c ordering
         current_coords = unravel_index(n, reordered_shape)[sorted_axis_order]

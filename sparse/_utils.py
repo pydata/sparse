@@ -1,11 +1,12 @@
 import functools
-from collections.abc import Iterable
-from numbers import Integral
-from functools import reduce
-
 import operator
-import numpy as np
+from collections.abc import Iterable
+from functools import reduce
+from numbers import Integral
+
 import numba
+
+import numpy as np
 
 
 def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
@@ -78,10 +79,7 @@ def assert_nnz(s, x):
 
 
 def is_canonical(x):
-    return not x.shape or (
-        (np.diff(x.linear_loc()) > 0).all()
-        and not equivalent(x.data, x.fill_value).any()
-    )
+    return not x.shape or ((np.diff(x.linear_loc()) > 0).all() and not equivalent(x.data, x.fill_value).any())
 
 
 def _zero_of_dtype(dtype):
@@ -295,17 +293,14 @@ def random(
     if density is None:
         density = 0.01
     if not (0 <= density <= 1):
-        raise ValueError("density {} is not in the unit interval".format(density))
+        raise ValueError(f"density {density} is not in the unit interval")
 
     elements = np.prod(shape, dtype=np.intp)
 
     if nnz is None:
         nnz = int(elements * density)
     if not (0 <= nnz <= elements):
-        raise ValueError(
-            "cannot generate {} nonzero elements "
-            "for an array with {} total elements".format(nnz, elements)
-        )
+        raise ValueError(f"cannot generate {nnz} nonzero elements " f"for an array with {elements} total elements")
 
     if random_state is None:
         random_state = np.random
@@ -352,9 +347,7 @@ def random(
         if can_store(idx_dtype, max(shape)):
             ar.coords = ar.coords.astype(idx_dtype)
         else:
-            raise ValueError(
-                "cannot cast array with shape {} to dtype {}.".format(shape, idx_dtype)
-            )
+            raise ValueError(f"cannot cast array with shape {shape} to dtype {idx_dtype}.")
 
     return ar.asformat(format, **kwargs)
 
@@ -496,11 +489,7 @@ def html_table(arr):
         info.append(human_readable_size(arr.nbytes))
         headings.append("Storage ratio")
         info.append(
-            "%.1f"
-            % (
-                np.float_(arr.nbytes)
-                / np.float_(reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize)
-            )
+            "%.1f" % (np.float_(arr.nbytes) / np.float_(reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize))
         )
 
     # compressed_axes
@@ -509,12 +498,7 @@ def html_table(arr):
         info.append(str(arr.compressed_axes))
 
     for h, i in zip(headings, info):
-        table += (
-            "<tr>"
-            '<th style="text-align: left">%s</th>'
-            '<td style="text-align: left">%s</td>'
-            "</tr>" % (h, i)
-        )
+        table += "<tr>" '<th style="text-align: left">%s</th>' '<td style="text-align: left">%s</td>' "</tr>" % (h, i)
     table += "</tbody>"
     table += "</table>"
     return table
@@ -579,12 +563,10 @@ def check_zero_fill_value(*args):
     ValueError: This operation requires zero fill values, but argument 1 had a fill value of 0.5.
     """
     for i, arg in enumerate(args):
-        if hasattr(arg, "fill_value") and not equivalent(
-            arg.fill_value, _zero_of_dtype(arg.dtype)
-        ):
+        if hasattr(arg, "fill_value") and not equivalent(arg.fill_value, _zero_of_dtype(arg.dtype)):
             raise ValueError(
                 "This operation requires zero fill values, "
-                "but argument {:d} had a fill value of {!s}.".format(i, arg.fill_value)
+                f"but argument {i:d} had a fill value of {arg.fill_value!s}."
             )
 
 
@@ -627,9 +609,9 @@ def check_consistent_fill_value(arrays):
         if not equivalent(fv, arg.fill_value):
             raise ValueError(
                 "This operation requires consistent fill-values, "
-                "but argument {:d} had a fill value of {!s}, which "
-                "is different from a fill_value of {!s} in the first "
-                "argument.".format(i, arg.fill_value, fv)
+                f"but argument {i:d} had a fill value of {arg.fill_value!s}, which "
+                f"is different from a fill_value of {fv!s} in the first "
+                "argument."
             )
 
 
