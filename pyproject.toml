@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sparse"
+dynamic = ["version"]
+description = "Sparse n-dimensional arrays for the PyData ecosystem"
+readme = "README.rst"
+dependencies = ["numpy>=1.17", "scipy>=0.19", "numba>=0.49"]
+maintainers = [{ name = "Hameer Abbasi", email = "hameerabbasi@yahoo.com" }]
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+keywords = ["sparse", "numpy", "scipy", "dask"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3 :: Only",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+]
+
+[project.optional-dependencies]
+docs = ["sphinx", "sphinx_rtd_theme"]
+tests = ["dask[array]", "pytest>=3.5", "pytest-black", "pytest-cov"]
+tox = ["sparse[tests]", "tox"]
+all = ["sparse[docs,tox]"]
+
+[project.urls]
+Documentation = "https://sparse.pydata.org/"
+Source = "https://github.com/pydata/sparse/"
+Repository = "https://github.com/pydata/sparse.git"
+"Issue Tracker" = "https://github.com/pydata/sparse/issues"
+Discussions = "https://github.com/pydata/sparse/discussions"
+
+[project.entry-points.numba_extensions]
+init = "sparse._numba_extension:_init_extension"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sparse", "sparse.*"]
+
+[tool.setuptools_scm]
+version_file = "sparse/_version.py"
+
+[tool.black]
+exclude = "sparse/_version.py"
