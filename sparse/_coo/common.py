@@ -1145,11 +1145,16 @@ def _arg_minmax_common(
     assert mode in ("max", "min")
     max_mode_flag = mode == "max"
 
+    from .core import COO
+
+    if not isinstance(x, COO):
+        raise ValueError(f"Only COO arrays are supported but {type(x)} was passed.")
+
     if not isinstance(axis, (int, type(None))):
-        raise ValueError(f"axis must be int or None, but it's: {type(axis)}")
+        raise ValueError(f"`axis` must be `int` or `None`, but it's: {type(axis)}.")
     if isinstance(axis, int) and axis >= x.ndim:
         raise ValueError(
-            f"axis {axis} is out of bounds for array of dimension {x.ndim}"
+            f"`axis={axis}` is out of bounds for array of dimension {x.ndim}."
         )
     if x.ndim == 0:
         raise ValueError("Input array must be at least 1-D, but it's 0-D.")

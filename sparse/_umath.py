@@ -431,6 +431,8 @@ class _Elemwise:
 
         sparse_args = [arg for arg in args if isinstance(arg, SparseArray)]
 
+        if len(sparse_args) == 0:
+            raise ValueError(f"None of the args is sparse: {args}")
         if all(isinstance(arg, DOK) for arg in sparse_args):
             out_type = DOK
         elif all(isinstance(arg, GCXS) for arg in sparse_args):

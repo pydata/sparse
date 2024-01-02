@@ -1736,7 +1736,7 @@ def test_argmax_argmin_constraint(func):
     s = sparse.COO.from_numpy(np.full((2, 2), 2), fill_value=2)
 
     with pytest.raises(
-        ValueError, match="axis 2 is out of bounds for array of dimension 2"
+        ValueError, match="`axis=2` is out of bounds for array of dimension 2."
     ):
         func(s, axis=2)
 

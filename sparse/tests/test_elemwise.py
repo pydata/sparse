@@ -384,7 +384,8 @@ def test_elemwise_noargs():
     def func():
         return np.float_(5.0)
 
-    assert_eq(sparse.elemwise(func), func())
+    with pytest.raises(ValueError, match=r"None of the args is sparse:"):
+        sparse.elemwise(func)
 
 
 @pytest.mark.parametrize(
