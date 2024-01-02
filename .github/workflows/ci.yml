@@ -1,6 +1,6 @@
 jobs:
   test:
-    defaults:  
+    defaults:
       run:
         shell: bash -el {0}
     strategy:
@@ -57,7 +57,7 @@ jobs:
         with:
           files: "**/test-*.xml"
   docs:
-    defaults:  
+    defaults:
       run:
         shell: bash -el {0}
     runs-on: ubuntu-latest
