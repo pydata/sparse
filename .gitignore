@@ -76,4 +76,7 @@ default.profraw
 sandbox.py
 
 # macOS
-*.DS_Store
+**/.DS_Store
+
+# Version file
+sparse/_version.py

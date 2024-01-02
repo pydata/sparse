@@ -6,11 +6,8 @@ from ._utils import random
 from ._io import save_npz, load_npz
 from ._common import *
 
-from ._version import get_versions
-
-__version__ = get_versions()["version"]
 __array_api_version__ = "2022.12"
-del get_versions
+from ._version import __version__
 
 from numpy import (
     bool_ as bool,
