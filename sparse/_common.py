@@ -1819,7 +1819,7 @@ def zeros(shape, dtype=float, format="coo", **kwargs):
     array([[0, 0],
            [0, 0]])
     """
-    return full(shape, 0, np.dtype(dtype)).asformat(format, **kwargs)
+    return full(shape, fill_value=0, dtype=np.dtype(dtype), format=format, **kwargs)
 
 
 def zeros_like(a, dtype=None, shape=None, format=None, **kwargs):
@@ -1848,7 +1848,7 @@ def zeros_like(a, dtype=None, shape=None, format=None, **kwargs):
     array([[0, 0, 0],
            [0, 0, 0]])
     """
-    return full_like(a, 0, dtype=dtype, shape=shape, format=format, **kwargs)
+    return full_like(a, fill_value=0, dtype=dtype, shape=shape, format=format, **kwargs)
 
 
 def ones(shape, dtype=float, format="coo", **kwargs):
@@ -1880,7 +1880,7 @@ def ones(shape, dtype=float, format="coo", **kwargs):
     array([[1, 1],
            [1, 1]])
     """
-    return full(shape, 1, np.dtype(dtype)).asformat(format, **kwargs)
+    return full(shape, fill_value=1, dtype=np.dtype(dtype), format=format, **kwargs)
 
 
 def ones_like(a, dtype=None, shape=None, format=None, **kwargs):
@@ -1909,18 +1909,18 @@ def ones_like(a, dtype=None, shape=None, format=None, **kwargs):
     array([[1, 1, 1],
            [1, 1, 1]])
     """
-    return full_like(a, 1, dtype=dtype, shape=shape, format=format, **kwargs)
+    return full_like(a, fill_value=1, dtype=dtype, shape=shape, format=format, **kwargs)
 
 
 def empty(shape, dtype=float, format="coo", **kwargs):
-    return full(shape, 0, np.dtype(dtype)).asformat(format, **kwargs)
+    return full(shape, fill_value=0, dtype=np.dtype(dtype), format=format, **kwargs)
 
 
 empty.__doc__ = zeros.__doc__
 
 
 def empty_like(a, dtype=None, shape=None, format=None, **kwargs):
-    return full_like(a, 0, dtype=dtype, shape=shape, format=format, **kwargs)
+    return full_like(a, fill_value=0, dtype=dtype, shape=shape, format=format, **kwargs)
 
 
 empty_like.__doc__ = zeros_like.__doc__
@@ -2159,16 +2159,16 @@ def asarray(
             return obj
 
         elif isinstance(obj, spmatrix):
-            return format_dict[format].from_scipy_sparse(
-                obj.astype(dtype=dtype, copy=copy)
-            )
+            sparse_obj = format_dict[format].from_scipy_sparse(obj)
+            if dtype is None:
+                dtype = sparse_obj.dtype
+            return sparse_obj.astype(dtype=dtype, copy=copy)
 
-        # check for scalars and 0-D arrays
-        elif np.isscalar(obj) or (isinstance(obj, np.ndarray) and obj.shape == ()):
-            return np.asarray(obj, dtype=dtype)
-
-        elif isinstance(obj, np.ndarray):
-            return format_dict[format].from_numpy(obj).astype(dtype=dtype, copy=copy)
+        elif np.isscalar(obj) or isinstance(obj, (np.ndarray, Iterable)):
+            sparse_obj = format_dict[format].from_numpy(np.asarray(obj))
+            if dtype is None:
+                dtype = sparse_obj.dtype
+            return sparse_obj.astype(dtype=dtype, copy=copy)
 
         else:
             raise ValueError(f"{type(obj)} not supported.")
