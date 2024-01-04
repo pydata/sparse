@@ -50,6 +50,10 @@ from ._coo.common import (
     tril,
     triu,
     where,
+    unique_all,
+    unique_counts,
+    unique_inverse,
+    unique_values,
 )
 from ._dok import DOK
 from ._io import load_npz, save_npz
@@ -114,6 +118,10 @@ __all__ = [
     "min",
     "max",
     "nanreduce",
+    "unique_all",
+    "unique_counts",
+    "unique_inverse",
+    "unique_values",
 ]
 
 __array_api_version__ = "2022.12"

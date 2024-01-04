@@ -21,6 +21,10 @@ from .common import (
     tril,
     triu,
     where,
+    unique_all,
+    unique_counts,
+    unique_inverse,
+    unique_values,
 )
 from .core import COO, as_coo
 
@@ -49,4 +53,8 @@ __all__ = [
     "result_type",
     "diagonal",
     "diagonalize",
+    "unique_all",
+    "unique_counts",
+    "unique_inverse",
+    "unique_values",
 ]
