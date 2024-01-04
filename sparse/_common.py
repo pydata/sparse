@@ -2044,10 +2044,10 @@ def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, 
     >>> sparse.asarray(x, format="COO")
     <COO: shape=(8, 8), dtype=int64, nnz=8, fill_value=0>
     """
-    if format not in ["coo", "dok", "gcxs"]:
+    if format not in {"coo", "dok", "gcxs"}:
         raise ValueError(f"{format} format not supported.")
 
-    if backend not in ["pydata", "taco"]:
+    if backend not in {"pydata", "taco"}:
         raise ValueError(f"{backend} backend not supported.")
 
     from ._compressed import GCXS
@@ -2056,29 +2056,26 @@ def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, 
 
     format_dict = {"coo": COO, "dok": DOK, "gcxs": GCXS}
 
-    if backend == "pydata":
-        if isinstance(obj, (COO, DOK, GCXS)):
-            # TODO: consider `format` argument
-            warnings.warn("`format` argument was ignored", RuntimeWarning, stacklevel=1)
-            return obj
-
-        elif isinstance(obj, spmatrix):
-            sparse_obj = format_dict[format].from_scipy_sparse(obj)
-            if dtype is None:
-                dtype = sparse_obj.dtype
-            return sparse_obj.astype(dtype=dtype, copy=copy)
-
-        elif np.isscalar(obj) or isinstance(obj, (np.ndarray, Iterable)):
-            sparse_obj = format_dict[format].from_numpy(np.asarray(obj))
-            if dtype is None:
-                dtype = sparse_obj.dtype
-            return sparse_obj.astype(dtype=dtype, copy=copy)
-
-        else:
-            raise ValueError(f"{type(obj)} not supported.")
-
-    elif backend == "taco":
+    if backend == "taco":
         raise ValueError("Taco not yet supported.")
+
+    if isinstance(obj, (COO, DOK, GCXS)):
+        return obj.asformat(format)
+
+    elif isinstance(obj, spmatrix):
+        sparse_obj = format_dict[format].from_scipy_sparse(obj)
+        if dtype is None:
+            dtype = sparse_obj.dtype
+        return sparse_obj.astype(dtype=dtype, copy=copy)
+
+    elif np.isscalar(obj) or isinstance(obj, (np.ndarray, Iterable)):
+        sparse_obj = format_dict[format].from_numpy(np.asarray(obj))
+        if dtype is None:
+            dtype = sparse_obj.dtype
+        return sparse_obj.astype(dtype=dtype, copy=copy)
+
+    else:
+        raise ValueError(f"{type(obj)} not supported.")
 
 
 def _support_numpy(func):
