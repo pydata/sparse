@@ -396,17 +396,17 @@ def normalize_axis(axis, ndim):
             axis += ndim
 
         if axis >= ndim or axis < 0:
-            raise ValueError("Invalid axis index %d for ndim=%d" % (axis, ndim))
+            raise ValueError(f"Invalid axis index {axis} for ndim={ndim}")
 
         return axis
 
     if isinstance(axis, Iterable):
         if not all(isinstance(a, Integral) for a in axis):
-            raise ValueError("axis %s not understood" % axis)
+            raise ValueError(f"axis {axis} not understood")
 
         return tuple(normalize_axis(a, ndim) for a in axis)
 
-    raise ValueError("axis %s not understood" % axis)
+    raise ValueError(f"axis {axis} not understood")
 
 
 def equivalent(x, y):
@@ -453,17 +453,17 @@ def equivalent(x, y):
 # See https://github.com/zarr-developers/zarr-python/blob/master/zarr/util.py
 def human_readable_size(size):
     if size < 2**10:
-        return "%s" % size
+        return str(size)
     elif size < 2**20:
-        return "%.1fK" % (size / float(2**10))
+        return f"{size / 2**10:.1f}K"
     elif size < 2**30:
-        return "%.1fM" % (size / float(2**20))
+        return f"{size / 2**20:.1f}M"
     elif size < 2**40:
-        return "%.1fG" % (size / float(2**30))
+        return f"{size / 2**30:.1f}G"
     elif size < 2**50:
-        return "%.1fT" % (size / float(2**40))
+        return f"{size / 2**40:.1f}T"
     else:
-        return "%.1fP" % (size / float(2**50))
+        return f"{size / 2**50:.1f}P"
 
 
 def html_table(arr):
@@ -489,7 +489,7 @@ def html_table(arr):
         info.append(human_readable_size(arr.nbytes))
         headings.append("Storage ratio")
         info.append(
-            "%.1f" % (np.float_(arr.nbytes) / np.float_(reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize))
+            f"{np.float_(arr.nbytes) / np.float_(reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize):.2f}"
         )
 
     # compressed_axes

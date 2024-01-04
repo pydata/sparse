@@ -46,7 +46,7 @@ def asCOO(x, name="asCOO", check=True):
     from .core import COO
 
     if check and not isinstance(x, (SparseArray, scipy.sparse.spmatrix)):
-        raise ValueError("Performing this operation would produce a dense result: %s" % name)
+        raise ValueError(f"Performing this operation would produce a dense result: {name}")
 
     if not isinstance(x, COO):
         x = COO(x)

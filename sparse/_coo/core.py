@@ -1590,8 +1590,8 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
         return COO.from_iter(x, shape=shape, fill_value=fill_value)
 
     raise NotImplementedError(
-        "Format not supported for conversion. Supplied type is "
-        "%s, see help(sparse.as_coo) for supported formats." % type(x)
+        f"Format not supported for conversion. Supplied type is "
+        f"{type(x)}, see help(sparse.as_coo) for supported formats."
     )
 
 

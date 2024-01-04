@@ -1191,7 +1191,7 @@ def _parse_einsum_input(operands):
             if s in ".,->":
                 continue
             if s not in np.core.einsumfunc.einsum_symbols:
-                raise ValueError("Character %s is not a valid symbol." % s)
+                raise ValueError(f"Character {s} is not a valid symbol.")
 
     else:
         tmp_operands = list(operands)
@@ -1287,7 +1287,7 @@ def _parse_einsum_input(operands):
             tmp_subscripts = subscripts.replace(",", "")
             for s in sorted(set(tmp_subscripts)):
                 if s not in (np.core.einsumfunc.einsum_symbols):
-                    raise ValueError("Character %s is not a valid symbol." % s)
+                    raise ValueError(f"Character {s} is not a valid symbol.")
                 if tmp_subscripts.count(s) == 1:
                     output_subscript += s
             normal_inds = "".join(sorted(set(output_subscript) - set(out_ellipse)))
@@ -1304,18 +1304,18 @@ def _parse_einsum_input(operands):
         output_subscript = ""
         for s in sorted(set(tmp_subscripts)):
             if s not in np.core.einsumfunc.einsum_symbols:
-                raise ValueError("Character %s is not a valid symbol." % s)
+                raise ValueError(f"Character {s} is not a valid symbol.")
             if tmp_subscripts.count(s) == 1:
                 output_subscript += s
 
     # Make sure output subscripts are in the input
     for char in output_subscript:
         if char not in input_subscripts:
-            raise ValueError("Output character %s did not appear in the input" % char)
+            raise ValueError(f"Output character {char} did not appear in the input")
 
     # Make sure number operands is equivalent to the number of terms
     if len(input_subscripts.split(",")) != len(operands):
-        raise ValueError("Number of einsum subscripts must be equal to the " "number of operands.")
+        raise ValueError("Number of einsum subscripts must be equal to the number of operands.")
 
     return (input_subscripts, output_subscript, operands)
 

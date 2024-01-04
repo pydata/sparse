@@ -387,7 +387,7 @@ class SparseArray:
 
             if reduce_super_ufunc is None:
                 raise ValueError(
-                    "Performing this reduction operation would produce " "a dense result: %s" % str(method)
+                    f"Performing this reduction operation would produce a dense result: {method!s}"
                 )
 
         if not isinstance(axis, tuple):
