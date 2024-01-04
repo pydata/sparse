@@ -488,9 +488,7 @@ def html_table(arr):
         headings.append("Size")
         info.append(human_readable_size(arr.nbytes))
         headings.append("Storage ratio")
-        info.append(
-            f"{np.float_(arr.nbytes) / np.float_(reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize):.2f}"
-        )
+        info.append(f"{np.float_(arr.nbytes) / np.float_(reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize):.2f}")
 
     # compressed_axes
     if type(arr).__name__ == "GCXS":
