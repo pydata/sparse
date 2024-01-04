@@ -51,6 +51,7 @@ from ._dok import DOK
 from ._io import load_npz, save_npz
 from ._umath import elemwise
 from ._utils import random
+from ._version import __version__, __version_tuple__  # noqa: F401
 
 __all__ = [
     "asCOO",
