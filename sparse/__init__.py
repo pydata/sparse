@@ -49,11 +49,9 @@ from ._coo.common import (
     roll,
     tril,
     triu,
-    where,
-    unique_all,
     unique_counts,
-    unique_inverse,
     unique_values,
+    where,
 )
 from ._dok import DOK
 from ._io import load_npz, save_npz
@@ -118,9 +116,7 @@ __all__ = [
     "min",
     "max",
     "nanreduce",
-    "unique_all",
     "unique_counts",
-    "unique_inverse",
     "unique_values",
 ]
 

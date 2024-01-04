@@ -20,11 +20,9 @@ from .common import (
     stack,
     tril,
     triu,
-    where,
-    unique_all,
     unique_counts,
-    unique_inverse,
     unique_values,
+    where,
 )
 from .core import COO, as_coo
 
@@ -53,8 +51,6 @@ __all__ = [
     "result_type",
     "diagonal",
     "diagonalize",
-    "unique_all",
     "unique_counts",
-    "unique_inverse",
     "unique_values",
 ]

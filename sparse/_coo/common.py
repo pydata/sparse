@@ -2,7 +2,7 @@ import operator
 import warnings
 from collections.abc import Iterable
 from functools import reduce
-from typing import Optional, Tuple
+from typing import NamedTuple, Optional, Tuple
 
 import numba
 
@@ -1059,50 +1059,44 @@ def clip(a, a_min=None, a_max=None, out=None):
     return a.clip(a_min, a_max)
 
 
-def unique_all(x, /):
-    """
-    Returns the unique elements of an input array x, the first occurring indices
-    for each unique element in x, the indices from the set of unique elements that
-    reconstruct x, and the corresponding counts for each unique element in x.
-    """
-    from .core import COO
-    if not isinstance(x, COO):
-        raise ValueError(f"Only COO arrays are supported but {type(x)} was passed.")
+# Array API set functions
 
-    x = x.flatten()
-    values, index, inverse, counts = np.unique(
-        x.data, return_index=True, return_inverse=True, return_counts=True
-    )
-    index = x.coords.squeeze()[index]
-    if x.nnz < x.size:
-        # find the first occurence of the fill value
-        last_idx = -1
-        first_fill_value = x.coords.max() + 1 if x.coords.size > 0 else 0
-        for idx in np.nditer(x.coords, flags=["zerosize_ok"]):
-            if idx - last_idx > 1:
-                first_fill_value = last_idx + 1
-                break
-            else:
-                last_idx = idx
-
-        values = np.concatenate([[x.fill_value], values])
-        index = np.concatenate([[first_fill_value], index])
-        inverse = inverse + 1
-        counts = np.concatenate([[x.size - x.nnz], counts])
-
-    from .._dok import DOK
-    result_inverse = DOK(shape=x.size, dtype=np.intp, fill_value=np.intp(0))
-    result_inverse[x.coords.squeeze()] = inverse
-
-    return values, index, result_inverse, counts
+class UniqueCountsResult(NamedTuple):
+    values: np.ndarray
+    counts: np.ndarray
 
 
 def unique_counts(x, /):
     """
-    Returns the unique elements of an input array x and the corresponding
-    counts for each unique element in x.
+    Returns the unique elements of an input array `x`, and the corresponding
+    counts for each unique element in `x`.
+
+    Parameters
+    ----------
+    x : COO
+        Input COO array. It will be flattened if it is not already 1-D.
+
+    Returns
+    -------
+    out : namedtuple
+        The result containing:
+        * values - The unique elements of an input array.
+        * counts - The corresponding counts for each unique element.
+
+    Raises
+    ------
+    ValueError
+        If the input array is in a different format than COO.
+
+    Examples
+    --------
+    >>> import sparse
+    >>> x = sparse.COO.from_numpy([1, 0, 2, 1, 2, -3])
+    >>> sparse.unique_counts(x)
+    UniqueCountsResult(values=array([-3,  0,  1,  2]), counts=array([1, 1, 2, 2]))
     """
     from .core import COO
+
     if not isinstance(x, COO):
         raise ValueError(f"Only COO arrays are supported but {type(x)} was passed.")
 
@@ -1111,43 +1105,48 @@ def unique_counts(x, /):
     if x.nnz < x.size:
         values = np.concatenate([[x.fill_value], values])
         counts = np.concatenate([[x.size - x.nnz], counts])
-    return values, counts
+        sorted_indices = np.argsort(values)
+        values[sorted_indices] = values.copy()
+        counts[sorted_indices] = counts.copy()
 
-
-def unique_inverse(x, /):
-    """
-    Returns the unique elements of an input array x and the indices from
-    the set of unique elements that reconstruct x.
-    """
-    from .core import COO
-    if not isinstance(x, COO):
-        raise ValueError(f"Only COO arrays are supported but {type(x)} was passed.")
-
-    x = x.flatten()
-    values, inverse = np.unique(x.data, return_inverse=True)
-    if x.nnz < x.size:
-        values = np.concatenate([[x.fill_value], values])
-        inverse = inverse + 1
-
-    from .._dok import DOK
-    result_inverse = DOK(shape=x.size, dtype=np.intp, fill_value=np.intp(0))
-    result_inverse[x.coords.squeeze()] = inverse
-
-    return values, result_inverse
+    return UniqueCountsResult(values, counts)
 
 
 def unique_values(x, /):
     """
-    Returns the unique elements of an input array x.
+    Returns the unique elements of an input array `x`.
+
+    Parameters
+    ----------
+    x : COO
+        Input COO array. It will be flattened if it is not already 1-D.
+
+    Returns
+    -------
+    out : ndarray
+        The unique elements of an input array.
+
+    Raises
+    ------
+    ValueError
+        If the input array is in a different format than COO.
+
+    Examples
+    --------
+    >>> import sparse
+    >>> x = sparse.COO.from_numpy([1, 0, 2, 1, 2, -3])
+    >>> sparse.unique_values(x)
+    array([-3, 0, 1, 2])
     """
     from .core import COO
+
     if not isinstance(x, COO):
         raise ValueError(f"Only COO arrays are supported but {type(x)} was passed.")
 
     x = x.flatten()
     values = np.unique(x.data)
     if x.nnz < x.size:
-        values = np.concatenate([[x.fill_value], values])
+        values = np.sort(np.concatenate([[x.fill_value], values]))
     return values
 
 
