@@ -36,7 +36,7 @@ Contributing Code
 
 This project has a number of requirements for all code contributed.
 
-* We use ``flake8`` to automatically lint the code and maintain code style.
+* We use ``pre-commit`` to automatically lint the code and maintain code style.
 * We use Numpy-style docstrings.
 * It's ideal if user-facing API changes or new features have documentation added.
 * 100% code coverage is recommended for all new code in any submitted PR. Doctests

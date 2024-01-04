@@ -46,6 +46,10 @@ from ._coo.common import (
     tril,
     triu,
     where,
+    clip,
+    isneginf,
+    isposinf,
+    nanreduce,
 )
 from ._dok import DOK
 from ._io import load_npz, save_npz
@@ -60,6 +64,9 @@ __all__ = [
     "argmax",
     "argmin",
     "argwhere",
+    "clip",
+    "isneginf",
+    "isposinf",
     "where",
     "DOK",
     "GCXS",
@@ -106,6 +113,7 @@ __all__ = [
     "prod",
     "min",
     "max",
+    "nanreduce",
 ]
 
 __array_api_version__ = "2022.12"
