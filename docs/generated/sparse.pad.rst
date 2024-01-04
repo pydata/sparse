@@ -1,4 +1,4 @@
-﻿pad
+pad
 ===
 
 .. currentmodule:: sparse

@@ -1,5 +1,6 @@
-import numpy as np
 import sparse
+
+import numpy as np
 
 
 class Matmul_Sparse:

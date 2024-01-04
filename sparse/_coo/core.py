@@ -1,26 +1,26 @@
 import copy as _copy
 import operator
-from collections.abc import Iterable, Iterator, Sized
-from collections import defaultdict, deque
-from functools import reduce
 import warnings
+from collections import defaultdict, deque
+from collections.abc import Iterable, Iterator, Sized
+from functools import reduce
+
+import numba
 
 import numpy as np
-import numba
 import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
-from .._common import dot, matmul
-from .indexing import getitem
-from .._umath import elemwise, broadcast_to
-from .._sparse_array import SparseArray, _reduce_super_ufunc
+from .._sparse_array import SparseArray
+from .._umath import broadcast_to
 from .._utils import (
-    normalize_axis,
-    equivalent,
-    check_zero_fill_value,
     _zero_of_dtype,
     can_store,
+    check_zero_fill_value,
+    equivalent,
+    normalize_axis,
 )
+from .indexing import getitem
 
 
 class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
@@ -221,12 +221,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             warnings.warn(
                 "coords should be an ndarray. This will raise a ValueError in the future.",
                 DeprecationWarning,
+                stacklevel=1,
             )
 
         if data is None:
-            arr = as_coo(
-                coords, shape=shape, fill_value=fill_value, idx_dtype=idx_dtype
-            )
+            arr = as_coo(coords, shape=shape, fill_value=fill_value, idx_dtype=idx_dtype)
             self._make_shallow_copy_of(arr)
             if cache:
                 self.enable_caching()
@@ -251,9 +250,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             warnings.warn(
                 "shape should be provided. This will raise a ValueError in the future.",
                 DeprecationWarning,
+                stacklevel=1,
             )
             if self.coords.nbytes:
-                shape = tuple((self.coords.max(axis=1) + 1))
+                shape = tuple(self.coords.max(axis=1) + 1)
             else:
                 shape = ()
 
@@ -264,25 +264,18 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             shape = tuple(shape)
 
         if shape and not self.coords.size:
-            self.coords = np.zeros(
-                (len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp
-            )
+            self.coords = np.zeros((len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp)
 
         super().__init__(shape, fill_value=fill_value)
         if idx_dtype:
             if not can_store(idx_dtype, max(shape)):
-                raise ValueError(
-                    "cannot cast array with shape {} to dtype {}.".format(
-                        shape, idx_dtype
-                    )
-                )
+                raise ValueError(f"cannot cast array with shape {shape} to dtype {idx_dtype}.")
             self.coords = self.coords.astype(idx_dtype)
 
         if self.shape:
             if len(self.data) != self.coords.shape[1]:
                 msg = (
-                    "The data length does not match the coordinates "
-                    "given.\nlen(data) = {}, but {} coords specified."
+                    "The data length does not match the coordinates " "given.\nlen(data) = {}, but {} coords specified."
                 )
                 raise ValueError(msg.format(len(data), self.coords.shape[1]))
             if len(self.shape) != self.coords.shape[0]:
@@ -291,9 +284,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                     "shape of `coords`; len(shape)={} != coords.shape[0]={}"
                     "(and coords.shape={})"
                 )
-                raise ValueError(
-                    msg.format(len(shape), self.coords.shape[0], self.coords.shape)
-                )
+                raise ValueError(msg.format(len(shape), self.coords.shape[0], self.coords.shape))
 
         from .._settings import WARN_ON_TOO_DENSE
 
@@ -303,6 +294,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 "memory than than an equivalent dense array. You may want to "
                 "use a dense array here instead.",
                 RuntimeWarning,
+                stacklevel=1,
             )
 
         if not sorted:
@@ -325,9 +317,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         "Produce a deterministic, content-based hash for dask."
         from dask.base import normalize_token
 
-        return normalize_token(
-            (type(self), self.coords, self.data, self.shape, self.fill_value)
-        )
+        return normalize_token((type(self), self.coords, self.data, self.shape, self.fill_value))
 
     def copy(self, deep=True):
         """Return a copy of the array.
@@ -560,10 +550,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             data = np.array([item[1] for item in x], dtype=dtype)
 
         if not (
-            coords.ndim == 2
-            and data.ndim == 1
-            and np.issubdtype(coords.dtype, np.integer)
-            and np.all(coords >= 0)
+            coords.ndim == 2 and data.ndim == 1 and np.issubdtype(coords.dtype, np.integer) and np.all(coords >= 0)
         ):
             raise ValueError("Invalid iterable to convert to COO.")
 
@@ -702,9 +689,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     __getitem__ = getitem
 
     def __str__(self):
-        summary = "<COO: shape={!s}, dtype={!s}, nnz={:d}, fill_value={!s}>".format(
-            self.shape, self.dtype, self.nnz, self.fill_value
-        )
+        summary = f"<COO: shape={self.shape!s}, dtype={self.dtype!s}, nnz={self.nnz:d}, fill_value={self.fill_value!s}>"
         return self._str_impl(summary)
 
     __repr__ = __str__
@@ -894,9 +879,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         <COO: shape=(4, 3, 2), dtype=float64, nnz=24, fill_value=0.0>
         """
         # Normalize all axis1, axis2 to positive values
-        axis1, axis2 = normalize_axis(
-            (axis1, axis2), self.ndim
-        )  # checks if axis1,2 are in range + raises ValueError
+        axis1, axis2 = normalize_axis((axis1, axis2), self.ndim)  # checks if axis1,2 are in range + raises ValueError
         axes = list(range(self.ndim))
         axes[axis1], axes[axis2] = axes[axis2], axes[axis1]
         return self.transpose(axes)
@@ -935,15 +918,21 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         array([[ 2,  3],
                [ 6, 11]], dtype=int64)
         """
+        from .._common import dot
+
         return dot(self, other)
 
     def __matmul__(self, other):
+        from .._common import matmul
+
         try:
             return matmul(self, other)
         except NotImplementedError:
             return NotImplemented
 
     def __rmatmul__(self, other):
+        from .._common import matmul
+
         try:
             return matmul(other, self)
         except NotImplementedError:
@@ -1051,9 +1040,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             shape = tuple([d if d != -1 else extra for d in shape])
 
         if self.size != reduce(operator.mul, shape, 1):
-            raise ValueError(
-                "cannot reshape array of size {} into shape {}".format(self.size, shape)
-            )
+            raise ValueError(f"cannot reshape array of size {self.size} into shape {shape}")
 
         if self._cache is not None:
             for sh, value in self._cache["reshape"]:
@@ -1119,12 +1106,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             raise ValueError(f"Invalid axis parameter: `{axis}`.")
 
         for d in axis:
-            if not d in squeezable_dims:
-                raise ValueError(
-                    f"Specified axis `{d}` has a size greater than one: {self.shape[d]}"
-                )
+            if d not in squeezable_dims:
+                raise ValueError(f"Specified axis `{d}` has a size greater than one: {self.shape[d]}")
 
-        retained_dims = [d for d in range(self.ndim) if not d in axis]
+        retained_dims = [d for d in range(self.ndim) if d not in axis]
 
         coords = self.coords[retained_dims, :]
         shape = tuple([s for idx, s in enumerate(self.shape) if idx in retained_dims])
@@ -1152,9 +1137,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         numpy.ndarray.resize : The equivalent Numpy function.
 
         """
-        warnings.warn(
-            "resize is deprecated on all SpraseArray objects.", DeprecationWarning
-        )
+        warnings.warn("resize is deprecated on all SpraseArray objects.", DeprecationWarning, stacklevel=1)
         if len(args) == 1 and isinstance(args[0], tuple):
             shape = args[0]
         elif all(isinstance(arg, int) for arg in args):
@@ -1211,21 +1194,15 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         check_zero_fill_value(self)
 
         if self.ndim != 2:
-            raise ValueError(
-                "Can only convert a 2-dimensional array to a Scipy sparse matrix."
-            )
+            raise ValueError("Can only convert a 2-dimensional array to a Scipy sparse matrix.")
 
-        result = scipy.sparse.coo_matrix(
-            (self.data, (self.coords[0], self.coords[1])), shape=self.shape
-        )
+        result = scipy.sparse.coo_matrix((self.data, (self.coords[0], self.coords[1])), shape=self.shape)
         result.has_canonical_format = True
         return result
 
     def _tocsr(self):
         if self.ndim != 2:
-            raise ValueError(
-                "This array must be two-dimensional for this conversion " "to work."
-            )
+            raise ValueError("This array must be two-dimensional for this conversion " "to work.")
         row, col = self.coords
 
         # Pass 3: count nonzeros in each row
@@ -1466,9 +1443,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if self.size <= max_size or self.density >= min_density:
             return self.todense()
         else:
-            raise ValueError(
-                "Operation would require converting " "large sparse array to dense"
-            )
+            raise ValueError("Operation would require converting " "large sparse array to dense")
 
     def nonzero(self):
         """
@@ -1597,16 +1572,10 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
         Convert an iterable to :obj:`COO`.
     """
     if hasattr(x, "shape") and shape is not None:
-        raise ValueError(
-            "Cannot provide a shape in combination with something "
-            "that already has a shape."
-        )
+        raise ValueError("Cannot provide a shape in combination with something " "that already has a shape.")
 
     if hasattr(x, "fill_value") and fill_value is not None:
-        raise ValueError(
-            "Cannot provide a fill-value in combination with something "
-            "that already has a fill-value."
-        )
+        raise ValueError("Cannot provide a fill-value in combination with something " "that already has a fill-value.")
 
     if isinstance(x, SparseArray):
         return x.asformat("coo")
@@ -1621,8 +1590,8 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
         return COO.from_iter(x, shape=shape, fill_value=fill_value)
 
     raise NotImplementedError(
-        "Format not supported for conversion. Supplied type is "
-        "%s, see help(sparse.as_coo) for supported formats." % type(x)
+        f"Format not supported for conversion. Supplied type is "
+        f"{type(x)}, see help(sparse.as_coo) for supported formats."
     )
 
 

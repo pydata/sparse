@@ -1,10 +1,10 @@
-import pytest
-import numpy as np
-
 import sparse
-
-from sparse import save_npz, load_npz
+from sparse import load_npz, save_npz
 from sparse._utils import assert_eq
+
+import pytest
+
+import numpy as np
 
 
 @pytest.mark.parametrize("compression", [True, False])

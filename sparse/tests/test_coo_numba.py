@@ -1,7 +1,7 @@
-import pytest
+import sparse
+
 import numba
 
-import sparse
 import numpy as np
 
 

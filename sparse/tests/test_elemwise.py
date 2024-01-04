@@ -1,10 +1,13 @@
-import numpy as np
-import sparse
-import pytest
 import operator
+
+import sparse
 from sparse import COO, DOK
 from sparse._compressed import GCXS
 from sparse._utils import assert_eq, random_value_array
+
+import pytest
+
+import numpy as np
 
 
 @pytest.mark.parametrize(
@@ -293,10 +296,7 @@ def test_trinary_broadcasting(shapes, func):
 @pytest.mark.parametrize("fraction", [0.25, 0.5, 0.75, 1.0])
 @pytest.mark.filterwarnings("ignore:invalid value")
 def test_trinary_broadcasting_pathological(shapes, func, value, fraction):
-    args = [
-        sparse.random(s, density=0.5, data_rvs=random_value_array(value, fraction))
-        for s in shapes
-    ]
+    args = [sparse.random(s, density=0.5, data_rvs=random_value_array(value, fraction)) for s in shapes]
     dense_args = [arg.todense() for arg in args]
 
     fs = sparse.elemwise(func, *args)
@@ -319,9 +319,7 @@ def test_sparse_broadcasting(monkeypatch):
             state["num_matches"] += 1
         return result
 
-    monkeypatch.setattr(
-        sparse._umath._Elemwise, "_get_func_coords_data", mock_unmatch_coo
-    )
+    monkeypatch.setattr(sparse._umath._Elemwise, "_get_func_coords_data", mock_unmatch_coo)
 
     xs * ys
 
@@ -343,9 +341,7 @@ def test_dense_broadcasting(monkeypatch):
             state["num_matches"] += 1
         return result
 
-    monkeypatch.setattr(
-        sparse._umath._Elemwise, "_get_func_coords_data", mock_unmatch_coo
-    )
+    monkeypatch.setattr(sparse._umath._Elemwise, "_get_func_coords_data", mock_unmatch_coo)
 
     xs + ys
 
@@ -720,7 +716,7 @@ def test_nanmean_regression(dtype):
 def test_no_deprecation_warning():
     a = np.array([1, 2])
     s = sparse.COO(a, a, shape=(3,))
-    s == s
+    assert_eq(s == s, np.broadcast_to(True, s.shape))
 
 
 # Regression test for gh-587

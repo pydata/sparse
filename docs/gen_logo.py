@@ -1,4 +1,5 @@
 import xml.etree.ElementTree as et
+
 import numpy as np
 
 
@@ -62,9 +63,7 @@ for i, j in np.ndindex(5, 5):
         root,
         "rect",
         style=f"{colors['orange']};{fill(rs)};",
-        transform=transform(
-            1, b, 0, 1, (i + 5) * s + offset_x, (i * b + j) * s + offset_y
-        ),
+        transform=transform(1, b, 0, 1, (i + 5) * s + offset_x, (i * b + j) * s + offset_y),
         **kwargs,
     )
 
@@ -104,9 +103,7 @@ for y2 in (5 + b * 5, 10 + b * 5):
             root,
             "rect",
             style=f"{colors['blue']};{fill(rs)};",
-            transform=transform(
-                1, b, 0, 1, i * s + offset_x, (i * b + j + y2) * s + offset_y
-            ),
+            transform=transform(1, b, 0, 1, i * s + offset_x, (i * b + j + y2) * s + offset_y),
             **kwargs,
         )
 
@@ -122,9 +119,7 @@ for i, j in np.ndindex(5, 5):
         root,
         "rect",
         style=f"{colors['grey']};{fill(rs)};",
-        transform=transform(
-            1, -b, 0, 1, (i + 5) * s + offset_x, ((10 - i) * b + j + 5) * s + offset_y
-        ),
+        transform=transform(1, -b, 0, 1, (i + 5) * s + offset_x, ((10 - i) * b + j + 5) * s + offset_y),
         **kwargs,
     )
 

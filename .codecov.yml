@@ -8,13 +8,13 @@ coverage:
           # Total project must not drop by more than 3%
           target: auto
           threshold: "3%"
-    
+
     patch:
       default:
           # Patch coverage must be 92%
           target: auto
           threshold: "92%"
-  
+
   precision: 2
   round: down
   range: 70...98

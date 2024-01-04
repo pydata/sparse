@@ -28,7 +28,12 @@ classifiers = [
 
 [project.optional-dependencies]
 docs = ["sphinx", "sphinx_rtd_theme"]
-tests = ["dask[array]", "pytest>=3.5", "pytest-black", "pytest-cov"]
+tests = [
+    "dask[array]",
+    "pytest>=3.5",
+    "pytest-cov",
+    "pre-commit",
+]
 tox = ["sparse[tests]", "tox"]
 all = ["sparse[docs,tox]"]
 
@@ -49,5 +54,20 @@ include = ["sparse", "sparse.*"]
 [tool.setuptools_scm]
 version_file = "sparse/_version.py"
 
-[tool.black]
-exclude = "sparse/_version.py"
+[tool.ruff]
+select = ["F", "E", "W", "I", "B", "UP"]
+exclude = ["sparse/_version.py"]
+line-length = 120
+
+[tool.ruff.lint.isort.sections]
+numpy = ["numpy", "numpy.*", "scipy", "scipy.*"]
+
+[tool.ruff.lint.isort]
+section-order = [
+    "future",
+    "standard-library",
+    "first-party",
+    "third-party",
+    "numpy",
+    "local-folder",
+]

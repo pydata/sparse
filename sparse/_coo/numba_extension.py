@@ -3,23 +3,25 @@ Numba support for COO objects.
 
 For now, this just supports attribute access
 """
-import numpy as np
-import numba
-from numba.extending import (
-    models,
-    register_model,
-    box,
-    unbox,
-    NativeValue,
-    make_attribute_wrapper,
-    type_callable,
-)
-from numba.core.imputils import impl_ret_borrowed, lower_constant, lower_builtin
-from numba.core.typing.typeof import typeof_impl
-from numba.core import cgutils, types
-from .._utils import _zero_of_dtype
 import contextlib
 
+import numba
+from numba.core import cgutils, types
+from numba.core.imputils import impl_ret_borrowed, lower_builtin, lower_constant
+from numba.core.typing.typeof import typeof_impl
+from numba.extending import (
+    NativeValue,
+    box,
+    make_attribute_wrapper,
+    models,
+    register_model,
+    type_callable,
+    unbox,
+)
+
+import numpy as np
+
+from .._utils import _zero_of_dtype
 from . import COO
 
 __all__ = ["COOType"]
@@ -33,9 +35,7 @@ class COOType(types.Type):
         self.coords_dtype = coords_dtype
         self.ndim = ndim
         super().__init__(
-            name="COOType[{!r}, {!r}, {!r}]".format(
-                numba.from_dtype(data_dtype), numba.from_dtype(coords_dtype), ndim
-            )
+            name=f"COOType[{numba.from_dtype(data_dtype)!r}, {numba.from_dtype(coords_dtype)!r}, {ndim!r}]"
         )
 
     @property
@@ -62,9 +62,7 @@ class COOType(types.Type):
 
 @typeof_impl.register(COO)
 def _typeof_COO(val: COO, c) -> COOType:
-    return COOType(
-        data_dtype=val.data.dtype, coords_dtype=val.coords.dtype, ndim=val.ndim
-    )
+    return COOType(data_dtype=val.data.dtype, coords_dtype=val.coords.dtype, ndim=val.ndim)
 
 
 @register_model(COOType)
@@ -100,9 +98,7 @@ def impl_COO(context, builder, sig, args):
     coo.coords = coords
     coo.data = data
     coo.shape = shape
-    coo.fill_value = context.get_constant_generic(
-        builder, typ.fill_value_type, _zero_of_dtype(typ.data_dtype)
-    )
+    coo.fill_value = context.get_constant_generic(builder, typ.fill_value_type, _zero_of_dtype(typ.data_dtype))
     return impl_ret_borrowed(context, builder, sig.return_type, coo._getvalue())
 
 
@@ -111,9 +107,7 @@ def lower_constant_COO(context, builder, typ, pyval):
     coords = context.get_constant_generic(builder, typ.coords_type, pyval.coords)
     data = context.get_constant_generic(builder, typ.data_type, pyval.data)
     shape = context.get_constant_generic(builder, typ.shape_type, pyval.shape)
-    fill_value = context.get_constant_generic(
-        builder, typ.fill_value_type, pyval.fill_value
-    )
+    fill_value = context.get_constant_generic(builder, typ.fill_value_type, pyval.fill_value)
     return impl_ret_borrowed(
         context,
         builder,
@@ -216,7 +210,7 @@ def unbox_COO(typ: COOType, obj: COO, c) -> NativeValue:
 
 
 @box(COOType)
-def box_COO(typ: COOType, val: "some LLVM thing", c) -> COO:
+def box_COO(typ: COOType, val, c) -> COO:
     ret_ptr = cgutils.alloca_once(c.builder, c.pyapi.pyobj)
     fail_obj = c.pyapi.get_null_object()
 

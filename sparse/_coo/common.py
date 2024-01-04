@@ -1,21 +1,22 @@
-from functools import reduce
 import operator
 import warnings
 from collections.abc import Iterable
+from functools import reduce
 from typing import Optional, Tuple
+
+import numba
 
 import numpy as np
 import scipy.sparse
-import numba
 
 from .._sparse_array import SparseArray
 from .._utils import (
-    isscalar,
-    is_unsigned_dtype,
-    normalize_axis,
-    check_zero_fill_value,
-    check_consistent_fill_value,
     can_store,
+    check_consistent_fill_value,
+    check_zero_fill_value,
+    is_unsigned_dtype,
+    isscalar,
+    normalize_axis,
 )
 
 
@@ -45,9 +46,7 @@ def asCOO(x, name="asCOO", check=True):
     from .core import COO
 
     if check and not isinstance(x, (SparseArray, scipy.sparse.spmatrix)):
-        raise ValueError(
-            "Performing this operation would produce a dense result: %s" % name
-        )
+        raise ValueError(f"Performing this operation would produce a dense result: {name}")
 
     if not isinstance(x, COO):
         x = COO(x)
@@ -95,8 +94,8 @@ def kron(a, b):
            [0, 0, 0, 1, 2, 3, 0, 0, 0],
            [0, 0, 0, 0, 0, 0, 1, 2, 3]], dtype=int64)
     """
-    from .core import COO
     from .._umath import _cartesian_product
+    from .core import COO
 
     check_zero_fill_value(a, b)
 
@@ -106,9 +105,7 @@ def kron(a, b):
     b_ndim = np.ndim(b)
 
     if not (a_sparse or b_sparse):
-        raise ValueError(
-            "Performing this operation would produce a dense " "result: kron"
-        )
+        raise ValueError("Performing this operation would produce a dense " "result: kron")
 
     if a_ndim == 0 or b_ndim == 0:
         return a * b
@@ -166,11 +163,7 @@ def concatenate(arrays, axis=0):
 
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
     axis = normalize_axis(axis, arrays[0].ndim)
-    assert all(
-        x.shape[ax] == arrays[0].shape[ax]
-        for x in arrays
-        for ax in set(range(arrays[0].ndim)) - {axis}
-    )
+    assert all(x.shape[ax] == arrays[0].shape[ax] for x in arrays for ax in set(range(arrays[0].ndim)) - {axis})
     nnz = 0
     dim = sum(x.shape[axis] for x in arrays)
     shape = list(arrays[0].shape)
@@ -288,9 +281,7 @@ def triu(x, k=0):
     check_zero_fill_value(x)
 
     if not x.ndim >= 2:
-        raise NotImplementedError(
-            "sparse.triu is not implemented for scalars or 1-D arrays."
-        )
+        raise NotImplementedError("sparse.triu is not implemented for scalars or 1-D arrays.")
 
     mask = x.coords[-2] + k <= x.coords[-1]
 
@@ -331,9 +322,7 @@ def tril(x, k=0):
     check_zero_fill_value(x)
 
     if not x.ndim >= 2:
-        raise NotImplementedError(
-            "sparse.tril is not implemented for scalars or 1-D arrays."
-        )
+        raise NotImplementedError("sparse.tril is not implemented for scalars or 1-D arrays.")
 
     mask = x.coords[-2] + k >= x.coords[-1]
 
@@ -401,10 +390,7 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
     assert out is None
     x = asCOO(x, name="nanmean")
 
-    if not (
-        np.issubdtype(x.dtype, np.floating)
-        or np.issubdtype(x.dtype, np.complexfloating)
-    ):
+    if not (np.issubdtype(x.dtype, np.floating) or np.issubdtype(x.dtype, np.complexfloating)):
         return x.mean(axis=axis, keepdims=keepdims, dtype=dtype)
 
     mask = np.isnan(x)
@@ -755,8 +741,9 @@ def roll(a, shift, axis=None):
     res : ndarray
         Output array, with the same shape as a.
     """
-    from .core import COO, as_coo
     from numpy.core._exceptions import UFuncTypeError
+
+    from .core import COO, as_coo
 
     a = as_coo(a)
 
@@ -784,9 +771,7 @@ def roll(a, shift, axis=None):
 
         # check if dimensions are consistent
         if len(axis) != len(shift):
-            raise ValueError(
-                "If 'shift' is a 1D sequence, " "'axis' must have equal length."
-            )
+            raise ValueError("If 'shift' is a 1D sequence, " "'axis' must have equal length.")
 
         if not can_store(a.coords.dtype, max(a.shape + shift)):
             raise ValueError(
@@ -802,13 +787,11 @@ def roll(a, shift, axis=None):
             for sh, ax in zip(shift, axis):
                 coords[ax] += sh
                 coords[ax] %= a.shape[ax]
-        except UFuncTypeError:
+        except UFuncTypeError as e:
             if is_unsigned_dtype(coords.dtype):
                 raise ValueError(
-                    "rolling with coords.dtype as {} is not safe. Try using a signed dtype.".format(
-                        coords.dtype
-                    )
-                )
+                    f"rolling with coords.dtype as {coords.dtype} is not safe. Try using a signed dtype."
+                ) from e
 
         return COO(
             coords,
@@ -873,9 +856,7 @@ def diagonal(a, offset=0, axis1=0, axis2=1):
     if a.shape[axis1] != a.shape[axis2]:
         raise ValueError("a.shape[axis1] != a.shape[axis2]")
 
-    diag_axes = [
-        axis for axis in range(len(a.shape)) if axis != axis1 and axis != axis2
-    ] + [axis1]
+    diag_axes = [axis for axis in range(len(a.shape)) if axis != axis1 and axis != axis2] + [axis1]
     diag_shape = [a.shape[axis] for axis in diag_axes]
     diag_shape[-1] -= abs(offset)
 
@@ -891,7 +872,8 @@ def diagonalize(a, axis=0):
     """
     Diagonalize a COO array. The new dimension is appended at the end.
 
-    .. WARNING:: :obj:`diagonalize` is not :obj:`numpy` compatible as there is no direct :obj:`numpy` equivalent. The API may change in the future.
+    .. WARNING:: :obj:`diagonalize` is not :obj:`numpy` compatible as there is no direct :obj:`numpy` equivalent. The
+      API may change in the future.
 
     Parameters
     ----------
@@ -1028,13 +1010,7 @@ def _diagonal_idx(coordlist, axis1, axis2, offset):
     offset : int
         Offset of the diagonal from the main diagonal. Defaults to main diagonal (0).
     """
-    return np.array(
-        [
-            i
-            for i in range(len(coordlist[axis1]))
-            if coordlist[axis1][i] + offset == coordlist[axis2][i]
-        ]
-    )
+    return np.array([i for i in range(len(coordlist[axis1])) if coordlist[axis1][i] + offset == coordlist[axis2][i]])
 
 
 def clip(a, a_min=None, a_max=None, out=None):
@@ -1111,9 +1087,7 @@ def _compute_minmax_args(
 
         if np.any(compared_data) or len(masked_data) == reduce_size:
             # best value is a non-fill value
-            best_arg = (
-                np.argmax(masked_data) if max_mode_flag else np.argmin(masked_data)
-            )
+            best_arg = np.argmax(masked_data) if max_mode_flag else np.argmin(masked_data)
             result_data.append(masked_reduce_coords[best_arg])
         else:
             # best value is a fill value, find the first occurrence of it
@@ -1153,9 +1127,7 @@ def _arg_minmax_common(
     if not isinstance(axis, (int, type(None))):
         raise ValueError(f"`axis` must be `int` or `None`, but it's: {type(axis)}.")
     if isinstance(axis, int) and axis >= x.ndim:
-        raise ValueError(
-            f"`axis={axis}` is out of bounds for array of dimension {x.ndim}."
-        )
+        raise ValueError(f"`axis={axis}` is out of bounds for array of dimension {x.ndim}.")
     if x.ndim == 0:
         raise ValueError("Input array must be at least 1-D, but it's 0-D.")
 
@@ -1195,9 +1167,7 @@ def _arg_minmax_common(
 
     from .core import COO
 
-    result = COO(
-        result_indices, result_data, shape=(x.shape[1],), fill_value=0, prune=True
-    )
+    result = COO(result_indices, result_data, shape=(x.shape[1],), fill_value=0, prune=True)
 
     # Let's reshape the result to the original shape.
     result = result.reshape((1, *new_shape[1:]))
@@ -1206,7 +1176,7 @@ def _arg_minmax_common(
     result = result.transpose(new_transpose)
 
     # If `axis=None` we need to reshape flattened array into original dimensionality.
-    if not axis_none_original_ndim is None:
+    if axis_none_original_ndim is not None:
         result = result.reshape([1 for _ in range(axis_none_original_ndim)])
 
     return result if keepdims else result.squeeze()

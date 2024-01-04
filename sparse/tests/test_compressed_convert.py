@@ -1,10 +1,10 @@
-import sparse
-import pytest
-import numpy as np
-from numba.typed import List
-
 import sparse._compressed.convert as convert
 from sparse._utils import assert_eq
+
+import pytest
+from numba.typed import List
+
+import numpy as np
 
 
 def make_inds(shape):
@@ -84,6 +84,4 @@ def test_compute_flat(shape, expected_subsample, subsample):
     ],
 )
 def test_transform_shape(shape, expected_shape):
-    assert_eq(
-        convert.transform_shape(np.asarray(shape)), expected_shape, compare_dtype=False
-    )
+    assert_eq(convert.transform_shape(np.asarray(shape)), expected_shape, compare_dtype=False)

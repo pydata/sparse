@@ -1,11 +1,11 @@
 {
-    "version": 1,
-    "project": "sparse",
-    "project_url": "https://sparse.pydata.org/",
-    "repo": ".",
-    "dvcs": "git",
-    "environment_type": "conda",
-    "env_dir": ".asv/env",
-    "results_dir": ".asv/results",
-    "html_dir": ".asv/html"
+  "dvcs": "git",
+  "env_dir": ".asv/env",
+  "environment_type": "conda",
+  "html_dir": ".asv/html",
+  "project": "sparse",
+  "project_url": "https://sparse.pydata.org/",
+  "repo": ".",
+  "results_dir": ".asv/results",
+  "version": 1
 }
