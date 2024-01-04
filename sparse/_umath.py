@@ -115,9 +115,9 @@ def _get_nary_broadcast_shape(*shapes):
     for shape in shapes:
         try:
             result_shape = _get_broadcast_shape(shape, result_shape)
-        except ValueError:
+        except ValueError as e:
             shapes_str = ", ".join(str(shape) for shape in shapes)
-            raise ValueError("operands could not be broadcast together with shapes %s" % shapes_str)
+            raise ValueError(f"operands could not be broadcast together with shapes {shapes_str}") from e
 
     return result_shape
 
@@ -145,7 +145,7 @@ def _get_broadcast_shape(shape1, shape2, is_result=False):
     """
     # https://stackoverflow.com/a/47244284/774273
     if not all((l1 == l2) or (l1 == 1) or ((l2 == 1) and not is_result) for l1, l2 in zip(shape1[::-1], shape2[::-1])):
-        raise ValueError("operands could not be broadcast together with shapes %s, %s" % (shape1, shape2))
+        raise ValueError(f"operands could not be broadcast together with shapes {shape1}, {shape2}")
 
     result_shape = tuple(l1 if l1 != 1 else l2 for l1, l2 in zip_longest(shape1[::-1], shape2[::-1], fillvalue=1))[::-1]
 
@@ -214,7 +214,7 @@ def _get_reduced_shape(shape, params):
     reduced_coords : np.ndarray
         The reduced coordinates.
     """
-    reduced_shape = tuple(l for l, p in zip(shape, params) if p)
+    reduced_shape = tuple(sh for sh, p in zip(shape, params) if p)
 
     return reduced_shape
 
@@ -244,13 +244,13 @@ def _get_expanded_coords_data(coords, data, params, broadcast_shape):
     """
     first_dim = -1
     expand_shapes = []
-    for d, p, l in zip(range(len(broadcast_shape)), params, broadcast_shape):
+    for d, p, sh in zip(range(len(broadcast_shape)), params, broadcast_shape):
         if p and first_dim == -1:
             expand_shapes.append(coords.shape[1])
             first_dim = d
 
         if not p:
-            expand_shapes.append(l)
+            expand_shapes.append(sh)
 
     all_idx = _cartesian_product(*(np.arange(d, dtype=np.intp) for d in expand_shapes))
 
@@ -266,7 +266,7 @@ def _get_expanded_coords_data(coords, data, params, broadcast_shape):
         expanded_data = np.repeat(data, np.prod(broadcast_shape, dtype=np.int64))
         return np.asarray(expanded_coords), np.asarray(expanded_data)
 
-    for d, p, l in zip(range(len(broadcast_shape)), params, broadcast_shape):
+    for d, p in zip(range(len(broadcast_shape)), params):
         if p:
             expanded_coords[d] = coords[dim, all_idx[first_dim]]
         else:

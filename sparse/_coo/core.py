@@ -221,6 +221,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             warnings.warn(
                 "coords should be an ndarray. This will raise a ValueError in the future.",
                 DeprecationWarning,
+                stacklevel=1,
             )
 
         if data is None:
@@ -249,6 +250,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             warnings.warn(
                 "shape should be provided. This will raise a ValueError in the future.",
                 DeprecationWarning,
+                stacklevel=1,
             )
             if self.coords.nbytes:
                 shape = tuple(self.coords.max(axis=1) + 1)
@@ -292,6 +294,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 "memory than than an equivalent dense array. You may want to "
                 "use a dense array here instead.",
                 RuntimeWarning,
+                stacklevel=1,
             )
 
         if not sorted:
@@ -1134,7 +1137,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         numpy.ndarray.resize : The equivalent Numpy function.
 
         """
-        warnings.warn("resize is deprecated on all SpraseArray objects.", DeprecationWarning)
+        warnings.warn("resize is deprecated on all SpraseArray objects.", DeprecationWarning, stacklevel=1)
         if len(args) == 1 and isinstance(args[0], tuple):
             shape = args[0]
         elif all(isinstance(arg, int) for arg in args):

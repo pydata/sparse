@@ -787,9 +787,11 @@ def roll(a, shift, axis=None):
             for sh, ax in zip(shift, axis):
                 coords[ax] += sh
                 coords[ax] %= a.shape[ax]
-        except UFuncTypeError:
+        except UFuncTypeError as e:
             if is_unsigned_dtype(coords.dtype):
-                raise ValueError(f"rolling with coords.dtype as {coords.dtype} is not safe. Try using a signed dtype.")
+                raise ValueError(
+                    f"rolling with coords.dtype as {coords.dtype} is not safe. Try using a signed dtype."
+                ) from e
 
         return COO(
             coords,
@@ -870,7 +872,8 @@ def diagonalize(a, axis=0):
     """
     Diagonalize a COO array. The new dimension is appended at the end.
 
-    .. WARNING:: :obj:`diagonalize` is not :obj:`numpy` compatible as there is no direct :obj:`numpy` equivalent. The API may change in the future.
+    .. WARNING:: :obj:`diagonalize` is not :obj:`numpy` compatible as there is no direct :obj:`numpy` equivalent. The
+      API may change in the future.
 
     Parameters
     ----------

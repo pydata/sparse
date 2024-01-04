@@ -45,7 +45,7 @@ def compute_flat(increments, cols, operations):  # pragma: no cover
     end = increments[-1].shape[0]
     positions = np.zeros(len(increments) - 1, dtype=np.intp)
     pos = len(increments) - 2
-    for i in range(operations):
+    for _ in range(operations):
         to_add = 0
         for j in range(len(increments) - 1):
             to_add += increments[j][positions[j]]
@@ -314,7 +314,7 @@ def _convert_coords(
     new_compressed_shape,
     transpose,
 ):  # pragma: no cover
-    if transpose == True:
+    if transpose:
         for i, n in enumerate(linear):
             # c ordering
             current_coords = unravel_index(n, reordered_shape)[sorted_axis_order]

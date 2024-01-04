@@ -292,7 +292,9 @@ def test_small_values(format1, format2):
     s1 = format1(sparse.COO(coords=[[0, 10]], data=[3.6e-100, 7.2e-009], shape=(20,)))
     s2 = format2(sparse.COO(coords=[[0, 0], [4, 28]], data=[3.8e-25, 4.5e-225], shape=(20, 50)))
 
-    dense_convertor = lambda x: x.todense() if isinstance(x, sparse.SparseArray) else x
+    def dense_convertor(x):
+        return x.todense() if isinstance(x, sparse.SparseArray) else x
+
     x1, x2 = dense_convertor(s1), dense_convertor(s2)
 
     assert_eq(x1 @ x2, s1 @ s2)
@@ -311,7 +313,9 @@ def test_complex(dtype1, dtype2, format1, format2, ndim1, ndim2):
     s1 = format1(sparse.random((20,) * ndim1, density=0.5).astype(dtype1))
     s2 = format2(sparse.random((20,) * ndim2, density=0.5).astype(dtype2))
 
-    dense_convertor = lambda x: x.todense() if isinstance(x, sparse.SparseArray) else x
+    def dense_convertor(x):
+        return x.todense() if isinstance(x, sparse.SparseArray) else x
+
     x1, x2 = dense_convertor(s1), dense_convertor(s2)
 
     assert_eq(x1 @ x2, s1 @ s2)

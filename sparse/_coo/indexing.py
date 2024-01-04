@@ -148,7 +148,8 @@ def _mask(coords, indices, shape):
             for ai in adv_idx:
                 if len(ai) != adv_ix_len:
                     raise IndexError(
-                        "shape mismatch: indexing arrays could not be broadcast together. Ensure all indexing arrays are of the same length."
+                        "shape mismatch: indexing arrays could not be broadcast together. Ensure all indexing arrays "
+                        "are of the same length."
                     )
                 if ai.ndim != 1:
                     raise IndexError("Only one-dimensional iterable indices supported.")
@@ -241,15 +242,15 @@ def _prune_indices(indices, shape, prune_none=True):
         indices = [idx for idx in indices if idx is not None]
 
     i = 0
-    for idx, l in zip(indices[::-1], shape[::-1]):
+    for idx, sh in zip(indices[::-1], shape[::-1]):
         if not isinstance(idx, slice):
             break
 
-        if idx.start == 0 and idx.stop == l and idx.step == 1:
+        if idx.start == 0 and idx.stop == sh and idx.step == 1:
             i += 1
             continue
 
-        if idx.start == l - 1 and idx.stop == -1 and idx.step == -1:
+        if idx.start == sh - 1 and idx.stop == -1 and idx.step == -1:
             i += 1
             continue
 
@@ -648,12 +649,12 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
 
 
 @numba.jit(nopython=True, nogil=True)
-def array_from_list_intp(l):  # pragma: no cover
-    n = len(l)
+def array_from_list_intp(x):  # pragma: no cover
+    n = len(x)
     a = np.empty(n, dtype=np.intp)
 
     for i in range(n):
-        a[i] = l[i]
+        a[i] = x[i]
 
     return a
 

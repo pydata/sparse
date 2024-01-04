@@ -128,5 +128,5 @@ def load_npz(filename):
                 fill_value=fill_value,
                 compressed_axes=comp_axes,
             )
-        except KeyError:
-            raise RuntimeError(f"The file {filename!s} does not contain a valid sparse matrix")
+        except KeyError as e:
+            raise RuntimeError(f"The file {filename!s} does not contain a valid sparse matrix") from e

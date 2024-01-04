@@ -110,7 +110,7 @@ def algD(n, N, random_state=None):
         random_state = seed for random number generation
     """
 
-    if random_state != None:
+    if random_state is not None:
         np.random.seed(random_state)
     n = np.int64(n + 1)
     N = np.int64(N)
@@ -169,7 +169,7 @@ def algA(n, N, random_state=None):
         N = size of system (elements)
         random_state = seed for random number generation
     """
-    if random_state != None:
+    if random_state is not None:
         np.random.seed(random_state)
     n = np.int64(n)
     N = np.int64(N)
@@ -498,7 +498,7 @@ def html_table(arr):
         info.append(str(arr.compressed_axes))
 
     for h, i in zip(headings, info):
-        table += "<tr>" '<th style="text-align: left">%s</th>' '<td style="text-align: left">%s</td>' "</tr>" % (h, i)
+        table += "<tr>" f'<th style="text-align: left">{h}</th>' f'<td style="text-align: left">{i}</td>' "</tr>"
     table += "</tbody>"
     table += "</table>"
     return table

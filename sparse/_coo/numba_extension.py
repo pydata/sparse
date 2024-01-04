@@ -210,7 +210,7 @@ def unbox_COO(typ: COOType, obj: COO, c) -> NativeValue:
 
 
 @box(COOType)
-def box_COO(typ: COOType, val: "some LLVM thing", c) -> COO:
+def box_COO(typ: COOType, val, c) -> COO:
     ret_ptr = cgutils.alloca_once(c.builder, c.pyapi.pyobj)
     fail_obj = c.pyapi.get_null_object()
 

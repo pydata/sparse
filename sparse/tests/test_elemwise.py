@@ -716,7 +716,7 @@ def test_nanmean_regression(dtype):
 def test_no_deprecation_warning():
     a = np.array([1, 2])
     s = sparse.COO(a, a, shape=(3,))
-    s == s
+    assert_eq(s == s, np.broadcast_to(True, s.shape))
 
 
 # Regression test for gh-587

@@ -33,10 +33,10 @@ class SparseArray:
         if not isinstance(shape, Iterable):
             shape = (shape,)
 
-        if not all(isinstance(l, Integral) and int(l) >= 0 for l in shape):
+        if not all(isinstance(sh, Integral) and int(sh) >= 0 for sh in shape):
             raise ValueError("shape must be an non-negative integer or a tuple " "of non-negative integers.")
 
-        self.shape = tuple(int(l) for l in shape)
+        self.shape = tuple(int(sh) for sh in shape)
 
         if fill_value is not None:
             if not hasattr(fill_value, "dtype") or fill_value.dtype != self.dtype:
@@ -348,8 +348,8 @@ class SparseArray:
             (out,) = out
             if out.shape != result.shape:
                 raise ValueError(
-                    "non-broadcastable output operand with shape %s "
-                    "doesn't match the broadcast shape %s" % (out.shape, result.shape)
+                    f"non-broadcastable output operand with shape {out.shape} "
+                    f"doesn't match the broadcast shape {result.shape}"
                 )
 
             out._make_shallow_copy_of(result)
@@ -787,7 +787,7 @@ class SparseArray:
         rcount = reduce(operator.mul, (self.shape[a] for a in axis), 1)
         # Make this warning show up on top.
         if ddof >= rcount:
-            warnings.warn("Degrees of freedom <= 0 for slice", RuntimeWarning)
+            warnings.warn("Degrees of freedom <= 0 for slice", RuntimeWarning, stacklevel=1)
 
         # Cast bool, unsigned int, and int to float64 by default
         if dtype is None and issubclass(self.dtype.type, (np.integer, np.bool_)):

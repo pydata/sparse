@@ -204,10 +204,10 @@ def matmul(a, b):
     """
     check_zero_fill_value(a, b)
     if not hasattr(a, "ndim") or not hasattr(b, "ndim"):
-        raise TypeError("Cannot perform dot product on types %s, %s" % (type(a), type(b)))
+        raise TypeError(f"Cannot perform dot product on types {type(a)}, {type(b)}")
 
     if check_class_nan(a) or check_class_nan(b):
-        warnings.warn("Nan will not be propagated in matrix multiplication", RuntimeWarning)
+        warnings.warn("Nan will not be propagated in matrix multiplication", RuntimeWarning, stacklevel=1)
 
     # When b is 2-d, it is equivalent to dot
     if b.ndim <= 2:
@@ -283,7 +283,7 @@ def dot(a, b):
     """
     check_zero_fill_value(a, b)
     if not hasattr(a, "ndim") or not hasattr(b, "ndim"):
-        raise TypeError("Cannot perform dot product on types %s, %s" % (type(a), type(b)))
+        raise TypeError(f"Cannot perform dot product on types {type(a)}, {type(b)}")
 
     if a.ndim == 1 and b.ndim == 1:
         if isinstance(a, SparseArray):
@@ -813,7 +813,6 @@ def _dot_csc_ndarray_type_sparse(dt1, dt2):
                             mask[ind] = head
                             head = ind
                             length += 1
-            start = nnz
             for _ in range(length):
                 if sums[head] != 0:
                     indices[nnz] = head
@@ -953,7 +952,6 @@ def _dot_coo_coo_type(dt1, dt2):
                         head = k
                         length += 1
 
-            start = nnz
             for _ in range(length):
                 if next_[head] != -1:
                     coords[0, nnz] = i
@@ -1199,7 +1197,7 @@ def _parse_einsum_input(operands):
         tmp_operands = list(operands)
         operand_list = []
         subscript_list = []
-        for p in range(len(operands) // 2):
+        for _ in range(len(operands) // 2):
             operand_list.append(tmp_operands.pop(0))
             subscript_list.append(tmp_operands.pop(0))
 
@@ -1361,7 +1359,7 @@ def _einsum_single(lhs, rhs, operand):
         where.setdefault(ix, []).append(i)
 
     selector = None
-    for ix, locs in where.items():
+    for locs in where.values():
         loc0, *rlocs = locs
         if rlocs:
             # repeated index
@@ -1956,7 +1954,9 @@ def pad(array, pad_width, mode="constant", **kwargs):
         Sparse array which is to be padded.
 
     pad_width : {sequence, array_like, int}
-        Number of values padded to the edges of each axis. ((before_1, after_1), … (before_N, after_N)) unique pad widths for each axis. ((before, after),) yields same before and after pad for each axis. (pad,) or int is a shortcut for before = after = pad width for all axes.
+        Number of values padded to the edges of each axis. ((before_1, after_1), … (before_N, after_N)) unique pad
+        widths for each axis. ((before, after),) yields same before and after pad for each axis. (pad,) or int is a
+        shortcut for before = after = pad width for all axes.
 
     mode : str
         Pads to a constant value which is fill value. Currently only constant mode is implemented
@@ -2059,7 +2059,7 @@ def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, 
     if backend == "pydata":
         if isinstance(obj, (COO, DOK, GCXS)):
             # TODO: consider `format` argument
-            warnings.warn("`format` argument was ignored")
+            warnings.warn("`format` argument was ignored", RuntimeWarning, stacklevel=1)
             return obj
 
         elif isinstance(obj, spmatrix):
@@ -2092,7 +2092,9 @@ def _support_numpy(func):
         if isinstance(x, (np.ndarray, np.number)):
             warnings.warn(
                 f"Sparse {func.__name__} received dense NumPy array instead "
-                "of sparse array. Dispatching to NumPy function."
+                "of sparse array. Dispatching to NumPy function.",
+                RuntimeWarning,
+                stacklevel=2,
             )
             return getattr(np, func.__name__)(*args, **kwargs)
         else:

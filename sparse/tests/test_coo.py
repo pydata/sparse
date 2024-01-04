@@ -227,7 +227,7 @@ def test_resize(a, b):
     orig_size = s.size
     x = s.todense()
 
-    x.resize(b)
+    x = np.resize(x, b)
     s.resize(b)
     temp = x.reshape(x.size)
     temp[orig_size:] = s.fill_value
@@ -304,7 +304,7 @@ def test_moveaxis_error(source, destination):
         [(), ()],
     ],
 )
-def test_resize(a, b):
+def test_resize_2(a, b):
     s = sparse.random(a, density=0.5)
     orig_size = s.size
     x = s.todense()
@@ -839,7 +839,7 @@ def test_caching():
 
     x = COO({(1, 1, 1, 1, 1, 1, 1, 2): 1}, cache=True)
 
-    for i in range(x.ndim):
+    for _ in range(x.ndim):
         x.reshape(x.size)
 
     assert len(x._cache["reshape"]) < 5
@@ -1238,7 +1238,7 @@ def test_pickle():
     x = sparse.COO.from_numpy([1, 0, 0, 0, 0]).reshape((5, 1))
     # Enable caching and add some data to it
     x.enable_caching()
-    x.T
+    x.T  # noqa: B018
     assert x._cache is not None
     # Pickle sends data but not cache
     x2 = pickle.loads(pickle.dumps(x))
@@ -1251,7 +1251,7 @@ def test_copy(deep):
     x = sparse.COO.from_numpy([1, 0, 0, 0, 0]).reshape((5, 1))
     # Enable caching and add some data to it
     x.enable_caching()
-    x.T
+    x.T  # noqa: B018
     assert x._cache is not None
 
     x2 = x.copy(deep)
@@ -1650,7 +1650,7 @@ def test_array_as_shape():
     coords = [[0, 1, 2, 3, 4], [0, 1, 2, 3, 4]]
     data = [10, 20, 30, 40, 50]
 
-    s = sparse.COO(coords, data, shape=np.array((5, 5)))
+    sparse.COO(coords, data, shape=np.array((5, 5)))
 
 
 @pytest.mark.parametrize(
