@@ -12,9 +12,7 @@ import numpy as np
 import scipy.sparse
 from scipy.sparse import spmatrix
 
-from ._coo.common import (
-    asCOO,
-)
+from ._coo.common import asCOO
 from ._sparse_array import SparseArray
 from ._utils import (
     _zero_of_dtype,

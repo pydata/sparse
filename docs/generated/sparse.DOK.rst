@@ -42,6 +42,3 @@ DOK
       DOK.to_coo
 
       DOK.todense
-
-
-

@@ -11,7 +11,6 @@ import numpy as np
 import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
-from .._common import dot, matmul
 from .._sparse_array import SparseArray
 from .._umath import broadcast_to
 from .._utils import (
@@ -916,15 +915,21 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         array([[ 2,  3],
                [ 6, 11]], dtype=int64)
         """
+        from .._common import dot
+
         return dot(self, other)
 
     def __matmul__(self, other):
+        from .._common import matmul
+
         try:
             return matmul(self, other)
         except NotImplementedError:
             return NotImplemented
 
     def __rmatmul__(self, other):
+        from .._common import matmul
+
         try:
             return matmul(other, self)
         except NotImplementedError:

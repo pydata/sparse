@@ -20,7 +20,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath(".."))
-from sparse import __version__  # flake8: noqa E402
+from sparse import __version__  # noqa: E402
 
 # -- General configuration ------------------------------------------------
 

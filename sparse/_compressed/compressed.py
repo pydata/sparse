@@ -7,7 +7,6 @@ import numpy as np
 import scipy.sparse as ss
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
-from .._common import dot, matmul
 from .._coo.common import linear_loc
 from .._coo.core import COO
 from .._sparse_array import SparseArray
@@ -763,15 +762,21 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         :obj:`numpy.dot` : Numpy equivalent function.
         scipy.sparse.csr_matrix.dot : Scipy equivalent function.
         """
+        from .._common import dot
+
         return dot(self, other)
 
     def __matmul__(self, other):
+        from .._common import matmul
+
         try:
             return matmul(self, other)
         except NotImplementedError:
             return NotImplemented
 
     def __rmatmul__(self, other):
+        from .._common import matmul
+
         try:
             return matmul(other, self)
         except NotImplementedError:
