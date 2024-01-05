@@ -412,6 +412,7 @@ class _Elemwise:
 
         processed_args = []
         out_type = GCXS
+        out_kwargs = {}
 
         sparse_args = [arg for arg in args if isinstance(arg, SparseArray)]
 
@@ -421,6 +422,8 @@ class _Elemwise:
             out_type = DOK
         elif all(isinstance(arg, GCXS) for arg in sparse_args):
             out_type = GCXS
+            if len({arg.compressed_axes for arg in sparse_args}) == 1:
+                out_kwargs["compressed_axes"] = sparse_args[0].compressed_axes
         else:
             out_type = COO
 
@@ -441,6 +444,7 @@ class _Elemwise:
                 return
 
         self.out_type = out_type
+        self.out_kwargs = out_kwargs
         self.args = tuple(processed_args)
         self.func = func
         self.dtype = kwargs.pop("dtype", None)
@@ -497,7 +501,7 @@ class _Elemwise:
             shape=self.shape,
             has_duplicates=False,
             fill_value=self.fill_value,
-        ).asformat(self.out_type)
+        ).asformat(self.out_type, **self.out_kwargs)
 
     def _get_fill_value(self):
         """
