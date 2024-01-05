@@ -422,7 +422,8 @@ class _Elemwise:
             out_type = DOK
         elif all(isinstance(arg, GCXS) for arg in sparse_args):
             out_type = GCXS
-            out_kwargs["compressed_axes"] = sparse_args[0].compressed_axes
+            if len({arg.compressed_axes for arg in sparse_args}) == 1:
+                out_kwargs["compressed_axes"] = sparse_args[0].compressed_axes
         else:
             out_type = COO
 
