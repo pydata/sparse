@@ -1,3 +1,4 @@
+import contextlib
 import operator
 import warnings
 from abc import ABCMeta, abstractmethod
@@ -34,7 +35,7 @@ class SparseArray:
             shape = (shape,)
 
         if not all(isinstance(sh, Integral) and int(sh) >= 0 for sh in shape):
-            raise ValueError("shape must be an non-negative integer or a tuple " "of non-negative integers.")
+            raise ValueError("shape must be an non-negative integer or a tuple of non-negative integers.")
 
         self.shape = tuple(int(sh) for sh in shape)
 
@@ -262,7 +263,7 @@ class SparseArray:
 
         if not AUTO_DENSIFY:
             raise RuntimeError(
-                "Cannot convert a sparse array to dense automatically. " "To manually densify, use the todense method."
+                "Cannot convert a sparse array to dense automatically. To manually densify, use the todense method."
             )
 
         return np.asarray(self.todense(), *args, **kwargs)
@@ -281,10 +282,8 @@ class SparseArray:
         else:
             return sparse_func(*args, **kwargs)
 
-        try:
+        with contextlib.suppress(AttributeError):
             sparse_func = getattr(type(self), func.__name__)
-        except AttributeError:
-            pass
 
         if not isinstance(sparse_func, Callable) and len(args) == 1 and len(kwargs) == 0:
             try:
@@ -662,8 +661,7 @@ class SparseArray:
         dimension.
 
         >>> from sparse import COO
-        >>> x = np.array([[1, 2, 0, 0],
-        ...               [0, 1, 0, 0]], dtype='i8')
+        >>> x = np.array([[1, 2, 0, 0], [0, 1, 0, 0]], dtype="i8")
         >>> s = COO.from_numpy(x)
         >>> s2 = s.mean(axis=1)
         >>> s2.todense()  # doctest: +SKIP
@@ -748,8 +746,7 @@ class SparseArray:
         dimension.
 
         >>> from sparse import COO
-        >>> x = np.array([[1, 2, 0, 0],
-        ...               [0, 1, 0, 0]], dtype='i8')
+        >>> x = np.array([[1, 2, 0, 0], [0, 1, 0, 0]], dtype="i8")
         >>> s = COO.from_numpy(x)
         >>> s2 = s.var(axis=1)
         >>> s2.todense()  # doctest: +SKIP
@@ -846,8 +843,7 @@ class SparseArray:
         across any dimension.
 
         >>> from sparse import COO
-        >>> x = np.array([[1, 2, 0, 0],
-        ...               [0, 1, 0, 0]], dtype='i8')
+        >>> x = np.array([[1, 2, 0, 0], [0, 1, 0, 0]], dtype="i8")
         >>> s = COO.from_numpy(x)
         >>> s2 = s.std(axis=1)
         >>> s2.todense()  # doctest: +SKIP
@@ -874,8 +870,7 @@ class SparseArray:
         """
         ret = self.var(axis=axis, dtype=dtype, out=out, ddof=ddof, keepdims=keepdims)
 
-        ret = np.sqrt(ret)
-        return ret
+        return np.sqrt(ret)
 
     @property
     def real(self):
@@ -963,12 +958,11 @@ class SparseArray:
         if api_version is None:
             api_version = "2022.12"
 
-        if api_version in ("2021.12", "2022.12"):
-            import sparse
-
-            return sparse
-        else:
+        if api_version not in {"2021.12", "2022.12"}:
             raise ValueError(f'"{api_version}" Array API version not supported.')
+        import sparse
+
+        return sparse
 
     def __bool__(self):
         """ """

@@ -76,7 +76,7 @@ def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
     assert_eq(xx, yy)
 
 
-@pytest.mark.xfail(reason=("Setting output dtype=float16 produces results " "inconsistent with numpy"))
+@pytest.mark.xfail(reason=("Setting output dtype=float16 produces results inconsistent with numpy"))
 @pytest.mark.filterwarnings("ignore:overflow")
 @pytest.mark.parametrize(
     "reduction, kwargs",

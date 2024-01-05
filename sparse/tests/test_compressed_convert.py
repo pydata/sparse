@@ -14,8 +14,7 @@ def make_inds(shape):
 def make_increments(shape):
     inds = make_inds(shape)
     shape_bins = convert.transform_shape(np.asarray(shape))
-    increments = List([inds[i] * shape_bins[i] for i in range(len(shape))])
-    return increments
+    return List([inds[i] * shape_bins[i] for i in range(len(shape))])
 
 
 @pytest.mark.parametrize(

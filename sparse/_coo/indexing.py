@@ -74,10 +74,7 @@ def getitem(x, index):
     mask, adv_idx = _mask(x.coords, index, x.shape)
 
     # Get the length of the mask
-    if isinstance(mask, slice):
-        n = len(range(mask.start, mask.stop, mask.step))
-    else:
-        n = len(mask)
+    n = len(range(mask.start, mask.stop, mask.step)) if isinstance(mask, slice) else len(mask)
 
     coords = []
     shape = []
@@ -91,21 +88,21 @@ def getitem(x, index):
             i += 1
             continue
         # Add to the shape and transform the coords in the case of a slice.
-        elif isinstance(ind, slice):
+        if isinstance(ind, slice):
             shape.append(len(range(ind.start, ind.stop, ind.step)))
             coords.append((x.coords[i, mask] - ind.start) // ind.step)
             i += 1
             if ind.step < 0:
                 sorted = False
         # Add the index and shape for the advanced index.
-        elif isinstance(ind, np.ndarray):
+        if isinstance(ind, np.ndarray):
             if not adv_idx_added:
                 shape.append(adv_idx.length)
                 coords.append(adv_idx.idx)
                 adv_idx_added = True
             i += 1
         # Add a dimension for None.
-        elif ind is None:
+        if ind is None:
             coords.append(np.zeros(n, dtype=np.intp))
             shape.append(1)
 
@@ -120,8 +117,8 @@ def getitem(x, index):
         else:
             if n != 0:
                 return x.data[mask][0]
-            else:
-                return x.fill_value
+
+            return x.fill_value
 
     shape = tuple(shape)
     data = x.data[mask]
@@ -162,22 +159,21 @@ def _mask(coords, indices, shape):
             )
             return mask, _AdvIdxInfo(aidxs, adv_idx_pos, adv_ix_len)
 
-        else:
-            adv_idx = adv_idx[0]
-            adv_idx_pos = adv_idx_pos[0]
+        adv_idx = adv_idx[0]
+        adv_idx_pos = adv_idx_pos[0]
 
-            if adv_idx.ndim != 1:
-                raise IndexError("Only one-dimensional iterable indices supported.")
+        if adv_idx.ndim != 1:
+            raise IndexError("Only one-dimensional iterable indices supported.")
 
-            mask, aidxs = _compute_multi_mask(coords, _ind_ar_from_indices(indices), adv_idx, adv_idx_pos)
-            return mask, _AdvIdxInfo(aidxs, adv_idx_pos, len(adv_idx))
+        mask, aidxs = _compute_multi_mask(coords, _ind_ar_from_indices(indices), adv_idx, adv_idx_pos)
+        return mask, _AdvIdxInfo(aidxs, adv_idx_pos, len(adv_idx))
 
     mask, is_slice = _compute_mask(coords, _ind_ar_from_indices(indices))
 
     if is_slice:
         return slice(mask[0], mask[1], 1), None
-    else:
-        return mask, None
+
+    return mask, None
 
 
 def _ind_ar_from_indices(indices):
@@ -233,9 +229,9 @@ def _prune_indices(indices, shape, prune_none=True):
 
     Examples
     --------
-    >>> _prune_indices((None, 5), (10,)) # None won't affect the mask
+    >>> _prune_indices((None, 5), (10,))  # None won't affect the mask
     [5]
-    >>> _prune_indices((slice(0, 10, 1),), (10,)) # Full slices don't affect the mask
+    >>> _prune_indices((slice(0, 10, 1),), (10,))  # Full slices don't affect the mask
     []
     """
     if prune_none:
@@ -527,8 +523,10 @@ def _get_mask_pairs(starts_old, stops_old, c, idx):  # pragma: no cover
     Examples
     --------
     >>> c = np.array([1, 2, 1, 2, 1, 1, 2, 2])
-    >>> starts_old = numba.typed.List(); starts_old.append(4)
-    >>> stops_old = numba.typed.List(); stops_old.append(8)
+    >>> starts_old = numba.typed.List()
+    ... starts_old.append(4)
+    >>> stops_old = numba.typed.List()
+    ... stops_old.append(8)
     >>> idx = np.array([1, 2, 1])
     >>> _get_mask_pairs(starts_old, stops_old, c, idx)
     (ListType[int64]([4]), ListType[int64]([6]), 2)
@@ -576,10 +574,12 @@ def _filter_pairs(starts, stops, coords, indices):  # pragma: no cover
     Examples
     --------
     >>> import numpy as np
-    >>> starts = numba.typed.List(); starts.append(2)
-    >>> stops = numba.typed.List(); stops.append(7)
+    >>> starts = numba.typed.List()
+    ... starts.append(2)
+    >>> stops = numba.typed.List()
+    ... stops.append(7)
     >>> coords = np.array([[0, 1, 2, 3, 4, 5, 6, 7]])
-    >>> indices = np.array([[2, 8, 2]]) # Start, stop, step pairs
+    >>> indices = np.array([[2, 8, 2]])  # Start, stop, step pairs
     >>> _filter_pairs(starts, stops, coords, indices)
     ListType[int64]([2, 4, 6])
     """
@@ -626,8 +626,12 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
 
     Examples
     --------
-    >>> starts = numba.typed.List(); starts.append(2); starts.append(5)
-    >>> stops = numba.typed.List(); stops.append(5); stops.append(7)
+    >>> starts = numba.typed.List()
+    ... starts.append(2)
+    ... starts.append(5)
+    >>> stops = numba.typed.List()
+    ... stops.append(5)
+    ... stops.append(7)
     >>> _join_adjacent_pairs(starts, stops)
     (ListType[int64]([2]), ListType[int64]([7]))
     """

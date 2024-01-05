@@ -100,10 +100,7 @@ def test_transpose(random_sparse, copy):
     tt = t.transpose(copy=copy)
 
     # Check if a copy was made
-    if copy:
-        check = is_not
-    else:
-        check = is_
+    check = is_not if copy else is_
 
     assert check(random_sparse.data, t.data)
     assert check(random_sparse.indices, t.indices)

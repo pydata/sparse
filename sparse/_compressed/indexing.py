@@ -49,7 +49,7 @@ def getitem(x, key):
     for i, ind in enumerate(Nones_removed):
         if isinstance(ind, Integral):
             continue
-        elif isinstance(ind, slice):
+        if isinstance(ind, slice):
             shape_key[i] = count
             shape.append(len(range(ind.start, ind.stop, ind.step)))
             if i in x.compressed_axes:
@@ -76,9 +76,8 @@ def getitem(x, key):
         if isinstance(ind, slice):
             if ind.step < 0:
                 pos_slice = False
-        elif isinstance(ind, Iterable):
-            if not is_sorted(ind):
-                pos_slice = False
+        elif isinstance(ind, Iterable) and not is_sorted(ind):
+            pos_slice = False
 
     # convert all ints and slices to iterables before flattening
     for i, ind in enumerate(reordered_key):
@@ -115,10 +114,7 @@ def getitem(x, key):
     if np.any(compressed_inds):
         compressed_axes = shape_key[compressed_inds]
 
-        if len(compressed_axes) == 1:
-            row_size = shape[compressed_axes]
-        else:
-            row_size = np.prod(shape[compressed_axes])
+        row_size = shape[compressed_axes] if len(compressed_axes) == 1 else np.prod(shape[compressed_axes])
 
     # if only indexing through uncompressed axes
     else:

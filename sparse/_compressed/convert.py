@@ -93,9 +93,11 @@ def is_sorted(arr):  # pragma: no cover
     function to check if an indexing array is sorted without repeats. If it is,
     we can use the faster slicing algorithm.
     """
-    for i in range(len(arr) - 1):
+    # numba doesn't recognize the new all(...) format
+    for i in range(len(arr) - 1):  # noqa: SIM110
         if arr[i + 1] <= arr[i]:
             return False
+
     return True
 
 

@@ -125,7 +125,7 @@ def algD(n, N, random_state=None):
             while True:
                 X = N * (1 - Vprime)
                 S = np.int64(X)
-                if S < qu1:
+                if qu1 > S:
                     break
                 Vprime = np.exp(np.log(np.random.rand()) / n)
             y1 = np.exp(np.log(np.random.rand() * N / qu1) * nmin1inv)
@@ -147,7 +147,7 @@ def algD(n, N, random_state=None):
                 top -= 1
                 bottom -= 1
                 t -= 1
-            if N / (N - X) >= y1 * np.exp(np.log(y2) / nmin1inv):
+            if y1 * np.exp(np.log(y2) / nmin1inv) <= N / (N - X):
                 Vprime = np.exp(np.log(np.random.rand()) * nmin1inv)
                 break
             Vprime = np.exp(np.log(np.random.rand()) / n)
@@ -212,7 +212,7 @@ def reverse(inv, N):
         if j == len(inv):
             a[k:] = np.arange(i, N)
             break
-        elif i == inv[j]:
+        if i == inv[j]:
             j += 1
         else:
             a[k] = i
@@ -300,7 +300,7 @@ def random(
     if nnz is None:
         nnz = int(elements * density)
     if not (0 <= nnz <= elements):
-        raise ValueError(f"cannot generate {nnz} nonzero elements " f"for an array with {elements} total elements")
+        raise ValueError(f"cannot generate {nnz} nonzero elements for an array with {elements} total elements")
 
     if random_state is None:
         random_state = np.random
@@ -454,21 +454,20 @@ def equivalent(x, y):
 def human_readable_size(size):
     if size < 2**10:
         return str(size)
-    elif size < 2**20:
+    if size < 2**20:
         return f"{size / 2**10:.1f}K"
-    elif size < 2**30:
+    if size < 2**30:
         return f"{size / 2**20:.1f}M"
-    elif size < 2**40:
+    if size < 2**40:
         return f"{size / 2**30:.1f}G"
-    elif size < 2**50:
+    if size < 2**50:
         return f"{size / 2**40:.1f}T"
-    else:
-        return f"{size / 2**50:.1f}P"
+
+    return f"{size / 2**50:.1f}P"
 
 
 def html_table(arr):
-    table = "<table>"
-    table += "<tbody>"
+    table = ["<table><tbody>"]
     headings = ["Format", "Data Type", "Shape", "nnz", "Density", "Read-only"]
 
     density = np.float_(arr.nnz) / np.float_(arr.size)
@@ -496,10 +495,9 @@ def html_table(arr):
         info.append(str(arr.compressed_axes))
 
     for h, i in zip(headings, info):
-        table += "<tr>" f'<th style="text-align: left">{h}</th>' f'<td style="text-align: left">{i}</td>' "</tr>"
-    table += "</tbody>"
-    table += "</table>"
-    return table
+        table.append(f'<tr><th style="text-align: left">{h}</th><td style="text-align: left">{i}</td></tr>')
+    table.append("</tbody></table>")
+    return "".join(table)
 
 
 def check_compressed_axes(ndim, compressed_axes):
@@ -625,7 +623,7 @@ def can_store(dtype, scalar):
 
 
 def is_unsigned_dtype(dtype):
-    return not np.array(-1, dtype=dtype) == np.array(-1)
+    return np.array(-1, dtype=dtype) != np.array(-1)
 
 
 def convert_format(format):

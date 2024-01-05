@@ -205,9 +205,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     def from_scipy_sparse(cls, x):
         if x.format == "csc":
             return cls((x.data, x.indices, x.indptr), shape=x.shape, compressed_axes=(1,))
-        else:
-            x = x.asformat("csr")
-            return cls((x.data, x.indices, x.indptr), shape=x.shape, compressed_axes=(0,))
+
+        x = x.asformat("csr")
+        return cls((x.data, x.indices, x.indptr), shape=x.shape, compressed_axes=(0,))
 
     @classmethod
     def from_iter(cls, x, shape=None, compressed_axes=None, fill_value=None, idx_dtype=None):
@@ -267,10 +267,10 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         Examples
         -------
         >>> import sparse
-        >>> s = sparse.random((5,5), density=0.2, format='dok')
+        >>> s = sparse.random((5, 5), density=0.2, format="dok")
         >>> s.format
         'dok'
-        >>> t = sparse.random((5,5), density=0.2, format='coo')
+        >>> t = sparse.random((5, 5), density=0.2, format="coo")
         >>> t.format
         'coo'
         """
@@ -291,8 +291,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         --------
         numpy.ndarray.nbytes : The equivalent Numpy property.
         """
-        nbytes = self.data.nbytes + self.indices.nbytes + self.indptr.nbytes
-        return nbytes
+        return self.data.nbytes + self.indices.nbytes + self.indptr.nbytes
 
     @property
     def _axis_order(self):
@@ -491,8 +490,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         if 0 in self.compressed_axes:
             return ss.csr_matrix((self.data, self.indices, self.indptr), shape=self.shape)
-        else:
-            return ss.csc_matrix((self.data, self.indices, self.indptr), shape=self.shape)
+
+        return ss.csc_matrix((self.data, self.indices, self.indptr), shape=self.shape)
 
     def asformat(self, format, **kwargs):
         """
@@ -561,10 +560,10 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             If the returned array would be too large.
         """
 
-        if self.size <= max_size or self.density >= min_density:
-            return self.todense()
-        else:
-            raise ValueError("Operation would require converting " "large sparse array to dense")
+        if self.size > max_size and self.density < min_density:
+            raise ValueError("Operation would require converting large sparse array to dense")
+
+        return self.todense()
 
     def flatten(self, order="C"):
         """
@@ -581,7 +580,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         Numpy and isn't actually supported.
         """
         if order not in {"C", None}:
-            raise NotImplementedError("The `order` parameter is not" "supported.")
+            raise NotImplementedError("The `order` parameter is not supported.")
 
         return self.reshape(-1)
 
@@ -613,10 +612,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         Numpy and isn't actually supported.
 
         """
-        if isinstance(shape, Iterable):
-            shape = tuple(shape)
-        else:
-            shape = (shape,)
+        shape = tuple(shape) if isinstance(shape, Iterable) else (shape,)
         if order not in {"C", None}:
             raise NotImplementedError("The 'order' parameter is not supported")
         if any(d == -1 for d in shape):
@@ -791,7 +787,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         --------
         >>> coords = np.array([[0, 1, 2, 3]])
         >>> data = np.array([1, 0, 1, 2])
-        >>> s = COO(coords, data).asformat('gcxs')
+        >>> s = COO(coords, data).asformat("gcxs")
         >>> s._prune()
         >>> s.nnz
         3
@@ -871,7 +867,7 @@ class CSR(_Compressed2d):
 
     def transpose(self, axes: None = None, copy: bool = False) -> "CSC":
         if axes is not None:
-            raise ValueError()
+            raise ValueError
         if copy:
             self = self.copy()
         return CSC((self.data, self.indices, self.indptr), self.shape[::-1])
@@ -896,7 +892,7 @@ class CSC(_Compressed2d):
 
     def transpose(self, axes: None = None, copy: bool = False) -> CSR:
         if axes is not None:
-            raise ValueError()
+            raise ValueError
         if copy:
             self = self.copy()
         return CSR((self.data, self.indices, self.indptr), self.shape[::-1])

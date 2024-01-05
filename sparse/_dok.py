@@ -94,7 +94,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
     def __init__(self, shape, data=None, dtype=None, fill_value=None):
         from ._coo import COO
 
-        self.data = dict()
+        self.data = {}
 
         if isinstance(shape, COO):
             ar = DOK.from_coo(shape)
@@ -114,7 +114,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         self.dtype = np.dtype(dtype)
 
         if not data:
-            data = dict()
+            data = {}
 
         super().__init__(shape, fill_value=fill_value)
 
@@ -123,7 +123,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
                 if not len(data):
                     self.dtype = np.dtype("float64")
                 else:
-                    self.dtype = np.result_type(*map(lambda x: np.asarray(x).dtype, data.values()))
+                    self.dtype = np.result_type(*(np.asarray(x).dtype for x in data.values()))
 
             for c, d in data.items():
                 self[c] = d
@@ -283,10 +283,10 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         Examples
         -------
         >>> import sparse
-        >>> s = sparse.random((5,5), density=0.2, format='dok')
+        >>> s = sparse.random((5, 5), density=0.2, format="dok")
         >>> s.format
         'dok'
-        >>> t = sparse.random((5,5), density=0.2, format='coo')
+        >>> t = sparse.random((5, 5), density=0.2, format="coo")
         >>> t.format
         'coo'
         """
@@ -310,7 +310,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         Examples
         --------
         >>> import sparse
-        >>> x = sparse.random((100,100),density=.1,format='dok')
+        >>> x = sparse.random((100, 100), density=0.1, format="dok")
         >>> x.nbytes
         8000
         """
@@ -384,7 +384,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         fill_value = self.fill_value
         data = self.data
         for idx, value in zip(zip(*idxs), values):
-            if not value == fill_value:
+            if value != fill_value:
                 data[idx] = value
             elif idx in data:
                 del data[idx]
@@ -420,7 +420,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
                     self._setitem(key_list_temp, vi)
 
                 return
-            elif not isinstance(ind, Integral):
+            if not isinstance(ind, Integral):
                 raise IndexError("All indices must be slices or integers when setting an item.")
 
         key = tuple(key_list)

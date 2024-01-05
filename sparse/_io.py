@@ -29,15 +29,15 @@ def save_npz(filename, matrix, compressed=True):
     >>> import os
     >>> import sparse
     >>> import numpy as np
-    >>> dense_mat = np.array([[[0., 0.], [0., 0.70677779]], [[0., 0.], [0., 0.86522495]]])
+    >>> dense_mat = np.array([[[0.0, 0.0], [0.0, 0.70677779]], [[0.0, 0.0], [0.0, 0.86522495]]])
     >>> mat = sparse.COO(dense_mat)
     >>> mat
     <COO: shape=(2, 2, 2), dtype=float64, nnz=2, fill_value=0.0>
-    >>> sparse.save_npz('mat.npz', mat)
-    >>> loaded_mat = sparse.load_npz('mat.npz')
+    >>> sparse.save_npz("mat.npz", mat)
+    >>> loaded_mat = sparse.load_npz("mat.npz")
     >>> loaded_mat
     <COO: shape=(2, 2, 2), dtype=float64, nnz=2, fill_value=0.0>
-    >>> os.remove('mat.npz')
+    >>> os.remove("mat.npz")
 
     See Also
     --------
