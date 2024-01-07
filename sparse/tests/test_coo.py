@@ -1773,9 +1773,7 @@ class TestUnique:
 
         np.testing.assert_equal(result, expected)
 
-    @pytest.mark.parametrize(
-        "func", [sparse.unique_counts, sparse.unique_values]
-    )
+    @pytest.mark.parametrize("func", [sparse.unique_counts, sparse.unique_values])
     def test_input_validation(self, func):
-        with pytest.raises(ValueError, match=r"Only COO arrays are supported"):
+        with pytest.raises(ValueError, match=r"Input must be an instance of SparseArray"):
             func(self.arr)

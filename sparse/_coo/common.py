@@ -1061,6 +1061,7 @@ def clip(a, a_min=None, a_max=None, out=None):
 
 # Array API set functions
 
+
 class UniqueCountsResult(NamedTuple):
     values: np.ndarray
     counts: np.ndarray
@@ -1097,8 +1098,12 @@ def unique_counts(x, /):
     """
     from .core import COO
 
-    if not isinstance(x, COO):
-        raise ValueError(f"Only COO arrays are supported but {type(x)} was passed.")
+    if isinstance(x, scipy.sparse.spmatrix):
+        x = COO.from_scipy_sparse(x)
+    elif not isinstance(x, SparseArray):
+        raise ValueError(f"Input must be an instance of SparseArray, but it's {type(x)}.")
+    elif not isinstance(x, COO):
+        x = x.asformat(COO)
 
     x = x.flatten()
     values, counts = np.unique(x.data, return_counts=True)
@@ -1140,8 +1145,12 @@ def unique_values(x, /):
     """
     from .core import COO
 
-    if not isinstance(x, COO):
-        raise ValueError(f"Only COO arrays are supported but {type(x)} was passed.")
+    if isinstance(x, scipy.sparse.spmatrix):
+        x = COO.from_scipy_sparse(x)
+    elif not isinstance(x, SparseArray):
+        raise ValueError(f"Input must be an instance of SparseArray, but it's {type(x)}.")
+    elif not isinstance(x, COO):
+        x = x.asformat(COO)
 
     x = x.flatten()
     values = np.unique(x.data)
@@ -1212,8 +1221,12 @@ def _arg_minmax_common(
 
     from .core import COO
 
-    if not isinstance(x, COO):
-        raise ValueError(f"Only COO arrays are supported but {type(x)} was passed.")
+    if isinstance(x, scipy.sparse.spmatrix):
+        x = COO.from_scipy_sparse(x)
+    elif not isinstance(x, SparseArray):
+        raise ValueError(f"Input must be an instance of SparseArray, but it's {type(x)}.")
+    elif not isinstance(x, COO):
+        x = x.asformat(COO)
 
     if not isinstance(axis, (int, type(None))):
         raise ValueError(f"`axis` must be `int` or `None`, but it's: {type(axis)}.")
