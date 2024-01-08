@@ -355,14 +355,12 @@ def isscalar(x):
 
 
 def random_value_array(value, fraction):
-    rng = np.random.default_rng()
-
     def replace_values(n):
         i = int(n * fraction)
 
         ar = np.empty((n,), dtype=np.float_)
         ar[:i] = value
-        ar[i:] = rng.random(n - i)
+        ar[i:] = default_rng.random(n - i)
         return ar
 
     return replace_values

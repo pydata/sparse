@@ -111,7 +111,7 @@ def check_index(ind, dimension):
         x = np.asanyarray(ind)
         if np.issubdtype(x.dtype, np.integer) and ((x >= dimension) | (x < -dimension)).any():
             raise IndexError(f"Index out of bounds for dimension {dimension:d}")
-        if x.dtype == bool and len(x) != dimension:
+        if x.dtype == np.bool_ and len(x) != dimension:
             raise IndexError(
                 f"boolean index did not match indexed array; dimension is {dimension:d} "
                 f"but corresponding boolean dimension is {len(x):d}"
