@@ -61,8 +61,8 @@ def linear_loc(coords, shape):
         # Since `coords` is an array and not a sequence, we know the correct
         # dimensions.
         return np.zeros(coords.shape[1:], dtype=np.intp)
-    else:
-        return np.ravel_multi_index(coords, shape)
+
+    return np.ravel_multi_index(coords, shape)
 
 
 def kron(a, b):
@@ -86,8 +86,8 @@ def kron(a, b):
     Examples
     --------
     >>> from sparse import eye
-    >>> a = eye(3, dtype='i8')
-    >>> b = np.array([1, 2, 3], dtype='i8')
+    >>> a = eye(3, dtype="i8")
+    >>> b = np.array([1, 2, 3], dtype="i8")
     >>> res = kron(a, b)
     >>> res.todense()  # doctest: +SKIP
     array([[1, 2, 3, 0, 0, 0, 0, 0, 0],
@@ -105,7 +105,7 @@ def kron(a, b):
     b_ndim = np.ndim(b)
 
     if not (a_sparse or b_sparse):
-        raise ValueError("Performing this operation would produce a dense " "result: kron")
+        raise ValueError("Performing this operation would produce a dense result: kron")
 
     if a_ndim == 0 or b_ndim == 0:
         return a * b
@@ -752,54 +752,50 @@ def roll(a, shift, axis=None):
         return roll(a.reshape((-1,)), shift, 0).reshape(a.shape)
 
     # roll across specified axis
-    else:
-        # parse axis input, wrap in tuple
-        axis = normalize_axis(axis, a.ndim)
-        if not isinstance(axis, tuple):
-            axis = (axis,)
+    # parse axis input, wrap in tuple
+    axis = normalize_axis(axis, a.ndim)
+    if not isinstance(axis, tuple):
+        axis = (axis,)
 
-        # make shift iterable
-        if not isinstance(shift, Iterable):
-            shift = (shift,)
+    # make shift iterable
+    if not isinstance(shift, Iterable):
+        shift = (shift,)
 
-        elif np.ndim(shift) > 1:
-            raise ValueError("'shift' and 'axis' must be integers or 1D sequences.")
+    elif np.ndim(shift) > 1:
+        raise ValueError("'shift' and 'axis' must be integers or 1D sequences.")
 
-        # handle broadcasting
-        if len(shift) == 1:
-            shift = np.full(len(axis), shift)
+    # handle broadcasting
+    if len(shift) == 1:
+        shift = np.full(len(axis), shift)
 
-        # check if dimensions are consistent
-        if len(axis) != len(shift):
-            raise ValueError("If 'shift' is a 1D sequence, " "'axis' must have equal length.")
+    # check if dimensions are consistent
+    if len(axis) != len(shift):
+        raise ValueError("If 'shift' is a 1D sequence, 'axis' must have equal length.")
 
-        if not can_store(a.coords.dtype, max(a.shape + shift)):
-            raise ValueError(
-                "cannot roll with coords.dtype {} and shift {}. Try casting coords to a larger dtype.".format(
-                    a.coords.dtype,
-                    shift,
-                )
-            )
-
-        # shift elements
-        coords, data = np.copy(a.coords), np.copy(a.data)
-        try:
-            for sh, ax in zip(shift, axis):
-                coords[ax] += sh
-                coords[ax] %= a.shape[ax]
-        except UFuncTypeError as e:
-            if is_unsigned_dtype(coords.dtype):
-                raise ValueError(
-                    f"rolling with coords.dtype as {coords.dtype} is not safe. Try using a signed dtype."
-                ) from e
-
-        return COO(
-            coords,
-            data=data,
-            shape=a.shape,
-            has_duplicates=False,
-            fill_value=a.fill_value,
+    if not can_store(a.coords.dtype, max(a.shape + shift)):
+        raise ValueError(
+            f"cannot roll with coords.dtype {a.coords.dtype} and shift {shift}. Try casting coords to a larger dtype."
         )
+
+    # shift elements
+    coords, data = np.copy(a.coords), np.copy(a.data)
+    try:
+        for sh, ax in zip(shift, axis):
+            coords[ax] += sh
+            coords[ax] %= a.shape[ax]
+    except UFuncTypeError as e:
+        if is_unsigned_dtype(coords.dtype):
+            raise ValueError(
+                f"rolling with coords.dtype as {coords.dtype} is not safe. Try using a signed dtype."
+            ) from e
+
+    return COO(
+        coords,
+        data=data,
+        shape=a.shape,
+        has_duplicates=False,
+        fill_value=a.fill_value,
+    )
 
 
 def diagonal(a, offset=0, axis1=0, axis2=1):
@@ -822,13 +818,13 @@ def diagonal(a, offset=0, axis1=0, axis2=1):
     Examples
     --------
     >>> import sparse
-    >>> x = sparse.as_coo(np.arange(9).reshape(3,3))
+    >>> x = sparse.as_coo(np.arange(9).reshape(3, 3))
     >>> sparse.diagonal(x).todense()
     array([0, 4, 8])
-    >>> sparse.diagonal(x,offset=1).todense()
+    >>> sparse.diagonal(x, offset=1).todense()
     array([1, 5])
 
-    >>> x = sparse.as_coo(np.arange(12).reshape((2,3,2)))
+    >>> x = sparse.as_coo(np.arange(12).reshape((2, 3, 2)))
     >>> x_diag = sparse.diagonal(x, axis1=0, axis2=2)
     >>> x_diag.shape
     (3, 2)
@@ -885,22 +881,22 @@ def diagonalize(a, axis=0):
     Examples
     --------
     >>> import sparse
-    >>> x = sparse.as_coo(np.arange(1,4))
+    >>> x = sparse.as_coo(np.arange(1, 4))
     >>> sparse.diagonalize(x).todense()
     array([[1, 0, 0],
            [0, 2, 0],
            [0, 0, 3]])
 
-    >>> x = sparse.as_coo(np.arange(24).reshape((2,3,4)))
+    >>> x = sparse.as_coo(np.arange(24).reshape((2, 3, 4)))
     >>> x_diag = sparse.diagonalize(x, axis=1)
     >>> x_diag.shape
     (2, 3, 4, 3)
 
     :obj:`diagonalize` is the inverse of :obj:`diagonal`
 
-    >>> a = sparse.random((3,3,3,3,3), density=0.3)
+    >>> a = sparse.random((3, 3, 3, 3, 3), density=0.3)
     >>> a_diag = sparse.diagonalize(a, axis=2)
-    >>> (sparse.diagonal(a_diag, axis1=2, axis2=5) == a.transpose([0,1,3,4,2])).all()
+    >>> (sparse.diagonal(a_diag, axis1=2, axis2=5) == a.transpose([0, 1, 3, 4, 2])).all()
     True
 
     Returns
@@ -1048,7 +1044,7 @@ def clip(a, a_min=None, a_max=None, out=None):
     array([1, 1, 1, 1, 2, 3])
     >>> sparse.clip(x, a_max=1).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([0, 0, 0, 1, 1, 1])
-    >>> sparse.clip(x, a_min=1, a_max=2).todense() # doctest: +NORMALIZE_WHITESPACE
+    >>> sparse.clip(x, a_min=1, a_max=2).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([1, 1, 1, 1, 2, 2])
 
     See Also
@@ -1180,10 +1176,7 @@ def _compute_minmax_args(
         masked_reduce_coords = reduce_coords[mask]
         masked_data = data[mask]
 
-        if max_mode_flag:
-            compared_data = operator.gt(masked_data, fill_value)
-        else:
-            compared_data = operator.lt(masked_data, fill_value)
+        compared_data = operator.gt(masked_data, fill_value) if max_mode_flag else operator.lt(masked_data, fill_value)
 
         if np.any(compared_data) or len(masked_data) == reduce_size:
             # best value is a non-fill value

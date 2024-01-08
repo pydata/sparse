@@ -9,29 +9,29 @@ import scipy
 
 
 @pytest.fixture(scope="module", params=["f8", "f4", "i8", "i4"])
-def random_sparse(request):
+def random_sparse(request, rng):
     dtype = request.param
     if np.issubdtype(dtype, np.integer):
 
         def data_rvs(n):
-            return np.random.randint(-1000, 1000, n)
+            return rng.integers(-1000, 1000, n)
 
     else:
         data_rvs = None
-    return sparse.random((20, 30, 40), density=0.25, format="gcxs", data_rvs=data_rvs).astype(dtype)
+    return sparse.random((20, 30, 40), density=0.25, format="gcxs", data_rvs=data_rvs, random_state=rng).astype(dtype)
 
 
 @pytest.fixture(scope="module", params=["f8", "f4", "i8", "i4"])
-def random_sparse_small(request):
+def random_sparse_small(request, rng):
     dtype = request.param
     if np.issubdtype(dtype, np.integer):
 
         def data_rvs(n):
-            return np.random.randint(-10, 10, n)
+            return rng.integers(-10, 10, n)
 
     else:
         data_rvs = None
-    return sparse.random((20, 30, 40), density=0.25, format="gcxs", data_rvs=data_rvs).astype(dtype)
+    return sparse.random((20, 30, 40), density=0.25, format="gcxs", data_rvs=data_rvs, random_state=rng).astype(dtype)
 
 
 @pytest.mark.parametrize(
@@ -58,7 +58,7 @@ def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
     assert_eq(xx, yy)
 
 
-@pytest.mark.xfail(reason=("Setting output dtype=float16 produces results " "inconsistent with numpy"))
+@pytest.mark.xfail(reason=("Setting output dtype=float16 produces results inconsistent with numpy"))
 @pytest.mark.filterwarnings("ignore:overflow")
 @pytest.mark.parametrize(
     "reduction, kwargs",
@@ -199,10 +199,7 @@ def test_tocoo():
 
 @pytest.mark.parametrize("complex", [True, False])
 def test_complex_methods(complex):
-    if complex:
-        x = np.array([1 + 2j, 2 - 1j, 0, 1, 0])
-    else:
-        x = np.array([1, 2, 0, 0, 0])
+    x = np.array([1 + 2j, 2 - 1j, 0, 1, 0]) if complex else np.array([1, 2, 0, 0, 0])
     s = GCXS.from_numpy(x)
     assert_eq(s.imag, x.imag)
     assert_eq(s.real, x.real)

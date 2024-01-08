@@ -115,14 +115,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     :obj:`COO` objects also support dot products and reductions.
 
-    >>> s.dot(s.T).sum(axis=0).todense()   # doctest: +NORMALIZE_WHITESPACE
+    >>> s.dot(s.T).sum(axis=0).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([ 1,  1, 31,  6], dtype=uint64)
 
     You can use Numpy :code:`ufunc` operations on :obj:`COO` arrays as well.
 
     >>> np.sum(s, axis=1).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([1, 1, 6, 1], dtype=uint64)
-    >>> np.round(np.sqrt(s, dtype=np.float64), decimals=1).todense()   # doctest: +SKIP
+    >>> np.round(np.sqrt(s, dtype=np.float64), decimals=1).todense()  # doctest: +SKIP
     array([[ 1. ,  0. ,  0. ,  0. ],
            [ 0. ,  1. ,  0. ,  0. ],
            [ 0. ,  0. ,  1. ,  2.2],
@@ -136,9 +136,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     You can also create :obj:`COO` arrays from coordinates and data.
 
-    >>> coords = [[0, 0, 0, 1, 1],
-    ...           [0, 1, 2, 0, 3],
-    ...           [0, 3, 2, 0, 1]]
+    >>> coords = [[0, 0, 0, 1, 1], [0, 1, 2, 0, 3], [0, 3, 2, 0, 1]]
     >>> data = [1, 2, 3, 4, 5]
     >>> s4 = COO(coords, data, shape=(3, 4, 5))
     >>> s4
@@ -146,9 +144,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     If the data is same across all coordinates, you can also specify a scalar.
 
-    >>> coords = [[0, 0, 0, 1, 1],
-    ...           [0, 1, 2, 0, 3],
-    ...           [0, 3, 2, 0, 1]]
+    >>> coords = [[0, 0, 0, 1, 1], [0, 1, 2, 0, 3], [0, 3, 2, 0, 1]]
     >>> data = 1
     >>> s5 = COO(coords, data, shape=(3, 4, 5))
     >>> s5
@@ -174,9 +170,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     >>> d = {(0, 0, 0): 1, (1, 2, 3): 2, (1, 1, 0): 3}
     >>> COO(d)
     <COO: shape=(2, 3, 4), dtype=int64, nnz=3, fill_value=0>
-    >>> L = [((0, 0), 1),
-    ...      ((1, 1), 2),
-    ...      ((0, 0), 3)]
+    >>> L = [((0, 0), 1), ((1, 1), 2), ((0, 0), 3)]
     >>> COO(L).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[4, 0],
            [0, 2]])
@@ -188,7 +182,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     >>> s6[1:3, 1:3] = [[4, 5], [6, 7]]
     >>> s6
     <DOK: shape=(5, 5), dtype=int64, nnz=4, fill_value=0>
-    >>> s7 = s6.asformat('coo')
+    >>> s7 = s6.asformat("coo")
     >>> s7
     <COO: shape=(5, 5), dtype=int64, nnz=4, fill_value=0>
     >>> s7.todense()  # doctest: +NORMALIZE_WHITESPACE
@@ -252,10 +246,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 DeprecationWarning,
                 stacklevel=1,
             )
-            if self.coords.nbytes:
-                shape = tuple(self.coords.max(axis=1) + 1)
-            else:
-                shape = ()
+            shape = tuple(self.coords.max(axis=1) + 1) if self.coords.nbytes else ()
 
         if not isinstance(shape, Iterable):
             shape = (shape,)
@@ -274,9 +265,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         if self.shape:
             if len(self.data) != self.coords.shape[1]:
-                msg = (
-                    "The data length does not match the coordinates " "given.\nlen(data) = {}, but {} coords specified."
-                )
+                msg = "The data length does not match the coordinates given.\nlen(data) = {}, but {} coords specified."
                 raise ValueError(msg.format(len(data), self.coords.shape[1]))
             if len(self.shape) != self.coords.shape[0]:
                 msg = (
@@ -626,10 +615,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         Examples
         -------
         >>> import sparse
-        >>> s = sparse.random((5,5), density=0.2, format='dok')
+        >>> s = sparse.random((5, 5), density=0.2, format="dok")
         >>> s.format
         'dok'
-        >>> t = sparse.random((5,5), density=0.2, format='coo')
+        >>> t = sparse.random((5, 5), density=0.2, format="coo")
         >>> t.format
         'coo'
         """
@@ -914,7 +903,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         --------
         >>> x = np.arange(4).reshape((2, 2))
         >>> s = COO.from_numpy(x)
-        >>> s.dot(s) # doctest: +SKIP
+        >>> s.dot(s)  # doctest: +SKIP
         array([[ 2,  3],
                [ 6, 11]], dtype=int64)
         """
@@ -987,7 +976,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         """
         if order not in {"C", None}:
-            raise NotImplementedError("The `order` parameter is not" "supported.")
+            raise NotImplementedError("The `order` parameter is notsupported.")
 
         return self.reshape(-1)
 
@@ -1025,10 +1014,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                [15, 16, 17, 18, 19],
                [20, 21, 22, 23, 24]])
         """
-        if isinstance(shape, Iterable):
-            shape = tuple(shape)
-        else:
-            shape = (shape,)
+        shape = tuple(shape) if isinstance(shape, Iterable) else (shape,)
 
         if order not in {"C", None}:
             raise NotImplementedError("The `order` parameter is not supported")
@@ -1202,7 +1188,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     def _tocsr(self):
         if self.ndim != 2:
-            raise ValueError("This array must be two-dimensional for this conversion " "to work.")
+            raise ValueError("This array must be two-dimensional for this conversion to work.")
         row, col = self.coords
 
         # Pass 3: count nonzeros in each row
@@ -1440,10 +1426,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             ...
         ValueError: Operation would require converting large sparse array to dense
         """
-        if self.size <= max_size or self.density >= min_density:
-            return self.todense()
-        else:
-            raise ValueError("Operation would require converting " "large sparse array to dense")
+        if self.size > max_size and self.density < min_density:
+            raise ValueError("Operation would require converting large sparse array to dense")
+
+        return self.todense()
 
     def nonzero(self):
         """
@@ -1500,7 +1486,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
             return GCXS.from_coo(self, **kwargs)
 
-        elif len(kwargs) != 0:
+        if len(kwargs) != 0:
             raise TypeError(f"Invalid keyword arguments provided: {kwargs}")
 
         if format == "coo":
@@ -1517,7 +1503,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         """
         Tests each element ``x_i`` of the array to determine if equal to positive or negative infinity.
         """
-        new_fill_value = True if np.isinf(self.fill_value) else False
+        new_fill_value = bool(np.isinf(self.fill_value))
         new_data = np.isinf(self.data)
 
         return COO(
@@ -1532,7 +1518,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         """
         Tests each element ``x_i`` of the array to determine whether the element is ``NaN``.
         """
-        new_fill_value = True if np.isnan(self.fill_value) else False
+        new_fill_value = bool(np.isnan(self.fill_value))
         new_data = np.isnan(self.data)
 
         return COO(
@@ -1572,10 +1558,10 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
         Convert an iterable to :obj:`COO`.
     """
     if hasattr(x, "shape") and shape is not None:
-        raise ValueError("Cannot provide a shape in combination with something " "that already has a shape.")
+        raise ValueError("Cannot provide a shape in combination with something that already has a shape.")
 
     if hasattr(x, "fill_value") and fill_value is not None:
-        raise ValueError("Cannot provide a fill-value in combination with something " "that already has a fill-value.")
+        raise ValueError("Cannot provide a fill-value in combination with something that already has a fill-value.")
 
     if isinstance(x, SparseArray):
         return x.asformat("coo")

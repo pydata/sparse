@@ -115,7 +115,7 @@ def _get_nary_broadcast_shape(*shapes):
     for shape in shapes:
         try:
             result_shape = _get_broadcast_shape(shape, result_shape)
-        except ValueError as e:
+        except ValueError as e:  # noqa: PERF203
             shapes_str = ", ".join(str(shape) for shape in shapes)
             raise ValueError(f"operands could not be broadcast together with shapes {shapes_str}") from e
 
@@ -147,9 +147,7 @@ def _get_broadcast_shape(shape1, shape2, is_result=False):
     if not all((l1 == l2) or (l1 == 1) or ((l2 == 1) and not is_result) for l1, l2 in zip(shape1[::-1], shape2[::-1])):
         raise ValueError(f"operands could not be broadcast together with shapes {shape1}, {shape2}")
 
-    result_shape = tuple(l1 if l1 != 1 else l2 for l1, l2 in zip_longest(shape1[::-1], shape2[::-1], fillvalue=1))[::-1]
-
-    return result_shape
+    return tuple(l1 if l1 != 1 else l2 for l1, l2 in zip_longest(shape1[::-1], shape2[::-1], fillvalue=1))[::-1]
 
 
 def _get_broadcast_parameters(shape, broadcast_shape):
@@ -169,11 +167,9 @@ def _get_broadcast_parameters(shape, broadcast_shape):
         A list containing None if the dimension isn't in the original array, False if
         it needs to be broadcast, and True if it doesn't.
     """
-    params = [
+    return [
         None if l1 is None else l1 == l2 for l1, l2 in zip_longest(shape[::-1], broadcast_shape[::-1], fillvalue=None)
     ][::-1]
-
-    return params
 
 
 def _get_reduced_coords(coords, params):
@@ -214,9 +210,7 @@ def _get_reduced_shape(shape, params):
     reduced_coords : np.ndarray
         The reduced coordinates.
     """
-    reduced_shape = tuple(sh for sh, p in zip(shape, params) if p)
-
-    return reduced_shape
+    return tuple(sh for sh, p in zip(shape, params) if p)
 
 
 def _get_expanded_coords_data(coords, data, params, broadcast_shape):
@@ -538,7 +532,7 @@ class _Elemwise:
                 "Performing a mixed sparse-dense operation that would result in a dense array. "
                 "Please make sure that func(sparse_fill_values, ndarrays) is a constant array."
             )
-        elif not equivalent_fv:
+        if not equivalent_fv:
             self._dense_result = True
 
         # Store dtype separately if needed.
@@ -708,8 +702,7 @@ class _Elemwise:
             matched_idx = _match_arrays(*linear)
 
             if return_midx:
-                matched_idx = [sidx[midx] for sidx, midx in zip(sorted_idx, matched_idx)]
-                return matched_idx
+                return [sidx[midx] for sidx, midx in zip(sorted_idx, matched_idx)]
 
             coords = [arg.coords[:, s] for arg, s in zip(cargs, sorted_idx)]
             mcoords = [c[:, idx] for c, idx in zip(coords, matched_idx)]

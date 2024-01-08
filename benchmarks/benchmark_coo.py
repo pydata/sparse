@@ -5,9 +5,9 @@ import numpy as np
 
 class MatrixMultiplySuite:
     def setup(self):
-        np.random.seed(0)
-        self.x = sparse.random((100, 100), density=0.01)
-        self.y = sparse.random((100, 100), density=0.01)
+        rng = np.random.default_rng(0)
+        self.x = sparse.random((100, 100), density=0.01, random_state=rng)
+        self.y = sparse.random((100, 100), density=0.01, random_state=rng)
 
         self.x @ self.y  # Numba compilation
 
@@ -17,9 +17,9 @@ class MatrixMultiplySuite:
 
 class ElemwiseSuite:
     def setup(self):
-        np.random.seed(0)
-        self.x = sparse.random((100, 100, 100), density=0.01)
-        self.y = sparse.random((100, 100, 100), density=0.01)
+        rng = np.random.default_rng(0)
+        self.x = sparse.random((100, 100, 100), density=0.01, random_state=rng)
+        self.y = sparse.random((100, 100, 100), density=0.01, random_state=rng)
 
         self.x + self.y  # Numba compilation
 
@@ -32,9 +32,9 @@ class ElemwiseSuite:
 
 class ElemwiseBroadcastingSuite:
     def setup(self):
-        np.random.seed(0)
-        self.x = sparse.random((100, 1, 100), density=0.01)
-        self.y = sparse.random((100, 100), density=0.01)
+        rng = np.random.default_rng(0)
+        self.x = sparse.random((100, 1, 100), density=0.01, random_state=rng)
+        self.y = sparse.random((100, 100), density=0.01, random_state=rng)
 
     def time_add(self):
         self.x + self.y
@@ -45,9 +45,9 @@ class ElemwiseBroadcastingSuite:
 
 class IndexingSuite:
     def setup(self):
-        np.random.seed(0)
-        self.index = np.random.randint(0, 100, 50)
-        self.x = sparse.random((100, 100, 100), density=0.01)
+        rng = np.random.default_rng(0)
+        self.index = rng.integers(0, 100, 50)
+        self.x = sparse.random((100, 100, 100), density=0.01, random_state=rng)
 
         # Numba compilation
         self.x[5]

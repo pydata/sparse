@@ -33,8 +33,8 @@ def test_convert_from_coo():
     assert_eq(s1, s2)
 
 
-def test_convert_from_numpy():
-    x = np.random.rand(2, 3, 4)
+def test_convert_from_numpy(rng):
+    x = rng.random((2, 3, 4))
     s = DOK(x)
 
     assert_eq(x, s)
@@ -76,15 +76,13 @@ def test_construct(shape, data):
 
 @pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4)])
 @pytest.mark.parametrize("density", [0.1, 0.3, 0.5, 0.7])
-def test_getitem_single(shape, density):
+def test_getitem_single(shape, density, rng):
     s = sparse.random(shape, density, format="dok")
     x = s.todense()
 
     for _ in range(s.nnz):
-        idx = np.random.randint(np.prod(shape))
+        idx = rng.integers(np.prod(shape))
         idx = np.unravel_index(idx, shape)
-        print(idx)
-
         assert np.isclose(s[idx], x[idx])
 
 
@@ -161,11 +159,11 @@ def test_getitem_index_error(shape, density, indices):
         ((4,), ([1, 3]), ()),
     ],
 )
-def test_setitem(shape, index, value_shape):
+def test_setitem(shape, index, value_shape, rng):
     s = sparse.random(shape, 0.5, format="dok")
     x = s.todense()
 
-    value = np.random.rand(*value_shape)
+    value = rng.random(value_shape)
 
     s[index] = value
     x[index] = value
@@ -195,9 +193,9 @@ def test_setitem_delete():
         ((2, 3), ([[0], [1]], [1, 2]), ()),
     ],
 )
-def test_setitem_index_error(shape, index, value_shape):
+def test_setitem_index_error(shape, index, value_shape, rng):
     s = sparse.random(shape, 0.5, format="dok")
-    value = np.random.rand(*value_shape)
+    value = rng.random(value_shape)
 
     with pytest.raises(IndexError):
         s[index] = value
@@ -209,9 +207,9 @@ def test_setitem_index_error(shape, index, value_shape):
         ((2, 3), ([0, 1],), ()),
     ],
 )
-def test_setitem_notimplemented_error(shape, index, value_shape):
+def test_setitem_notimplemented_error(shape, index, value_shape, rng):
     s = sparse.random(shape, 0.5, format="dok")
-    value = np.random.rand(*value_shape)
+    value = rng.random(value_shape)
     with pytest.raises(NotImplementedError):
         s[index] = value
 
@@ -224,9 +222,9 @@ def test_setitem_notimplemented_error(shape, index, value_shape):
         ((2,), 1, (2,)),
     ],
 )
-def test_setitem_value_error(shape, index, value_shape):
+def test_setitem_value_error(shape, index, value_shape, rng):
     s = sparse.random(shape, 0.5, format="dok")
-    value = np.random.rand(*value_shape)
+    value = rng.random(value_shape)
 
     with pytest.raises(ValueError):
         s[index] = value
@@ -271,8 +269,8 @@ def test_asformat(format):
     assert_eq(s, s2)
 
 
-def test_coo_fv_interface():
-    s1 = sparse.full((5, 5), fill_value=1 + np.random.rand())
+def test_coo_fv_interface(rng):
+    s1 = sparse.full((5, 5), fill_value=1 + rng.random())
     s2 = sparse.DOK(s1)
     assert_eq(s1, s2)
     s3 = sparse.COO(s2)

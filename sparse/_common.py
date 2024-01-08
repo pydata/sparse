@@ -61,10 +61,9 @@ def check_class_nan(test):
 
     if isinstance(test, (GCXS, COO)):
         return nan_check(test.fill_value, test.data)
-    elif isinstance(test, spmatrix):
+    if isinstance(test, spmatrix):
         return nan_check(test.data)
-    else:
-        return nan_check(test)
+    return nan_check(test)
 
 
 def tensordot(a, b, axes=2, *, return_type=None):
@@ -109,7 +108,7 @@ def tensordot(a, b, axes=2, *, return_type=None):
         iter(axes)
     except TypeError:
         axes_a = list(range(-axes, 0))
-        axes_b = list(range(0, axes))
+        axes_b = list(range(axes))
     else:
         axes_a, axes_b = axes
     try:
@@ -250,9 +249,9 @@ def matmul(a, b):
         mask = [isinstance(x, SparseArray) for x in res]
         if builtins.all(mask):
             return stack(res)
-        else:
-            res = [x.todense() if isinstance(x, SparseArray) else x for x in res]
-            return np.stack(res)
+
+        res = [x.todense() if isinstance(x, SparseArray) else x for x in res]
+        return np.stack(res)
 
     return _matmul_recurser(a, b)
 
@@ -343,7 +342,7 @@ def _dot(a, b, return_type=None):
         )
         if return_type == np.ndarray:
             return out.todense()
-        elif return_type == COO:
+        if return_type == COO:
             return out.tocoo()
         return out
 
@@ -433,7 +432,7 @@ def _dot(a, b, return_type=None):
 
         if return_type == np.ndarray:
             return out.todense()
-        elif return_type == GCXS:
+        if return_type == GCXS:
             return out.asformat("gcxs")
         return out
 
@@ -483,9 +482,9 @@ def _memoize_dtype(f):
     >>> def func(dt1):
     ...     return object()
     >>> func = _memoize_dtype(func)
-    >>> func(np.dtype('i8')) is func(np.dtype('int64'))
+    >>> func(np.dtype("i8")) is func(np.dtype("int64"))
     True
-    >>> func(np.dtype('i8')) is func(np.dtype('i4'))
+    >>> func(np.dtype("i8")) is func(np.dtype("i4"))
     False
     """
     cache = {}
@@ -1173,7 +1172,7 @@ def _parse_einsum_input(operands):
     >>> np.random.seed(123)
     >>> a = np.random.rand(4, 4)
     >>> b = np.random.rand(4, 4, 4)
-    >>> _parse_einsum_input(('...a,...a->...', a, b))
+    >>> _parse_einsum_input(("...a,...a->...", a, b))
     ('za,xza', 'xz', [a, b]) # may vary
     >>> _parse_einsum_input((a, [Ellipsis, 0], b, [Ellipsis, 0]))
     ('za,xza', 'xz', [a, b]) # may vary
@@ -1184,7 +1183,7 @@ def _parse_einsum_input(operands):
 
     if isinstance(operands[0], str):
         subscripts = operands[0].replace(" ", "")
-        operands = [v for v in operands[1:]]
+        operands = operands[1:]
 
         # Ensure all characters are valid
         for s in subscripts:
@@ -1202,7 +1201,7 @@ def _parse_einsum_input(operands):
             subscript_list.append(tmp_operands.pop(0))
 
         output_list = tmp_operands[-1] if len(tmp_operands) else None
-        operands = [v for v in operand_list]
+        operands = operand_list
         subscripts = ""
         last = len(subscript_list) - 1
         for num, sub in enumerate(subscript_list):
@@ -1213,7 +1212,7 @@ def _parse_einsum_input(operands):
                     try:
                         s = index(s)
                     except TypeError as e:
-                        raise TypeError("For this input type lists must contain " "either int or Ellipsis") from e
+                        raise TypeError("For this input type lists must contain either int or Ellipsis") from e
                     subscripts += np.core.einsumfunc.einsum_symbols[s]
             if num != last:
                 subscripts += ","
@@ -1227,7 +1226,7 @@ def _parse_einsum_input(operands):
                     try:
                         s = index(s)
                     except TypeError as e:
-                        raise TypeError("For this input type lists must contain " "either int or Ellipsis") from e
+                        raise TypeError("For this input type lists must contain either int or Ellipsis") from e
                     subscripts += np.core.einsumfunc.einsum_symbols[s]
     # Check for proper "->"
     if ("-" in subscripts) or (">" in subscripts):
@@ -1267,17 +1266,14 @@ def _parse_einsum_input(operands):
 
                 if ellipse_count < 0:
                     raise ValueError("Ellipses lengths do not match.")
-                elif ellipse_count == 0:
+                if ellipse_count == 0:
                     split_subscripts[num] = sub.replace("...", "")
                 else:
                     rep_inds = ellipse_inds[-ellipse_count:]
                     split_subscripts[num] = sub.replace("...", rep_inds)
 
         subscripts = ",".join(split_subscripts)
-        if longest == 0:
-            out_ellipse = ""
-        else:
-            out_ellipse = ellipse_inds[-longest:]
+        out_ellipse = "" if longest == 0 else ellipse_inds[-longest:]
 
         if out_sub:
             subscripts += "->" + output_sub.replace("...", out_ellipse)
@@ -1505,10 +1501,10 @@ def stack(arrays, axis=0, compressed_axes=None):
         from ._coo import stack as coo_stack
 
         return coo_stack(arrays, axis)
-    else:
-        from ._compressed import stack as gcxs_stack
 
-        return gcxs_stack(arrays, axis, compressed_axes)
+    from ._compressed import stack as gcxs_stack
+
+    return gcxs_stack(arrays, axis, compressed_axes)
 
 
 def concatenate(arrays, axis=0, compressed_axes=None):
@@ -1544,10 +1540,10 @@ def concatenate(arrays, axis=0, compressed_axes=None):
         from ._coo import concatenate as coo_concat
 
         return coo_concat(arrays, axis)
-    else:
-        from ._compressed import concatenate as gcxs_concat
 
-        return gcxs_concat(arrays, axis, compressed_axes)
+    from ._compressed import concatenate as gcxs_concat
+
+    return gcxs_concat(arrays, axis, compressed_axes)
 
 
 concat = concatenate
@@ -1690,7 +1686,7 @@ def full_like(a, fill_value, dtype=None, shape=None, format=None, **kwargs):
 
     Examples
     --------
-    >>> x = np.ones((2, 3), dtype='i8')
+    >>> x = np.ones((2, 3), dtype="i8")
     >>> full_like(x, 9.0).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[9, 9, 9],
            [9, 9, 9]])
@@ -1765,7 +1761,7 @@ def zeros_like(a, dtype=None, shape=None, format=None, **kwargs):
 
     Examples
     --------
-    >>> x = np.ones((2, 3), dtype='i8')
+    >>> x = np.ones((2, 3), dtype="i8")
     >>> zeros_like(x).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[0, 0, 0],
            [0, 0, 0]])
@@ -1826,7 +1822,7 @@ def ones_like(a, dtype=None, shape=None, format=None, **kwargs):
 
     Examples
     --------
-    >>> x = np.ones((2, 3), dtype='i8')
+    >>> x = np.ones((2, 3), dtype="i8")
     >>> ones_like(x).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[1, 1, 1],
            [1, 1, 1]])
@@ -1940,15 +1936,14 @@ def moveaxis(a, source, destination):
     destination = normalize_axis(destination, a.ndim)
 
     if len(source) != len(destination):
-        raise ValueError("`source` and `destination` arguments must have " "the same number of elements")
+        raise ValueError("`source` and `destination` arguments must have the same number of elements")
 
     order = [n for n in range(a.ndim) if n not in source]
 
     for dest, src in sorted(zip(destination, source)):
         order.insert(dest, src)
 
-    result = a.transpose(order)
-    return result
+    return a.transpose(order)
 
 
 def pad(array, pad_width, mode="constant", **kwargs):
@@ -2048,7 +2043,7 @@ def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, 
         Sparse or 0-D array containing the data from `obj`.
     Examples
     --------
-    >>> x = np.eye(8, dtype='i8')
+    >>> x = np.eye(8, dtype="i8")
     >>> sparse.asarray(x, format="COO")
     <COO: shape=(8, 8), dtype=int64, nnz=8, fill_value=0>
     """
@@ -2070,20 +2065,19 @@ def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, 
     if isinstance(obj, (COO, DOK, GCXS)):
         return obj.asformat(format)
 
-    elif isinstance(obj, spmatrix):
+    if isinstance(obj, spmatrix):
         sparse_obj = format_dict[format].from_scipy_sparse(obj)
         if dtype is None:
             dtype = sparse_obj.dtype
         return sparse_obj.astype(dtype=dtype, copy=copy)
 
-    elif np.isscalar(obj) or isinstance(obj, (np.ndarray, Iterable)):
+    if np.isscalar(obj) or isinstance(obj, (np.ndarray, Iterable)):
         sparse_obj = format_dict[format].from_numpy(np.asarray(obj))
         if dtype is None:
             dtype = sparse_obj.dtype
         return sparse_obj.astype(dtype=dtype, copy=copy)
 
-    else:
-        raise ValueError(f"{type(obj)} not supported.")
+    raise ValueError(f"{type(obj)} not supported.")
 
 
 def _support_numpy(func):
@@ -2102,8 +2096,8 @@ def _support_numpy(func):
                 stacklevel=2,
             )
             return getattr(np, func.__name__)(*args, **kwargs)
-        else:
-            return func(*args, **kwargs)
+
+        return func(*args, **kwargs)
 
     return wrapper_func
 
