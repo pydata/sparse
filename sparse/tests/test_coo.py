@@ -1745,3 +1745,35 @@ class TestSqueeze:
 
         with pytest.raises(ValueError, match="Specified axis `0` has a size greater than one: 3"):
             s_arr.squeeze(0)
+
+
+class TestUnique:
+    arr = np.array([[0, 0, 1, 5, 3, 0], [1, 0, 4, 0, 3, 0], [0, 1, 0, 1, 1, 0]], dtype=np.int64)
+    arr_empty = np.zeros((5, 5))
+    arr_full = np.arange(1, 10)
+
+    @pytest.mark.parametrize("arr", [arr, arr_empty, arr_full])
+    @pytest.mark.parametrize("fill_value", [-1, 0, 1])
+    def test_unique_counts(self, arr, fill_value):
+        s_arr = sparse.COO.from_numpy(arr, fill_value)
+
+        result_values, result_counts = sparse.unique_counts(s_arr)
+        expected_values, expected_counts = np.unique(arr, return_counts=True)
+
+        np.testing.assert_equal(result_values, expected_values)
+        np.testing.assert_equal(result_counts, expected_counts)
+
+    @pytest.mark.parametrize("arr", [arr, arr_empty, arr_full])
+    @pytest.mark.parametrize("fill_value", [-1, 0, 1])
+    def test_unique_values(self, arr, fill_value):
+        s_arr = sparse.COO.from_numpy(arr, fill_value)
+
+        result = sparse.unique_values(s_arr)
+        expected = np.unique(arr)
+
+        np.testing.assert_equal(result, expected)
+
+    @pytest.mark.parametrize("func", [sparse.unique_counts, sparse.unique_values])
+    def test_input_validation(self, func):
+        with pytest.raises(ValueError, match=r"Input must be an instance of SparseArray"):
+            func(self.arr)

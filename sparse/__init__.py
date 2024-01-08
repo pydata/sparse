@@ -49,6 +49,8 @@ from ._coo.common import (
     roll,
     tril,
     triu,
+    unique_counts,
+    unique_values,
     where,
 )
 from ._dok import DOK
@@ -114,6 +116,8 @@ __all__ = [
     "min",
     "max",
     "nanreduce",
+    "unique_counts",
+    "unique_values",
 ]
 
 __array_api_version__ = "2022.12"
