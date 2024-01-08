@@ -550,7 +550,7 @@ def test_advanced_indexing(index):
 
 
 def test_custom_dtype_slicing():
-    dt = np.dtype([("part1", np.float_), ("part2", np.int_, (2,)), ("part3", np.int_, (2, 2))])
+    dt = np.dtype([("part1", np.float_), ("part2", np.int64, (2,)), ("part3", np.int64, (2, 2))])
 
     x = np.zeros((2, 3, 4), dtype=dt)
     x[1, 1, 1] = (0.64, [4, 2], [[1, 2], [3, 0]])

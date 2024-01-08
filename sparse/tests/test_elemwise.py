@@ -517,8 +517,8 @@ def test_scalar_output_nonzero_fv(func, scalar):
 def test_bitwise_binary(func, shape, format):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
-    xs = (sparse.random(shape, density=0.5, format=format) * 100).astype(np.int_)
-    ys = (sparse.random(shape, density=0.5, format=format) * 100).astype(np.int_)
+    xs = (sparse.random(shape, density=0.5, format=format) * 100).astype(np.int64)
+    ys = (sparse.random(shape, density=0.5, format=format) * 100).astype(np.int64)
 
     x = xs.todense()
     y = ys.todense()
@@ -532,8 +532,8 @@ def test_bitwise_binary(func, shape, format):
 def test_bitwise_binary_inplace(func, shape, format):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
-    xs = (sparse.random(shape, density=0.5, format=format) * 100).astype(np.int_)
-    ys = (sparse.random(shape, density=0.5, format=format) * 100).astype(np.int_)
+    xs = (sparse.random(shape, density=0.5, format=format) * 100).astype(np.int64)
+    ys = (sparse.random(shape, density=0.5, format=format) * 100).astype(np.int64)
 
     x = xs.todense()
     y = ys.todense()
@@ -549,11 +549,11 @@ def test_bitwise_binary_inplace(func, shape, format):
 def test_bitshift_binary(func, shape):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
-    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int64)
 
     # Can't merge into test_bitwise_binary because left/right shifting
     # with something >= 64 isn't defined.
-    ys = (sparse.random(shape, density=0.5) * 64).astype(np.int_)
+    ys = (sparse.random(shape, density=0.5) * 64).astype(np.int64)
 
     x = xs.todense()
     y = ys.todense()
@@ -566,11 +566,11 @@ def test_bitshift_binary(func, shape):
 def test_bitshift_binary_inplace(func, shape):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
-    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int64)
 
     # Can't merge into test_bitwise_binary because left/right shifting
     # with something >= 64 isn't defined.
-    ys = (sparse.random(shape, density=0.5) * 64).astype(np.int_)
+    ys = (sparse.random(shape, density=0.5) * 64).astype(np.int64)
 
     x = xs.todense()
     y = ys.todense()
@@ -586,7 +586,7 @@ def test_bitshift_binary_inplace(func, shape):
 def test_bitwise_scalar(func, shape, rng):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
-    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int64)
     y = rng.integers(100)
 
     x = xs.todense()
@@ -600,7 +600,7 @@ def test_bitwise_scalar(func, shape, rng):
 def test_bitshift_scalar(func, shape, rng):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
-    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int64)
 
     # Can't merge into test_bitwise_binary because left/right shifting
     # with something >= 64 isn't defined.
@@ -616,7 +616,7 @@ def test_bitshift_scalar(func, shape, rng):
 def test_unary_bitwise_nonzero_output_fv(func, shape):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
-    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int64)
     x = xs.todense()
 
     f = func(x)
@@ -633,7 +633,7 @@ def test_unary_bitwise_nonzero_output_fv(func, shape):
 def test_binary_bitwise_nonzero_output_fv(func, shape, rng):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
-    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
+    xs = (sparse.random(shape, density=0.5) * 100).astype(np.int64)
     y = rng.integers(1, 100)
 
     x = xs.todense()
@@ -668,7 +668,7 @@ def test_binary_bitshift_densification_fails(func, shape, rng):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
     x = rng.integers(1, 100)
-    ys = (sparse.random(shape, density=0.5) * 64).astype(np.int_)
+    ys = (sparse.random(shape, density=0.5) * 64).astype(np.int64)
 
     y = ys.todense()
 
