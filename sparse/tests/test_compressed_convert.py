@@ -1,4 +1,4 @@
-import sparse._compressed.convert as convert
+from sparse._compressed import convert
 from sparse._utils import assert_eq
 
 import pytest

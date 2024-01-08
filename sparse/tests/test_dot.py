@@ -3,7 +3,7 @@ import operator
 import sparse
 from sparse import COO
 from sparse._compressed import GCXS
-from sparse._utils import assert_eq, assert_gcxs_slicing
+from sparse._utils import assert_eq, assert_gcxs_slicing, default_rng
 
 import pytest
 
@@ -174,19 +174,19 @@ def test_matmul_errors():
     "a, b",
     [
         (
-            sparse.GCXS.from_numpy(np.random.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009])),
+            sparse.GCXS.from_numpy(default_rng.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009])),
             sparse.random((100, 100), density=0.01),
         ),
         (
-            sparse.COO.from_numpy(np.random.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009])),
+            sparse.COO.from_numpy(default_rng.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009])),
             sparse.random((100, 100), density=0.01),
         ),
         (
-            sparse.GCXS.from_numpy(np.random.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009])),
+            sparse.GCXS.from_numpy(default_rng.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009])),
             scipy.sparse.random(100, 100),
         ),
         (
-            np.random.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]),
+            default_rng.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]),
             sparse.random((100, 100), density=0.01),
         ),
     ],

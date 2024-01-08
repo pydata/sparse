@@ -55,7 +55,7 @@ include = ["sparse", "sparse.*"]
 version_file = "sparse/_version.py"
 
 [tool.ruff]
-select = ["F", "E", "W", "I", "B", "UP", "YTT", "BLE", "C4", "T10", "ISC", "ICN", "PIE", "PYI", "RSE", "RET", "SIM"]
+select = ["F", "E", "W", "I", "B", "UP", "YTT", "BLE", "C4", "T10", "ISC", "ICN", "PIE", "PYI", "RSE", "RET", "SIM", "PGH", "FLY", "NPY", "PERF"]
 exclude = ["sparse/_version.py"]
 line-length = 120
 

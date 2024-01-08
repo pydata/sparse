@@ -9,29 +9,29 @@ import scipy
 
 
 @pytest.fixture(scope="module", params=["f8", "f4", "i8", "i4"])
-def random_sparse(request):
+def random_sparse(request, rng):
     dtype = request.param
     if np.issubdtype(dtype, np.integer):
 
         def data_rvs(n):
-            return np.random.randint(-1000, 1000, n)
+            return rng.integers(-1000, 1000, n)
 
     else:
         data_rvs = None
-    return sparse.random((20, 30, 40), density=0.25, format="gcxs", data_rvs=data_rvs).astype(dtype)
+    return sparse.random((20, 30, 40), density=0.25, format="gcxs", data_rvs=data_rvs, random_state=rng).astype(dtype)
 
 
 @pytest.fixture(scope="module", params=["f8", "f4", "i8", "i4"])
-def random_sparse_small(request):
+def random_sparse_small(request, rng):
     dtype = request.param
     if np.issubdtype(dtype, np.integer):
 
         def data_rvs(n):
-            return np.random.randint(-10, 10, n)
+            return rng.integers(-10, 10, n)
 
     else:
         data_rvs = None
-    return sparse.random((20, 30, 40), density=0.25, format="gcxs", data_rvs=data_rvs).astype(dtype)
+    return sparse.random((20, 30, 40), density=0.25, format="gcxs", data_rvs=data_rvs, random_state=rng).astype(dtype)
 
 
 @pytest.mark.parametrize(

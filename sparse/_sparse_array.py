@@ -203,7 +203,7 @@ class SparseArray:
                 width_str=0,  # autodetect terminal width
                 max_cols=9999,
             )
-            return "\n".join([summary, values])
+            return f"{summary}\n{values}"
         except ImportError:
             return summary
 

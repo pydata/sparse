@@ -21,11 +21,11 @@ def dtype(request):
 
 
 @pytest.fixture(scope="module")
-def random_sparse(cls, dtype):
+def random_sparse(cls, dtype, rng):
     if np.issubdtype(dtype, np.integer):
 
         def data_rvs(n):
-            return np.random.randint(-1000, 1000, n)
+            return rng.integers(-1000, 1000, n)
 
     else:
         data_rvs = None
@@ -33,11 +33,11 @@ def random_sparse(cls, dtype):
 
 
 @pytest.fixture(scope="module")
-def random_sparse_small(cls, dtype):
+def random_sparse_small(cls, dtype, rng):
     if np.issubdtype(dtype, np.integer):
 
         def data_rvs(n):
-            return np.random.randint(-10, 10, n)
+            return rng.integers(-10, 10, n)
 
     else:
         data_rvs = None

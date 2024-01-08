@@ -16,12 +16,12 @@ import scipy.stats
 
 
 @pytest.fixture(scope="module", params=["f8", "f4", "i8", "i4"])
-def random_sparse(request):
+def random_sparse(request, rng):
     dtype = request.param
     if np.issubdtype(dtype, np.integer):
 
         def data_rvs(n):
-            return np.random.randint(-1000, 1000, n)
+            return rng.integers(-1000, 1000, n)
 
     else:
         data_rvs = None
@@ -29,12 +29,12 @@ def random_sparse(request):
 
 
 @pytest.fixture(scope="module", params=["f8", "f4", "i8", "i4"])
-def random_sparse_small(request):
+def random_sparse_small(request, rng):
     dtype = request.param
     if np.issubdtype(dtype, np.integer):
 
         def data_rvs(n):
-            return np.random.randint(-10, 10, n)
+            return rng.integers(-10, 10, n)
 
     else:
         data_rvs = None
@@ -44,8 +44,8 @@ def random_sparse_small(request):
 @pytest.mark.parametrize("reduction, kwargs", [("sum", {}), ("sum", {"dtype": np.float32}), ("prod", {})])
 @pytest.mark.parametrize("axis", [None, 0, 1, 2, (0, 2), -3, (1, -1)])
 @pytest.mark.parametrize("keepdims", [True, False])
-def test_reductions_fv(reduction, random_sparse_small, axis, keepdims, kwargs):
-    x = random_sparse_small + np.random.randint(-1, 1, dtype="i4")
+def test_reductions_fv(reduction, random_sparse_small, axis, keepdims, kwargs, rng):
+    x = random_sparse_small + rng.integers(-1, 1, dtype="i4")
     y = x.todense()
     xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
@@ -707,11 +707,11 @@ def test_sizeof():
     assert 400 < nb < x.nbytes / 10
 
 
-def test_scipy_sparse_interface():
+def test_scipy_sparse_interface(rng):
     n = 100
     m = 10
-    row = np.random.randint(0, n, size=n, dtype=np.uint16)
-    col = np.random.randint(0, m, size=n, dtype=np.uint16)
+    row = rng.integers(0, n, size=n, dtype=np.uint16)
+    col = rng.integers(0, m, size=n, dtype=np.uint16)
     data = np.ones(n, dtype=np.uint8)
 
     inp = (data, (row, col))
@@ -809,13 +809,13 @@ def test_single_dimension():
     assert_eq(x, np.array([0, 1.0, 0, 3.0]))
 
 
-def test_large_sum():
+def test_large_sum(rng):
     n = 500000
-    x = np.random.randint(0, 10000, size=(n,))
-    y = np.random.randint(0, 1000, size=(n,))
-    z = np.random.randint(0, 3, size=(n,))
+    x = rng.integers(0, 10000, size=(n,))
+    y = rng.integers(0, 1000, size=(n,))
+    z = rng.integers(0, 3, size=(n,))
 
-    data = np.random.random(n)
+    data = rng.random(n)
 
     a = COO((x, y, z), data)
     assert a.shape == (10000, 1000, 3)
@@ -916,8 +916,8 @@ def test_two_random_unequal():
     assert not np.allclose(s1.todense(), s2.todense())
 
 
-def test_two_random_same_seed():
-    state = np.random.randint(100)
+def test_two_random_same_seed(rng):
+    state = rng.integers(100)
     s1 = sparse.random((2, 3, 4), 0.3, random_state=state)
     s2 = sparse.random((2, 3, 4), 0.3, random_state=state)
 
@@ -929,7 +929,7 @@ def test_two_random_same_seed():
     [
         (None, np.float64),
         (scipy.stats.poisson(25, loc=10).rvs, np.int64),
-        (lambda x: np.random.choice([True, False], size=x), np.bool_),
+        (lambda x: np.random.default_rng().choice([True, False], size=x), np.bool_),
     ],
 )
 @pytest.mark.parametrize("shape", [(2, 4, 5), (20, 40, 50)])
@@ -941,15 +941,15 @@ def test_random_rvs(rvs, dtype, shape, density):
 
 
 @pytest.mark.parametrize("format", ["coo", "dok"])
-def test_random_fv(format):
-    fv = np.random.rand()
+def test_random_fv(format, rng):
+    fv = rng.random()
     s = sparse.random((2, 3, 4), density=0.5, format=format, fill_value=fv)
 
     assert s.fill_value == fv
 
 
-def test_scalar_shape_construction():
-    x = np.random.rand(5)
+def test_scalar_shape_construction(rng):
+    x = rng.random(5)
     coords = np.arange(5)[None]
 
     s = COO(coords, x, shape=5)
@@ -1023,8 +1023,8 @@ def test_one_arg_where():
         assert_eq(e, a, compare_dtype=False)
 
 
-def test_one_arg_where_dense():
-    x = np.random.rand(2, 3, 4)
+def test_one_arg_where_dense(rng):
+    x = rng.random((2, 3, 4))
 
     with pytest.raises(ValueError):
         sparse.where(x)
@@ -1262,19 +1262,19 @@ def test_copy(deep):
 
 
 @pytest.mark.parametrize("ndim", [2, 3, 4, 5])
-def test_initialization(ndim):
+def test_initialization(ndim, rng):
     shape = [10] * ndim
     shape[1] *= 2
     shape = tuple(shape)
 
-    coords = np.random.randint(10, size=ndim * 20).reshape(ndim, 20)
-    data = np.random.rand(20)
+    coords = rng.integers(10, size=(ndim, 20))
+    data = rng.random(20)
     COO(coords, data=data, shape=shape)
 
     with pytest.raises(ValueError, match="data length"):
         COO(coords, data=data[:5], shape=shape)
     with pytest.raises(ValueError, match="shape of `coords`"):
-        coords = np.random.randint(10, size=20).reshape(1, 20)
+        coords = rng.integers(10, size=(1, 20))
         COO(coords, data=data, shape=shape)
 
 
@@ -1341,8 +1341,8 @@ def test_complex_methods(x):
         assert_eq(s.conj(), x.conj())
 
 
-def test_np_matrix():
-    x = np.random.rand(10, 1).view(type=np.matrix)
+def test_np_matrix(rng):
+    x = rng.random((10, 1)).view(type=np.matrix)
     s = sparse.COO.from_numpy(x)
 
     assert_eq(x, s)
@@ -1637,9 +1637,9 @@ def test_scalar_from_numpy(val):
     assert_eq(x, s)
 
 
-def test_scalar_elemwise():
+def test_scalar_elemwise(rng):
     s1 = sparse.random((), density=0.5)
-    x2 = np.random.rand(2)
+    x2 = rng.random(2)
 
     x1 = s1.todense()
 

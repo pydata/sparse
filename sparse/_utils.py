@@ -59,7 +59,8 @@ def assert_gcxs_slicing(s, x):
     s: sparse product matrix
     x: dense product matrix
     """
-    row = np.random.randint(s.shape[s.ndim - 2])
+    rng = np.random.default_rng()
+    row = rng.integers(s.shape[s.ndim - 2])
     assert np.allclose(s[0][row].data, [num for num in x[0][row] if num != 0])
 
     # regression test
@@ -100,7 +101,7 @@ def _zero_of_dtype(dtype):
 
 
 @numba.jit(nopython=True, nogil=True)
-def algD(n, N, random_state=None):
+def algD(n, N, random_state):
     """
     Random Sampling without Replacement
     Alg D proposed by J.S. Vitter in Faster Methods for Random Sampling
@@ -109,13 +110,10 @@ def algD(n, N, random_state=None):
         N = size of system (elements)
         random_state = seed for random number generation
     """
-
-    if random_state is not None:
-        np.random.seed(random_state)
     n = np.int64(n + 1)
     N = np.int64(N)
     qu1 = N - n + 1
-    Vprime = np.exp(np.log(np.random.rand()) / n)
+    Vprime = np.exp(np.log(random_state.random()) / n)
     i = 0
     arr = np.zeros(n - 1, dtype=np.int64)
     arr[-1] = -1
@@ -127,8 +125,8 @@ def algD(n, N, random_state=None):
                 S = np.int64(X)
                 if qu1 > S:
                     break
-                Vprime = np.exp(np.log(np.random.rand()) / n)
-            y1 = np.exp(np.log(np.random.rand() * N / qu1) * nmin1inv)
+                Vprime = np.exp(np.log(random_state.random()) / n)
+            y1 = np.exp(np.log(random_state.random() * N / qu1) * nmin1inv)
             Vprime = y1 * (1 - X / N) * (qu1 / (qu1 - S))
             if Vprime <= 1:
                 break
@@ -148,9 +146,9 @@ def algD(n, N, random_state=None):
                 bottom -= 1
                 t -= 1
             if y1 * np.exp(np.log(y2) / nmin1inv) <= N / (N - X):
-                Vprime = np.exp(np.log(np.random.rand()) * nmin1inv)
+                Vprime = np.exp(np.log(random_state.random()) * nmin1inv)
                 break
-            Vprime = np.exp(np.log(np.random.rand()) / n)
+            Vprime = np.exp(np.log(random_state.random()) / n)
         arr[i] = arr[i - 1] + S + 1
         i += 1
         N = N - S - 1
@@ -160,7 +158,7 @@ def algD(n, N, random_state=None):
 
 
 @numba.jit(nopython=True, nogil=True)
-def algA(n, N, random_state=None):
+def algA(n, N, random_state):
     """
     Random Sampling without Replacement
     Alg A proposed by J.S. Vitter in Faster Methods for Random Sampling
@@ -169,8 +167,6 @@ def algA(n, N, random_state=None):
         N = size of system (elements)
         random_state = seed for random number generation
     """
-    if random_state is not None:
-        np.random.seed(random_state)
     n = np.int64(n)
     N = np.int64(N)
     arr = np.zeros(n, dtype=np.int64)
@@ -178,7 +174,7 @@ def algA(n, N, random_state=None):
     i = 0
     top = N - n
     while n >= 2:
-        V = np.random.rand()
+        V = random_state.random()
         S = 0
         quot = top / N
         while quot > V:
@@ -190,7 +186,7 @@ def algA(n, N, random_state=None):
         i += 1
         N -= 1
         n -= 1
-    S = np.int64(N * np.random.rand())
+    S = np.int64(N * random_state.random())
     arr[i] = arr[i - 1] + S + 1
     i += 1
     return arr
@@ -220,6 +216,9 @@ def reverse(inv, N):
     return a
 
 
+default_rng = np.random.default_rng()
+
+
 def random(
     shape,
     density=None,
@@ -243,7 +242,7 @@ def random(
     nnz : int, optional
         Number of nonzero elements in the generated array.
         Mutually exclusive with `density`.
-    random_state : Union[numpy.random.RandomState, int], optional
+    random_state : Union[numpy.random.Generator, int], optional
         Random number generator or random seed. If not given, the
         singleton numpy.random will be used. This random state will be used
         for sampling the sparsity structure, but not necessarily for sampling
@@ -303,11 +302,11 @@ def random(
         raise ValueError(f"cannot generate {nnz} nonzero elements for an array with {elements} total elements")
 
     if random_state is None:
-        random_state = np.random
+        random_state = default_rng
     elif isinstance(random_state, Integral):
-        random_state = np.random.RandomState(random_state)
+        random_state = np.random.default_rng(random_state)
     if data_rvs is None:
-        data_rvs = random_state.rand
+        data_rvs = random_state.random
 
     if nnz == elements or density >= 1:
         ind = np.arange(elements)
@@ -321,19 +320,16 @@ def random(
         # Using algorithm A for dens > .1
         if elements > 10 * nnztemp:
             ind = reverse(
-                algD(nnztemp, elements, random_state.choice(np.iinfo(np.int32).max)),
+                algD(nnztemp, elements, random_state),
                 elements,
             )
         else:
             ind = reverse(
-                algA(nnztemp, elements, random_state.choice(np.iinfo(np.int32).max)),
+                algA(nnztemp, elements, random_state),
                 elements,
             )
     else:
-        if elements > 10 * nnz:
-            ind = algD(nnz, elements, random_state.choice(np.iinfo(np.int32).max))
-        else:
-            ind = algA(nnz, elements, random_state.choice(np.iinfo(np.int32).max))
+        ind = algD(nnz, elements, random_state) if elements > 10 * nnz else algA(nnz, elements, random_state)
     data = data_rvs(nnz)
 
     ar = COO(
@@ -359,12 +355,14 @@ def isscalar(x):
 
 
 def random_value_array(value, fraction):
+    rng = np.random.default_rng()
+
     def replace_values(n):
         i = int(n * fraction)
 
         ar = np.empty((n,), dtype=np.float_)
         ar[:i] = value
-        ar[i:] = np.random.rand(n - i)
+        ar[i:] = rng.random(n - i)
         return ar
 
     return replace_values
@@ -445,8 +443,7 @@ def equivalent(x, y):
 
     # Can contain NaNs
     # FIXME: Complex floats and np.void with multiple values can't be compared properly.
-    # lgtm [py/comparison-of-identical-expressions]
-    return (x == y) | ((x != x) & (y != y))
+    return (x == y) | ((x != x) & (y != y))  # noqa: PLR0124
 
 
 # copied from zarr

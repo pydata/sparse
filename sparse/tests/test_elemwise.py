@@ -92,9 +92,9 @@ def test_elemwise_inplace(func, format):
     ],
 )
 @pytest.mark.parametrize("format", [COO, GCXS, DOK])
-def test_elemwise_mixed(shape1, shape2, format):
+def test_elemwise_mixed(shape1, shape2, format, rng):
     s1 = sparse.random(shape1, density=0.5, format=format)
-    x2 = np.random.rand(*shape2)
+    x2 = rng.random(shape2)
 
     x1 = s1.todense()
 
@@ -102,9 +102,9 @@ def test_elemwise_mixed(shape1, shape2, format):
 
 
 @pytest.mark.parametrize("format", [COO, GCXS, DOK])
-def test_elemwise_mixed_empty(format):
+def test_elemwise_mixed_empty(format, rng):
     s1 = sparse.random((2, 0, 4), density=0.5, format=format)
-    x2 = np.random.rand(2, 0, 4)
+    x2 = rng.random((2, 0, 4))
 
     x1 = s1.todense()
 
@@ -126,10 +126,10 @@ def test_elemwise_unsupported(format):
 
 
 @pytest.mark.parametrize("format", [COO, GCXS, DOK])
-def test_elemwise_mixed_broadcast(format):
+def test_elemwise_mixed_broadcast(format, rng):
     s1 = sparse.random((2, 3, 4), density=0.5, format=format)
     s2 = sparse.random(4, density=0.5)
-    x3 = np.random.rand(3, 4)
+    x3 = rng.random((3, 4))
 
     x1 = s1.todense()
     x2 = s2.todense()
@@ -368,9 +368,9 @@ def test_sparsearray_elemwise(format):
     assert_eq(fs, x + y)
 
 
-def test_ndarray_densification_fails():
+def test_ndarray_densification_fails(rng):
     xs = sparse.random((2, 3, 4), density=0.5)
-    y = np.random.rand(3, 4)
+    y = rng.random((3, 4))
 
     with pytest.raises(ValueError):
         xs + y
@@ -583,11 +583,11 @@ def test_bitshift_binary_inplace(func, shape):
 
 @pytest.mark.parametrize("func", [operator.and_])
 @pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-def test_bitwise_scalar(func, shape):
+def test_bitwise_scalar(func, shape, rng):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
     xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
-    y = np.random.randint(100)
+    y = rng.integers(100)
 
     x = xs.todense()
 
@@ -597,14 +597,14 @@ def test_bitwise_scalar(func, shape):
 
 @pytest.mark.parametrize("func", [operator.lshift, operator.rshift])
 @pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-def test_bitshift_scalar(func, shape):
+def test_bitshift_scalar(func, shape, rng):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
     xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
 
     # Can't merge into test_bitwise_binary because left/right shifting
     # with something >= 64 isn't defined.
-    y = np.random.randint(64)
+    y = rng.integers(64)
 
     x = xs.todense()
 
@@ -630,11 +630,11 @@ def test_unary_bitwise_nonzero_output_fv(func, shape):
 
 @pytest.mark.parametrize("func", [operator.or_, operator.xor])
 @pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-def test_binary_bitwise_nonzero_output_fv(func, shape):
+def test_binary_bitwise_nonzero_output_fv(func, shape, rng):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
     xs = (sparse.random(shape, density=0.5) * 100).astype(np.int_)
-    y = np.random.randint(1, 100)
+    y = rng.integers(1, 100)
 
     x = xs.todense()
 
@@ -652,9 +652,9 @@ def test_binary_bitwise_nonzero_output_fv(func, shape):
     [operator.mul, operator.add, operator.sub, operator.gt, operator.lt, operator.ne],
 )
 @pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-def test_elemwise_nonzero_input_fv(func, shape):
-    xs = sparse.random(shape, density=0.5, fill_value=np.random.rand())
-    ys = sparse.random(shape, density=0.5, fill_value=np.random.rand())
+def test_elemwise_nonzero_input_fv(func, shape, rng):
+    xs = sparse.random(shape, density=0.5, fill_value=rng.random())
+    ys = sparse.random(shape, density=0.5, fill_value=rng.random())
 
     x = xs.todense()
     y = ys.todense()
@@ -664,10 +664,10 @@ def test_elemwise_nonzero_input_fv(func, shape):
 
 @pytest.mark.parametrize("func", [operator.lshift, operator.rshift])
 @pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4), (2, 3, 4, 5)])
-def test_binary_bitshift_densification_fails(func, shape):
+def test_binary_bitshift_densification_fails(func, shape, rng):
     # Small arrays need high density to have nnz entries
     # Casting floats to int will result in all zeros, hence the * 100
-    x = np.random.randint(1, 100)
+    x = rng.integers(1, 100)
     ys = (sparse.random(shape, density=0.5) * 64).astype(np.int_)
 
     y = ys.todense()

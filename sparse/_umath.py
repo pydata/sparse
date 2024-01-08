@@ -115,7 +115,7 @@ def _get_nary_broadcast_shape(*shapes):
     for shape in shapes:
         try:
             result_shape = _get_broadcast_shape(shape, result_shape)
-        except ValueError as e:
+        except ValueError as e:  # noqa: PERF203
             shapes_str = ", ".join(str(shape) for shape in shapes)
             raise ValueError(f"operands could not be broadcast together with shapes {shapes_str}") from e
 

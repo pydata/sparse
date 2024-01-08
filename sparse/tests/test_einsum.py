@@ -162,9 +162,9 @@ format_test_cases = [
 
 
 @pytest.mark.parametrize("formats,expected", format_test_cases)
-def test_einsum_format(formats, expected):
+def test_einsum_format(formats, expected, rng):
     inputs = [
-        np.random.randn(2, 2, 2) if format == "dense" else sparse.random((2, 2, 2), density=0.5, format=format)
+        rng.standard_normal((2, 2, 2)) if format == "dense" else sparse.random((2, 2, 2), density=0.5, format=format)
         for format in formats
     ]
     if len(inputs) == 1:
