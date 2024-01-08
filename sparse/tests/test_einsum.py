@@ -190,3 +190,15 @@ def test_einsum_shape_check():
     y = sparse.random((2, 3, 4), density=0.5)
     with pytest.raises(ValueError):
         sparse.einsum("abc,acb", x, y)
+
+
+@pytest.mark.parametrize("dtype", [np.int64, np.complex128])
+def test_einsum_dtype(dtype):
+    x = sparse.random((3, 3), density=0.5) * 10.0
+    x = x.astype(np.float64)
+
+    y = sparse.COO.from_numpy(np.ones((3, 1), dtype=np.float64))
+
+    result = sparse.einsum("ij,i->j", x, y, dtype=dtype)
+
+    assert result.dtype == dtype

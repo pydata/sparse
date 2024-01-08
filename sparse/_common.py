@@ -1393,7 +1393,7 @@ def _einsum_single(lhs, rhs, operand):
     return to_output_format(COO(new_coords, new_data, shape=new_shape, has_duplicates=True))
 
 
-def einsum(*operands):
+def einsum(*operands, **kwargs):
     """
     Perform the equivalent of :obj:`numpy.einsum`.
 
@@ -1406,6 +1406,11 @@ def einsum(*operands):
         included as well as subscript labels of the precise output form.
     operands : sequence of SparseArray
         These are the arrays for the operation.
+    dtype : data-type, optional
+        If provided, forces the calculation to use the data type specified.
+        Default is ``None``.
+    **kwargs : dict, optional
+        Any additional arguments to pass to the function.
 
     Returns
     -------
@@ -1416,6 +1421,9 @@ def einsum(*operands):
     lhs, rhs, operands = _parse_einsum_input(operands)  # Parse input
 
     check_zero_fill_value(*operands)
+
+    if "dtype" in kwargs and kwargs["dtype"] is not None:
+        operands = [o.astype(kwargs["dtype"]) for o in operands]
 
     if len(operands) == 1:
         return _einsum_single(lhs, rhs, operands[0])
