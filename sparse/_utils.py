@@ -283,7 +283,7 @@ def random(
 
     """
     # Copied, in large part, from scipy.sparse.random
-    # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
+    # See https://github.com/scipy/scipy/blob/main/LICENSE.txt
     from ._coo import COO
 
     if density is not None and nnz is not None:
@@ -445,7 +445,7 @@ def equivalent(x, y):
 
 
 # copied from zarr
-# See https://github.com/zarr-developers/zarr-python/blob/master/zarr/util.py
+# See https://github.com/zarr-developers/zarr-python/blob/main/zarr/util.py
 def human_readable_size(size):
     if size < 2**10:
         return str(size)

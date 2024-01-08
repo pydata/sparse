@@ -56,8 +56,8 @@ mathjax_path = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS
 # source_suffix = ['.rst', '.md']
 source_suffix = ".rst"
 
-# The master toctree document.
-master_doc = "index"
+# The main toctree document.
+main_doc = "index"
 
 # General information about the project.
 project = "sparse"
@@ -151,13 +151,13 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [(master_doc, "sparse.tex", "sparse Documentation", "Sparse Developers", "manual")]
+latex_documents = [(main_doc, "sparse.tex", "sparse Documentation", "Sparse Developers", "manual")]
 
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "sparse", "sparse Documentation", [author], 1)]
+man_pages = [(main_doc, "sparse", "sparse Documentation", [author], 1)]
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -166,7 +166,7 @@ man_pages = [(master_doc, "sparse", "sparse Documentation", [author], 1)]
 #  dir menu entry, description, category)
 texinfo_documents = [
     (
-        master_doc,
+        main_doc,
         "sparse",
         "sparse Documentation",
         author,

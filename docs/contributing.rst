@@ -27,7 +27,7 @@ you open a new issue, please make sure of the following:
 
 * This should go without saying, but make sure what you are requesting is within
   the scope of this project.
-* The bug/feature is still present/missing on the ``master`` branch on GitHub.
+* The bug/feature is still present/missing on the ``main`` branch on GitHub.
 * A similar issue or pull request isn't already open. If one already is, it's better
   to contribute to the discussion there.
 

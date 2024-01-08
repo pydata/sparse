@@ -96,7 +96,7 @@ def tensordot(a, b, axes=2, *, return_type=None):
     from ._compressed import GCXS
 
     # Much of this is stolen from numpy/core/numeric.py::tensordot
-    # Please see license at https://github.com/numpy/numpy/blob/master/LICENSE.txt
+    # Please see license at https://github.com/numpy/numpy/blob/main/LICENSE.txt
     check_zero_fill_value(a, b)
 
     if scipy.sparse.issparse(a):
@@ -623,7 +623,7 @@ def _dot_csr_csr_type(dt1, dt2):
         """
 
         # much of this is borrowed from:
-        # https://github.com/scipy/scipy/blob/master/scipy/sparse/sparsetools/csr.h
+        # https://github.com/scipy/scipy/blob/main/scipy/sparse/sparsetools/csr.h
 
         # calculate nnz before multiplying so we can use static arrays
         nnz = _csr_csr_count_nnz(out_shape, a_indices, b_indices, a_indptr, b_indptr)
@@ -922,7 +922,7 @@ def _dot_coo_coo_type(dt1, dt2):
         """
 
         # much of this is borrowed from:
-        # https://github.com/scipy/scipy/blob/master/scipy/sparse/sparsetools/csr.h
+        # https://github.com/scipy/scipy/blob/main/scipy/sparse/sparsetools/csr.h
 
         n_row, n_col = out_shape
         # calculate nnz before multiplying so we can use static arrays

@@ -97,11 +97,11 @@ on:
   # but only for the main branch
   push:
     branches:
-      - master
+      - main
       - vnext
   pull_request:
     branches:
-      - master
+      - main
       - vnext
   # Also trigger on page_build, as well as release created events
   page_build:

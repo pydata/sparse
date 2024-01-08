@@ -6,7 +6,7 @@ Sparse Multidimensional Arrays
 This library provides multi-dimensional sparse arrays.
 
 * `Documentation <http://sparse.pydata.org/>`_
-* `Contributing <https://github.com/pydata/sparse/blob/master/docs/contributing.rst>`_
+* `Contributing <https://github.com/pydata/sparse/blob/main/docs/contributing.rst>`_
 * `Bug Reports/Feature Requests <https://github.com/pydata/sparse/issues>`_
 
 .. |Build Status| image:: https://github.com/pydata/sparse/actions/workflows/ci.yml/badge.svg
@@ -17,6 +17,6 @@ This library provides multi-dimensional sparse arrays.
    :target: http://sparse.pydata.org/en/latest/?badge=latest
    :alt: Documentation Status
 
-.. |Coverage| image:: https://codecov.io/gh/pydata/sparse/branch/master/graph/badge.svg
+.. |Coverage| image:: https://codecov.io/gh/pydata/sparse/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/pydata/sparse
    :alt: Coverage Report

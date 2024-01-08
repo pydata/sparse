@@ -1323,7 +1323,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         array([6, 7, 2], dtype=uint8)
         """
         # Inspired by scipy/sparse/coo.py::sum_duplicates
-        # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
+        # See https://github.com/scipy/scipy/blob/main/LICENSE.txt
         linear = self.linear_loc()
         unique_mask = np.diff(linear) != 0
 
