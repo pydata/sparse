@@ -35,7 +35,7 @@ tests = [
     "pre-commit",
 ]
 tox = ["sparse[tests]", "tox"]
-all = ["sparse[docs,tox]"]
+all = ["sparse[docs,tox]", "matrepr"]
 
 [project.urls]
 Documentation = "https://sparse.pydata.org/"
