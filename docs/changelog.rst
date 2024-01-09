@@ -3,6 +3,19 @@ Changelog
 
 .. currentmodule:: sparse
 
+0.15.0 / 2024-01-09
+-------------------
+* Fix regression where :obj:`DeprecationWarning`s were being fired unexpectedly. (:pr:`581` thanks :ghuser:`hameerabbasi`)
+* Extended :obj:`sparse.einsum` support (:pr:`579` thanks :ghuser:`HadrienNU`)
+* General code clean-up (:pr:`586` thanks :ghuser:`MHRasmy`, :pr:`598` thanks :ghuser:`jamestwebber`)
+* Bug fixes with respect to NumPy compatibility  (:pr:`598` thanks :ghuser:`hameerabbasi`, :pr:`609` thanks :ghuser:`Illviljan`, :pr:`620` thanks :ghuser:`mtsokol`)
+* Bug fixes with respect to GCXS (:pr:`611` thanks :ghuser:`EuGig`, :pr:`601` thanks :ghuser:`jamestwebber`)
+* `Array API standard <https://data-apis.org/array-api/latest/>`_ support (:pr:`612`, :pr:`613`, :pr:`614`, :pr:`615`, :pr:`619`, :pr:`620` thanks :ghuser:`mtsokol`)
+* ``matrepr`` support for display of sparse data (:pr:`605`, :pr:`606` thanks :ghuser:`alugowski`).
+* Larger code clean-up with Ruff formatter and linter (:pr:`617`, :pr:`621` thanks :ghuser:`hameerabbasi`)
+* Packaging and maintenance (:pr:`616`, :commit:`b5954e68d3d6e35a62f7401d1d4fb84ea04414dd`, :commit:`dda93d3ea9521881c721c3ba875c769c9c5a79d4` thanks :ghuser:`hameerabbasi`)
+
+
 0.14.0 / 2023-02-24
 -------------------
 * :obj:`sparse.einsum` support (:pr:`564` thanks
