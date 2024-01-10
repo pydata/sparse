@@ -604,6 +604,7 @@ def argmax(x, /, *, axis=None, keepdims=False):
     Returns the indices of the maximum values along a specified axis.
     When the maximum value occurs multiple times, only the indices
     corresponding to the first occurrence are returned.
+
     Parameters
     ----------
     x : SparseArray
@@ -617,6 +618,7 @@ def argmax(x, /, *, axis=None, keepdims=False):
         as singleton dimensions, and, accordingly, the result must be compatible
         with the input array. Otherwise, if ``False``, the reduced axes (dimensions)
         must not be included in the result. Default: ``False``.
+
     Returns
     -------
     out : numpy.ndarray
@@ -632,6 +634,7 @@ def argmin(x, /, *, axis=None, keepdims=False):
     Returns the indices of the minimum values along a specified axis.
     When the minimum value occurs multiple times, only the indices
     corresponding to the first occurrence are returned.
+
     Parameters
     ----------
     x : SparseArray
@@ -645,6 +648,7 @@ def argmin(x, /, *, axis=None, keepdims=False):
         as singleton dimensions, and, accordingly, the result must be compatible
         with the input array. Otherwise, if ``False``, the reduced axes (dimensions)
         must not be included in the result. Default: ``False``.
+
     Returns
     -------
     out : numpy.ndarray
