@@ -247,7 +247,6 @@ __all__ = [
     "mean",
     "min",
     "moveaxis",
-    "moveaxis",
     "multiply",
     "nan",
     "nanmax",
