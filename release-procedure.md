@@ -13,7 +13,7 @@
 * Upload to PyPI
   ```bash
   git clean -xfd  # remove all files in directory not in repository
-  python setup.py sdist bdist_wheel --universal  # make packages
+  python -m build --wheel --sdist # make packages
   twine upload dist/*  # upload packages
   ```
 

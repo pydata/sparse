@@ -3,6 +3,10 @@ Changelog
 
 .. currentmodule:: sparse
 
+0.15.1 / 2024-01-10
+-------------------
+* Fix regression where with XArray by supporting all API functions via the Array API standard. (:pr:`622` thanks :ghuser:`hameerabbasi`)
+
 0.15.0 / 2024-01-09
 -------------------
 * Fix regression where :obj:`DeprecationWarning`s were being fired unexpectedly. (:pr:`581` thanks :ghuser:`hameerabbasi`)
