@@ -378,7 +378,7 @@ def test_ndarray_densification_fails(rng):
 
 def test_elemwise_noargs():
     def func():
-        return np.float_(5.0)
+        return np.float64(5.0)
 
     with pytest.raises(ValueError, match=r"None of the args is sparse:"):
         sparse.elemwise(func)
