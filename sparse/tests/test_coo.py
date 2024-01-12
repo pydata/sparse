@@ -1790,6 +1790,25 @@ def test_expand_dims(axis):
     np.testing.assert_equal(result.todense(), expected)
 
 
+@pytest.mark.parametrize(
+    "arr",
+    [
+        np.array([[0, 0, 1, 5, 3, 0], [1, 0, 4, 0, 3, 0], [0, 1, 0, 1, 1, 0]], dtype=np.int64),
+        np.array([[[2, 0], [0, 5]], [[1, 0], [4, 0]], [[0, 1], [0, -1]]], dtype=np.float64),
+    ],
+)
+@pytest.mark.parametrize("fill_value", [-1, 0, 1, 3])
+@pytest.mark.parametrize("axis", [0, 1, -1])
+@pytest.mark.parametrize("descending", [False, True])
+def test_sort(arr, fill_value, axis, descending):
+    s_arr = sparse.COO.from_numpy(arr, fill_value)
+
+    result = sparse.sort(s_arr, axis=axis, descending=descending)
+    expected = -np.sort(-arr, axis=axis) if descending else np.sort(arr, axis=axis)
+
+    np.testing.assert_equal(result.todense(), expected)
+
+
 @pytest.mark.parametrize("axis", [None, -1, 0, 1, 2, (0, 1), (2, 0)])
 def test_flip(axis):
     arr = np.arange(24).reshape((2, 3, 4))
@@ -1797,5 +1816,30 @@ def test_flip(axis):
 
     result = sparse.flip(s_arr, axis=axis)
     expected = np.flip(arr, axis=axis)
+
+    np.testing.assert_equal(result.todense(), expected)
+
+
+@pytest.mark.parametrize("fill_value", [-1, 0, 1, 3])
+@pytest.mark.parametrize(
+    "indices,axis",
+    [
+        (
+            [1],
+            0,
+        ),
+        ([2, 1], 1),
+        ([1, 2, 3], 2),
+        ([2, 3], -1),
+        ([5, 3, 7, 8], None),
+    ],
+)
+def test_take(fill_value, indices, axis):
+    arr = np.arange(24).reshape((2, 3, 4))
+
+    s_arr = sparse.COO.from_numpy(arr, fill_value)
+
+    result = sparse.take(s_arr, np.array(indices), axis=axis)
+    expected = np.take(arr, indices, axis)
 
     np.testing.assert_equal(result.todense(), expected)

@@ -2,7 +2,7 @@ import operator
 import warnings
 from collections.abc import Iterable
 from functools import reduce
-from typing import NamedTuple, Optional, Tuple
+from typing import Any, NamedTuple, Optional, Tuple
 
 import numba
 
@@ -1203,14 +1203,8 @@ def unique_counts(x, /):
     >>> sparse.unique_counts(x)
     UniqueCountsResult(values=array([-3,  0,  1,  2]), counts=array([1, 1, 2, 2]))
     """
-    from .core import COO
 
-    if isinstance(x, scipy.sparse.spmatrix):
-        x = COO.from_scipy_sparse(x)
-    elif not isinstance(x, SparseArray):
-        raise ValueError(f"Input must be an instance of SparseArray, but it's {type(x)}.")
-    elif not isinstance(x, COO):
-        x = x.asformat(COO)
+    x = _validate_coo_input(x)
 
     x = x.flatten()
     values, counts = np.unique(x.data, return_counts=True)
@@ -1250,6 +1244,113 @@ def unique_values(x, /):
     >>> sparse.unique_values(x)
     array([-3, 0, 1, 2])
     """
+
+    x = _validate_coo_input(x)
+
+    x = x.flatten()
+    values = np.unique(x.data)
+    if x.nnz < x.size:
+        values = np.sort(np.concatenate([[x.fill_value], values]))
+    return values
+
+
+def sort(x, /, *, axis=-1, descending=False):
+    """
+    Returns a sorted copy of an input array ``x``.
+
+    Parameters
+    ----------
+    x : SparseArray
+        Input array. Should have a real-valued data type.
+    axis : int
+        Axis along which to sort. If set to ``-1``, the function must sort along
+        the last axis. Default: ``-1``.
+    descending : bool
+        Sort order. If ``True``, the array must be sorted in descending order (by value).
+        If ``False``, the array must be sorted in ascending order (by value).
+        Default: ``False``.
+
+    Returns
+    -------
+    out : COO
+        A sorted array.
+
+    Raises
+    ------
+    ValueError
+        If the input array isn't and can't be converted to COO format.
+
+    Examples
+    --------
+    >>> import sparse
+    >>> x = sparse.COO.from_numpy([1, 0, 2, 0, 2, -3])
+    >>> sparse.sort(x).todense()
+    array([-3, 0, 0, 1, 2, 2])
+    >>> sparse.sort(x, descending=True).todense()
+    array([ 2, 2, 1, 0, 0, -3])
+
+    """
+
+    from .._common import moveaxis
+
+    x = _validate_coo_input(x)
+
+    original_ndim = x.ndim
+    if x.ndim == 1:
+        x = x[None, :]
+        axis = -1
+
+    x = moveaxis(x, source=axis, destination=-1)
+    x_shape = x.shape
+    x = x.reshape((np.prod(x_shape[:-1]), x_shape[-1]))
+
+    _sort_coo(x.coords, x.data, x.fill_value, sort_axis_len=x_shape[-1], descending=descending)
+
+    x = x.reshape(x_shape[:-1] + (x_shape[-1],))
+    x = moveaxis(x, source=-1, destination=axis)
+
+    return x if original_ndim == x.ndim else x.squeeze()
+
+
+def take(x, indices, /, *, axis=None):
+    """
+    Returns elements of an array along an axis.
+
+    Parameters
+    ----------
+    x : SparseArray
+        Input array.
+    indices : ndarray
+        Array indices. The array must be one-dimensional and have an integer data type.
+    axis : int
+        Axis over which to select values. If ``axis`` is negative, the function must
+        determine the axis along which to select values by counting from the last dimension.
+        For ``None``, the flattened input array is used. Default: ``None``.
+
+    Returns
+    -------
+    out : COO
+        A COO array with requested indices.
+
+    Raises
+    ------
+    ValueError
+        If the input array isn't and can't be converted to COO format.
+
+    """
+
+    x = _validate_coo_input(x)
+
+    if axis is None:
+        x = x.flatten()
+        return x[indices]
+
+    axis = normalize_axis(axis, x.ndim)
+    full_index = (slice(None),) * axis + (indices, ...)
+    return x[full_index]
+
+
+def _validate_coo_input(x: Any):
     from .core import COO
 
     if isinstance(x, scipy.sparse.spmatrix):
@@ -1259,11 +1360,52 @@ def unique_values(x, /):
     elif not isinstance(x, COO):
         x = x.asformat(COO)
 
-    x = x.flatten()
-    values = np.unique(x.data)
-    if x.nnz < x.size:
-        values = np.sort(np.concatenate([[x.fill_value], values]))
-    return values
+    return x
+
+
+@numba.jit(nopython=True, nogil=True)
+def _sort_coo(
+    coords: np.ndarray,
+    data: np.ndarray,
+    fill_value: float,
+    sort_axis_len: int,
+    descending: bool,
+) -> None:
+    assert coords.shape[0] == 2
+    group_coords = coords[0, :]
+    sort_coords = coords[1, :]
+
+    result_indices = np.empty_like(sort_coords)
+    offset = 0  # tracks where the current group starts
+
+    # iterate through all groups and sort each one of them
+    for unique_val in np.unique(group_coords):
+        # .copy() required by numba, as `reshape` expects a continous array
+        group = np.argwhere(group_coords == unique_val).copy()
+        group = np.reshape(group, -1)
+        group = np.atleast_1d(group)
+
+        # SORT VALUES
+        if group.size > 1:
+            # np.sort in numba doesn't support `np.sort`'s arguments so `stable`
+            # keyword can't be supported.
+            # https://numba.pydata.org/numba-doc/latest/reference/numpysupported.html#other-methods
+            data[group] = np.sort(data[group])
+            if descending:
+                data[group] = data[group][::-1]
+
+        # SORT INDICES
+        fill_value_count = sort_axis_len - group.size
+        indices = np.arange(group.size)
+        # find a place where fill_value would be
+        for pos in range(group.size):
+            if (not descending and fill_value < data[group][pos]) or (descending and fill_value > data[group][pos]):
+                indices[pos:] += fill_value_count
+                break
+        result_indices[offset : offset + len(indices)] = indices
+        offset += len(indices)
+
+    sort_coords[:] = result_indices
 
 
 @numba.jit(nopython=True, nogil=True)
@@ -1323,14 +1465,7 @@ def _arg_minmax_common(
     assert mode in ("max", "min")
     max_mode_flag = mode == "max"
 
-    from .core import COO
-
-    if isinstance(x, scipy.sparse.spmatrix):
-        x = COO.from_scipy_sparse(x)
-    elif not isinstance(x, SparseArray):
-        raise ValueError(f"Input must be an instance of SparseArray, but it's {type(x)}.")
-    elif not isinstance(x, COO):
-        x = x.asformat(COO)
+    x = _validate_coo_input(x)
 
     if not isinstance(axis, (int, type(None))):
         raise ValueError(f"`axis` must be `int` or `None`, but it's: {type(axis)}.")
