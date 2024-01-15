@@ -70,7 +70,11 @@ API
 
     equal
 
+    expand_dims
+
     eye
+
+    flip
 
     full
 
@@ -157,6 +161,8 @@ API
     unique_counts
 
     unique_values
+
+    var
 
     where
 

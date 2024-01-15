@@ -1059,6 +1059,113 @@ def clip(a, a_min=None, a_max=None, out=None):
     return a.clip(a_min, a_max)
 
 
+def expand_dims(x, /, *, axis=0):
+    """
+    Expands the shape of an array by inserting a new axis (dimension) of size
+    one at the position specified by ``axis``.
+
+    Parameters
+    ----------
+    a : COO
+        Input COO array.
+    axis : int
+        Position in the expanded axes where the new axis is placed.
+
+    Returns
+    -------
+    result : COO
+        An expanded output COO array having the same data type as ``x``.
+
+    Examples
+    --------
+    >>> import sparse
+    >>> x = sparse.COO.from_numpy([[1, 0, 0, 0, 2, -3]])
+    >>> x.shape
+    (1, 6)
+    >>> y1 = sparse.expand_dims(x, axis=1)
+    >>> y1.shape
+    (1, 1, 6)
+    >>> y2 = sparse.expand_dims(x, axis=2)
+    >>> y2.shape
+    (1, 6, 1)
+
+    """
+    from .core import COO
+
+    if isinstance(x, scipy.sparse.spmatrix):
+        x = COO.from_scipy_sparse(x)
+    elif not isinstance(x, SparseArray):
+        raise ValueError(f"Input must be an instance of SparseArray, but it's {type(x)}.")
+    elif not isinstance(x, COO):
+        x = x.asformat(COO)
+
+    if not isinstance(axis, int):
+        raise IndexError(f"Invalid axis position: {axis}")
+
+    axis = normalize_axis(axis, x.ndim + 1)
+
+    new_coords = np.insert(x.coords, obj=axis, values=np.zeros(x.nnz, dtype=np.intp), axis=0)
+    new_shape = list(x.shape)
+    new_shape.insert(axis, 1)
+    new_shape = tuple(new_shape)
+
+    return COO(
+        new_coords,
+        x.data,
+        shape=new_shape,
+        fill_value=x.fill_value,
+    )
+
+
+def flip(x, /, *, axis=None):
+    """
+    Reverses the order of elements in an array along the given axis.
+
+    The shape of the array is preserved.
+
+    Parameters
+    ----------
+    a : COO
+        Input COO array.
+    axis : int or tuple of ints, optional
+        Axis (or axes) along which to flip. If ``axis`` is ``None``, the function must
+        flip all input array axes. If ``axis`` is negative, the function must count from
+        the last dimension. If provided more than one axis, the function must flip only
+        the specified axes. Default: ``None``.
+
+    Returns
+    -------
+    result : COO
+        An output array having the same data type and shape as ``x`` and whose elements,
+        relative to ``x``, are reordered.
+
+    """
+    from .core import COO
+
+    if isinstance(x, scipy.sparse.spmatrix):
+        x = COO.from_scipy_sparse(x)
+    elif not isinstance(x, SparseArray):
+        raise ValueError(f"Input must be an instance of SparseArray, but it's {type(x)}.")
+    elif not isinstance(x, COO):
+        x = x.asformat(COO)
+
+    if axis is None:
+        axis = range(x.ndim)
+    if not isinstance(axis, Iterable):
+        axis = (axis,)
+
+    new_coords = x.coords.copy()
+    for ax in axis:
+        new_coords[ax, :] = x.shape[ax] - 1 - x.coords[ax, :]
+
+    return COO(
+        new_coords,
+        x.data,
+        shape=x.shape,
+        fill_value=x.fill_value,
+    )
+
+
 # Array API set functions
 
 

@@ -1777,3 +1777,25 @@ class TestUnique:
     def test_input_validation(self, func):
         with pytest.raises(ValueError, match=r"Input must be an instance of SparseArray"):
             func(self.arr)
+
+
+@pytest.mark.parametrize("axis", [-1, 0, 1, 2, 3])
+def test_expand_dims(axis):
+    arr = np.arange(24).reshape((2, 3, 4))
+    s_arr = sparse.COO.from_numpy(arr)
+
+    result = sparse.expand_dims(s_arr, axis=axis)
+    expected = np.expand_dims(arr, axis=axis)
+
+    np.testing.assert_equal(result.todense(), expected)
+
+
+@pytest.mark.parametrize("axis", [None, -1, 0, 1, 2, (0, 1), (2, 0)])
+def test_flip(axis):
+    arr = np.arange(24).reshape((2, 3, 4))
+    s_arr = sparse.COO.from_numpy(arr)
+
+    result = sparse.flip(s_arr, axis=axis)
+    expected = np.flip(arr, axis=axis)
+
+    np.testing.assert_equal(result.todense(), expected)
