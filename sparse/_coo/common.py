@@ -1090,14 +1090,8 @@ def expand_dims(x, /, *, axis=0):
     (1, 6, 1)
 
     """
-    from .core import COO
 
-    if isinstance(x, scipy.sparse.spmatrix):
-        x = COO.from_scipy_sparse(x)
-    elif not isinstance(x, SparseArray):
-        raise ValueError(f"Input must be an instance of SparseArray, but it's {type(x)}.")
-    elif not isinstance(x, COO):
-        x = x.asformat(COO)
+    x = _validate_coo_input(x)
 
     if not isinstance(axis, int):
         raise IndexError(f"Invalid axis position: {axis}")
@@ -1108,6 +1102,8 @@ def expand_dims(x, /, *, axis=0):
     new_shape = list(x.shape)
     new_shape.insert(axis, 1)
     new_shape = tuple(new_shape)
+
+    from .core import COO
 
     return COO(
         new_coords,
@@ -1140,14 +1136,8 @@ def flip(x, /, *, axis=None):
         relative to ``x``, are reordered.
 
     """
-    from .core import COO
 
-    if isinstance(x, scipy.sparse.spmatrix):
-        x = COO.from_scipy_sparse(x)
-    elif not isinstance(x, SparseArray):
-        raise ValueError(f"Input must be an instance of SparseArray, but it's {type(x)}.")
-    elif not isinstance(x, COO):
-        x = x.asformat(COO)
+    x = _validate_coo_input(x)
 
     if axis is None:
         axis = range(x.ndim)
@@ -1157,6 +1147,8 @@ def flip(x, /, *, axis=None):
     new_coords = x.coords.copy()
     for ax in axis:
         new_coords[ax, :] = x.shape[ax] - 1 - x.coords[ax, :]
+
+    from .core import COO
 
     return COO(
         new_coords,
@@ -1291,6 +1283,7 @@ def sort(x, /, *, axis=-1, descending=False):
 
     """
 
+    from .core import COO
     from .._common import moveaxis
 
     x = _validate_coo_input(x)
@@ -1302,9 +1295,13 @@ def sort(x, /, *, axis=-1, descending=False):
 
     x = moveaxis(x, source=axis, destination=-1)
     x_shape = x.shape
-    x = x.reshape((np.prod(x_shape[:-1]), x_shape[-1]))
+    x = x.reshape((-1, x_shape[-1]))
 
-    _sort_coo(x.coords, x.data, x.fill_value, sort_axis_len=x_shape[-1], descending=descending)
+    new_coords, new_data = _sort_coo(
+        x.coords, x.data, x.fill_value, sort_axis_len=x_shape[-1], descending=descending
+    )
+
+    x = COO(new_coords, new_data, x.shape, has_duplicates=False, sorted=True, fill_value=x.fill_value)
 
     x = x.reshape(x_shape[:-1] + (x_shape[-1],))
     x = moveaxis(x, source=-1, destination=axis)
@@ -1370,42 +1367,55 @@ def _sort_coo(
     fill_value: float,
     sort_axis_len: int,
     descending: bool,
-) -> None:
+) -> Tuple[np.ndarray, np.ndarray]:
     assert coords.shape[0] == 2
     group_coords = coords[0, :]
     sort_coords = coords[1, :]
 
+    data = data.copy()
     result_indices = np.empty_like(sort_coords)
-    offset = 0  # tracks where the current group starts
 
-    # iterate through all groups and sort each one of them
-    for unique_val in np.unique(group_coords):
-        # .copy() required by numba, as `reshape` expects a continous array
-        group = np.argwhere(group_coords == unique_val).copy()
-        group = np.reshape(group, -1)
-        group = np.atleast_1d(group)
+    # We iterate through all groups and sort each one of them.
+    # first and last index of a group is tracked.
+    prev_group = -1
+    group_first_idx = -1
+    group_last_idx = -1
+    # We add `-1` sentinel to know when the last group ends
+    for idx, group in enumerate(np.append(group_coords, -1)):
+        if group == prev_group:
+            continue
 
-        # SORT VALUES
-        if group.size > 1:
-            # np.sort in numba doesn't support `np.sort`'s arguments so `stable`
-            # keyword can't be supported.
-            # https://numba.pydata.org/numba-doc/latest/reference/numpysupported.html#other-methods
-            data[group] = np.sort(data[group])
-            if descending:
-                data[group] = data[group][::-1]
+        if prev_group != -1:
+            group_last_idx = idx
 
-        # SORT INDICES
-        fill_value_count = sort_axis_len - group.size
-        indices = np.arange(group.size)
-        # find a place where fill_value would be
-        for pos in range(group.size):
-            if (not descending and fill_value < data[group][pos]) or (descending and fill_value > data[group][pos]):
-                indices[pos:] += fill_value_count
-                break
-        result_indices[offset : offset + len(indices)] = indices
-        offset += len(indices)
+            group_slice = slice(group_first_idx, group_last_idx)
+            group_size = group_last_idx - group_first_idx
 
-    sort_coords[:] = result_indices
+            # SORT VALUES
+            if group_size > 1:
+                # np.sort in numba doesn't support `np.sort`'s arguments so `stable`
+                # keyword can't be supported.
+                # https://numba.pydata.org/numba-doc/latest/reference/numpysupported.html#other-methods
+                data[group_slice] = np.sort(data[group_slice])
+                if descending:
+                    data[group_slice] = data[group_slice][::-1]
+
+            # SORT INDICES
+            fill_value_count = sort_axis_len - group_size
+            indices = np.arange(group_size)
+            # find a place where fill_value would be
+            for pos in range(group_size):
+                if (not descending and fill_value < data[group_slice][pos]) or (
+                    descending and fill_value > data[group_slice][pos]
+                ):
+                    indices[pos:] += fill_value_count
+                    break
+            result_indices[group_first_idx:group_last_idx] = indices
+
+        prev_group = group
+        group_first_idx = idx
+
+    return np.vstack((group_coords, result_indices)), data
 
 
 @numba.jit(nopython=True, nogil=True)

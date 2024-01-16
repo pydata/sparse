@@ -1795,16 +1795,35 @@ def test_expand_dims(axis):
     [
         np.array([[0, 0, 1, 5, 3, 0], [1, 0, 4, 0, 3, 0], [0, 1, 0, 1, 1, 0]], dtype=np.int64),
         np.array([[[2, 0], [0, 5]], [[1, 0], [4, 0]], [[0, 1], [0, -1]]], dtype=np.float64),
+        np.arange(3, 10),
     ],
 )
 @pytest.mark.parametrize("fill_value", [-1, 0, 1, 3])
 @pytest.mark.parametrize("axis", [0, 1, -1])
 @pytest.mark.parametrize("descending", [False, True])
 def test_sort(arr, fill_value, axis, descending):
+    if axis >= arr.ndim:
+        return
+
     s_arr = sparse.COO.from_numpy(arr, fill_value)
 
     result = sparse.sort(s_arr, axis=axis, descending=descending)
     expected = -np.sort(-arr, axis=axis) if descending else np.sort(arr, axis=axis)
+
+    np.testing.assert_equal(result.todense(), expected)
+    # make sure no inplace changes happened
+    np.testing.assert_equal(s_arr.todense(), arr)
+
+
+@pytest.mark.parametrize("fill_value", [-1, 0, 1])
+@pytest.mark.parametrize("descending", [False, True])
+def test_sort_only_fill_value(fill_value, descending):
+
+    arr = np.full((3, 3), fill_value=fill_value)
+    s_arr = sparse.COO.from_numpy(arr, fill_value)
+
+    result = sparse.sort(s_arr, axis=0, descending=descending)
+    expected = np.sort(arr, axis=0)
 
     np.testing.assert_equal(result.todense(), expected)
 
