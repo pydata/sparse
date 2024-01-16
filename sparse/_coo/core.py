@@ -8,7 +8,6 @@ from functools import reduce
 import numba
 
 import numpy as np
-import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .._sparse_array import SparseArray
@@ -1177,6 +1176,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         COO.tocsr : Convert to a :obj:`scipy.sparse.csr_matrix`.
         COO.tocsc : Convert to a :obj:`scipy.sparse.csc_matrix`.
         """
+        import scipy.sparse
+
         check_zero_fill_value(self)
 
         if self.ndim != 2:
@@ -1187,6 +1188,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         return result
 
     def _tocsr(self):
+        import scipy.sparse
+
         if self.ndim != 2:
             raise ValueError("This array must be two-dimensional for this conversion to work.")
         row, col = self.coords
