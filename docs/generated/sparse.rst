@@ -144,6 +144,8 @@ API
 
     save_npz
 
+    sort
+
     squeeze
 
     stack
@@ -151,6 +153,8 @@ API
     std
 
     sum
+
+    take
 
     tensordot
 
