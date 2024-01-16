@@ -8,7 +8,6 @@ from functools import reduce
 import numba
 
 import numpy as np
-import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .._sparse_array import SparseArray
@@ -1177,6 +1176,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         COO.tocsr : Convert to a :obj:`scipy.sparse.csr_matrix`.
         COO.tocsc : Convert to a :obj:`scipy.sparse.csc_matrix`.
         """
+        import scipy.sparse
+
         check_zero_fill_value(self)
 
         if self.ndim != 2:
@@ -1187,6 +1188,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         return result
 
     def _tocsr(self):
+        import scipy.sparse
+
         if self.ndim != 2:
             raise ValueError("This array must be two-dimensional for this conversion to work.")
         row, col = self.coords
@@ -1557,6 +1560,8 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
     COO.from_iter :
         Convert an iterable to :obj:`COO`.
     """
+    from .._common import _is_scipy_sparse_obj
+
     if hasattr(x, "shape") and shape is not None:
         raise ValueError("Cannot provide a shape in combination with something that already has a shape.")
 
@@ -1569,7 +1574,7 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
     if isinstance(x, np.ndarray) or np.isscalar(x):
         return COO.from_numpy(x, fill_value=fill_value, idx_dtype=idx_dtype)
 
-    if isinstance(x, scipy.sparse.spmatrix):
+    if _is_scipy_sparse_obj(x):
         return COO.from_scipy_sparse(x)
 
     if isinstance(x, (Iterable, Iterator)):

@@ -7,7 +7,6 @@ from typing import Any, NamedTuple, Optional, Tuple
 import numba
 
 import numpy as np
-import scipy.sparse
 
 from .._sparse_array import SparseArray
 from .._utils import (
@@ -43,9 +42,10 @@ def asCOO(x, name="asCOO", check=True):
     ValueError
         If ``check`` is true and a dense input is supplied.
     """
+    from .._common import _is_sparse
     from .core import COO
 
-    if check and not isinstance(x, (SparseArray, scipy.sparse.spmatrix)):
+    if check and not _is_sparse(x):
         raise ValueError(f"Performing this operation would produce a dense result: {name}")
 
     if not isinstance(x, COO):
@@ -94,13 +94,14 @@ def kron(a, b):
            [0, 0, 0, 1, 2, 3, 0, 0, 0],
            [0, 0, 0, 0, 0, 0, 1, 2, 3]], dtype=int64)
     """
+    from .._common import _is_sparse
     from .._umath import _cartesian_product
     from .core import COO
 
     check_zero_fill_value(a, b)
 
-    a_sparse = isinstance(a, (SparseArray, scipy.sparse.spmatrix))
-    b_sparse = isinstance(b, (SparseArray, scipy.sparse.spmatrix))
+    a_sparse = _is_sparse(a)
+    b_sparse = _is_sparse(b)
     a_ndim = np.ndim(a)
     b_ndim = np.ndim(b)
 
@@ -1346,9 +1347,10 @@ def take(x, indices, /, *, axis=None):
 
 
 def _validate_coo_input(x: Any):
+    from .._common import _is_scipy_sparse_obj
     from .core import COO
 
-    if isinstance(x, scipy.sparse.spmatrix):
+    if _is_scipy_sparse_obj(x):
         x = COO.from_scipy_sparse(x)
     elif not isinstance(x, SparseArray):
         raise ValueError(f"Input must be an instance of SparseArray, but it's {type(x)}.")
