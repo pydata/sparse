@@ -20,13 +20,19 @@ from ._utils import (
 )
 
 
-def _is_scipy_sparse_obj(x):  # supports sparse arrays and matrices
-    if hasattr(x, "__class__") and x.__class__.startswith("scipy.sparse"):
+def _is_scipy_sparse_obj(x):
+    """
+    Tests if the supplied argument is a SciPy sparse object.
+    """
+    if hasattr(x, "__module__") and x.__module__.startswith("scipy.sparse"):
         return True
     return False
 
 
 def _is_sparse(x):
+    """
+    Tests if the supplied argument is a SciPy sparse object, or one from this library.
+    """
     return isinstance(x, SparseArray) or _is_scipy_sparse_obj(x)
 
 
