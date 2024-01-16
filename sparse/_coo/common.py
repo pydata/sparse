@@ -1283,8 +1283,8 @@ def sort(x, /, *, axis=-1, descending=False):
 
     """
 
-    from .core import COO
     from .._common import moveaxis
+    from .core import COO
 
     x = _validate_coo_input(x)
 
@@ -1297,9 +1297,7 @@ def sort(x, /, *, axis=-1, descending=False):
     x_shape = x.shape
     x = x.reshape((-1, x_shape[-1]))
 
-    new_coords, new_data = _sort_coo(
-        x.coords, x.data, x.fill_value, sort_axis_len=x_shape[-1], descending=descending
-    )
+    new_coords, new_data = _sort_coo(x.coords, x.data, x.fill_value, sort_axis_len=x_shape[-1], descending=descending)
 
     x = COO(new_coords, new_data, x.shape, has_duplicates=False, sorted=True, fill_value=x.fill_value)
 

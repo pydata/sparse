@@ -1818,7 +1818,6 @@ def test_sort(arr, fill_value, axis, descending):
 @pytest.mark.parametrize("fill_value", [-1, 0, 1])
 @pytest.mark.parametrize("descending", [False, True])
 def test_sort_only_fill_value(fill_value, descending):
-
     arr = np.full((3, 3), fill_value=fill_value)
     s_arr = sparse.COO.from_numpy(arr, fill_value)
 
