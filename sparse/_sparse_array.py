@@ -8,7 +8,6 @@ from numbers import Integral
 from typing import Callable
 
 import numpy as np
-import scipy.sparse as ss
 
 from ._umath import elemwise
 from ._utils import _zero_of_dtype, equivalent, html_table, normalize_axis
@@ -298,10 +297,12 @@ class SparseArray:
 
     @staticmethod
     def _reduce(method, *args, **kwargs):
+        from ._common import _is_scipy_sparse_obj
+
         assert len(args) == 1
 
         self = args[0]
-        if isinstance(self, ss.spmatrix):
+        if _is_scipy_sparse_obj(self):
             self = type(self).from_scipy_sparse(self)
 
         return self.reduce(method, **kwargs)

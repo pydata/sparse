@@ -4,7 +4,6 @@ from collections.abc import Iterable
 from functools import reduce
 
 import numpy as np
-import scipy.sparse as ss
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .._coo.common import linear_loc
@@ -140,7 +139,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         fill_value=0,
         idx_dtype=None,
     ):
-        if isinstance(arg, ss.spmatrix):
+        from .._common import _is_scipy_sparse_obj
+
+        if _is_scipy_sparse_obj(arg):
             arg = self.from_scipy_sparse(arg)
 
         if isinstance(arg, np.ndarray):
@@ -482,6 +483,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         ValueError
             If all the array doesn't zero fill-values.
         """
+        import scipy.sparse
 
         check_zero_fill_value(self)
 
@@ -489,9 +491,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             raise ValueError("Can only convert a 2-dimensional array to a Scipy sparse matrix.")
 
         if 0 in self.compressed_axes:
-            return ss.csr_matrix((self.data, self.indices, self.indptr), shape=self.shape)
+            return scipy.sparse.csr_matrix((self.data, self.indices, self.indptr), shape=self.shape)
 
-        return ss.csc_matrix((self.data, self.indices, self.indptr), shape=self.shape)
+        return scipy.sparse.csc_matrix((self.data, self.indices, self.indptr), shape=self.shape)
 
     def asformat(self, format, **kwargs):
         """

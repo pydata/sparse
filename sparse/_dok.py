@@ -2,7 +2,6 @@ from collections.abc import Iterable
 from numbers import Integral
 
 import numpy as np
-import scipy.sparse
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from ._slicing import normalize_index
@@ -92,6 +91,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
     """
 
     def __init__(self, shape, data=None, dtype=None, fill_value=None):
+        from ._common import _is_scipy_sparse_obj
         from ._coo import COO
 
         self.data = {}
@@ -106,7 +106,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
             self._make_shallow_copy_of(ar)
             return
 
-        if isinstance(shape, scipy.sparse.spmatrix):
+        if _is_scipy_sparse_obj(shape):
             ar = DOK.from_scipy_sparse(shape)
             self._make_shallow_copy_of(ar)
             return

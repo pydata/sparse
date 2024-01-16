@@ -1557,6 +1557,8 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
     COO.from_iter :
         Convert an iterable to :obj:`COO`.
     """
+    from .._common import _is_scipy_sparse_obj
+
     if hasattr(x, "shape") and shape is not None:
         raise ValueError("Cannot provide a shape in combination with something that already has a shape.")
 
@@ -1569,7 +1571,7 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
     if isinstance(x, np.ndarray) or np.isscalar(x):
         return COO.from_numpy(x, fill_value=fill_value, idx_dtype=idx_dtype)
 
-    if isinstance(x, scipy.sparse.spmatrix):
+    if _is_scipy_sparse_obj(x):
         return COO.from_scipy_sparse(x)
 
     if isinstance(x, (Iterable, Iterator)):

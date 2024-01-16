@@ -7,7 +7,7 @@ name = "sparse"
 dynamic = ["version"]
 description = "Sparse n-dimensional arrays for the PyData ecosystem"
 readme = "README.rst"
-dependencies = ["numpy>=1.17", "scipy>=0.19", "numba>=0.49"]
+dependencies = ["numpy>=1.17", "numba>=0.49"]
 maintainers = [{ name = "Hameer Abbasi", email = "hameerabbasi@yahoo.com" }]
 requires-python = ">=3.8"
 license = { file = "LICENSE" }
@@ -34,6 +34,7 @@ tests = [
     "pytest>=3.5",
     "pytest-cov",
     "pre-commit",
+    "scipy",
 ]
 tox = ["sparse[tests]", "tox"]
 all = ["sparse[docs,tox]", "matrepr"]

@@ -4,7 +4,6 @@ from itertools import zip_longest
 import numba
 
 import numpy as np
-import scipy.sparse
 
 from ._utils import _zero_of_dtype, equivalent, isscalar
 
@@ -399,6 +398,7 @@ class _Elemwise:
         **kwargs : dict
             Extra arguments to pass to the function.
         """
+        from ._common import _is_scipy_sparse_obj
         from ._compressed import GCXS
         from ._coo import COO
         from ._dok import DOK
@@ -422,7 +422,7 @@ class _Elemwise:
             out_type = COO
 
         for arg in args:
-            if isinstance(arg, scipy.sparse.spmatrix):
+            if _is_scipy_sparse_obj(arg):
                 processed_args.append(COO.from_scipy_sparse(arg))
             elif isscalar(arg) or isinstance(arg, np.ndarray):
                 # Faster and more reliable to pass ()-shaped ndarrays as scalars.

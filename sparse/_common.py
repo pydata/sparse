@@ -9,8 +9,6 @@ import numba
 from numba import literal_unroll
 
 import numpy as np
-import scipy.sparse
-from scipy.sparse import spmatrix
 
 from ._coo.common import asCOO
 from ._sparse_array import SparseArray
@@ -20,6 +18,16 @@ from ._utils import (
     equivalent,
     normalize_axis,
 )
+
+
+def _is_scipy_sparse_obj(x):  # supports sparse arrays and matrices
+    if hasattr(x, "__class__") and x.__class__.startswith("scipy.sparse"):
+        return True
+    return False
+
+
+def _is_sparse(x):
+    return isinstance(x, SparseArray) or _is_scipy_sparse_obj(x)
 
 
 @numba.njit
@@ -61,7 +69,7 @@ def check_class_nan(test):
 
     if isinstance(test, (GCXS, COO)):
         return nan_check(test.fill_value, test.data)
-    if isinstance(test, spmatrix):
+    if _is_scipy_sparse_obj(test):
         return nan_check(test.data)
     return nan_check(test)
 
@@ -99,9 +107,9 @@ def tensordot(a, b, axes=2, *, return_type=None):
     # Please see license at https://github.com/numpy/numpy/blob/main/LICENSE.txt
     check_zero_fill_value(a, b)
 
-    if scipy.sparse.issparse(a):
+    if _is_scipy_sparse_obj(a):
         a = GCXS.from_scipy_sparse(a)
-    if scipy.sparse.issparse(b):
+    if _is_scipy_sparse_obj(b):
         b = GCXS.from_scipy_sparse(b)
 
     try:
@@ -2047,6 +2055,7 @@ def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, 
     >>> sparse.asarray(x, format="COO")
     <COO: shape=(8, 8), dtype=int64, nnz=8, fill_value=0>
     """
+
     if format not in {"coo", "dok", "gcxs"}:
         raise ValueError(f"{format} format not supported.")
 
@@ -2065,7 +2074,7 @@ def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, 
     if isinstance(obj, (COO, DOK, GCXS)):
         return obj.asformat(format)
 
-    if isinstance(obj, spmatrix):
+    if _is_scipy_sparse_obj(obj):
         sparse_obj = format_dict[format].from_scipy_sparse(obj)
         if dtype is None:
             dtype = sparse_obj.dtype
