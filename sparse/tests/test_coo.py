@@ -1895,9 +1895,16 @@ def test_matrix_transpose(ndim, density):
     ],
 )
 @pytest.mark.parametrize("density", [0.0, 0.1, 0.25, 1.0])
-def test_vecdot(shape1, shape2, density, rng):
-    s1 = sparse.random(shape1, density=density)
-    s2 = sparse.random(shape1, density=density)
+@pytest.mark.parametrize("is_complex", [False, True])
+def test_vecdot(shape1, shape2, density, rng, is_complex):
+    def data_rvs(size):
+        data = rng.random(size)
+        if is_complex:
+            data = data + rng.random(size) * 1j
+        return data
+
+    s1 = sparse.random(shape1, density=density, data_rvs=data_rvs)
+    s2 = sparse.random(shape2, density=density, data_rvs=data_rvs)
 
     axis = rng.integers(max(s1.ndim, s2.ndim))
 
