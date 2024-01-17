@@ -117,6 +117,7 @@ from ._common import (
     sum,
     tensordot,
     var,
+    vecdot,
     zeros,
     zeros_like,
 )
@@ -309,6 +310,7 @@ __all__ = [
     "unique_counts",
     "unique_values",
     "var",
+    "vecdot",
     "where",
     "zeros",
     "zeros_like",

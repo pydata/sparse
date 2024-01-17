@@ -1877,3 +1877,40 @@ def test_matrix_transpose(ndim, density):
     actual = sparse.matrix_transpose(xs)
 
     np.testing.assert_equal(actual.todense(), expected)
+
+
+@pytest.mark.parametrize(
+    "shape1, shape2",
+    [
+        ((2, 3, 4), (3, 4)),
+        ((3, 4), (2, 3, 4)),
+        ((3, 1, 4), (3, 2, 4)),
+        ((1, 3, 4), (3, 4)),
+        ((3, 4, 1), (3, 4, 2)),
+        ((1, 5), (5, 1)),
+        ((3, 1), (3, 4)),
+        ((3, 1), (1, 4)),
+        ((1, 4), (3, 4)),
+        ((2, 2, 2), (1, 1, 1)),
+    ],
+)
+@pytest.mark.parametrize("density", [0.0, 0.1, 0.25, 1.0])
+def test_vecdot(shape1, shape2, density, rng):
+    s1 = sparse.random(shape1, density=density)
+    s2 = sparse.random(shape1, density=density)
+
+    axis = rng.integers(max(s1.ndim, s2.ndim))
+
+    x1 = s1.todense()
+    x2 = s2.todense()
+
+    def np_vecdot(x1, x2, /, *, axis=-1):
+        if np.issubdtype(x2.dtype, np.complexfloating):
+            x2 = np.conjugate(x2)
+
+        return np.sum(x1 * x2, axis=axis)
+
+    expected = np_vecdot(x1, x2, axis=axis)
+    actual = sparse.vecdot(s1, s2, axis=axis)
+
+    np.testing.assert_allclose(actual.todense(), expected)

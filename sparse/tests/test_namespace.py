@@ -153,6 +153,7 @@ def test_namespace():
         "unique_counts",
         "unique_values",
         "var",
+        "vecdot",
         "where",
         "zeros",
         "zeros_like",

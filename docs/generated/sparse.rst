@@ -170,6 +170,8 @@ API
 
     var
 
+    vecdot
+
     where
 
     zeros

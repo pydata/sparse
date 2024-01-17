@@ -2037,6 +2037,7 @@ def format_to_string(format):
 def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, copy=False):
     """
     Convert the input to a sparse array.
+
     Parameters
     ----------
     obj : array_like
@@ -2051,10 +2052,12 @@ def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, 
         Device on which to place the created array.
     copy : bool, optional
         Boolean indicating whether or not to copy the input.
+
     Returns
     -------
     out : Union[SparseArray, numpy.ndarray]
         Sparse or 0-D array containing the data from `obj`.
+
     Examples
     --------
     >>> x = np.eye(8, dtype="i8")
@@ -2209,3 +2212,25 @@ def isfinite(x, /):
 
 def nonzero(x, /):
     return x.nonzero()
+
+
+def vecdot(x1, x2, /, *, axis=-1):
+    """
+    Computes the (vector) dot product of two arrays.
+
+    Parameters
+    ----------
+    x1, x2 : array_like
+        Input sparse arrays
+    axis : int
+        The axis to reduce over.
+
+    Returns
+    -------
+    out : Union[SparseArray, numpy.ndarray]
+        Sparse or 0-D array containing dot product.
+    """
+    if np.issubdtype(x2.dtype, np.complexfloating):
+        x2 = np.conjugate(x2)
+
+    return np.sum(x1 * x2, axis=axis)
