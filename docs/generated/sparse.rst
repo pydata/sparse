@@ -96,6 +96,8 @@ API
 
     matmul
 
+    matrix_transpose
+
     max
 
     mean

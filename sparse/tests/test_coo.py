@@ -1775,7 +1775,7 @@ class TestUnique:
 
     @pytest.mark.parametrize("func", [sparse.unique_counts, sparse.unique_values])
     def test_input_validation(self, func):
-        with pytest.raises(ValueError, match=r"Input must be an instance of SparseArray"):
+        with pytest.raises(ValueError, match="Input must be an instance of SparseArray"):
             func(self.arr)
 
 
@@ -1861,3 +1861,19 @@ def test_take(fill_value, indices, axis):
     expected = np.take(arr, indices, axis)
 
     np.testing.assert_equal(result.todense(), expected)
+
+
+@pytest.mark.parametrize("ndim", [2, 3, 4, 5])
+@pytest.mark.parametrize("density", [0.0, 0.1, 0.25, 1.0])
+def test_matrix_transpose(ndim, density):
+    shape = tuple(range(2, 34)[:ndim])
+    xs = sparse.random(shape, density=density)
+    xd = xs.todense()
+
+    transpose_axes = list(range(ndim))
+    transpose_axes[-2:] = transpose_axes[-2:][::-1]
+
+    expected = np.transpose(xd, axes=transpose_axes)
+    actual = sparse.matrix_transpose(xs)
+
+    np.testing.assert_equal(actual.todense(), expected)

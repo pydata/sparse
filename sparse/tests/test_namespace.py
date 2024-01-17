@@ -94,6 +94,7 @@ def test_namespace():
         "logical_not",
         "logical_or",
         "logical_xor",
+        "matrix_transpose",
         "matmul",
         "max",
         "mean",

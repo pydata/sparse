@@ -1332,7 +1332,6 @@ def take(x, indices, /, *, axis=None):
     ------
     ValueError
         If the input array isn't and can't be converted to COO format.
-
     """
 
     x = _validate_coo_input(x)
@@ -1533,3 +1532,31 @@ def _arg_minmax_common(
         result = result.reshape([1 for _ in range(axis_none_original_ndim)])
 
     return result if keepdims else result.squeeze()
+
+
+def matrix_transpose(x, /):
+    """
+    Transposes a matrix or a stack of matrices.
+
+    Parameters
+    ----------
+    x : SparseArray
+        Input array.
+
+    Returns
+    -------
+    out : COO
+        Transposed COO array.
+
+    Raises
+    ------
+    ValueError
+        If the input array isn't and can't be converted to COO format, or if ``x.ndim < 2``.
+    """
+    if hasattr(x, "ndim") and x.ndim < 2:
+        raise ValueError("`x.ndim >= 2` must hold.")
+    x = _validate_coo_input(x)
+    transpose_axes = list(range(x.ndim))
+    transpose_axes[-2:] = transpose_axes[-2:][::-1]
+
+    return x.transpose(transpose_axes)
