@@ -1913,7 +1913,7 @@ def test_vecdot(shape1, shape2, density, rng, is_complex):
 
     def np_vecdot(x1, x2, /, *, axis=-1):
         if np.issubdtype(x1.dtype, np.complexfloating):
-            np.conjugate(x1, out=x1)
+            x1 = np.conjugate(x1)
 
         return np.sum(x1 * x2, axis=axis)
 
