@@ -1,4 +1,6 @@
 import itertools
+import operator
+from functools import reduce
 from itertools import zip_longest
 
 import numba
@@ -257,7 +259,7 @@ def _get_expanded_coords_data(coords, data, params, broadcast_shape):
         expanded_data = data[all_idx[first_dim]]
     else:
         expanded_coords = all_idx if len(data) else np.empty((0, all_idx.shape[1]), dtype=np.intp)
-        expanded_data = np.repeat(data, np.prod(broadcast_shape, dtype=np.int64))
+        expanded_data = np.repeat(data, reduce(operator.mul, broadcast_shape, 1))
         return np.asarray(expanded_coords), np.asarray(expanded_data)
 
     for d, p in zip(range(len(broadcast_shape)), params):
