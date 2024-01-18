@@ -231,7 +231,7 @@ def get_slicing_selection(arr_data, arr_indices, indptr, starts, ends, col):  # 
                 col_count += 1
             ind_list.extend(inds)
             indptr[i + 1] = indptr[i] + len(inds)
-    ind_list = np.array(ind_list, dtype=np.int64)
+    ind_list = np.array(ind_list, dtype=np.intp)
     indices = np.array(indices, dtype=indptr.dtype)
     data = arr_data[ind_list]
     return (data, indices, indptr)
@@ -260,7 +260,7 @@ def get_array_selection(arr_data, arr_indices, indptr, starts, ends, col):  # pr
                 indices.append(c)
         ind_list.extend(inds)
         indptr[i + 1] = indptr[i] + len(inds)
-    ind_list = np.array(ind_list, dtype=np.int64)
+    ind_list = np.array(ind_list, dtype=np.intp)
     indices = np.array(indices, dtype=indptr.dtype)
     data = arr_data[ind_list]
     return (data, indices, indptr)
