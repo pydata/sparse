@@ -110,19 +110,19 @@ def algD(n, N, random_state):
         N = size of system (elements)
         random_state = seed for random number generation
     """
-    n = np.int64(n + 1)
-    N = np.int64(N)
+    n = np.intp(n + 1)
+    N = np.intp(N)
     qu1 = N - n + 1
     Vprime = np.exp(np.log(random_state.random()) / n)
     i = 0
-    arr = np.zeros(n - 1, dtype=np.int64)
+    arr = np.zeros(n - 1, dtype=np.intp)
     arr[-1] = -1
     while n > 1:
         nmin1inv = 1 / (n - 1)
         while True:
             while True:
                 X = N * (1 - Vprime)
-                S = np.int64(X)
+                S = np.intp(X)
                 if qu1 > S:
                     break
                 Vprime = np.exp(np.log(random_state.random()) / n)
@@ -167,9 +167,9 @@ def algA(n, N, random_state):
         N = size of system (elements)
         random_state = seed for random number generation
     """
-    n = np.int64(n)
-    N = np.int64(N)
-    arr = np.zeros(n, dtype=np.int64)
+    n = np.intp(n)
+    N = np.intp(N)
+    arr = np.zeros(n, dtype=np.intp)
     arr[-1] = -1
     i = 0
     top = N - n
@@ -186,7 +186,7 @@ def algA(n, N, random_state):
         i += 1
         N -= 1
         n -= 1
-    S = np.int64(N * random_state.random())
+    S = np.intp(N * random_state.random())
     arr[i] = arr[i - 1] + S + 1
     i += 1
     return arr
@@ -197,11 +197,11 @@ def reverse(inv, N):
     """
     If density of random matrix is greater than .5, it is faster to sample states not included
     Parameters:
-        arr = np.array(np.int64) of indices to be excluded from sample
+        arr = np.array(np.intp) of indices to be excluded from sample
         N = size of the system (elements)
     """
-    N = np.int64(N)
-    a = np.zeros(np.int64(N - len(inv)), dtype=np.int64)
+    N = np.intp(N)
+    a = np.zeros(np.intp(N - len(inv)), dtype=np.intp)
     j = 0
     k = 0
     for i in range(N):
