@@ -96,6 +96,8 @@ API
 
     matmul
 
+    matrix_transpose
+
     max
 
     mean
@@ -167,6 +169,8 @@ API
     unique_values
 
     var
+
+    vecdot
 
     where
 

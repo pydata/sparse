@@ -1775,7 +1775,7 @@ class TestUnique:
 
     @pytest.mark.parametrize("func", [sparse.unique_counts, sparse.unique_values])
     def test_input_validation(self, func):
-        with pytest.raises(ValueError, match=r"Input must be an instance of SparseArray"):
+        with pytest.raises(ValueError, match="Input must be an instance of SparseArray"):
             func(self.arr)
 
 
@@ -1861,3 +1861,63 @@ def test_take(fill_value, indices, axis):
     expected = np.take(arr, indices, axis)
 
     np.testing.assert_equal(result.todense(), expected)
+
+
+@pytest.mark.parametrize("ndim", [2, 3, 4, 5])
+@pytest.mark.parametrize("density", [0.0, 0.1, 0.25, 1.0])
+def test_matrix_transpose(ndim, density):
+    shape = tuple(range(2, 34)[:ndim])
+    xs = sparse.random(shape, density=density)
+    xd = xs.todense()
+
+    transpose_axes = list(range(ndim))
+    transpose_axes[-2:] = transpose_axes[-2:][::-1]
+
+    expected = np.transpose(xd, axes=transpose_axes)
+    actual = sparse.matrix_transpose(xs)
+
+    np.testing.assert_equal(actual.todense(), expected)
+
+
+@pytest.mark.parametrize(
+    "shape1, shape2",
+    [
+        ((2, 3, 4), (3, 4)),
+        ((3, 4), (2, 3, 4)),
+        ((3, 1, 4), (3, 2, 4)),
+        ((1, 3, 4), (3, 4)),
+        ((3, 4, 1), (3, 4, 2)),
+        ((1, 5), (5, 1)),
+        ((3, 1), (3, 4)),
+        ((3, 1), (1, 4)),
+        ((1, 4), (3, 4)),
+        ((2, 2, 2), (1, 1, 1)),
+    ],
+)
+@pytest.mark.parametrize("density", [0.0, 0.1, 0.25, 1.0])
+@pytest.mark.parametrize("is_complex", [False, True])
+def test_vecdot(shape1, shape2, density, rng, is_complex):
+    def data_rvs(size):
+        data = rng.random(size)
+        if is_complex:
+            data = data + rng.random(size) * 1j
+        return data
+
+    s1 = sparse.random(shape1, density=density, data_rvs=data_rvs)
+    s2 = sparse.random(shape2, density=density, data_rvs=data_rvs)
+
+    axis = rng.integers(max(s1.ndim, s2.ndim))
+
+    x1 = s1.todense()
+    x2 = s2.todense()
+
+    def np_vecdot(x1, x2, /, *, axis=-1):
+        if np.issubdtype(x1.dtype, np.complexfloating):
+            x1 = np.conjugate(x1)
+
+        return np.sum(x1 * x2, axis=axis)
+
+    expected = np_vecdot(x1, x2, axis=axis)
+    actual = sparse.vecdot(s1, s2, axis=axis)
+
+    np.testing.assert_allclose(actual.todense(), expected)
