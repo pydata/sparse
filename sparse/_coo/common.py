@@ -2,7 +2,7 @@ import operator
 import warnings
 from collections.abc import Iterable
 from functools import reduce
-from typing import Any, NamedTuple, Optional, Tuple
+from typing import Any, NamedTuple, Optional
 
 import numba
 
@@ -1366,7 +1366,7 @@ def _sort_coo(
     fill_value: float,
     sort_axis_len: int,
     descending: bool,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     assert coords.shape[0] == 2
     group_coords = coords[0, :]
     sort_coords = coords[1, :]
@@ -1424,7 +1424,7 @@ def _compute_minmax_args(
     reduce_size: int,
     fill_value: float,
     max_mode_flag: bool,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     assert coords.shape[0] == 2
     reduce_coords = coords[0, :]
     index_coords = coords[1, :]
