@@ -6,15 +6,15 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python: ['3.8', '3.9', '3.10', '3.11']
+        python: ['3.9', '3.10', '3.11']
         numba_boundscheck: [0]
         include:
           - os: macos-latest
-            python: '3.10'
+            python: '3.9'
           - os: windows-latest
-            python: '3.10'
+            python: '3.9'
           - os: ubuntu-latest
-            python: '3.10'
+            python: '3.9'
             numba_boundscheck: 1
       fail-fast: false
     runs-on: ${{ matrix.os }}
@@ -73,13 +73,13 @@ jobs:
           path: ~/conda_pkgs_dir
           key:
             docs-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment.yml') }}
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: sparse-dev
           allow-softlinks: true
           environment-file: ci/environment.yml
           python-version: '3.10'
-          miniforge-variant: Mambaforge
+          miniforge-version: latest
           use-only-tar-bz2: true
           use-mamba: true
       - name: Install package
