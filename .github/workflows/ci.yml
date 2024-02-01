@@ -78,7 +78,7 @@ jobs:
           activate-environment: sparse-dev
           allow-softlinks: true
           environment-file: ci/environment.yml
-          python-version: '3.10'
+          python-version: ${{ matrix.python }}
           miniforge-version: latest
           use-only-tar-bz2: true
           use-mamba: true
