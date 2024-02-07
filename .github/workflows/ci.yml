@@ -51,8 +51,8 @@ jobs:
           pytest --pyargs sparse
       - uses: codecov/codecov-action@v3
         if: always()
-      - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action/composite@v1
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action/composite@v2
         if: always()
         with:
           files: "**/test-*.xml"
