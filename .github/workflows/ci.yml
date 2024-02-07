@@ -49,7 +49,7 @@ jobs:
       - name: Run tests
         run: |
           pytest --pyargs sparse
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         if: always()
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action/composite@v2
