@@ -56,6 +56,62 @@ jobs:
         if: always()
         with:
           files: "**/test-*.xml"
+  array-api:
+    defaults:
+      run:
+        shell: bash -el {0}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python: ['3.11']
+        numba_boundscheck: [0]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    env:
+      PYTHON_VERSION: ${{ matrix.python }}
+      NUMBA_BOUNDSCHECK: ${{ matrix.numba_boundscheck }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - name: Cache conda
+        uses: actions/cache@v4
+        env:
+          # Increase this value to reset cache if ci/environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key:
+            test-${{ matrix.os }}-conda-py${{ matrix.python }}-${{ env.CACHE_NUMBER }}-${{
+            hashFiles('ci/environment.yml') }}
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: sparse-dev
+          allow-softlinks: true
+          environment-file: ci/environment.yml
+          python-version: ${{ matrix.python }}
+          miniforge-version: latest
+          use-only-tar-bz2: true
+          use-mamba: true
+      - name: Install package
+        run: |
+          pip install -e .
+      - name: Checkout Array API test Repo
+        uses: actions/checkout@v4
+        with:
+          repository: data-apis/array-api-tests
+          path: array-api-tests
+          submodules: recursive
+      - name: Install Test Dependencies
+        run: |
+          pip install -r array-api-tests/requirements.txt
+      - name: Run tests
+        run: |
+          ARRAY_API_TESTS_MODULE=sparse pytest array-api-tests/array_api_tests
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action/composite@v2
+        if: always()
+        with:
+          files: "**/test-*.xml"
   docs:
     defaults:
       run:
