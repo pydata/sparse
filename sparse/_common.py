@@ -869,8 +869,11 @@ def _dot_csc_ndarray_type(dt1, dt2):
         out = np.zeros((a_shape[0], b_shape[1]), dtype=dtr)
         for i in range(b_shape[0]):
             for k in range(a_indptr[i], a_indptr[i + 1]):
+                ind = a_indices[k]
+                v = a_data[k]
+                val = out[ind]
                 for j in range(b_shape[1]):
-                    out[a_indices[k], j] += a_data[k] * b[i, j]
+                    val[j] += v * b[i, j]
         return out
 
     return _dot_csc_ndarray
