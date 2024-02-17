@@ -866,9 +866,9 @@ def _dot_csc_ndarray_type(dt1, dt2):
             The shapes of the input arrays.
         """
         out = np.zeros((a_shape[0], b_shape[1]), dtype=dtr)
-        for j in range(b_shape[1]):
-            for i in range(b_shape[0]):
-                for k in range(a_indptr[i], a_indptr[i + 1]):
+        for i in range(b_shape[0]):
+            for k in range(a_indptr[i], a_indptr[i + 1]):
+                for j in range(b_shape[1]):
                     out[a_indices[k], j] += a_data[k] * b[i, j]
         return out
 
