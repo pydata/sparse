@@ -717,15 +717,14 @@ def _dot_csr_ndarray_type(dt1, dt2):
         out_shape : Tuple[int]
             The shape of the output array.
         """
-        out = np.empty(out_shape, dtype=dtr)
+        out = np.zeros(out_shape, dtype=dtr)
         for i in range(out_shape[0]):
-            for j in range(out_shape[1]):
-                val = 0
-                for k in range(a_indptr[i], a_indptr[i + 1]):
-                    ind = a_indices[k]
-                    v = a_data[k]
-                    val += v * b[ind, j]
-                out[i, j] = val
+            val = out[i]
+            for k in range(a_indptr[i], a_indptr[i + 1]):
+                ind = a_indices[k]
+                v = a_data[k]
+                for j in range(out_shape[1]):
+                    val[j] += v * b[ind, j]
         return out
 
     return _dot_csr_ndarray
