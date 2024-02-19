@@ -41,8 +41,6 @@ jobs:
           environment-file: ci/environment.yml
           python-version: ${{ matrix.python }}
           miniforge-version: latest
-          use-only-tar-bz2: true
-          use-mamba: true
       - name: Install package
         run: |
           pip install -e .[tests]
@@ -90,8 +88,6 @@ jobs:
           environment-file: ci/environment.yml
           python-version: ${{ matrix.python }}
           miniforge-version: latest
-          use-only-tar-bz2: true
-          use-mamba: true
       - name: Install package
         run: |
           pip install -e .
