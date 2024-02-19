@@ -107,6 +107,8 @@ jobs:
       - name: Run tests
         run: |
           ARRAY_API_TESTS_MODULE=sparse pytest array-api-tests/array_api_tests
+          cd array-api-tests
+          ARRAY_API_TESTS_MODULE=sparse pytest array_api_tests
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action/composite@v2
         if: always()
