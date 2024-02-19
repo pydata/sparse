@@ -172,7 +172,7 @@ class SparseArray:
             from matrepr.adapters.sparse_driver import PyDataSparseDriver
 
             return to_html(PyDataSparseDriver.adapt(self), notebook=True)
-        except ImportError:
+        except (ImportError, ValueError):
             return html_table(self)
 
     def _str_impl(self, summary):
@@ -203,7 +203,7 @@ class SparseArray:
                 max_cols=9999,
             )
             return f"{summary}\n{values}"
-        except ImportError:
+        except (ImportError, ValueError):
             return summary
 
     @abstractmethod
