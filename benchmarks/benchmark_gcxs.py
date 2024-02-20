@@ -67,3 +67,28 @@ class IndexingSuite:
 
     def time_index_fancy(self):
         self.x[self.index]
+
+
+class DenseMultiplySuite:
+    params = ([0, 1], [1, 20, 100])
+    param_names = ["compressed axis", "n_vectors"]
+
+    def setup(self, compressed_axis, n_vecs):
+        rng = np.random.default_rng(1337)
+        n = 10000
+        x = sparse.random((n, n), density=0.001, format="gcxs", random_state=rng).change_compressed_axes(
+            (compressed_axis,)
+        )
+        self.x = x
+        self.t = rng.random((n, n_vecs))
+        self.u = rng.random((n_vecs, n))
+
+        # Numba compilation
+        self.x @ self.t
+        self.u @ self.x
+
+    def time_gcxs_dot_ndarray(self, *args):
+        self.x @ self.t
+
+    def time_ndarray_dot_gcxs(self, *args):
+        self.u @ self.x
