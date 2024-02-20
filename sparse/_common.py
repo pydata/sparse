@@ -718,6 +718,7 @@ def _dot_csr_ndarray_type(dt1, dt2):
         out_shape : Tuple[int]
             The shape of the output array.
         """
+        b = np.ascontiguousarray(b)  # ensure memory aligned
         out = np.zeros(out_shape, dtype=dtr)
         for i in range(out_shape[0]):
             val = out[i]
@@ -866,6 +867,7 @@ def _dot_csc_ndarray_type(dt1, dt2):
         a_shape, b_shape : Tuple[int]
             The shapes of the input arrays.
         """
+        b = np.ascontiguousarray(b)  # ensure memory aligned
         out = np.zeros((a_shape[0], b_shape[1]), dtype=dtr)
         for i in range(b_shape[0]):
             for k in range(a_indptr[i], a_indptr[i + 1]):
