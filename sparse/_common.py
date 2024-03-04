@@ -414,7 +414,8 @@ def _dot(a, b, return_type=None):
 
         # compressed_axes == (1,)
         if return_type is None or return_type == np.ndarray:
-            return _dot_ndarray_csc_type(a.dtype, b.dtype)(out_shape, b.data, b.indices, b.indptr, a)
+            out = _dot_csr_ndarray_type(bt.dtype, at.dtype)(out_shape[::-1], bt.data, bt.indices, bt.indptr, at)
+            return out.T
         data, indices, indptr = _dot_csr_ndarray_type_sparse(bt.dtype, at.dtype)(
             out_shape[::-1], bt.data, bt.indices, bt.indptr, at
         )
@@ -717,15 +718,15 @@ def _dot_csr_ndarray_type(dt1, dt2):
         out_shape : Tuple[int]
             The shape of the output array.
         """
-        out = np.empty(out_shape, dtype=dtr)
+        b = np.ascontiguousarray(b)  # ensure memory aligned
+        out = np.zeros(out_shape, dtype=dtr)
         for i in range(out_shape[0]):
-            for j in range(out_shape[1]):
-                val = 0
-                for k in range(a_indptr[i], a_indptr[i + 1]):
-                    ind = a_indices[k]
-                    v = a_data[k]
-                    val += v * b[ind, j]
-                out[i, j] = val
+            val = out[i]
+            for k in range(a_indptr[i], a_indptr[i + 1]):
+                ind = a_indices[k]
+                v = a_data[k]
+                for j in range(out_shape[1]):
+                    val[j] += v * b[ind, j]
         return out
 
     return _dot_csr_ndarray
@@ -866,49 +867,18 @@ def _dot_csc_ndarray_type(dt1, dt2):
         a_shape, b_shape : Tuple[int]
             The shapes of the input arrays.
         """
+        b = np.ascontiguousarray(b)  # ensure memory aligned
         out = np.zeros((a_shape[0], b_shape[1]), dtype=dtr)
-        for j in range(b_shape[1]):
-            for i in range(b_shape[0]):
-                for k in range(a_indptr[i], a_indptr[i + 1]):
-                    out[a_indices[k], j] += a_data[k] * b[i, j]
+        for i in range(b_shape[0]):
+            for k in range(a_indptr[i], a_indptr[i + 1]):
+                ind = a_indices[k]
+                v = a_data[k]
+                val = out[ind]
+                for j in range(b_shape[1]):
+                    val[j] += v * b[i, j]
         return out
 
     return _dot_csc_ndarray
-
-
-@_memoize_dtype
-def _dot_ndarray_csc_type(dt1, dt2):
-    dtr = _dot_dtype(dt1, dt2)
-
-    @numba.jit(
-        nopython=True,
-        nogil=True,
-        locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
-    )
-    def _dot_ndarray_csc(out_shape, b_data, b_indices, b_indptr, a):  # pragma: no cover
-        """
-        Utility function taking in one `ndarray` and one ``GCXS`` and
-        calculating their dot product: a @ b for b with compressed columns.
-
-        Parameters
-        ----------
-        a : np.ndarray
-            The input array ``a``.
-        b_data, b_indices, b_indptr : np.ndarray
-            The data, indices, and index pointers of ``b``.
-        out_shape : Tuple[int]
-            The shape of the output array.
-        """
-        out = np.empty(out_shape, dtype=dtr)
-        for i in range(out_shape[0]):
-            for j in range(out_shape[1]):
-                total = 0
-                for k in range(b_indptr[j], b_indptr[j + 1]):
-                    total += a[i, b_indices[k]] * b_data[k]
-                out[i, j] = total
-        return out
-
-    return _dot_ndarray_csc
 
 
 @_memoize_dtype
