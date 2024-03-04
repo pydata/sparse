@@ -23,9 +23,9 @@ jobs:
       NUMBA_BOUNDSCHECK: ${{ matrix.numba_boundscheck }}
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Cache conda
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           # Increase this value to reset cache if ci/environment.yml has not changed
           CACHE_NUMBER: 0
@@ -34,25 +34,23 @@ jobs:
           key:
             test-${{ matrix.os }}-conda-py${{ matrix.python }}-${{ env.CACHE_NUMBER }}-${{
             hashFiles('ci/environment.yml') }}
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: sparse-dev
           allow-softlinks: true
           environment-file: ci/environment.yml
           python-version: ${{ matrix.python }}
-          miniforge-variant: Mambaforge
-          use-only-tar-bz2: true
-          use-mamba: true
+          miniforge-version: latest
       - name: Install package
         run: |
           pip install -e .[tests]
       - name: Run tests
         run: |
           pytest --pyargs sparse
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         if: always()
-      - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action/composite@v1
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action/composite@v2
         if: always()
         with:
           files: "**/test-*.xml"
@@ -63,9 +61,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Cache conda
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           # Increase this value to reset cache if ci/environment.yml has not changed
           CACHE_NUMBER: 0
@@ -80,15 +78,13 @@ jobs:
           environment-file: ci/environment.yml
           python-version: '3.10'
           miniforge-version: latest
-          use-only-tar-bz2: true
-          use-mamba: true
       - name: Install package
         run: |
           pip install -e .[docs]
       - name: Run tests
         run: |
           sphinx-build -W -b html docs/ _build/html
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v4
         with:
           name: Documentation
           path: _build/html
