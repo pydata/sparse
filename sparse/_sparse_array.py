@@ -173,7 +173,7 @@ class SparseArray:
             from matrepr.adapters.sparse_driver import PyDataSparseDriver
 
             return to_html(PyDataSparseDriver.adapt(self), notebook=True)
-        except ImportError:
+        except (ImportError, ValueError):
             return html_table(self)
 
     def _str_impl(self, summary):
@@ -204,7 +204,7 @@ class SparseArray:
                 max_cols=9999,
             )
             return f"{summary}\n{values}"
-        except ImportError:
+        except (ImportError, ValueError):
             return summary
 
     @abstractmethod
@@ -382,7 +382,7 @@ class SparseArray:
         reduce_super_ufunc = None
 
         if not equivalent(zero_reduce_result, self.fill_value):
-            reduce_super_ufunc = _reduce_super_ufunc.get(method, None)
+            reduce_super_ufunc = _reduce_super_ufunc.get(method)
 
             if reduce_super_ufunc is None:
                 raise ValueError(f"Performing this reduction operation would produce a dense result: {method!s}")

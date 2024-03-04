@@ -56,9 +56,11 @@ include = ["sparse", "sparse.*"]
 version_file = "sparse/_version.py"
 
 [tool.ruff]
-select = ["F", "E", "W", "I", "B", "UP", "YTT", "BLE", "C4", "T10", "ISC", "ICN", "PIE", "PYI", "RSE", "RET", "SIM", "PGH", "FLY", "NPY", "PERF"]
 exclude = ["sparse/_version.py"]
 line-length = 120
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "B", "UP", "YTT", "BLE", "C4", "T10", "ISC", "ICN", "PIE", "PYI", "RSE", "RET", "SIM", "PGH", "FLY", "NPY", "PERF"]
 
 [tool.ruff.lint.isort.sections]
 numpy = ["numpy", "numpy.*", "scipy", "scipy.*"]

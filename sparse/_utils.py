@@ -359,7 +359,7 @@ def random_value_array(value, fraction):
     def replace_values(n):
         i = int(n * fraction)
 
-        ar = np.empty((n,), dtype=np.float_)
+        ar = np.empty((n,), dtype=np.float64)
         ar[:i] = value
         ar[i:] = default_rng.random(n - i)
         return ar
@@ -466,7 +466,7 @@ def html_table(arr):
     table = ["<table><tbody>"]
     headings = ["Format", "Data Type", "Shape", "nnz", "Density", "Read-only"]
 
-    density = np.float_(arr.nnz) / np.float_(arr.size)
+    density = np.float64(arr.nnz) / np.float64(arr.size)
 
     info = [
         type(arr).__name__.lower(),
@@ -483,7 +483,9 @@ def html_table(arr):
         headings.append("Size")
         info.append(human_readable_size(arr.nbytes))
         headings.append("Storage ratio")
-        info.append(f"{np.float_(arr.nbytes) / np.float_(reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize):.2f}")
+        info.append(
+            f"{np.float64(arr.nbytes) / np.float64(reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize):.2f}"
+        )
 
     # compressed_axes
     if type(arr).__name__ == "GCXS":
@@ -625,7 +627,7 @@ def can_store(dtype, scalar):
 
 
 def is_unsigned_dtype(dtype):
-    return np.array(-1, dtype=dtype) != np.array(-1)
+    return np.issubdtype(dtype, np.integer) and np.iinfo(dtype).min == 0
 
 
 def convert_format(format):
