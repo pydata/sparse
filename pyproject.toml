@@ -37,6 +37,7 @@ tests = [
 ]
 tox = ["sparse[tests]", "tox"]
 all = ["sparse[docs,tox]", "matrepr"]
+finch = ["finch"]
 
 [project.urls]
 Documentation = "https://sparse.pydata.org/"
