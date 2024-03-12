@@ -3,6 +3,7 @@ Numba support for COO objects.
 
 For now, this just supports attribute access
 """
+
 import contextlib
 
 import numba
