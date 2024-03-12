@@ -41,9 +41,12 @@ jobs:
           environment-file: ci/environment.yml
           python-version: ${{ matrix.python }}
           miniforge-version: latest
+      - uses: julia-actions/setup-julia@v1.9
+        with:
+          version: '1.10'
       - name: Install package
         run: |
-          pip install -e .[tests]
+          pip install -e .[tests,finch]
       - name: Run tests
         run: |
           pytest --pyargs sparse
