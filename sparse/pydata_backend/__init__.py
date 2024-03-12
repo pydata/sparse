@@ -318,5 +318,3 @@ __all__ = [
     "zeros",
     "zeros_like",
 ]
-
-__array_api_version__ = "2022.12"

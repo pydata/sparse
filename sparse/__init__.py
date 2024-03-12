@@ -5,9 +5,11 @@ from enum import Enum
 from ._version import __version__, __version_tuple__  # noqa: F401
 
 
+__array_api_version__ = "2022.12"
+
 class BackendType(Enum):
-    pydata = "pydata"
-    finch = "finch"
+    pydata = "PyData"
+    finch = "Finch"
 
 
 _ENV_VAR_NAME = "SPARSE_BACKEND"
@@ -46,9 +48,11 @@ class Backend:
 def __getattr__(attr):
     if attr == "pydata_backend":
         import sparse.pydata_backend as backend_module
+
         return backend_module
-    elif attr == "finch_backend":
+    if attr == "finch_backend":
         import sparse.finch_backend as backend_module
+
         return backend_module
-    else:
-        return getattr(Backend.get_backend_module(), attr)
+
+    return getattr(Backend.get_backend_module(), attr)

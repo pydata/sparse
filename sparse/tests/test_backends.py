@@ -1,19 +1,13 @@
-import pytest
-import numpy as np
-
 import sparse
 
+import pytest
 
-@pytest.mark.parametrize("backend", [sparse.BackendType.pydata, sparse.BackendType.finch])
+import numpy as np
+
+
 def test_backend_contex_manager(backend):
-
-    sparse.COO.from_numpy(np.eye(5))
-
-    with sparse.Backend(backend=backend):
-
-        try:
+    if backend == sparse.BackendType.finch:
+        with pytest.raises(NotImplementedError):
             sparse.COO.from_numpy(np.eye(5))
-        except NotImplementedError:
-            pass
-
-    sparse.COO.from_numpy(np.eye(5))
+    else:
+        sparse.COO.from_numpy(np.eye(5))
