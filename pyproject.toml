@@ -37,6 +37,7 @@ tests = [
 ]
 tox = ["sparse[tests]", "tox"]
 all = ["sparse[docs,tox]", "matrepr"]
+finch = ["finch-tensor"]
 
 [project.urls]
 Documentation = "https://sparse.pydata.org/"
@@ -46,7 +47,7 @@ Repository = "https://github.com/pydata/sparse.git"
 Discussions = "https://github.com/pydata/sparse/discussions"
 
 [project.entry-points.numba_extensions]
-init = "sparse._numba_extension:_init_extension"
+init = "sparse.pydata_backend._numba_extension:_init_extension"
 
 [tool.setuptools.packages.find]
 where = ["."]

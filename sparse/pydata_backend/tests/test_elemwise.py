@@ -2,8 +2,8 @@ import operator
 
 import sparse
 from sparse import COO, DOK
-from sparse._compressed import GCXS
-from sparse._utils import assert_eq, random_value_array
+from sparse.pydata_backend._compressed import GCXS
+from sparse.pydata_backend._utils import assert_eq, random_value_array
 
 import pytest
 
@@ -306,7 +306,7 @@ def test_trinary_broadcasting_pathological(shapes, func, value, fraction):
 
 
 def test_sparse_broadcasting(monkeypatch):
-    orig_unmatch_coo = sparse._umath._Elemwise._get_func_coords_data
+    orig_unmatch_coo = sparse.pydata_backend._umath._Elemwise._get_func_coords_data
 
     state = {"num_matches": 0}
 
@@ -319,7 +319,7 @@ def test_sparse_broadcasting(monkeypatch):
             state["num_matches"] += 1
         return result
 
-    monkeypatch.setattr(sparse._umath._Elemwise, "_get_func_coords_data", mock_unmatch_coo)
+    monkeypatch.setattr(sparse.pydata_backend._umath._Elemwise, "_get_func_coords_data", mock_unmatch_coo)
 
     xs * ys
 
@@ -328,7 +328,7 @@ def test_sparse_broadcasting(monkeypatch):
 
 
 def test_dense_broadcasting(monkeypatch):
-    orig_unmatch_coo = sparse._umath._Elemwise._get_func_coords_data
+    orig_unmatch_coo = sparse.pydata_backend._umath._Elemwise._get_func_coords_data
 
     state = {"num_matches": 0}
 
@@ -341,7 +341,7 @@ def test_dense_broadcasting(monkeypatch):
             state["num_matches"] += 1
         return result
 
-    monkeypatch.setattr(sparse._umath._Elemwise, "_get_func_coords_data", mock_unmatch_coo)
+    monkeypatch.setattr(sparse.pydata_backend._umath._Elemwise, "_get_func_coords_data", mock_unmatch_coo)
 
     xs + ys
 

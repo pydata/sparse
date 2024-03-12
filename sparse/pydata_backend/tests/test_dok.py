@@ -1,6 +1,6 @@
 import sparse
 from sparse import DOK
-from sparse._utils import assert_eq
+from sparse.pydata_backend._utils import assert_eq
 
 import pytest
 

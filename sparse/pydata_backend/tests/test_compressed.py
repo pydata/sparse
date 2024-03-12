@@ -1,6 +1,6 @@
 import sparse
-from sparse._compressed import GCXS
-from sparse._utils import assert_eq
+from sparse.pydata_backend._compressed import GCXS
+from sparse.pydata_backend._utils import assert_eq
 
 import pytest
 
