@@ -1,11 +1,12 @@
+import os
 from contextvars import ContextVar
 from enum import Enum
-import os
 
 
 class BackendType(Enum):
     pydata = "pydata"
     finch = "finch"
+
 
 _ENV_VAR_NAME = "SPARSE_BACKEND"
 
@@ -45,7 +46,7 @@ def __getattr__(attr):
 
 
 def __dir__():
-    return getattr(Backend.get_backend_module(), "__dir__")()
+    return Backend.get_backend_module().__dir__()
 
 
 from ._version import __version__, __version_tuple__  # noqa: F401
