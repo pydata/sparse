@@ -320,8 +320,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         return self.transpose()
 
     def __str__(self):
-        summary = "<GCXS: shape={}, dtype={}, nnz={}, fill_value={}, compressed_axes={}>".format(
-            self.shape, self.dtype, self.nnz, self.fill_value, self.compressed_axes
+        summary = (
+            f"<GCXS: shape={self.shape}, dtype={self.dtype}, nnz={self.nnz}, fill_value={self.fill_value}, "
+            f"compressed_axes={self.compressed_axes}>"
         )
         return self._str_impl(summary)
 
@@ -834,12 +835,9 @@ class _Compressed2d(GCXS):
         )
 
     def __str__(self):
-        summary = "<{}: shape={}, dtype={}, nnz={}, fill_value={}>".format(
-            type(self).__name__,
-            self.shape,
-            self.dtype,
-            self.nnz,
-            self.fill_value,
+        summary = (
+            f"<{type(self).__name__}: shape={self.shape}, dtype={self.dtype}, nnz={self.nnz}, "
+            f"fill_value={self.fill_value}>"
         )
         return self._str_impl(summary)
 
