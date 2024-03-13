@@ -63,7 +63,9 @@ class COOType(types.Type):
 
 @typeof_impl.register(COO)
 def _typeof_COO(val: COO, c) -> COOType:
-    return COOType(data_dtype=val.data.dtype, coords_dtype=val.coords.dtype, ndim=val.ndim)
+    return COOType(
+        data_dtype=val.data.dtype, coords_dtype=val.coords.dtype, ndim=val.ndim
+    )
 
 
 @register_model(COOType)
@@ -99,7 +101,9 @@ def impl_COO(context, builder, sig, args):
     coo.coords = coords
     coo.data = data
     coo.shape = shape
-    coo.fill_value = context.get_constant_generic(builder, typ.fill_value_type, _zero_of_dtype(typ.data_dtype))
+    coo.fill_value = context.get_constant_generic(
+        builder, typ.fill_value_type, _zero_of_dtype(typ.data_dtype)
+    )
     return impl_ret_borrowed(context, builder, sig.return_type, coo._getvalue())
 
 
@@ -108,7 +112,9 @@ def lower_constant_COO(context, builder, typ, pyval):
     coords = context.get_constant_generic(builder, typ.coords_type, pyval.coords)
     data = context.get_constant_generic(builder, typ.data_type, pyval.data)
     shape = context.get_constant_generic(builder, typ.shape_type, pyval.shape)
-    fill_value = context.get_constant_generic(builder, typ.fill_value_type, pyval.fill_value)
+    fill_value = context.get_constant_generic(
+        builder, typ.fill_value_type, pyval.fill_value
+    )
     return impl_ret_borrowed(
         context,
         builder,

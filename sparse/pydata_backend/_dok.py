@@ -123,7 +123,9 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
                 if not len(data):
                     self.dtype = np.dtype("float64")
                 else:
-                    self.dtype = np.result_type(*(np.asarray(x).dtype for x in data.values()))
+                    self.dtype = np.result_type(
+                        *(np.asarray(x).dtype for x in data.values())
+                    )
 
             for c, d in data.items():
                 self[c] = d
@@ -322,7 +324,9 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
         if all(isinstance(k, Iterable) for k in key):
             if len(key) != self.ndim:
-                raise NotImplementedError(f"Index sequences for all {self.ndim} array dimensions needed!")
+                raise NotImplementedError(
+                    f"Index sequences for all {self.ndim} array dimensions needed!"
+                )
             if not all(len(key[0]) == len(k) for k in key):
                 raise IndexError("Unequal length of index sequences!")
             return self._fancy_getitem(key)
@@ -352,12 +356,18 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         value = np.asarray(value, dtype=self.dtype)
 
         # 1D fancy indexing
-        if self.ndim == 1 and isinstance(key, Iterable) and all(isinstance(i, (int, np.integer)) for i in key):
+        if (
+            self.ndim == 1
+            and isinstance(key, Iterable)
+            and all(isinstance(i, (int, np.integer)) for i in key)
+        ):
             key = (key,)
 
         if isinstance(key, tuple) and all(isinstance(k, Iterable) for k in key):
             if len(key) != self.ndim:
-                raise NotImplementedError(f"Index sequences for all {self.ndim} array dimensions needed!")
+                raise NotImplementedError(
+                    f"Index sequences for all {self.ndim} array dimensions needed!"
+                )
             if not all(len(key[0]) == len(k) for k in key):
                 raise IndexError("Unequal length of index sequences!")
             self._fancy_setitem(key, value)
@@ -380,7 +390,9 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         elif values.ndim > 1:
             raise ValueError(f"Dimension of values ({values.ndim}) must be 0 or 1!")
         if not idxs[0].shape == values.shape:
-            raise ValueError(f"Shape mismatch of indices ({idxs[0].shape}) and values ({values.shape})!")
+            raise ValueError(
+                f"Shape mismatch of indices ({idxs[0].shape}) and values ({values.shape})!"
+            )
         fill_value = self.fill_value
         data = self.data
         for idx, value in zip(zip(*idxs), values):
@@ -390,7 +402,9 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
                 del data[idx]
 
     def _setitem(self, key_list, value):
-        value_missing_dims = len([ind for ind in key_list if isinstance(ind, slice)]) - value.ndim
+        value_missing_dims = (
+            len([ind for ind in key_list if isinstance(ind, slice)]) - value.ndim
+        )
 
         if value_missing_dims < 0:
             raise ValueError("setting an array element with a sequence.")
@@ -416,12 +430,18 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
                 key_list_temp = key_list[:]
                 for v_idx, ki in enumerate(range(start, stop, step)):
                     key_list_temp[i] = ki
-                    vi = value if value_missing_dims > 0 else (value[0] if value.shape[0] == 1 else value[v_idx])
+                    vi = (
+                        value
+                        if value_missing_dims > 0
+                        else (value[0] if value.shape[0] == 1 else value[v_idx])
+                    )
                     self._setitem(key_list_temp, vi)
 
                 return
             if not isinstance(ind, Integral):
-                raise IndexError("All indices must be slices or integers when setting an item.")
+                raise IndexError(
+                    "All indices must be slices or integers when setting an item."
+                )
 
         key = tuple(key_list)
         if not equivalent(value, self.fill_value):

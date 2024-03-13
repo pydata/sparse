@@ -220,7 +220,11 @@ def matmul(a, b):
         raise TypeError(f"Cannot perform dot product on types {type(a)}, {type(b)}")
 
     if check_class_nan(a) or check_class_nan(b):
-        warnings.warn("Nan will not be propagated in matrix multiplication", RuntimeWarning, stacklevel=1)
+        warnings.warn(
+            "Nan will not be propagated in matrix multiplication",
+            RuntimeWarning,
+            stacklevel=1,
+        )
 
     # When b is 2-d, it is equivalent to dot
     if b.ndim <= 2:
@@ -363,7 +367,9 @@ def _dot(a, b, return_type=None):
     if isinstance(a, GCXS) and isinstance(b, np.ndarray):
         if a.compressed_axes == (0,):  # csr @ ndarray
             if return_type is None or return_type == np.ndarray:
-                return _dot_csr_ndarray_type(a.dtype, b.dtype)(out_shape, a.data, a.indices, a.indptr, b)
+                return _dot_csr_ndarray_type(a.dtype, b.dtype)(
+                    out_shape, a.data, a.indices, a.indptr, b
+                )
             data, indices, indptr = _dot_csr_ndarray_type_sparse(a.dtype, b.dtype)(
                 out_shape, a.data, a.indices, a.indptr, b
             )
@@ -377,7 +383,9 @@ def _dot(a, b, return_type=None):
                 return out.tocoo()
             return out
         if return_type is None or return_type == np.ndarray:  # csc @ ndarray
-            return _dot_csc_ndarray_type(a.dtype, b.dtype)(a.shape, b.shape, a.data, a.indices, a.indptr, b)
+            return _dot_csc_ndarray_type(a.dtype, b.dtype)(
+                a.shape, b.shape, a.data, a.indices, a.indptr, b
+            )
         data, indices, indptr = _dot_csc_ndarray_type_sparse(a.dtype, b.dtype)(
             a.shape, b.shape, a.data, a.indices, a.indptr, b
         )
@@ -397,7 +405,9 @@ def _dot(a, b, return_type=None):
         bt = b.T  # constant-time transpose
         if b.compressed_axes == (0,):
             if return_type is None or return_type == np.ndarray:
-                out = _dot_csc_ndarray_type(bt.dtype, at.dtype)(bt.shape, at.shape, bt.data, bt.indices, bt.indptr, at)
+                out = _dot_csc_ndarray_type(bt.dtype, at.dtype)(
+                    bt.shape, at.shape, bt.data, bt.indices, bt.indptr, at
+                )
                 return out.T
             data, indices, indptr = _dot_csc_ndarray_type_sparse(bt.dtype, at.dtype)(
                 bt.shape, at.shape, bt.data, b.indices, b.indptr, at
@@ -414,12 +424,16 @@ def _dot(a, b, return_type=None):
 
         # compressed_axes == (1,)
         if return_type is None or return_type == np.ndarray:
-            out = _dot_csr_ndarray_type(bt.dtype, at.dtype)(out_shape[::-1], bt.data, bt.indices, bt.indptr, at)
+            out = _dot_csr_ndarray_type(bt.dtype, at.dtype)(
+                out_shape[::-1], bt.data, bt.indices, bt.indptr, at
+            )
             return out.T
         data, indices, indptr = _dot_csr_ndarray_type_sparse(bt.dtype, at.dtype)(
             out_shape[::-1], bt.data, bt.indices, bt.indptr, at
         )
-        out = GCXS((data, indices, indptr), shape=out_shape, compressed_axes=(1,), prune=True)
+        out = GCXS(
+            (data, indices, indptr), shape=out_shape, compressed_axes=(1,), prune=True
+        )
         if return_type == COO:
             return out.tocoo()
         return out
@@ -455,8 +469,12 @@ def _dot(a, b, return_type=None):
         b = b.view(type=np.ndarray).T
 
         if return_type is None or return_type == np.ndarray:
-            return _dot_coo_ndarray_type(a.dtype, b.dtype)(a.coords, a.data, b, out_shape)
-        coords, data = _dot_coo_ndarray_type_sparse(a.dtype, b.dtype)(a.coords, a.data, b, out_shape)
+            return _dot_coo_ndarray_type(a.dtype, b.dtype)(
+                a.coords, a.data, b, out_shape
+            )
+        coords, data = _dot_coo_ndarray_type_sparse(a.dtype, b.dtype)(
+            a.coords, a.data, b, out_shape
+        )
         out = COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True)
         if return_type == GCXS:
             return out.asformat("gcxs")
@@ -466,10 +484,16 @@ def _dot(a, b, return_type=None):
         a = a.view(type=np.ndarray)
 
         if return_type is None or return_type == np.ndarray:
-            return _dot_ndarray_coo_type(a.dtype, b.dtype)(a, b.coords, b.data, out_shape)
+            return _dot_ndarray_coo_type(a.dtype, b.dtype)(
+                a, b.coords, b.data, out_shape
+            )
         b = b.T
-        coords, data = _dot_ndarray_coo_type_sparse(a.dtype, b.dtype)(a, b.coords, b.data, out_shape)
-        out = COO(coords, data, shape=out_shape, has_duplicates=False, sorted=True, prune=True)
+        coords, data = _dot_ndarray_coo_type_sparse(a.dtype, b.dtype)(
+            a, b.coords, b.data, out_shape
+        )
+        out = COO(
+            coords, data, shape=out_shape, has_duplicates=False, sorted=True, prune=True
+        )
         if return_type == GCXS:
             return out.asformat("gcxs")
         return out
@@ -518,7 +542,9 @@ def _memoize_dtype(f):
 
 
 @numba.jit(nopython=True, nogil=True)
-def _csr_csr_count_nnz(out_shape, a_indices, b_indices, a_indptr, b_indptr):  # pragma: no cover
+def _csr_csr_count_nnz(
+    out_shape, a_indices, b_indices, a_indptr, b_indptr
+):  # pragma: no cover
     """
     A function for computing the number of nonzero values in the resulting
     array from multiplying an array with compressed rows with an array
@@ -548,7 +574,9 @@ def _csr_csr_count_nnz(out_shape, a_indices, b_indices, a_indptr, b_indptr):  # 
 
 
 @numba.jit(nopython=True, nogil=True)
-def _csr_ndarray_count_nnz(out_shape, indptr, a_indices, a_indptr, b):  # pragma: no cover
+def _csr_ndarray_count_nnz(
+    out_shape, indptr, a_indices, a_indptr, b
+):  # pragma: no cover
     """
     A function for computing the number of nonzero values in the resulting
     array from multiplying an array with compressed rows with a dense
@@ -578,7 +606,9 @@ def _csr_ndarray_count_nnz(out_shape, indptr, a_indices, a_indptr, b):  # pragma
 
 
 @numba.jit(nopython=True, nogil=True)
-def _csc_ndarray_count_nnz(a_shape, b_shape, indptr, a_indices, a_indptr, b):  # pragma: no cover
+def _csc_ndarray_count_nnz(
+    a_shape, b_shape, indptr, a_indices, a_indptr, b
+):  # pragma: no cover
     """
     A function for computing the number of nonzero values in the resulting
     array from multiplying an array with compressed columns with a dense
@@ -622,7 +652,9 @@ def _dot_csr_csr_type(dt1, dt2):
         nogil=True,
         locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
     )
-    def _dot_csr_csr(out_shape, a_data, b_data, a_indices, b_indices, a_indptr, b_indptr):  # pragma: no cover
+    def _dot_csr_csr(
+        out_shape, a_data, b_data, a_indices, b_indices, a_indptr, b_indptr
+    ):  # pragma: no cover
         """
         Utility function taking in two ``GCXS`` objects and calculating
         their dot product: a @ b for a and b with compressed rows.
@@ -741,7 +773,9 @@ def _dot_csr_ndarray_type_sparse(dt1, dt2):
         nogil=True,
         locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
     )
-    def _dot_csr_ndarray_sparse(out_shape, a_data, a_indices, a_indptr, b):  # pragma: no cover
+    def _dot_csr_ndarray_sparse(
+        out_shape, a_data, a_indices, a_indptr, b
+    ):  # pragma: no cover
         """
         Utility function taking in one `GCXS` and one ``ndarray`` and
         calculating their dot product: a @ b for a with compressed rows.
@@ -790,7 +824,9 @@ def _dot_csc_ndarray_type_sparse(dt1, dt2):
         nogil=True,
         locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
     )
-    def _dot_csc_ndarray_sparse(a_shape, b_shape, a_data, a_indices, a_indptr, b):  # pragma: no cover
+    def _dot_csc_ndarray_sparse(
+        a_shape, b_shape, a_data, a_indices, a_indptr, b
+    ):  # pragma: no cover
         """
         Utility function taking in one `GCXS` and one ``ndarray`` and
         calculating their dot product: a @ b for a with compressed columns.
@@ -852,7 +888,9 @@ def _dot_csc_ndarray_type(dt1, dt2):
         nogil=True,
         locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
     )
-    def _dot_csc_ndarray(a_shape, b_shape, a_data, a_indices, a_indptr, b):  # pragma: no cover
+    def _dot_csc_ndarray(
+        a_shape, b_shape, a_data, a_indices, a_indptr, b
+    ):  # pragma: no cover
         """
         Utility function taking in one `GCXS` and one ``ndarray`` and
         calculating their dot product: a @ b for a with compressed columns.
@@ -890,7 +928,9 @@ def _dot_coo_coo_type(dt1, dt2):
         nogil=True,
         locals={"data_curr": numba.np.numpy_support.from_dtype(dtr)},
     )
-    def _dot_coo_coo(out_shape, a_coords, b_coords, a_data, b_data, a_indptr, b_indptr):  # pragma: no cover
+    def _dot_coo_coo(
+        out_shape, a_coords, b_coords, a_data, b_data, a_indptr, b_indptr
+    ):  # pragma: no cover
         """
         Utility function taking in two ``COO`` objects and calculating
         their dot product: a @ b.
@@ -910,7 +950,9 @@ def _dot_coo_coo_type(dt1, dt2):
 
         n_row, n_col = out_shape
         # calculate nnz before multiplying so we can use static arrays
-        nnz = _csr_csr_count_nnz(out_shape, a_coords[1], b_coords[1], a_indptr, b_indptr)
+        nnz = _csr_csr_count_nnz(
+            out_shape, a_coords[1], b_coords[1], a_indptr, b_indptr
+        )
         coords = np.empty((2, nnz), dtype=np.intp)
         data = np.empty(nnz, dtype=dtr)
         next_ = np.full(n_col, -1)
@@ -1196,7 +1238,9 @@ def _parse_einsum_input(operands):
                     try:
                         s = index(s)
                     except TypeError as e:
-                        raise TypeError("For this input type lists must contain either int or Ellipsis") from e
+                        raise TypeError(
+                            "For this input type lists must contain either int or Ellipsis"
+                        ) from e
                     subscripts += np.core.einsumfunc.einsum_symbols[s]
             if num != last:
                 subscripts += ","
@@ -1210,7 +1254,9 @@ def _parse_einsum_input(operands):
                     try:
                         s = index(s)
                     except TypeError as e:
-                        raise TypeError("For this input type lists must contain either int or Ellipsis") from e
+                        raise TypeError(
+                            "For this input type lists must contain either int or Ellipsis"
+                        ) from e
                     subscripts += np.core.einsumfunc.einsum_symbols[s]
     # Check for proper "->"
     if ("-" in subscripts) or (">" in subscripts):
@@ -1295,7 +1341,9 @@ def _parse_einsum_input(operands):
 
     # Make sure number operands is equivalent to the number of terms
     if len(input_subscripts.split(",")) != len(operands):
-        raise ValueError("Number of einsum subscripts must be equal to the number of operands.")
+        raise ValueError(
+            "Number of einsum subscripts must be equal to the number of operands."
+        )
 
     return (input_subscripts, output_subscript, operands)
 
@@ -1370,7 +1418,9 @@ def _einsum_single(lhs, rhs, operand):
         # scalar output - match numpy behaviour by not wrapping as array
         return new_data.sum()
 
-    return to_output_format(COO(new_coords, new_data, shape=new_shape, has_duplicates=True))
+    return to_output_format(
+        COO(new_coords, new_data, shape=new_shape, has_duplicates=True)
+    )
 
 
 def einsum(*operands, **kwargs):
@@ -1444,7 +1494,9 @@ def einsum(*operands, **kwargs):
             # perform necessary transpose and reductions
             array = _einsum_single(term, pterm, array)
         # calc broadcastable shape
-        shape = tuple(array.shape[pterm.index(ix)] if ix in pterm else 1 for ix in aligned_term)
+        shape = tuple(
+            array.shape[pterm.index(ix)] if ix in pterm else 1 for ix in aligned_term
+        )
         parrays.append(array.reshape(shape) if array.shape != shape else array)
 
     aligned_array = reduce(mul, parrays)
@@ -1592,7 +1644,9 @@ def eye(N, M=None, k=0, dtype=float, format="coo", **kwargs):
     coords = np.stack([n_coords, m_coords])
     data = np.array(1, dtype=dtype)
 
-    return COO(coords, data=data, shape=(N, M), has_duplicates=False, sorted=True).asformat(format, **kwargs)
+    return COO(
+        coords, data=data, shape=(N, M), has_duplicates=False, sorted=True
+    ).asformat(format, **kwargs)
 
 
 def full(shape, fill_value, dtype=None, format="coo", order="C", **kwargs):
@@ -1920,7 +1974,9 @@ def moveaxis(a, source, destination):
     destination = normalize_axis(destination, a.ndim)
 
     if len(source) != len(destination):
-        raise ValueError("`source` and `destination` arguments must have the same number of elements")
+        raise ValueError(
+            "`source` and `destination` arguments must have the same number of elements"
+        )
 
     order = [n for n in range(a.ndim) if n not in source]
 
@@ -1975,7 +2031,9 @@ def pad(array, pad_width, mode="constant", **kwargs):
     if mode.lower() != "constant":
         raise NotImplementedError(f"Mode '{mode}' is not yet supported.")
 
-    if not equivalent(kwargs.pop("constant_values", _zero_of_dtype(array.dtype)), array.fill_value):
+    if not equivalent(
+        kwargs.pop("constant_values", _zero_of_dtype(array.dtype)), array.fill_value
+    ):
         raise ValueError("constant_values can only be equal to fill value.")
 
     if kwargs:
@@ -1987,7 +2045,12 @@ def pad(array, pad_width, mode="constant", **kwargs):
 
     pad_width = np.broadcast_to(pad_width, (len(array.shape), 2))
     new_coords = array.coords + pad_width[:, 0:1]
-    new_shape = tuple([array.shape[i] + pad_width[i, 0] + pad_width[i, 1] for i in range(len(array.shape))])
+    new_shape = tuple(
+        [
+            array.shape[i] + pad_width[i, 0] + pad_width[i, 1]
+            for i in range(len(array.shape))
+        ]
+    )
     new_data = array.data
     return COO(new_coords, new_data, new_shape, fill_value=array.fill_value)
 
@@ -2004,7 +2067,9 @@ def format_to_string(format):
     raise ValueError(f"invalid format: {format}")
 
 
-def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, copy=False):
+def asarray(
+    obj, /, *, dtype=None, format="coo", backend="pydata", device=None, copy=False
+):
     """
     Convert the input to a sparse array.
 

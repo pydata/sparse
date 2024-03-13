@@ -81,7 +81,10 @@ def assert_nnz(s, x):
 
 
 def is_canonical(x):
-    return not x.shape or ((np.diff(x.linear_loc()) > 0).all() and not equivalent(x.data, x.fill_value).any())
+    return not x.shape or (
+        (np.diff(x.linear_loc()) > 0).all()
+        and not equivalent(x.data, x.fill_value).any()
+    )
 
 
 def _zero_of_dtype(dtype):
@@ -300,7 +303,9 @@ def random(
     if nnz is None:
         nnz = int(elements * density)
     if not (0 <= nnz <= elements):
-        raise ValueError(f"cannot generate {nnz} nonzero elements for an array with {elements} total elements")
+        raise ValueError(
+            f"cannot generate {nnz} nonzero elements for an array with {elements} total elements"
+        )
 
     if random_state is None:
         random_state = default_rng
@@ -330,7 +335,11 @@ def random(
                 elements,
             )
     else:
-        ind = algD(nnz, elements, random_state) if elements > 10 * nnz else algA(nnz, elements, random_state)
+        ind = (
+            algD(nnz, elements, random_state)
+            if elements > 10 * nnz
+            else algA(nnz, elements, random_state)
+        )
     data = data_rvs(nnz)
 
     ar = COO(
@@ -344,7 +353,9 @@ def random(
         if can_store(idx_dtype, max(shape)):
             ar.coords = ar.coords.astype(idx_dtype)
         else:
-            raise ValueError(f"cannot cast array with shape {shape} to dtype {idx_dtype}.")
+            raise ValueError(
+                f"cannot cast array with shape {shape} to dtype {idx_dtype}."
+            )
 
     return ar.asformat(format, **kwargs)
 
@@ -493,7 +504,9 @@ def html_table(arr):
         info.append(str(arr.compressed_axes))
 
     for h, i in zip(headings, info):
-        table.append(f'<tr><th style="text-align: left">{h}</th><td style="text-align: left">{i}</td></tr>')
+        table.append(
+            f'<tr><th style="text-align: left">{h}</th><td style="text-align: left">{i}</td></tr>'
+        )
     table.append("</tbody></table>")
     return "".join(table)
 
@@ -557,7 +570,9 @@ def check_zero_fill_value(*args):
     ValueError: This operation requires zero fill values, but argument 1 had a fill value of 0.5.
     """
     for i, arg in enumerate(args):
-        if hasattr(arg, "fill_value") and not equivalent(arg.fill_value, _zero_of_dtype(arg.dtype)):
+        if hasattr(arg, "fill_value") and not equivalent(
+            arg.fill_value, _zero_of_dtype(arg.dtype)
+        ):
             raise ValueError(
                 "This operation requires zero fill values, "
                 f"but argument {i:d} had a fill value of {arg.fill_value!s}."

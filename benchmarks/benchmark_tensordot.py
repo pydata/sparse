@@ -33,7 +33,9 @@ class TensordotSuiteSparseSparse:
         self.s2 = sparse.random((100, 100, 100, 100), density=0.01, random_state=rng)
 
     def time_dense(self):
-        sparse.tensordot(self.s1, self.s2, axes=([0, 1], [0, 2]), return_type=np.ndarray)
+        sparse.tensordot(
+            self.s1, self.s2, axes=([0, 1], [0, 2]), return_type=np.ndarray
+        )
 
     def time_sparse(self):
         sparse.tensordot(self.s1, self.s2, axes=([0, 1], [0, 2]))

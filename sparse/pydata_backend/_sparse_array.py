@@ -34,7 +34,9 @@ class SparseArray:
             shape = (shape,)
 
         if not all(isinstance(sh, Integral) and int(sh) >= 0 for sh in shape):
-            raise ValueError("shape must be an non-negative integer or a tuple of non-negative integers.")
+            raise ValueError(
+                "shape must be an non-negative integer or a tuple of non-negative integers."
+            )
 
         self.shape = tuple(int(sh) for sh in shape)
 
@@ -284,7 +286,11 @@ class SparseArray:
         with contextlib.suppress(AttributeError):
             sparse_func = getattr(type(self), func.__name__)
 
-        if not isinstance(sparse_func, Callable) and len(args) == 1 and len(kwargs) == 0:
+        if (
+            not isinstance(sparse_func, Callable)
+            and len(args) == 1
+            and len(kwargs) == 0
+        ):
             try:
                 return getattr(self, func.__name__)
             except AttributeError:
@@ -313,10 +319,15 @@ class SparseArray:
             return NotImplemented
 
         if getattr(ufunc, "signature", None) is not None:
-            return self.__array_function__(ufunc, (np.ndarray, type(self)), inputs, kwargs)
+            return self.__array_function__(
+                ufunc, (np.ndarray, type(self)), inputs, kwargs
+            )
 
         if out is not None:
-            test_args = [np.empty(1, dtype=a.dtype) if hasattr(a, "dtype") else [a] for a in inputs]
+            test_args = [
+                np.empty(1, dtype=a.dtype) if hasattr(a, "dtype") else [a]
+                for a in inputs
+            ]
             test_kwargs = kwargs.copy()
             if method == "reduce":
                 test_kwargs["axis"] = None
@@ -386,7 +397,9 @@ class SparseArray:
             reduce_super_ufunc = _reduce_super_ufunc.get(method)
 
             if reduce_super_ufunc is None:
-                raise ValueError(f"Performing this reduction operation would produce a dense result: {method!s}")
+                raise ValueError(
+                    f"Performing this reduction operation would produce a dense result: {method!s}"
+                )
 
         if not isinstance(axis, tuple):
             axis = (axis,)
@@ -397,7 +410,9 @@ class SparseArray:
         result_fill_value = self.fill_value
         if reduce_super_ufunc is None:
             missing_counts = counts != n_cols
-            data[missing_counts] = method(data[missing_counts], self.fill_value, **kwargs)
+            data[missing_counts] = method(
+                data[missing_counts], self.fill_value, **kwargs
+            )
         else:
             data = method(
                 data,
@@ -569,7 +584,9 @@ class SparseArray:
         --------
         :obj:`numpy.prod` : Equivalent numpy function.
         """
-        return np.multiply.reduce(self, out=out, axis=axis, keepdims=keepdims, dtype=dtype)
+        return np.multiply.reduce(
+            self, out=out, axis=axis, keepdims=keepdims, dtype=dtype
+        )
 
     def round(self, decimals=0, out=None):
         """
@@ -585,7 +602,9 @@ class SparseArray:
         """
         if out is not None and not isinstance(out, tuple):
             out = (out,)
-        return self.__array_ufunc__(np.round, "__call__", self, decimals=decimals, out=out)
+        return self.__array_ufunc__(
+            np.round, "__call__", self, decimals=decimals, out=out
+        )
 
     round_ = round
 
@@ -605,7 +624,9 @@ class SparseArray:
             raise ValueError("One of max or min must be given.")
         if out is not None and not isinstance(out, tuple):
             out = (out,)
-        return self.__array_ufunc__(np.clip, "__call__", self, a_min=min, a_max=max, out=out)
+        return self.__array_ufunc__(
+            np.clip, "__call__", self, a_min=min, a_max=max, out=out
+        )
 
     def astype(self, dtype, casting="unsafe", copy=True):
         """
@@ -624,7 +645,9 @@ class SparseArray:
         # this matches numpy's behavior
         if self.dtype == dtype and not copy:
             return self
-        return self.__array_ufunc__(np.ndarray.astype, "__call__", self, dtype=dtype, copy=copy, casting=casting)
+        return self.__array_ufunc__(
+            np.ndarray.astype, "__call__", self, dtype=dtype, copy=copy, casting=casting
+        )
 
     def mean(self, axis=None, keepdims=False, dtype=None, out=None):
         """
@@ -699,7 +722,9 @@ class SparseArray:
                 dtype = inter_dtype = np.dtype("f8")
             else:
                 dtype = self.dtype
-                inter_dtype = np.dtype("f4") if issubclass(dtype.type, np.float16) else dtype
+                inter_dtype = (
+                    np.dtype("f4") if issubclass(dtype.type, np.float16) else dtype
+                )
         else:
             inter_dtype = dtype
 
@@ -783,7 +808,9 @@ class SparseArray:
         rcount = reduce(operator.mul, (self.shape[a] for a in axis), 1)
         # Make this warning show up on top.
         if ddof >= rcount:
-            warnings.warn("Degrees of freedom <= 0 for slice", RuntimeWarning, stacklevel=1)
+            warnings.warn(
+                "Degrees of freedom <= 0 for slice", RuntimeWarning, stacklevel=1
+            )
 
         # Cast bool, unsigned int, and int to float64 by default
         if dtype is None and issubclass(self.dtype.type, (np.integer, np.bool_)):

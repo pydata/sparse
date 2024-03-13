@@ -296,7 +296,10 @@ def test_trinary_broadcasting(shapes, func):
 @pytest.mark.parametrize("fraction", [0.25, 0.5, 0.75, 1.0])
 @pytest.mark.filterwarnings("ignore:invalid value")
 def test_trinary_broadcasting_pathological(shapes, func, value, fraction):
-    args = [sparse.random(s, density=0.5, data_rvs=random_value_array(value, fraction)) for s in shapes]
+    args = [
+        sparse.random(s, density=0.5, data_rvs=random_value_array(value, fraction))
+        for s in shapes
+    ]
     dense_args = [arg.todense() for arg in args]
 
     fs = sparse.elemwise(func, *args)
@@ -319,7 +322,11 @@ def test_sparse_broadcasting(monkeypatch):
             state["num_matches"] += 1
         return result
 
-    monkeypatch.setattr(sparse.pydata_backend._umath._Elemwise, "_get_func_coords_data", mock_unmatch_coo)
+    monkeypatch.setattr(
+        sparse.pydata_backend._umath._Elemwise,
+        "_get_func_coords_data",
+        mock_unmatch_coo,
+    )
 
     xs * ys
 
@@ -341,7 +348,11 @@ def test_dense_broadcasting(monkeypatch):
             state["num_matches"] += 1
         return result
 
-    monkeypatch.setattr(sparse.pydata_backend._umath._Elemwise, "_get_func_coords_data", mock_unmatch_coo)
+    monkeypatch.setattr(
+        sparse.pydata_backend._umath._Elemwise,
+        "_get_func_coords_data",
+        mock_unmatch_coo,
+    )
 
     xs + ys
 

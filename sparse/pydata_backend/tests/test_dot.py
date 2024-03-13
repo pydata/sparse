@@ -174,15 +174,27 @@ def test_matmul_errors():
     "a, b",
     [
         (
-            sparse.GCXS.from_numpy(default_rng.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009])),
+            sparse.GCXS.from_numpy(
+                default_rng.choice(
+                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
+                )
+            ),
             sparse.random((100, 100), density=0.01),
         ),
         (
-            sparse.COO.from_numpy(default_rng.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009])),
+            sparse.COO.from_numpy(
+                default_rng.choice(
+                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
+                )
+            ),
             sparse.random((100, 100), density=0.01),
         ),
         (
-            sparse.GCXS.from_numpy(default_rng.choice([0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009])),
+            sparse.GCXS.from_numpy(
+                default_rng.choice(
+                    [0, np.nan, 2], size=[100, 100], p=[0.99, 0.001, 0.009]
+                )
+            ),
             scipy.sparse.random(100, 100),
         ),
         (
@@ -290,7 +302,9 @@ dot_formats = [
 @pytest.mark.parametrize("format2", dot_formats)
 def test_small_values(format1, format2):
     s1 = format1(sparse.COO(coords=[[0, 10]], data=[3.6e-100, 7.2e-009], shape=(20,)))
-    s2 = format2(sparse.COO(coords=[[0, 0], [4, 28]], data=[3.8e-25, 4.5e-225], shape=(20, 50)))
+    s2 = format2(
+        sparse.COO(coords=[[0, 0], [4, 28]], data=[3.8e-25, 4.5e-225], shape=(20, 50))
+    )
 
     def dense_convertor(x):
         return x.todense() if isinstance(x, sparse.SparseArray) else x

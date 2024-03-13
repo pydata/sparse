@@ -41,7 +41,9 @@ def random_sparse_small(cls, dtype, rng):
 
     else:
         data_rvs = None
-    return cls(sparse.random((20, 30, 40), density=0.25, data_rvs=data_rvs).astype(dtype))
+    return cls(
+        sparse.random((20, 30, 40), density=0.25, data_rvs=data_rvs).astype(dtype)
+    )
 
 
 def test_repr(random_sparse):

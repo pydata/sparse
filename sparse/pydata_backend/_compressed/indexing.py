@@ -29,7 +29,10 @@ def getitem(x, key):
     key = list(normalize_index(key, x.shape))
 
     # zip_longest so things like x[..., None] are picked up.
-    if len(key) != 0 and all(isinstance(k, slice) and k == slice(0, dim, 1) for k, dim in zip_longest(key, x.shape)):
+    if len(key) != 0 and all(
+        isinstance(k, slice) and k == slice(0, dim, 1)
+        for k, dim in zip_longest(key, x.shape)
+    ):
         return x
 
     # return a single element
@@ -114,7 +117,11 @@ def getitem(x, key):
     if np.any(compressed_inds):
         compressed_axes = shape_key[compressed_inds]
 
-        row_size = shape[compressed_axes] if len(compressed_axes) == 1 else np.prod(shape[compressed_axes])
+        row_size = (
+            shape[compressed_axes]
+            if len(compressed_axes) == 1
+            else np.prod(shape[compressed_axes])
+        )
 
     # if only indexing through uncompressed axes
     else:
@@ -144,7 +151,9 @@ def getitem(x, key):
             indices = uncompressed % size
             indptr = np.empty(shape[0] + 1, dtype=x.indptr.dtype)
             indptr[0] = 0
-            np.cumsum(np.bincount(uncompressed // size, minlength=shape[0]), out=indptr[1:])
+            np.cumsum(
+                np.bincount(uncompressed // size, minlength=shape[0]), out=indptr[1:]
+            )
     if not np.any(compressed_inds):
         if len(shape) == 1:
             indptr = None
@@ -171,11 +180,15 @@ def getitem(x, key):
     if len(shape) == 1:
         compressed_axes = None
 
-    return GCXS(arg, shape=shape, compressed_axes=compressed_axes, fill_value=x.fill_value)
+    return GCXS(
+        arg, shape=shape, compressed_axes=compressed_axes, fill_value=x.fill_value
+    )
 
 
 @numba.jit(nopython=True, nogil=True)
-def get_slicing_selection(arr_data, arr_indices, indptr, starts, ends, col):  # pragma: no cover
+def get_slicing_selection(
+    arr_data, arr_indices, indptr, starts, ends, col
+):  # pragma: no cover
     """
     When the requested elements come in a strictly ascending order, as is the
     case with acsending slices, we can iteratively reduce the search space,
@@ -212,7 +225,9 @@ def get_slicing_selection(arr_data, arr_indices, indptr, starts, ends, col):  # 
             col_count = 0
             while col_count < len(col):
                 while (
-                    col_count < len(col) and size < len(current_row) and col[col_count] < current_row[size]
+                    col_count < len(col)
+                    and size < len(current_row)
+                    and col[col_count] < current_row[size]
                 ):  # skip needless searches
                     col_count += 1
                 if col_count >= len(col):  # check again because of previous loop
@@ -238,7 +253,9 @@ def get_slicing_selection(arr_data, arr_indices, indptr, starts, ends, col):  # 
 
 
 @numba.jit(nopython=True, nogil=True)
-def get_array_selection(arr_data, arr_indices, indptr, starts, ends, col):  # pragma: no cover
+def get_array_selection(
+    arr_data, arr_indices, indptr, starts, ends, col
+):  # pragma: no cover
     """
     This is a very general algorithm to be used when more optimized methods don't apply.
     It performs a binary search for each of the requested elements.

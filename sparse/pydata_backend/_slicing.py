@@ -78,7 +78,9 @@ def replace_ellipsis(n, index):
 
     loc = isellipsis[0]
     extra_dimensions = n - (len(index) - sum(i is None for i in index) - 1)
-    return index[:loc] + (slice(None, None, None),) * extra_dimensions + index[loc + 1 :]
+    return (
+        index[:loc] + (slice(None, None, None),) * extra_dimensions + index[loc + 1 :]
+    )
 
 
 def check_index(ind, dimension):
@@ -109,7 +111,10 @@ def check_index(ind, dimension):
     # unknown dimension, assumed to be in bounds
     if isinstance(ind, Iterable):
         x = np.asanyarray(ind)
-        if np.issubdtype(x.dtype, np.integer) and ((x >= dimension) | (x < -dimension)).any():
+        if (
+            np.issubdtype(x.dtype, np.integer)
+            and ((x >= dimension) | (x < -dimension)).any()
+        ):
             raise IndexError(f"Index out of bounds for dimension {dimension:d}")
         if x.dtype == np.bool_ and len(x) != dimension:
             raise IndexError(
@@ -125,7 +130,9 @@ def check_index(ind, dimension):
         )
 
     elif ind >= dimension:
-        raise IndexError(f"Index is not smaller than dimension {ind:d} >= {dimension:d}")
+        raise IndexError(
+            f"Index is not smaller than dimension {ind:d} >= {dimension:d}"
+        )
 
     elif ind < -dimension:
         msg = "Negative index is not greater than negative dimension {:d} <= -{:d}"

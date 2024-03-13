@@ -118,7 +118,9 @@ def _get_nary_broadcast_shape(*shapes):
             result_shape = _get_broadcast_shape(shape, result_shape)
         except ValueError as e:  # noqa: PERF203
             shapes_str = ", ".join(str(shape) for shape in shapes)
-            raise ValueError(f"operands could not be broadcast together with shapes {shapes_str}") from e
+            raise ValueError(
+                f"operands could not be broadcast together with shapes {shapes_str}"
+            ) from e
 
     return result_shape
 
@@ -145,10 +147,18 @@ def _get_broadcast_shape(shape1, shape2, is_result=False):
         If the two shapes cannot be broadcast together.
     """
     # https://stackoverflow.com/a/47244284/774273
-    if not all((l1 == l2) or (l1 == 1) or ((l2 == 1) and not is_result) for l1, l2 in zip(shape1[::-1], shape2[::-1])):
-        raise ValueError(f"operands could not be broadcast together with shapes {shape1}, {shape2}")
+    if not all(
+        (l1 == l2) or (l1 == 1) or ((l2 == 1) and not is_result)
+        for l1, l2 in zip(shape1[::-1], shape2[::-1])
+    ):
+        raise ValueError(
+            f"operands could not be broadcast together with shapes {shape1}, {shape2}"
+        )
 
-    return tuple(l1 if l1 != 1 else l2 for l1, l2 in zip_longest(shape1[::-1], shape2[::-1], fillvalue=1))[::-1]
+    return tuple(
+        l1 if l1 != 1 else l2
+        for l1, l2 in zip_longest(shape1[::-1], shape2[::-1], fillvalue=1)
+    )[::-1]
 
 
 def _get_broadcast_parameters(shape, broadcast_shape):
@@ -169,7 +179,8 @@ def _get_broadcast_parameters(shape, broadcast_shape):
         it needs to be broadcast, and True if it doesn't.
     """
     return [
-        None if l1 is None else l1 == l2 for l1, l2 in zip_longest(shape[::-1], broadcast_shape[::-1], fillvalue=None)
+        None if l1 is None else l1 == l2
+        for l1, l2 in zip_longest(shape[::-1], broadcast_shape[::-1], fillvalue=None)
     ][::-1]
 
 
@@ -257,7 +268,9 @@ def _get_expanded_coords_data(coords, data, params, broadcast_shape):
     if first_dim != -1:
         expanded_data = data[all_idx[first_dim]]
     else:
-        expanded_coords = all_idx if len(data) else np.empty((0, all_idx.shape[1]), dtype=np.intp)
+        expanded_coords = (
+            all_idx if len(data) else np.empty((0, all_idx.shape[1]), dtype=np.intp)
+        )
         expanded_data = np.repeat(data, reduce(operator.mul, broadcast_shape, 1))
         return np.asarray(expanded_coords), np.asarray(expanded_data)
 
@@ -373,7 +386,9 @@ def broadcast_to(x, shape):
 
     # Check if all the non-broadcast axes are next to each other
     nonbroadcast_idx = [idx for idx, p in enumerate(params) if p]
-    diff_nonbroadcast_idx = [a - b for a, b in zip(nonbroadcast_idx[1:], nonbroadcast_idx[:-1])]
+    diff_nonbroadcast_idx = [
+        a - b for a, b in zip(nonbroadcast_idx[1:], nonbroadcast_idx[:-1])
+    ]
     sorted = all(d == 1 for d in diff_nonbroadcast_idx)
 
     return COO(
@@ -475,7 +490,9 @@ class _Elemwise:
         data_list = []
         coords_list = []
 
-        for mask in itertools.product(*[[True, False] if isinstance(arg, COO) else [None] for arg in self.args]):
+        for mask in itertools.product(
+            *[[True, False] if isinstance(arg, COO) else [None] for arg in self.args]
+        ):
             if not any(mask):
                 continue
 
@@ -486,9 +503,15 @@ class _Elemwise:
                 data_list.append(r[1])
 
         # Concatenate matches and mismatches
-        data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=self.fill_value.dtype)
+        data = (
+            np.concatenate(data_list)
+            if len(data_list)
+            else np.empty((0,), dtype=self.fill_value.dtype)
+        )
         coords = (
-            np.concatenate(coords_list, axis=1) if len(coords_list) else np.empty((0, len(self.shape)), dtype=np.intp)
+            np.concatenate(coords_list, axis=1)
+            if len(coords_list)
+            else np.empty((0, len(self.shape)), dtype=np.intp)
         )
 
         return COO(
@@ -511,20 +534,26 @@ class _Elemwise:
         from ._coo import COO
 
         zero_args = tuple(
-            np.asarray(arg.fill_value, like=arg.data) if isinstance(arg, COO) else arg for arg in self.args
+            np.asarray(arg.fill_value, like=arg.data) if isinstance(arg, COO) else arg
+            for arg in self.args
         )
 
         # Some elemwise functions require a dtype argument, some abhorr it.
         try:
-            fill_value_array = self.func(*np.broadcast_arrays(*zero_args), dtype=self.dtype, **self.kwargs)
+            fill_value_array = self.func(
+                *np.broadcast_arrays(*zero_args), dtype=self.dtype, **self.kwargs
+            )
         except TypeError:
-            fill_value_array = self.func(*np.broadcast_arrays(*zero_args), **self.kwargs)
+            fill_value_array = self.func(
+                *np.broadcast_arrays(*zero_args), **self.kwargs
+            )
 
         try:
             fill_value = fill_value_array[(0,) * fill_value_array.ndim]
         except IndexError:
             zero_args = tuple(
-                arg.fill_value if isinstance(arg, COO) else _zero_of_dtype(arg.dtype) for arg in self.args
+                arg.fill_value if isinstance(arg, COO) else _zero_of_dtype(arg.dtype)
+                for arg in self.args
             )
             fill_value = self.func(*zero_args, **self.kwargs)[()]
 
@@ -556,8 +585,12 @@ class _Elemwise:
         from ._coo import COO
 
         full_shape = _get_nary_broadcast_shape(*tuple(arg.shape for arg in self.args))
-        non_ndarray_shape = _get_nary_broadcast_shape(*tuple(arg.shape for arg in self.args if isinstance(arg, COO)))
-        ndarray_shape = _get_nary_broadcast_shape(*tuple(arg.shape for arg in self.args if isinstance(arg, np.ndarray)))
+        non_ndarray_shape = _get_nary_broadcast_shape(
+            *tuple(arg.shape for arg in self.args if isinstance(arg, COO))
+        )
+        ndarray_shape = _get_nary_broadcast_shape(
+            *tuple(arg.shape for arg in self.args if isinstance(arg, np.ndarray))
+        )
 
         self.shape = full_shape
         self.ndarray_shape = ndarray_shape
@@ -580,21 +613,29 @@ class _Elemwise:
         from ._coo import COO
 
         matched_args = [arg for arg, m in zip(self.args, mask) if m is not None and m]
-        unmatched_args = [arg for arg, m in zip(self.args, mask) if m is not None and not m]
+        unmatched_args = [
+            arg for arg, m in zip(self.args, mask) if m is not None and not m
+        ]
         ndarray_args = [arg for arg, m in zip(self.args, mask) if m is None]
 
         matched_broadcast_shape = _get_nary_broadcast_shape(
             *tuple(arg.shape for arg in itertools.chain(matched_args, ndarray_args))
         )
 
-        matched_arrays = self._match_coo(*matched_args, cache=self.cache, broadcast_shape=matched_broadcast_shape)
+        matched_arrays = self._match_coo(
+            *matched_args, cache=self.cache, broadcast_shape=matched_broadcast_shape
+        )
 
         func_args = []
 
         m_arg = 0
         for arg, m in zip(self.args, mask):
             if m is None:
-                func_args.append(np.broadcast_to(arg, matched_broadcast_shape)[tuple(matched_arrays[0].coords)])
+                func_args.append(
+                    np.broadcast_to(arg, matched_broadcast_shape)[
+                        tuple(matched_arrays[0].coords)
+                    ]
+                )
                 continue
 
             if m:
@@ -624,13 +665,17 @@ class _Elemwise:
 
         if matched_arrays[0].shape != self.shape:
             params = _get_broadcast_parameters(matched_arrays[0].shape, self.shape)
-            func_coords, func_data = _get_expanded_coords_data(func_coords, func_data, params, self.shape)
+            func_coords, func_data = _get_expanded_coords_data(
+                func_coords, func_data, params, self.shape
+            )
 
         if all(m is None or m for m in mask):
             return func_coords, func_data
 
         # Not really sorted but we need the sortedness.
-        func_array = COO(func_coords, func_data, self.shape, has_duplicates=False, sorted=True)
+        func_array = COO(
+            func_coords, func_data, self.shape, has_duplicates=False, sorted=True
+        )
 
         unmatched_mask = np.ones(func_array.nnz, dtype=np.bool_)
 
@@ -679,7 +724,9 @@ class _Elemwise:
             raise ValueError(f"Unknown kwargs: {kwargs.keys()}")
 
         if return_midx and (len(args) != 2 or cache is not None):
-            raise NotImplementedError("Matching indices only supported for two args, and no cache.")
+            raise NotImplementedError(
+                "Matching indices only supported for two args, and no cache."
+            )
 
         matched_arrays = [args[0]]
         cache_key = [id(args[0])]
@@ -692,11 +739,18 @@ class _Elemwise:
 
             cargs = [matched_arrays[0], arg2]
             current_shape = _get_broadcast_shape(matched_arrays[0].shape, arg2.shape)
-            params = [_get_broadcast_parameters(arg.shape, current_shape) for arg in cargs]
+            params = [
+                _get_broadcast_parameters(arg.shape, current_shape) for arg in cargs
+            ]
             reduced_params = [all(p) for p in zip(*params)]
-            reduced_shape = _get_reduced_shape(arg2.shape, _rev_idx(reduced_params, arg2.ndim))
+            reduced_shape = _get_reduced_shape(
+                arg2.shape, _rev_idx(reduced_params, arg2.ndim)
+            )
 
-            reduced_coords = [_get_reduced_coords(arg.coords, _rev_idx(reduced_params, arg.ndim)) for arg in cargs]
+            reduced_coords = [
+                _get_reduced_coords(arg.coords, _rev_idx(reduced_params, arg.ndim))
+                for arg in cargs
+            ]
 
             linear = [linear_loc(rc, reduced_shape) for rc in reduced_coords]
             sorted_idx = [np.argsort(idx) for idx in linear]
@@ -713,7 +767,10 @@ class _Elemwise:
             mdata.append(arg2.data[sorted_idx[1]][matched_idx[1]])
             # The coords aren't truly sorted, but we don't need them, so it's
             # best to avoid the extra cost.
-            matched_arrays = [COO(mcoords, md, shape=current_shape, sorted=True, has_duplicates=False) for md in mdata]
+            matched_arrays = [
+                COO(mcoords, md, shape=current_shape, sorted=True, has_duplicates=False)
+                for md in mdata
+            ]
 
             if cache is not None:
                 cache[key] = matched_arrays

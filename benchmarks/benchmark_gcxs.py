@@ -6,8 +6,12 @@ import numpy as np
 class MatrixMultiplySuite:
     def setup(self):
         rng = np.random.default_rng(0)
-        self.x = sparse.random((100, 100), density=0.01, format="gcxs", random_state=rng)
-        self.y = sparse.random((100, 100), density=0.01, format="gcxs", random_state=rng)
+        self.x = sparse.random(
+            (100, 100), density=0.01, format="gcxs", random_state=rng
+        )
+        self.y = sparse.random(
+            (100, 100), density=0.01, format="gcxs", random_state=rng
+        )
 
         self.x @ self.y  # Numba compilation
 
@@ -18,8 +22,12 @@ class MatrixMultiplySuite:
 class ElemwiseSuite:
     def setup(self):
         rng = np.random.default_rng(0)
-        self.x = sparse.random((100, 100, 100), density=0.01, format="gcxs", random_state=rng)
-        self.y = sparse.random((100, 100, 100), density=0.01, format="gcxs", random_state=rng)
+        self.x = sparse.random(
+            (100, 100, 100), density=0.01, format="gcxs", random_state=rng
+        )
+        self.y = sparse.random(
+            (100, 100, 100), density=0.01, format="gcxs", random_state=rng
+        )
 
         self.x + self.y  # Numba compilation
 
@@ -33,8 +41,12 @@ class ElemwiseSuite:
 class ElemwiseBroadcastingSuite:
     def setup(self):
         rng = np.random.default_rng(0)
-        self.x = sparse.random((100, 1, 100), density=0.01, format="gcxs", random_state=rng)
-        self.y = sparse.random((100, 100), density=0.01, format="gcxs", random_state=rng)
+        self.x = sparse.random(
+            (100, 1, 100), density=0.01, format="gcxs", random_state=rng
+        )
+        self.y = sparse.random(
+            (100, 100), density=0.01, format="gcxs", random_state=rng
+        )
 
     def time_add(self):
         self.x + self.y
@@ -47,7 +59,9 @@ class IndexingSuite:
     def setup(self):
         rng = np.random.default_rng(0)
         self.index = rng.integers(0, 100, 50)
-        self.x = sparse.random((100, 100, 100), density=0.01, format="gcxs", random_state=rng)
+        self.x = sparse.random(
+            (100, 100, 100), density=0.01, format="gcxs", random_state=rng
+        )
 
         # Numba compilation
         self.x[5]
@@ -76,9 +90,9 @@ class DenseMultiplySuite:
     def setup(self, compressed_axis, n_vecs):
         rng = np.random.default_rng(1337)
         n = 10000
-        x = sparse.random((n, n), density=0.001, format="gcxs", random_state=rng).change_compressed_axes(
-            (compressed_axis,)
-        )
+        x = sparse.random(
+            (n, n), density=0.001, format="gcxs", random_state=rng
+        ).change_compressed_axes((compressed_axis,))
         self.x = x
         self.t = rng.random((n, n_vecs))
         self.u = rng.random((n_vecs, n))

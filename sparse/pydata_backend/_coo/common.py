@@ -46,7 +46,9 @@ def asCOO(x, name="asCOO", check=True):
     from .core import COO
 
     if check and not _is_sparse(x):
-        raise ValueError(f"Performing this operation would produce a dense result: {name}")
+        raise ValueError(
+            f"Performing this operation would produce a dense result: {name}"
+        )
 
     if not isinstance(x, COO):
         x = COO(x)
@@ -164,7 +166,11 @@ def concatenate(arrays, axis=0):
 
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
     axis = normalize_axis(axis, arrays[0].ndim)
-    assert all(x.shape[ax] == arrays[0].shape[ax] for x in arrays for ax in set(range(arrays[0].ndim)) - {axis})
+    assert all(
+        x.shape[ax] == arrays[0].shape[ax]
+        for x in arrays
+        for ax in set(range(arrays[0].ndim)) - {axis}
+    )
     nnz = 0
     dim = sum(x.shape[axis] for x in arrays)
     shape = list(arrays[0].shape)
@@ -280,7 +286,9 @@ def triu(x, k=0):
     check_zero_fill_value(x)
 
     if not x.ndim >= 2:
-        raise NotImplementedError("sparse.triu is not implemented for scalars or 1-D arrays.")
+        raise NotImplementedError(
+            "sparse.triu is not implemented for scalars or 1-D arrays."
+        )
 
     mask = x.coords[-2] + k <= x.coords[-1]
 
@@ -321,7 +329,9 @@ def tril(x, k=0):
     check_zero_fill_value(x)
 
     if not x.ndim >= 2:
-        raise NotImplementedError("sparse.tril is not implemented for scalars or 1-D arrays.")
+        raise NotImplementedError(
+            "sparse.tril is not implemented for scalars or 1-D arrays."
+        )
 
     mask = x.coords[-2] + k >= x.coords[-1]
 
@@ -389,7 +399,10 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
     assert out is None
     x = asCOO(x, name="nanmean")
 
-    if not (np.issubdtype(x.dtype, np.floating) or np.issubdtype(x.dtype, np.complexfloating)):
+    if not (
+        np.issubdtype(x.dtype, np.floating)
+        or np.issubdtype(x.dtype, np.complexfloating)
+    ):
         return x.mean(axis=axis, keepdims=keepdims, dtype=dtype)
 
     mask = np.isnan(x)
@@ -855,7 +868,9 @@ def diagonal(a, offset=0, axis1=0, axis2=1):
     if a.shape[axis1] != a.shape[axis2]:
         raise ValueError("a.shape[axis1] != a.shape[axis2]")
 
-    diag_axes = [axis for axis in range(len(a.shape)) if axis != axis1 and axis != axis2] + [axis1]
+    diag_axes = [
+        axis for axis in range(len(a.shape)) if axis != axis1 and axis != axis2
+    ] + [axis1]
     diag_shape = [a.shape[axis] for axis in diag_axes]
     diag_shape[-1] -= abs(offset)
 
@@ -1009,7 +1024,13 @@ def _diagonal_idx(coordlist, axis1, axis2, offset):
     offset : int
         Offset of the diagonal from the main diagonal. Defaults to main diagonal (0).
     """
-    return np.array([i for i in range(len(coordlist[axis1])) if coordlist[axis1][i] + offset == coordlist[axis2][i]])
+    return np.array(
+        [
+            i
+            for i in range(len(coordlist[axis1]))
+            if coordlist[axis1][i] + offset == coordlist[axis2][i]
+        ]
+    )
 
 
 def clip(a, a_min=None, a_max=None, out=None):
@@ -1097,7 +1118,9 @@ def expand_dims(x, /, *, axis=0):
 
     axis = normalize_axis(axis, x.ndim + 1)
 
-    new_coords = np.insert(x.coords, obj=axis, values=np.zeros(x.nnz, dtype=np.intp), axis=0)
+    new_coords = np.insert(
+        x.coords, obj=axis, values=np.zeros(x.nnz, dtype=np.intp), axis=0
+    )
     new_shape = list(x.shape)
     new_shape.insert(axis, 1)
     new_shape = tuple(new_shape)
@@ -1296,9 +1319,18 @@ def sort(x, /, *, axis=-1, descending=False):
     x_shape = x.shape
     x = x.reshape((-1, x_shape[-1]))
 
-    new_coords, new_data = _sort_coo(x.coords, x.data, x.fill_value, sort_axis_len=x_shape[-1], descending=descending)
+    new_coords, new_data = _sort_coo(
+        x.coords, x.data, x.fill_value, sort_axis_len=x_shape[-1], descending=descending
+    )
 
-    x = COO(new_coords, new_data, x.shape, has_duplicates=False, sorted=True, fill_value=x.fill_value)
+    x = COO(
+        new_coords,
+        new_data,
+        x.shape,
+        has_duplicates=False,
+        sorted=True,
+        fill_value=x.fill_value,
+    )
 
     x = x.reshape(x_shape[:-1] + (x_shape[-1],))
     x = moveaxis(x, source=-1, destination=axis)
@@ -1350,7 +1382,9 @@ def _validate_coo_input(x: Any):
     if _is_scipy_sparse_obj(x):
         x = COO.from_scipy_sparse(x)
     elif not isinstance(x, SparseArray):
-        raise ValueError(f"Input must be an instance of SparseArray, but it's {type(x)}.")
+        raise ValueError(
+            f"Input must be an instance of SparseArray, but it's {type(x)}."
+        )
     elif not isinstance(x, COO):
         x = x.asformat(COO)
 
@@ -1436,11 +1470,17 @@ def _compute_minmax_args(
         masked_reduce_coords = reduce_coords[mask]
         masked_data = data[mask]
 
-        compared_data = operator.gt(masked_data, fill_value) if max_mode_flag else operator.lt(masked_data, fill_value)
+        compared_data = (
+            operator.gt(masked_data, fill_value)
+            if max_mode_flag
+            else operator.lt(masked_data, fill_value)
+        )
 
         if np.any(compared_data) or len(masked_data) == reduce_size:
             # best value is a non-fill value
-            best_arg = np.argmax(masked_data) if max_mode_flag else np.argmin(masked_data)
+            best_arg = (
+                np.argmax(masked_data) if max_mode_flag else np.argmin(masked_data)
+            )
             result_data.append(masked_reduce_coords[best_arg])
         else:
             # best value is a fill value, find the first occurrence of it
@@ -1477,7 +1517,9 @@ def _arg_minmax_common(
     if not isinstance(axis, (int, type(None))):
         raise ValueError(f"`axis` must be `int` or `None`, but it's: {type(axis)}.")
     if isinstance(axis, int) and axis >= x.ndim:
-        raise ValueError(f"`axis={axis}` is out of bounds for array of dimension {x.ndim}.")
+        raise ValueError(
+            f"`axis={axis}` is out of bounds for array of dimension {x.ndim}."
+        )
     if x.ndim == 0:
         raise ValueError("Input array must be at least 1-D, but it's 0-D.")
 
@@ -1517,7 +1559,9 @@ def _arg_minmax_common(
 
     from .core import COO
 
-    result = COO(result_indices, result_data, shape=(x.shape[1],), fill_value=0, prune=True)
+    result = COO(
+        result_indices, result_data, shape=(x.shape[1],), fill_value=0, prune=True
+    )
 
     # Let's reshape the result to the original shape.
     result = result.reshape((1, *new_shape[1:]))

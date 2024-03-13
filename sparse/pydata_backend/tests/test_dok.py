@@ -302,7 +302,9 @@ def test_zeros_like():
 )
 @pytest.mark.parametrize("constant_values", [0, 1, 150, np.nan])
 def test_pad_valid(pad_width, constant_values):
-    y = sparse.random((50, 50, 3), density=0.15, fill_value=constant_values, format="dok")
+    y = sparse.random(
+        (50, 50, 3), density=0.15, fill_value=constant_values, format="dok"
+    )
     x = y.todense()
     xx = np.pad(x, pad_width=pad_width, constant_values=constant_values)
     yy = np.pad(y, pad_width=pad_width, constant_values=constant_values)

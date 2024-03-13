@@ -200,7 +200,9 @@ def _resize(x, shape, compressed_axes):
 
 
 @numba.jit(nopython=True, nogil=True)
-def _c_ordering(linear, c_linear, reordered_shape, sorted_axis_order, shape):  # pragma: no cover
+def _c_ordering(
+    linear, c_linear, reordered_shape, sorted_axis_order, shape
+):  # pragma: no cover
     for i, n in enumerate(linear):
         # c ordering
         current_coords = unravel_index(n, reordered_shape)[sorted_axis_order]
