@@ -1,6 +1,6 @@
 import sparse
 from sparse import load_npz, save_npz
-from sparse._utils import assert_eq
+from sparse.pydata_backend._utils import assert_eq
 
 import pytest
 

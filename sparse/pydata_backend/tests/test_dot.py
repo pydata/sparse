@@ -2,8 +2,8 @@ import operator
 
 import sparse
 from sparse import COO
-from sparse._compressed import GCXS
-from sparse._utils import assert_eq, assert_gcxs_slicing, default_rng
+from sparse.pydata_backend._compressed import GCXS
+from sparse.pydata_backend._utils import assert_eq, assert_gcxs_slicing, default_rng
 
 import pytest
 
@@ -98,7 +98,7 @@ def test_tensordot_valueerror():
 
 
 def gen_kwargs(format):
-    from sparse._utils import convert_format
+    from sparse.pydata_backend._utils import convert_format
 
     format = convert_format(format)
     if format == "gcxs":
