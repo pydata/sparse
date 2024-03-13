@@ -26,8 +26,7 @@ class Backend:
         self.token = None
 
     def __enter__(self):
-        token = backend_var.set(self.backend)
-        self.token = token
+        self.token = backend_var.set(self.backend)
 
     def __exit__(self, exc_type, exc_value, traceback):
         backend_var.reset(self.token)

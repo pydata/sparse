@@ -34,6 +34,9 @@ jobs:
           key:
             test-${{ matrix.os }}-conda-py${{ matrix.python }}-${{ env.CACHE_NUMBER }}-${{
             hashFiles('ci/environment.yml') }}
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: '1.10.0'
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: sparse-dev
