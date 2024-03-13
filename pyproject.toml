@@ -1,81 +1,110 @@
-[build-system]
-requires = ["setuptools>=64", "setuptools_scm>=8"]
-build-backend = "setuptools.build_meta"
+# [build-system]
+# requires = ["setuptools>=64", "setuptools_scm>=8"]
+# build-backend = "setuptools.build_meta"
 
-[project]
-name = "sparse"
-dynamic = ["version"]
-description = "Sparse n-dimensional arrays for the PyData ecosystem"
+# [project]
+# name = "sparse"
+# dynamic = ["version"]
+# description = "Sparse n-dimensional arrays for the PyData ecosystem"
+# readme = "README.rst"
+# dependencies = ["numpy>=1.17"]
+# maintainers = [{ name = "Hameer Abbasi", email = "hameerabbasi@yahoo.com" }]
+# requires-python = ">=3.9"
+# license = { file = "LICENSE" }
+# keywords = ["sparse", "numpy", "scipy", "dask"]
+# classifiers = [
+#     "Development Status :: 2 - Pre-Alpha",
+#     "Operating System :: OS Independent",
+#     "License :: OSI Approved :: BSD License",
+#     "Programming Language :: Python",
+#     "Programming Language :: Python :: 3",
+#     "Programming Language :: Python :: 3.9",
+#     "Programming Language :: Python :: 3.10",
+#     "Programming Language :: Python :: 3.11",
+#     "Programming Language :: Python :: 3 :: Only",
+#     "Intended Audience :: Developers",
+#     "Intended Audience :: Science/Research",
+# ]
+
+# [project.optional-dependencies]
+# docs = ["sphinx", "sphinx_rtd_theme", "scipy"]
+# tests = [
+#     "dask[array]",
+#     "pytest>=3.5",
+#     "pytest-cov",
+#     "pre-commit",
+#     "scipy",
+# ]
+# tox = ["sparse[tests]", "tox"]
+# all = ["sparse[docs,tox]", "matrepr"]
+# finch = ["finch-tensor==0.1.6"]
+
+# [project.urls]
+# Documentation = "https://sparse.pydata.org/"
+# Source = "https://github.com/pydata/sparse/"
+# Repository = "https://github.com/pydata/sparse.git"
+# "Issue Tracker" = "https://github.com/pydata/sparse/issues"
+# Discussions = "https://github.com/pydata/sparse/discussions"
+
+# # [project.entry-points.numba_extensions]
+# # init = "sparse.pydata_backend._numba_extension:_init_extension"
+
+# [tool.setuptools.packages.find]
+# where = ["."]
+# include = ["sparse", "sparse.*"]
+
+# [tool.setuptools_scm]
+# version_file = "sparse/_version.py"
+
+# [tool.ruff]
+# exclude = ["sparse/_version.py"]
+# line-length = 120
+
+# [tool.ruff.lint]
+# select = ["F", "E", "W", "I", "B", "UP", "YTT", "BLE", "C4", "T10", "ISC", "ICN", "PIE", "PYI", "RSE", "RET", "SIM", "PGH", "FLY", "NPY", "PERF"]
+
+# [tool.ruff.lint.isort.sections]
+# numpy = ["numpy", "numpy.*", "scipy", "scipy.*"]
+
+# [tool.ruff.format]
+# quote-style = "double"
+# docstring-code-format = true
+
+# [tool.ruff.lint.isort]
+# section-order = [
+#     "future",
+#     "standard-library",
+#     "first-party",
+#     "third-party",
+#     "numpy",
+#     "local-folder",
+# ]
+
+[tool.poetry]
+name = "sparse-copy"
+version = "1.1.1"
+description = ""
+authors = ["Hameer Abbasi"]
 readme = "README.rst"
-dependencies = ["numpy>=1.17"]
-maintainers = [{ name = "Hameer Abbasi", email = "hameerabbasi@yahoo.com" }]
-requires-python = ">=3.9"
-license = { file = "LICENSE" }
-keywords = ["sparse", "numpy", "scipy", "dask"]
-classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
-    "Operating System :: OS Independent",
-    "License :: OSI Approved :: BSD License",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3 :: Only",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Science/Research",
-]
+packages = [{include = "sparse"}]
 
-[project.optional-dependencies]
-docs = ["sphinx", "sphinx_rtd_theme", "scipy"]
-tests = [
-    "dask[array]",
-    "pytest>=3.5",
-    "pytest-cov",
-    "pre-commit",
-    "scipy",
-]
-tox = ["sparse[tests]", "tox"]
-all = ["sparse[docs,tox]", "matrepr"]
-finch = ["finch-tensor==0.1.6"]
+[tool.poetry.dependencies]
+python = "^3.9"
+juliapkg = "^0.1.10"
+juliacall = "^0.9.15"
+numpy = "^1.19"
+llvmlite = "0.42.0"
+numba = "^0.59"
 
-[project.urls]
-Documentation = "https://sparse.pydata.org/"
-Source = "https://github.com/pydata/sparse/"
-Repository = "https://github.com/pydata/sparse.git"
-"Issue Tracker" = "https://github.com/pydata/sparse/issues"
-Discussions = "https://github.com/pydata/sparse/discussions"
+[tool.poetry.group.tests.dependencies]
+pytest = "^7.4.4"
+pre-commit = "^3.6.0"
+pytest-cov = "^4.1.0"
+scipy = "^1.7"
 
-# [project.entry-points.numba_extensions]
-# init = "sparse.pydata_backend._numba_extension:_init_extension"
+[tool.poetry.group.finch.dependencies]
+finch-tensor = "0.1.6"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["sparse", "sparse.*"]
-
-[tool.setuptools_scm]
-version_file = "sparse/_version.py"
-
-[tool.ruff]
-exclude = ["sparse/_version.py"]
-line-length = 120
-
-[tool.ruff.lint]
-select = ["F", "E", "W", "I", "B", "UP", "YTT", "BLE", "C4", "T10", "ISC", "ICN", "PIE", "PYI", "RSE", "RET", "SIM", "PGH", "FLY", "NPY", "PERF"]
-
-[tool.ruff.lint.isort.sections]
-numpy = ["numpy", "numpy.*", "scipy", "scipy.*"]
-
-[tool.ruff.format]
-quote-style = "double"
-docstring-code-format = true
-
-[tool.ruff.lint.isort]
-section-order = [
-    "future",
-    "standard-library",
-    "first-party",
-    "third-party",
-    "numpy",
-    "local-folder",
-]
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

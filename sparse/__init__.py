@@ -2,8 +2,6 @@ import os
 from contextvars import ContextVar
 from enum import Enum
 
-from ._version import __version__, __version_tuple__  # noqa: F401
-
 __array_api_version__ = "2022.12"
 
 
@@ -36,9 +34,7 @@ class Backend:
     @staticmethod
     def get_backend_module():
         backend = backend_var.get()
-        if backend == BackendType.PyData:
-            import sparse.finch_backend as backend_module
-        elif backend == BackendType.Finch:
+        if backend == BackendType.PyData or backend == BackendType.Finch:
             import sparse.finch_backend as backend_module
         else:
             raise ValueError(f"Invalid backend identifier: {backend}")

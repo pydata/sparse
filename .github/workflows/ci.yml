@@ -24,23 +24,23 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-      - name: Cache conda
-        uses: actions/cache@v4
-        env:
-          # Increase this value to reset cache if ci/environment.yml has not changed
-          CACHE_NUMBER: 0
-        with:
-          path: ~/conda_pkgs_dir
-          key:
-            test-${{ matrix.os }}-conda-py${{ matrix.python }}-${{ env.CACHE_NUMBER }}-${{
-            hashFiles('ci/environment.yml') }}
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          activate-environment: sparse-dev
-          allow-softlinks: true
-          environment-file: ci/environment.yml
-          python-version: ${{ matrix.python }}
-          miniforge-version: latest
+      # - name: Cache conda
+      #   uses: actions/cache@v4
+      #   env:
+      #     # Increase this value to reset cache if ci/environment.yml has not changed
+      #     CACHE_NUMBER: 0
+      #   with:
+      #     path: ~/conda_pkgs_dir
+      #     key:
+      #       test-${{ matrix.os }}-conda-py${{ matrix.python }}-${{ env.CACHE_NUMBER }}-${{
+      #       hashFiles('ci/environment.yml') }}
+      # - uses: conda-incubator/setup-miniconda@v3
+      #   with:
+      #     activate-environment: sparse-dev
+      #     allow-softlinks: true
+      #     environment-file: ci/environment.yml
+      #     python-version: ${{ matrix.python }}
+      #     miniforge-version: latest
       # - name: Install julia and numba
       #   run: |
       #     conda install conda-forge::numba
@@ -48,19 +48,28 @@ jobs:
       # - uses: julia-actions/setup-julia@v1.9
       #   with:
       #     version: '1.10'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
       - name: Install package
         run: |
-          pip install -e .[tests,finch]
+          poetry install --with tests,finch
+      # - name: Install package
+      #   run: |
+      #     pip install -e .[tests,finch]
       - name: Run tests
         run: |
-          pytest --pyargs sparse/tests/test_backends.py
+          poetry run pytest tests/test_backends.py
+      # pytest --pyargs sparse/tests/test_backends.py
       - uses: codecov/codecov-action@v4
         if: always()
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action/composite@v2
-        if: always()
-        with:
-          files: "**/test-*.xml"
+      # - name: Publish Test Results
+      #   uses: EnricoMi/publish-unit-test-result-action/composite@v2
+      #   if: always()
+      #   with:
+      #     files: "**/test-*.xml"
   docs:
     defaults:
       run:
