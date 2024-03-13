@@ -37,7 +37,7 @@ class Backend:
     def get_backend_module():
         backend = backend_var.get()
         if backend == BackendType.PyData:
-            import sparse.pydata_backend as backend_module
+            import sparse.finch_backend as backend_module
         elif backend == BackendType.Finch:
             import sparse.finch_backend as backend_module
         else:
@@ -47,7 +47,7 @@ class Backend:
 
 def __getattr__(attr):
     if attr == "pydata_backend":
-        import sparse.pydata_backend as backend_module
+        import sparse.finch_backend as backend_module
 
         return backend_module
     if attr == "finch_backend":

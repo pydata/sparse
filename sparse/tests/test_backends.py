@@ -1,10 +1,7 @@
 import sparse
 
-import pytest
-
 import numpy as np
 import scipy.sparse as sp
-
 
 # def test_backend_contex_manager(backend):
 #     if backend == sparse.BackendType.Finch:

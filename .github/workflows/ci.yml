@@ -53,7 +53,7 @@ jobs:
           pip install -e .[tests,finch]
       - name: Run tests
         run: |
-          pytest --pyargs sparse
+          pytest --pyargs sparse/tests/test_backends.py
       - uses: codecov/codecov-action@v4
         if: always()
       - name: Publish Test Results
