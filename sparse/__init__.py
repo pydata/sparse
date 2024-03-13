@@ -4,24 +4,24 @@ from enum import Enum
 
 from ._version import __version__, __version_tuple__  # noqa: F401
 
-
 __array_api_version__ = "2022.12"
 
+
 class BackendType(Enum):
-    pydata = "PyData"
-    finch = "Finch"
+    PyData = "PyData"
+    Finch = "Finch"
 
 
 _ENV_VAR_NAME = "SPARSE_BACKEND"
 
-backend_var = ContextVar("backend", default=BackendType.pydata)
+backend_var = ContextVar("backend", default=BackendType.PyData)
 
 if _ENV_VAR_NAME in os.environ:
     backend_var.set(BackendType[os.environ[_ENV_VAR_NAME]])
 
 
 class Backend:
-    def __init__(self, backend=BackendType.pydata):
+    def __init__(self, backend=BackendType.PyData):
         self.backend = backend
         self.token = None
 
@@ -36,9 +36,9 @@ class Backend:
     @staticmethod
     def get_backend_module():
         backend = backend_var.get()
-        if backend == BackendType.pydata:
+        if backend == BackendType.PyData:
             import sparse.pydata_backend as backend_module
-        elif backend == BackendType.finch:
+        elif backend == BackendType.Finch:
             import sparse.finch_backend as backend_module
         else:
             raise ValueError(f"Invalid backend identifier: {backend}")
