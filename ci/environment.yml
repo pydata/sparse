@@ -2,4 +2,5 @@ name: sparse-dev
 channels:
   - conda-forge
 dependencies:
+  - python
   - pip
