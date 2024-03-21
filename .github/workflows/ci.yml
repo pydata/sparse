@@ -91,6 +91,37 @@ jobs:
         with:
           name: Documentation
           path: _build/html
+  benchmarks:
+    defaults:
+      run:
+        shell: bash -el {0}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - name: Cache conda
+        uses: actions/cache@v4
+        env:
+          # Increase this value to reset cache if ci/environment.yml has not changed
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key:
+            benchmarks-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment.yml') }}
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: sparse-dev
+          allow-softlinks: true
+          environment-file: ci/environment.yml
+          python-version: '3.9'
+          miniforge-version: latest
+      - name: Install asv
+        run: |
+          pip install asv
+          asv machine --yes
+      - name: Run benchmarks
+        run: |
+          asv run --quick
 on:
   # Trigger the workflow on push or pull request,
   # but only for the main branch

@@ -1,11 +1,25 @@
 {
-  "dvcs": "git",
-  "env_dir": ".asv/env",
+  "branches": [
+    "HEAD"
+  ],
+  "build_command": [],
   "environment_type": "conda",
-  "html_dir": ".asv/html",
+  "install_command": [
+    "pip install --no-deps ."
+  ],
+  "matrix": {
+    "env": {},
+    "env_nobuild": {},
+    "req": {
+      "numba": [],
+      "numpy": []
+    }
+  },
   "project": "sparse",
   "project_url": "https://sparse.pydata.org/",
   "repo": ".",
-  "results_dir": ".asv/results",
+  "uninstall_command": [
+    "pip uninstall sparse --yes"
+  ],
   "version": 1
 }
