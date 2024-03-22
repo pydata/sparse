@@ -10,7 +10,7 @@
         "SPARSE_BACKEND": "Finch"
       },
       "req": {
-        "finch-tensor": null
+        "../finch-tensor": null
       }
     },
     {
@@ -18,7 +18,7 @@
         "SPARSE_BACKEND": "PyData"
       },
       "req": {
-        "finch-tensor": "0.1.7"
+        "../finch-tensor": ""
       }
     }
   ],
@@ -34,8 +34,8 @@
     },
     "env_nobuild": {},
     "req": {
-      "finch-tensor": [
-        "0.1.7",
+      "../finch-tensor": [
+        "",
         null
       ],
       "juliacall": [

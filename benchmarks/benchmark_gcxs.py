@@ -1,6 +1,7 @@
-# import sparse
+import sparse
+import os
 
-# import numpy as np
+import numpy as np
 
 
 # class MatrixMultiplySuite:
@@ -28,6 +29,50 @@
 
 #     def time_mul(self):
 #         self.x * self.y
+
+
+
+# def fun(arr1, arr2, arr3):
+#     temp = sparse.multiply(arr1, arr2)
+#     temp = sparse.subtract(temp, arr3)
+#     reduced = sparse.sum(temp, axis=(0, 1))
+#     return sparse.add(temp, reduced)
+
+# random_kwargs = {"density": 0.01, "random_state": 42}
+
+# if os.environ[sparse._ENV_VAR_NAME] == "Finch":
+#     import finch
+#     @finch.compiled
+#     def my_fun(arr1, arr2, arr3):
+#         return fun(arr1, arr2, arr3)
+# else:
+#     random_kwargs["format"] = "gcxs"
+#     def my_fun(arr1, arr2, arr3):
+#         return fun(arr1, arr2, arr3)
+
+# class LazySuite:
+#     timeout = 120.0
+
+#     def setup(self):
+#         self.x = sparse.random((1, 1, 1), **random_kwargs)
+#         self.y = sparse.random((1, 1, 1), **random_kwargs)
+#         self.z = sparse.random((1, 1, 1), **random_kwargs)
+
+#         if os.environ[sparse._ENV_VAR_NAME] == "Finch":
+#             import finch
+#             storage = lambda: finch.Storage(
+#                 finch.Dense(finch.SparseList(finch.SparseList(finch.Element(0.0)))), order=self.x.get_order()
+#             )
+#             self.x = self.x.to_device(storage())
+#             self.y = self.y.to_device(storage())
+#             self.z = self.z.to_device(storage())
+
+#         my_fun(self.x, self.y, self.z)
+
+#     def time_my_fun(self):
+#         my_fun(self.x, self.y, self.z)
+
+
 
 
 # class ElemwiseBroadcastingSuite:
