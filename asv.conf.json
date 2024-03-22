@@ -3,18 +3,26 @@
     "HEAD"
   ],
   "build_command": [],
-  "environment_type": "conda",
+  "environment_type": "virtualenv",
   "install_command": [
     "pip install --no-deps ."
   ],
   "matrix": {
-    "env": {},
+    "env": {
+      "SPARSE_BACKEND": ["Finch", "PyData"]
+    },
     "env_nobuild": {},
     "req": {
-      "numba": [],
-      "numpy": []
+      "numba": [""],
+      "numpy": [""],
+      "juliacall": [""],
+      "'../finch-tensor'": ["", null]
     }
   },
+  "exclude": [
+    {"req": {"'../finch-tensor'": null}, "env": {"SPARSE_BACKEND": "Finch"}},
+    {"req": {"'../finch-tensor'": ""}, "env": {"SPARSE_BACKEND": "PyData"}}
+  ],
   "project": "sparse",
   "project_url": "https://sparse.pydata.org/",
   "repo": ".",
