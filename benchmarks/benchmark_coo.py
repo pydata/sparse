@@ -2,9 +2,13 @@ import sparse
 
 import numpy as np
 
+from .utils import skip_if_finch
+
 
 class MatrixMultiplySuite:
     def setup(self):
+        skip_if_finch()
+
         rng = np.random.default_rng(0)
         self.x = sparse.random((100, 100), density=0.01, random_state=rng)
         self.y = sparse.random((100, 100), density=0.01, random_state=rng)
@@ -17,11 +21,14 @@ class MatrixMultiplySuite:
 
 class ElemwiseSuite:
     def setup(self):
+        skip_if_finch()
+
         rng = np.random.default_rng(0)
         self.x = sparse.random((100, 100, 100), density=0.01, random_state=rng)
         self.y = sparse.random((100, 100, 100), density=0.01, random_state=rng)
 
         self.x + self.y  # Numba compilation
+        self.x * self.y  # Numba compilation
 
     def time_add(self):
         self.x + self.y
@@ -32,9 +39,14 @@ class ElemwiseSuite:
 
 class ElemwiseBroadcastingSuite:
     def setup(self):
+        skip_if_finch()
+
         rng = np.random.default_rng(0)
         self.x = sparse.random((100, 1, 100), density=0.01, random_state=rng)
         self.y = sparse.random((100, 100), density=0.01, random_state=rng)
+
+        self.x + self.y  # Numba compilation
+        self.x * self.y  # Numba compilation
 
     def time_add(self):
         self.x + self.y
@@ -45,6 +57,8 @@ class ElemwiseBroadcastingSuite:
 
 class IndexingSuite:
     def setup(self):
+        skip_if_finch()
+
         rng = np.random.default_rng(0)
         self.index = rng.integers(0, 100, 50)
         self.x = sparse.random((100, 100, 100), density=0.01, random_state=rng)
