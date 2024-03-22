@@ -4,25 +4,51 @@
   ],
   "build_command": [],
   "environment_type": "virtualenv",
+  "exclude": [
+    {
+      "env": {
+        "SPARSE_BACKEND": "Finch"
+      },
+      "req": {
+        "finch-tensor": null
+      }
+    },
+    {
+      "env": {
+        "SPARSE_BACKEND": "PyData"
+      },
+      "req": {
+        "finch-tensor": "0.1.7"
+      }
+    }
+  ],
   "install_command": [
     "pip install --no-deps ."
   ],
   "matrix": {
     "env": {
-      "SPARSE_BACKEND": ["Finch", "PyData"]
+      "SPARSE_BACKEND": [
+        "Finch",
+        "PyData"
+      ]
     },
     "env_nobuild": {},
     "req": {
-      "numba": [""],
-      "numpy": [""],
-      "juliacall": [""],
-      "'../finch-tensor'": ["", null]
+      "finch-tensor": [
+        "0.1.7",
+        null
+      ],
+      "juliacall": [
+        ""
+      ],
+      "numba": [
+        ""
+      ],
+      "numpy": [
+        ""
+      ]
     }
   },
-  "exclude": [
-    {"req": {"'../finch-tensor'": null}, "env": {"SPARSE_BACKEND": "Finch"}},
-    {"req": {"'../finch-tensor'": ""}, "env": {"SPARSE_BACKEND": "PyData"}}
-  ],
   "project": "sparse",
   "project_url": "https://sparse.pydata.org/",
   "repo": ".",

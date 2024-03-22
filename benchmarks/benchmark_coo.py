@@ -1,6 +1,6 @@
-import sparse
-
 import os
+
+import sparse
 
 
 class ElemwiseSuite:
@@ -9,8 +9,8 @@ class ElemwiseSuite:
     repeat = 10
 
     def setup(self):
-        self.x = sparse.random((100, 100, 100), density=0.01, random_state=42)
-        self.y = sparse.random((100, 100, 100), density=0.01, random_state=42)
+        self.x = sparse.random((100, 100, 100), density=0.05, random_state=42)
+        self.y = sparse.random((100, 100, 100), density=0.05, random_state=42)
 
         if os.environ[sparse._ENV_VAR_NAME] == "Finch":
             import finch
