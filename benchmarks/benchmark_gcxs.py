@@ -1,9 +1,3 @@
-import sparse
-import os
-
-import numpy as np
-
-
 # class MatrixMultiplySuite:
 #     def setup(self):
 #         rng = np.random.default_rng(0)
@@ -29,7 +23,6 @@ import numpy as np
 
 #     def time_mul(self):
 #         self.x * self.y
-
 
 
 # def fun(arr1, arr2, arr3):
@@ -71,8 +64,6 @@ import numpy as np
 
 #     def time_my_fun(self):
 #         my_fun(self.x, self.y, self.z)
-
-
 
 
 # class ElemwiseBroadcastingSuite:

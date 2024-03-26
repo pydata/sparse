@@ -2,9 +2,6 @@ import os
 
 import sparse
 
-import numpy as np
-
-
 # class TensordotSuiteDenseSparse:
 #     """
 #     Performance comparison for returntype=COO vs returntype=np.ndarray.
@@ -28,10 +25,10 @@ class TensordotSuiteSparseSparse:
     Performance comparison for returntype=COO vs returntype=np.ndarray.
     tensordot(COO, COO)
     """
+
     timeout = 120.0
 
     def setup(self):
-
         random_kwargs = {"density": 0.01, "random_state": 42}
         if os.environ[sparse._ENV_VAR_NAME] == "PyData":
             random_kwargs["format"] = "gcxs"
@@ -41,6 +38,7 @@ class TensordotSuiteSparseSparse:
 
         if os.environ[sparse._ENV_VAR_NAME] == "Finch":
             import finch
+
             self.s1 = self.s1.to_device(
                 finch.Storage(finch.Dense(finch.SparseList(finch.Element(0.0))), order=self.s1.get_order())
             )
@@ -50,7 +48,6 @@ class TensordotSuiteSparseSparse:
                     order=self.s2.get_order(),
                 )
             )
-
 
     # def time_dense(self):
     #     sparse.tensordot(self.s1, self.s2, axes=([0, 1], [0, 2]), return_type=np.ndarray)
