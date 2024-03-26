@@ -125,7 +125,7 @@ def kron(a, b):
     b_expanded_coords = b.coords[:, b_idx]
     o_coords = a_expanded_coords * np.asarray(b.shape)[:, None] + b_expanded_coords
     o_data = a.data[a_idx] * b.data[b_idx]
-    o_shape = tuple(i * j for i, j in zip(a.shape, b.shape, strict=False))
+    o_shape = tuple(i * j for i, j in zip(a.shape, b.shape, strict=True))
 
     return COO(o_coords, o_data, shape=o_shape, has_duplicates=False)
 
@@ -783,7 +783,7 @@ def roll(a, shift, axis=None):
     # shift elements
     coords, data = np.copy(a.coords), np.copy(a.data)
     try:
-        for sh, ax in zip(shift, axis, strict=False):
+        for sh, ax in zip(shift, axis, strict=True):
             coords[ax] += sh
             coords[ax] %= a.shape[ax]
     except UFuncTypeError as e:
@@ -1474,7 +1474,7 @@ def _arg_minmax_common(
 
     x = _validate_coo_input(x)
 
-    if not isinstance(axis, (int, type(None))):
+    if not isinstance(axis, int | type(None)):
         raise ValueError(f"`axis` must be `int` or `None`, but it's: {type(axis)}.")
     if isinstance(axis, int) and axis >= x.ndim:
         raise ValueError(f"`axis={axis}` is out of bounds for array of dimension {x.ndim}.")

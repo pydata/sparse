@@ -73,7 +73,7 @@ def check_class_nan(test):
     from ._compressed import GCXS
     from ._coo import COO
 
-    if isinstance(test, (GCXS, COO)):
+    if isinstance(test, GCXS | COO):
         return nan_check(test.fill_value, test.data)
     if _is_scipy_sparse_obj(test):
         return nan_check(test.data)
@@ -248,7 +248,7 @@ def matmul(a, b):
         a = a[(None,) * (b.ndim - a.ndim)]
     if a.ndim > b.ndim:
         b = b[(None,) * (a.ndim - b.ndim)]
-    for i, j in zip(a.shape[:-2], b.shape[:-2], strict=False):
+    for i, j in zip(a.shape[:-2], b.shape[:-2], strict=True):
         if i != 1 and j != 1 and i != j:
             raise ValueError("shapes of a and b are not broadcastable")
 
@@ -655,15 +655,13 @@ def _dot_csr_csr_type(dt1, dt2):
             head = -2
             length = 0
             next_[:] = -1
-            for j, av in zip(
+            for j, av in zip(  # noqa: B905
                 a_indices[a_indptr[i] : a_indptr[i + 1]],
                 a_data[a_indptr[i] : a_indptr[i + 1]],
-                strict=False,
             ):
-                for k, bv in zip(
+                for k, bv in zip(  # noqa: B905
                     b_indices[b_indptr[j] : b_indptr[j + 1]],
                     b_data[b_indptr[j] : b_indptr[j + 1]],
-                    strict=False,
                 ):
                     sums[k] += av * bv
                     if next_[k] == -1:
@@ -923,15 +921,13 @@ def _dot_coo_coo_type(dt1, dt2):
             head = -2
             length = 0
             next_[:] = -1
-            for j, av in zip(
+            for j, av in zip(  # noqa: B905
                 a_coords[1, a_indptr[i] : a_indptr[i + 1]],
                 a_data[a_indptr[i] : a_indptr[i + 1]],
-                strict=False,
             ):
-                for k, bv in zip(
+                for k, bv in zip(  # noqa: B905
                     b_coords[1, b_indptr[j] : b_indptr[j + 1]],
                     b_data[b_indptr[j] : b_indptr[j + 1]],
-                    strict=False,
                 ):
                     sums[k] += av * bv
                     if next_[k] == -1:
@@ -1441,7 +1437,7 @@ def einsum(*operands, **kwargs):
     # we could identify and dispatch to tensordot here?
 
     parrays = []
-    for term, array in zip(terms, operands, strict=False):
+    for term, array in zip(terms, operands, strict=True):
         # calc the target indices for this term
         pterm = "".join(ix for ix in aligned_term if ix in term)
         if pterm != term:
@@ -1928,7 +1924,7 @@ def moveaxis(a, source, destination):
 
     order = [n for n in range(a.ndim) if n not in source]
 
-    for dest, src in sorted(zip(destination, source, strict=False)):
+    for dest, src in sorted(zip(destination, source, strict=True)):
         order.insert(dest, src)
 
     return a.transpose(order)
@@ -2054,7 +2050,7 @@ def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, 
     if backend == "taco":
         raise ValueError("Taco not yet supported.")
 
-    if isinstance(obj, (COO, DOK, GCXS)):
+    if isinstance(obj, COO | DOK | GCXS):
         return obj.asformat(format)
 
     if _is_scipy_sparse_obj(obj):
@@ -2063,7 +2059,7 @@ def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, 
             dtype = sparse_obj.dtype
         return sparse_obj.astype(dtype=dtype, copy=copy)
 
-    if np.isscalar(obj) or isinstance(obj, (np.ndarray, Iterable)):
+    if np.isscalar(obj) or isinstance(obj, np.ndarray | Iterable):
         sparse_obj = format_dict[format].from_numpy(np.asarray(obj))
         if dtype is None:
             dtype = sparse_obj.dtype
@@ -2080,7 +2076,7 @@ def _support_numpy(func):
 
     def wrapper_func(*args, **kwargs):
         x = args[0]
-        if isinstance(x, (np.ndarray, np.number)):
+        if isinstance(x, np.ndarray | np.number):
             warnings.warn(
                 f"Sparse {func.__name__} received dense NumPy array instead "
                 "of sparse array. Dispatching to NumPy function.",

@@ -694,7 +694,7 @@ class SparseArray:
         den = reduce(operator.mul, (self.shape[i] for i in axis), 1)
 
         if dtype is None:
-            if issubclass(self.dtype.type, (np.integer, np.bool_)):
+            if issubclass(self.dtype.type, np.integer | np.bool_):
                 dtype = inter_dtype = np.dtype("f8")
             else:
                 dtype = self.dtype
@@ -785,7 +785,7 @@ class SparseArray:
             warnings.warn("Degrees of freedom <= 0 for slice", RuntimeWarning, stacklevel=1)
 
         # Cast bool, unsigned int, and int to float64 by default
-        if dtype is None and issubclass(self.dtype.type, (np.integer, np.bool_)):
+        if dtype is None and issubclass(self.dtype.type, np.integer | np.bool_):
             dtype = np.dtype("f8")
 
         arrmean = self.sum(axis, dtype=dtype, keepdims=True)

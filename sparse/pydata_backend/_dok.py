@@ -181,7 +181,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         """
         ar = cls(x.shape, dtype=x.dtype, fill_value=x.fill_value)
 
-        for c, d in zip(x.coords.T, x.data, strict=False):
+        for c, d in zip(x.coords.T, x.data, strict=True):
             ar.data[tuple(c)] = d
 
         return ar
@@ -235,7 +235,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         coords = np.nonzero(x)
         data = x[coords]
 
-        for c in zip(data, *coords, strict=False):
+        for c in zip(data, *coords, strict=True):
             d, c = c[0], c[1:]
             ar.data[c] = d
 
@@ -338,7 +338,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
     def _fancy_getitem(self, key):
         """Subset of fancy indexing, when all dimensions are accessed"""
         new_data = {}
-        for i, k in enumerate(zip(*key, strict=False)):
+        for i, k in enumerate(zip(*key, strict=True)):
             if k in self.data:
                 new_data[i] = self.data[k]
         return DOK(
@@ -352,7 +352,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         value = np.asarray(value, dtype=self.dtype)
 
         # 1D fancy indexing
-        if self.ndim == 1 and isinstance(key, Iterable) and all(isinstance(i, (int, np.integer)) for i in key):
+        if self.ndim == 1 and isinstance(key, Iterable) and all(isinstance(i, int | np.integer) for i in key):
             key = (key,)
 
         if isinstance(key, tuple) and all(isinstance(k, Iterable) for k in key):
@@ -383,7 +383,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
             raise ValueError(f"Shape mismatch of indices ({idxs[0].shape}) and values ({values.shape})!")
         fill_value = self.fill_value
         data = self.data
-        for idx, value in zip(zip(*idxs, strict=False), values, strict=False):
+        for idx, value in zip(zip(*idxs, strict=True), values, strict=True):
             if value != fill_value:
                 data[idx] = value
             elif idx in data:

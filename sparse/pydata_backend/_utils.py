@@ -492,7 +492,7 @@ def html_table(arr):
         headings.append("Compressed Axes")
         info.append(str(arr.compressed_axes))
 
-    for h, i in zip(headings, info, strict=False):
+    for h, i in zip(headings, info, strict=True):
         table.append(f'<tr><th style="text-align: left">{h}</th><td style="text-align: left">{i}</td></tr>')
     table.append("</tbody></table>")
     return "".join(table)

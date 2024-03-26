@@ -185,7 +185,7 @@ def get_slicing_selection(arr_data, arr_indices, indptr, starts, ends, col):  # 
     """
     indices = []
     ind_list = []
-    for i, (start, end) in enumerate(zip(starts, ends, strict=False)):
+    for i, (start, end) in enumerate(zip(starts, ends)):  # noqa: B905
         inds = []
         current_row = arr_indices[start:end]
         if current_row.size < col.size:  # linear filtering
@@ -246,7 +246,7 @@ def get_array_selection(arr_data, arr_indices, indptr, starts, ends, col):  # pr
     """
     indices = []
     ind_list = []
-    for i, (start, end) in enumerate(zip(starts, ends, strict=False)):
+    for i, (start, end) in enumerate(zip(starts, ends)):  # noqa: B905
         inds = []
         current_row = arr_indices[start:end]
         if len(current_row) == 0:
