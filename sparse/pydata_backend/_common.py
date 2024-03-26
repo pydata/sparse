@@ -2004,7 +2004,7 @@ def format_to_string(format):
     raise ValueError(f"invalid format: {format}")
 
 
-def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, copy=False):
+def asarray(obj, /, *, dtype=None, format="coo", device=None, copy=False):
     """
     Convert the input to a sparse array.
 
@@ -2016,8 +2016,6 @@ def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, 
         Output array data type.
     format : str, optional
         Output array sparse format.
-    backend : str, optional
-        Backend for the output array.
     device : str, optional
         Device on which to place the created array.
     copy : bool, optional
@@ -2038,17 +2036,11 @@ def asarray(obj, /, *, dtype=None, format="coo", backend="pydata", device=None, 
     if format not in {"coo", "dok", "gcxs"}:
         raise ValueError(f"{format} format not supported.")
 
-    if backend not in {"pydata", "taco"}:
-        raise ValueError(f"{backend} backend not supported.")
-
     from ._compressed import GCXS
     from ._coo import COO
     from ._dok import DOK
 
     format_dict = {"coo": COO, "dok": DOK, "gcxs": GCXS}
-
-    if backend == "taco":
-        raise ValueError("Taco not yet supported.")
 
     if isinstance(obj, COO | DOK | GCXS):
         return obj.asformat(format)
