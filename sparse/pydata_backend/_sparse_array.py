@@ -2,10 +2,9 @@ import contextlib
 import operator
 import warnings
 from abc import ABCMeta, abstractmethod
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from functools import reduce
 from numbers import Integral
-from typing import Callable
 
 import numpy as np
 

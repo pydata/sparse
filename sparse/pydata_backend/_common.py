@@ -248,7 +248,7 @@ def matmul(a, b):
         a = a[(None,) * (b.ndim - a.ndim)]
     if a.ndim > b.ndim:
         b = b[(None,) * (a.ndim - b.ndim)]
-    for i, j in zip(a.shape[:-2], b.shape[:-2]):
+    for i, j in zip(a.shape[:-2], b.shape[:-2], strict=False):
         if i != 1 and j != 1 and i != j:
             raise ValueError("shapes of a and b are not broadcastable")
 
@@ -658,10 +658,12 @@ def _dot_csr_csr_type(dt1, dt2):
             for j, av in zip(
                 a_indices[a_indptr[i] : a_indptr[i + 1]],
                 a_data[a_indptr[i] : a_indptr[i + 1]],
+                strict=False,
             ):
                 for k, bv in zip(
                     b_indices[b_indptr[j] : b_indptr[j + 1]],
                     b_data[b_indptr[j] : b_indptr[j + 1]],
+                    strict=False,
                 ):
                     sums[k] += av * bv
                     if next_[k] == -1:
@@ -924,10 +926,12 @@ def _dot_coo_coo_type(dt1, dt2):
             for j, av in zip(
                 a_coords[1, a_indptr[i] : a_indptr[i + 1]],
                 a_data[a_indptr[i] : a_indptr[i + 1]],
+                strict=False,
             ):
                 for k, bv in zip(
                     b_coords[1, b_indptr[j] : b_indptr[j + 1]],
                     b_data[b_indptr[j] : b_indptr[j + 1]],
+                    strict=False,
                 ):
                     sums[k] += av * bv
                     if next_[k] == -1:
@@ -1425,7 +1429,7 @@ def einsum(*operands, **kwargs):
     sizes = {}
     for t, term in enumerate(terms):
         shape = operands[t].shape
-        for ix, d in zip(term, shape):
+        for ix, d in zip(term, shape, strict=False):
             if d != sizes.setdefault(ix, d):
                 raise ValueError(f"Inconsistent shape for index '{ix}'.")
             total.setdefault(ix, set()).add(t)
@@ -1437,7 +1441,7 @@ def einsum(*operands, **kwargs):
     # we could identify and dispatch to tensordot here?
 
     parrays = []
-    for term, array in zip(terms, operands):
+    for term, array in zip(terms, operands, strict=False):
         # calc the target indices for this term
         pterm = "".join(ix for ix in aligned_term if ix in term)
         if pterm != term:
@@ -1924,7 +1928,7 @@ def moveaxis(a, source, destination):
 
     order = [n for n in range(a.ndim) if n not in source]
 
-    for dest, src in sorted(zip(destination, source)):
+    for dest, src in sorted(zip(destination, source, strict=False)):
         order.insert(dest, src)
 
     return a.transpose(order)

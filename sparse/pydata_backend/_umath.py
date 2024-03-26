@@ -145,7 +145,10 @@ def _get_broadcast_shape(shape1, shape2, is_result=False):
         If the two shapes cannot be broadcast together.
     """
     # https://stackoverflow.com/a/47244284/774273
-    if not all((l1 == l2) or (l1 == 1) or ((l2 == 1) and not is_result) for l1, l2 in zip(shape1[::-1], shape2[::-1])):
+    if not all(
+        (l1 == l2) or (l1 == 1) or ((l2 == 1) and not is_result)
+        for l1, l2 in zip(shape1[::-1], shape2[::-1], strict=False)
+    ):
         raise ValueError(f"operands could not be broadcast together with shapes {shape1}, {shape2}")
 
     return tuple(l1 if l1 != 1 else l2 for l1, l2 in zip_longest(shape1[::-1], shape2[::-1], fillvalue=1))[::-1]
@@ -211,7 +214,7 @@ def _get_reduced_shape(shape, params):
     reduced_coords : np.ndarray
         The reduced coordinates.
     """
-    return tuple(sh for sh, p in zip(shape, params) if p)
+    return tuple(sh for sh, p in zip(shape, params, strict=False) if p)
 
 
 def _get_expanded_coords_data(coords, data, params, broadcast_shape):
@@ -239,7 +242,7 @@ def _get_expanded_coords_data(coords, data, params, broadcast_shape):
     """
     first_dim = -1
     expand_shapes = []
-    for d, p, sh in zip(range(len(broadcast_shape)), params, broadcast_shape):
+    for d, p, sh in zip(range(len(broadcast_shape)), params, broadcast_shape, strict=False):
         if p and first_dim == -1:
             expand_shapes.append(coords.shape[1])
             first_dim = d
@@ -261,7 +264,7 @@ def _get_expanded_coords_data(coords, data, params, broadcast_shape):
         expanded_data = np.repeat(data, reduce(operator.mul, broadcast_shape, 1))
         return np.asarray(expanded_coords), np.asarray(expanded_data)
 
-    for d, p in zip(range(len(broadcast_shape)), params):
+    for d, p in zip(range(len(broadcast_shape)), params, strict=False):
         if p:
             expanded_coords[d] = coords[dim, all_idx[first_dim]]
         else:
@@ -323,7 +326,7 @@ def _get_matching_coords(coords, params):
     matching_coords = []
     dims = np.zeros(len(coords), dtype=np.uint8)
 
-    for p_all in zip(*params):
+    for p_all in zip(*params, strict=False):
         for i, p in enumerate(p_all):
             if p:
                 matching_coords.append(coords[i][dims[i]])
@@ -373,7 +376,7 @@ def broadcast_to(x, shape):
 
     # Check if all the non-broadcast axes are next to each other
     nonbroadcast_idx = [idx for idx, p in enumerate(params) if p]
-    diff_nonbroadcast_idx = [a - b for a, b in zip(nonbroadcast_idx[1:], nonbroadcast_idx[:-1])]
+    diff_nonbroadcast_idx = [a - b for a, b in zip(nonbroadcast_idx[1:], nonbroadcast_idx[:-1], strict=False)]
     sorted = all(d == 1 for d in diff_nonbroadcast_idx)
 
     return COO(
@@ -579,9 +582,9 @@ class _Elemwise:
         """
         from ._coo import COO
 
-        matched_args = [arg for arg, m in zip(self.args, mask) if m is not None and m]
-        unmatched_args = [arg for arg, m in zip(self.args, mask) if m is not None and not m]
-        ndarray_args = [arg for arg, m in zip(self.args, mask) if m is None]
+        matched_args = [arg for arg, m in zip(self.args, mask, strict=False) if m is not None and m]
+        unmatched_args = [arg for arg, m in zip(self.args, mask, strict=False) if m is not None and not m]
+        ndarray_args = [arg for arg, m in zip(self.args, mask, strict=False) if m is None]
 
         matched_broadcast_shape = _get_nary_broadcast_shape(
             *tuple(arg.shape for arg in itertools.chain(matched_args, ndarray_args))
@@ -592,7 +595,7 @@ class _Elemwise:
         func_args = []
 
         m_arg = 0
-        for arg, m in zip(self.args, mask):
+        for arg, m in zip(self.args, mask, strict=False):
             if m is None:
                 func_args.append(np.broadcast_to(arg, matched_broadcast_shape)[tuple(matched_arrays[0].coords)])
                 continue
@@ -693,21 +696,21 @@ class _Elemwise:
             cargs = [matched_arrays[0], arg2]
             current_shape = _get_broadcast_shape(matched_arrays[0].shape, arg2.shape)
             params = [_get_broadcast_parameters(arg.shape, current_shape) for arg in cargs]
-            reduced_params = [all(p) for p in zip(*params)]
+            reduced_params = [all(p) for p in zip(*params, strict=False)]
             reduced_shape = _get_reduced_shape(arg2.shape, _rev_idx(reduced_params, arg2.ndim))
 
             reduced_coords = [_get_reduced_coords(arg.coords, _rev_idx(reduced_params, arg.ndim)) for arg in cargs]
 
             linear = [linear_loc(rc, reduced_shape) for rc in reduced_coords]
             sorted_idx = [np.argsort(idx) for idx in linear]
-            linear = [idx[s] for idx, s in zip(linear, sorted_idx)]
+            linear = [idx[s] for idx, s in zip(linear, sorted_idx, strict=False)]
             matched_idx = _match_arrays(*linear)
 
             if return_midx:
-                return [sidx[midx] for sidx, midx in zip(sorted_idx, matched_idx)]
+                return [sidx[midx] for sidx, midx in zip(sorted_idx, matched_idx, strict=False)]
 
-            coords = [arg.coords[:, s] for arg, s in zip(cargs, sorted_idx)]
-            mcoords = [c[:, idx] for c, idx in zip(coords, matched_idx)]
+            coords = [arg.coords[:, s] for arg, s in zip(cargs, sorted_idx, strict=False)]
+            mcoords = [c[:, idx] for c, idx in zip(coords, matched_idx, strict=False)]
             mcoords = _get_matching_coords(mcoords, params)
             mdata = [arg.data[sorted_idx[0]][matched_idx[0]] for arg in matched_arrays]
             mdata.append(arg2.data[sorted_idx[1]][matched_idx[1]])

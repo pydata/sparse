@@ -53,7 +53,7 @@ def normalize_index(idx, shape):
         else:
             none_shape.append(None)
 
-    for i, d in zip(idx, none_shape):
+    for i, d in zip(idx, none_shape, strict=False):
         if d is not None:
             check_index(i, d)
     idx = tuple(map(sanitize_index, idx))
