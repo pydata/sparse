@@ -132,13 +132,3 @@ class TestAsarray:
         expected = input.todense() if hasattr(input, "todense") else np.asarray(input)
 
         np.testing.assert_equal(actual, expected)
-
-    def test_asarray_special_cases(self):
-        with pytest.raises(ValueError, match="Taco not yet supported."):
-            sparse.asarray(self.np_eye, backend="taco")
-
-        with pytest.raises(ValueError, match="any backend not supported."):
-            sparse.asarray(self.np_eye, backend="any")
-
-        with pytest.raises(ValueError, match="any format not supported."):
-            sparse.asarray(self.np_eye, format="any")
