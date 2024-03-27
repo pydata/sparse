@@ -1019,7 +1019,7 @@ def test_one_arg_where():
 
     assert len(expected) == len(actual)
 
-    for e, a in zip(expected, actual):
+    for e, a in zip(expected, actual, strict=True):
         assert_eq(e, a, compare_dtype=False)
 
 
@@ -1057,7 +1057,7 @@ def test_nonzero():
     assert isinstance(actual, tuple)
     assert len(expected) == len(actual)
 
-    for e, a in zip(expected, actual):
+    for e, a in zip(expected, actual, strict=True):
         assert_eq(e, a, compare_dtype=False)
 
 

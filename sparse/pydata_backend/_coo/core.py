@@ -1577,7 +1577,7 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
     if _is_scipy_sparse_obj(x):
         return COO.from_scipy_sparse(x)
 
-    if isinstance(x, (Iterable, Iterator)):
+    if isinstance(x, Iterable | Iterator):
         return COO.from_iter(x, shape=shape, fill_value=fill_value)
 
     raise NotImplementedError(

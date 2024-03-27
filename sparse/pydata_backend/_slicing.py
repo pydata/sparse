@@ -53,7 +53,7 @@ def normalize_index(idx, shape):
         else:
             none_shape.append(None)
 
-    for i, d in zip(idx, none_shape):
+    for i, d in zip(idx, none_shape, strict=True):
         if d is not None:
             check_index(i, d)
     idx = tuple(map(sanitize_index, idx))
@@ -206,7 +206,7 @@ def posify_index(shape, ind):
             return ind + shape
 
         return ind
-    if isinstance(ind, (np.ndarray, list)) and not math.isnan(shape):
+    if isinstance(ind, np.ndarray | list) and not math.isnan(shape):
         ind = np.asanyarray(ind)
         return np.where(ind < 0, ind + shape, ind)
     if isinstance(ind, slice):

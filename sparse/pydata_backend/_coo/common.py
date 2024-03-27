@@ -2,7 +2,7 @@ import operator
 import warnings
 from collections.abc import Iterable
 from functools import reduce
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 import numba
 
@@ -125,7 +125,7 @@ def kron(a, b):
     b_expanded_coords = b.coords[:, b_idx]
     o_coords = a_expanded_coords * np.asarray(b.shape)[:, None] + b_expanded_coords
     o_data = a.data[a_idx] * b.data[b_idx]
-    o_shape = tuple(i * j for i, j in zip(a.shape, b.shape))
+    o_shape = tuple(i * j for i, j in zip(a.shape, b.shape, strict=True))
 
     return COO(o_coords, o_data, shape=o_shape, has_duplicates=False)
 
@@ -783,7 +783,7 @@ def roll(a, shift, axis=None):
     # shift elements
     coords, data = np.copy(a.coords), np.copy(a.data)
     try:
-        for sh, ax in zip(shift, axis):
+        for sh, ax in zip(shift, axis, strict=True):
             coords[ax] += sh
             coords[ax] %= a.shape[ax]
     except UFuncTypeError as e:
@@ -1462,7 +1462,7 @@ def _compute_minmax_args(
 
 def _arg_minmax_common(
     x: SparseArray,
-    axis: Optional[int],
+    axis: int | None,
     keepdims: bool,
     mode: str,
 ):
@@ -1474,7 +1474,7 @@ def _arg_minmax_common(
 
     x = _validate_coo_input(x)
 
-    if not isinstance(axis, (int, type(None))):
+    if not isinstance(axis, int | type(None)):
         raise ValueError(f"`axis` must be `int` or `None`, but it's: {type(axis)}.")
     if isinstance(axis, int) and axis >= x.ndim:
         raise ValueError(f"`axis={axis}` is out of bounds for array of dimension {x.ndim}.")
@@ -1483,7 +1483,7 @@ def _arg_minmax_common(
 
     # If `axis` is None then we need to flatten the input array and memorize
     # the original dimensionality for the final reshape operation.
-    axis_none_original_ndim: Optional[int] = None
+    axis_none_original_ndim: int | None = None
     if axis is None:
         axis_none_original_ndim = x.ndim
         x = x.reshape(-1)[:, None]

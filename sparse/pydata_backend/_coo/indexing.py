@@ -238,7 +238,7 @@ def _prune_indices(indices, shape, prune_none=True):
         indices = [idx for idx in indices if idx is not None]
 
     i = 0
-    for idx, sh in zip(indices[::-1], shape[::-1]):
+    for idx, sh in zip(indices[::-1], shape[::-1], strict=True):
         if not isinstance(idx, slice):
             break
 

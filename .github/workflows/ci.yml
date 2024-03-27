@@ -6,15 +6,15 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python: ['3.9', '3.10', '3.11']
+        python: ['3.10', '3.11', '3.12']
         numba_boundscheck: [0]
         include:
           - os: macos-latest
-            python: '3.9'
+            python: '3.10'
           - os: windows-latest
-            python: '3.9'
+            python: '3.10'
           - os: ubuntu-latest
-            python: '3.9'
+            python: '3.10'
             numba_boundscheck: 1
       fail-fast: false
     runs-on: ${{ matrix.os }}
@@ -113,7 +113,7 @@ jobs:
           activate-environment: sparse-dev
           allow-softlinks: true
           environment-file: ci/environment.yml
-          python-version: '3.9'
+          python-version: '3.10'
           miniforge-version: latest
       - name: Install asv
         run: |
