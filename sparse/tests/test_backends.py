@@ -12,6 +12,7 @@ def test_backend_contex_manager(backend):
 
     if backend == sparse.BackendType.Finch:
         import finch
+
         def storage():
             return finch.Storage(finch.Dense(finch.SparseList(finch.SparseList(finch.Element(0.0)))), order="C")
 
@@ -32,6 +33,7 @@ def test_finch_backend():
 
     with sparse.Backend(backend=sparse.BackendType.Finch):
         import finch
+
         finch_dense = finch.Tensor(np_eye)
 
         assert np.shares_memory(finch_dense.todense(), np_eye)
