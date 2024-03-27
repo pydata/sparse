@@ -3,11 +3,68 @@ try:
 except ModuleNotFoundError as e:
     raise ImportError("Finch not installed. Run `pip install sparse[finch]` to enable Finch backend") from e
 
-from finch import Tensor, astype, permute_dims
+from finch import (
+    add,
+    astype,
+    bool,
+    compiled,
+    complex64,
+    complex128,
+    compute,
+    divide,
+    float16,
+    float32,
+    float64,
+    int8,
+    int16,
+    int32,
+    int64,
+    int_,
+    lazy,
+    multiply,
+    negative,
+    permute_dims,
+    positive,
+    prod,
+    random,
+    subtract,
+    sum,
+    uint,
+    uint8,
+    uint16,
+    uint32,
+    uint64,
+)
 
-__all__ = ["Tensor", "astype", "permute_dims"]
-
-
-class COO:
-    def from_numpy(self):
-        raise NotImplementedError
+__all__ = [
+    "add",
+    "astype",
+    "bool",
+    "compiled",
+    "complex64",
+    "complex128",
+    "compute",
+    "divide",
+    "float16",
+    "float32",
+    "float64",
+    "int8",
+    "int16",
+    "int32",
+    "int64",
+    "int_",
+    "lazy",
+    "multiply",
+    "negative",
+    "permute_dims",
+    "positive",
+    "prod",
+    "random",
+    "subtract",
+    "sum",
+    "uint",
+    "uint8",
+    "uint16",
+    "uint32",
+    "uint64",
+]
