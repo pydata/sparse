@@ -2033,16 +2033,16 @@ def asarray(obj, /, *, dtype=None, format="coo", device=None, copy=False):
     <COO: shape=(8, 8), dtype=int64, nnz=8, fill_value=0>
     """
 
-    if format not in {"coo", "dok", "gcxs"}:
+    if format not in {"coo", "dok", "gcxs", "csc", "csr"}:
         raise ValueError(f"{format} format not supported.")
 
-    from ._compressed import GCXS
+    from ._compressed import CSC, CSR, GCXS
     from ._coo import COO
     from ._dok import DOK
 
-    format_dict = {"coo": COO, "dok": DOK, "gcxs": GCXS}
+    format_dict = {"coo": COO, "dok": DOK, "gcxs": GCXS, "csc": CSC, "csr": CSR}
 
-    if isinstance(obj, COO | DOK | GCXS):
+    if isinstance(obj, COO | DOK | GCXS | CSC | CSR):
         return obj.asformat(format)
 
     if _is_scipy_sparse_obj(obj):

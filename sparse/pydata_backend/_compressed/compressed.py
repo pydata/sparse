@@ -817,6 +817,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
 
 class _Compressed2d(GCXS):
+    class_compressed_axes: tuple[int]
+
     def __init__(self, arg, shape=None, compressed_axes=None, prune=False, fill_value=0):
         if not hasattr(arg, "shape") and shape is None:
             raise ValueError("missing `shape` argument")
@@ -847,6 +849,11 @@ class _Compressed2d(GCXS):
     def ndim(self) -> int:
         return 2
 
+    @classmethod
+    def from_numpy(cls, x, fill_value=0, idx_dtype=None):
+        coo = COO.from_numpy(x, fill_value=fill_value, idx_dtype=idx_dtype)
+        return cls.from_coo(coo, cls.class_compressed_axes, idx_dtype)
+
 
 class CSR(_Compressed2d):
     """
@@ -857,8 +864,12 @@ class CSR(_Compressed2d):
     Sparse supports 2-D CSR.
     """
 
-    def __init__(self, arg, shape=None, prune=False, fill_value=0):
-        super().__init__(arg, shape=shape, compressed_axes=(0,), fill_value=fill_value)
+    class_compressed_axes: tuple[int] = (0,)
+
+    def __init__(self, arg, shape=None, compressed_axes=class_compressed_axes, prune=False, fill_value=0):
+        if compressed_axes != self.class_compressed_axes:
+            raise ValueError(f"CSR only accepts rows as compressed axis but got: {compressed_axes}")
+        super().__init__(arg, shape=shape, compressed_axes=compressed_axes, fill_value=fill_value)
 
     @classmethod
     def from_scipy_sparse(cls, x):
@@ -882,8 +893,12 @@ class CSC(_Compressed2d):
     Sparse supports 2-D CSC.
     """
 
-    def __init__(self, arg, shape=None, prune=False, fill_value=0):
-        super().__init__(arg, shape=shape, compressed_axes=(1,), fill_value=fill_value)
+    class_compressed_axes: tuple[int] = (1,)
+
+    def __init__(self, arg, shape=None, compressed_axes=class_compressed_axes, prune=False, fill_value=0):
+        if compressed_axes != self.class_compressed_axes:
+            raise ValueError(f"CSC only accepts columns as compressed axis but got: {compressed_axes}")
+        super().__init__(arg, shape=shape, compressed_axes=compressed_axes, fill_value=fill_value)
 
     @classmethod
     def from_scipy_sparse(cls, x):

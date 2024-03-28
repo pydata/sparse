@@ -5,6 +5,7 @@ except ModuleNotFoundError as e:
 
 from finch import (
     add,
+    asarray,
     astype,
     bool,
     compiled,
@@ -38,6 +39,7 @@ from finch import (
 
 __all__ = [
     "add",
+    "asarray",
     "astype",
     "bool",
     "compiled",
