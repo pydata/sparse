@@ -1,5 +1,7 @@
 import sparse
 
+import pytest
+
 import numpy as np
 import scipy.sparse as sp
 from numpy.testing import assert_equal
@@ -54,3 +56,12 @@ def test_finch_backend():
         result = my_fun(finch_dense, finch_arr)
 
         assert_equal(result.todense(), np.sum(2 * np_eye, axis=0))
+
+
+@pytest.mark.parametrize("format", ["csc", "csr", "coo"])
+def test_asarray(backend, format):
+    arr = np.eye(5)
+
+    result = sparse.asarray(arr, format=format)
+
+    assert_equal(result.todense(), arr)
