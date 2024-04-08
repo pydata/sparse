@@ -2,6 +2,7 @@ import copy as _copy
 import operator
 from collections.abc import Iterable
 from functools import reduce
+from typing import Union
 
 import numpy as np
 from numpy.lib.mixins import NDArrayOperatorsMixin
@@ -876,11 +877,14 @@ class CSR(_Compressed2d):
         x = x.asformat("csr", copy=False)
         return cls((x.data, x.indices, x.indptr), shape=x.shape)
 
-    def transpose(self, axes: None = None, copy: bool = False) -> "CSC":
-        if axes is not None:
-            raise ValueError
+    def transpose(self, axes: None = None, copy: bool = False) -> Union["CSC", "CSR"]:
+        axes = normalize_axis(axes, self.ndim)
+        if axes not in [(0, 1), (1, 0), None]:
+            raise ValueError(f"Invalid transpose axes: {axes}")
         if copy:
             self = self.copy()
+        if axes == (0, 1):
+            return self
         return CSC((self.data, self.indices, self.indptr), self.shape[::-1])
 
 
@@ -905,9 +909,12 @@ class CSC(_Compressed2d):
         x = x.asformat("csc", copy=False)
         return cls((x.data, x.indices, x.indptr), shape=x.shape)
 
-    def transpose(self, axes: None = None, copy: bool = False) -> CSR:
-        if axes is not None:
-            raise ValueError
+    def transpose(self, axes: None = None, copy: bool = False) -> Union["CSC", "CSR"]:
+        axes = normalize_axis(axes, self.ndim)
+        if axes not in [(0, 1), (1, 0), None]:
+            raise ValueError(f"Invalid transpose axes: {axes}")
         if copy:
             self = self.copy()
+        if axes == (0, 1):
+            return self
         return CSR((self.data, self.indices, self.indptr), self.shape[::-1])
