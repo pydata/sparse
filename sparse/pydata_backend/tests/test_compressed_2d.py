@@ -41,7 +41,7 @@ def random_sparse_small(cls, dtype, rng):
 
     else:
         data_rvs = None
-    return cls(sparse.random((20, 30, 40), density=0.25, data_rvs=data_rvs).astype(dtype))
+    return cls(sparse.random((20, 20), density=0.25, data_rvs=data_rvs).astype(dtype))
 
 
 def test_repr(random_sparse):
@@ -111,7 +111,21 @@ def test_transpose(random_sparse, copy):
     assert_eq(random_sparse, tt)
     assert type(random_sparse) == type(tt)
 
+    assert_eq(random_sparse.transpose(axes=(0, 1)), random_sparse)
+    assert_eq(random_sparse.transpose(axes=(1, 0)), t)
+    with pytest.raises(ValueError, match="Invalid transpose axes"):
+        random_sparse.transpose(axes=0)
+
 
 def test_transpose_error(random_sparse):
     with pytest.raises(ValueError):
         random_sparse.transpose(axes=1)
+
+
+def test_matmul(random_sparse_small):
+    arr = random_sparse_small.todense()
+
+    actual = random_sparse_small @ random_sparse_small
+    expected = arr @ arr
+
+    assert_eq(actual, expected)
