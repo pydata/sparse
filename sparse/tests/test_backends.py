@@ -4,7 +4,8 @@ import pytest
 
 import numpy as np
 import scipy.sparse as sp
-from numpy.testing import assert_equal
+import scipy.sparse.linalg as splin
+from numpy.testing import assert_almost_equal, assert_equal
 
 
 def test_backend_contex_manager(backend):
@@ -65,3 +66,18 @@ def test_asarray(backend, format):
     result = sparse.asarray(arr, format=format)
 
     assert_equal(result.todense(), arr)
+
+
+@pytest.mark.parametrize("format_with_order", [("csc", "F"), ("csr", "C"), ("coo", "F"), ("coo", "C")])
+def test_scipy_sparse_dispatch(backend, format_with_order):
+    format, order = format_with_order
+    x = np.eye(10, order=order) * 2
+    y = np.ones((10, 1), order=order)
+
+    x_sp = sparse.asarray(x, format=format)
+    y_sp = sparse.asarray(y, format="coo")
+
+    actual = splin.spsolve(x_sp, y_sp)
+    expected = np.linalg.solve(x, y.ravel())
+
+    assert_almost_equal(actual, expected)

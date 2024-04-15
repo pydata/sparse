@@ -4,6 +4,7 @@ except ModuleNotFoundError as e:
     raise ImportError("Finch not installed. Run `pip install sparse[finch]` to enable Finch backend") from e
 
 from finch import (
+    SparseArray,
     abs,
     acos,
     acosh,
@@ -56,6 +57,7 @@ from finch import (
 )
 
 __all__ = [
+    "SparseArray",
     "abs",
     "acos",
     "acosh",
