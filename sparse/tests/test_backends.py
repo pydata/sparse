@@ -59,18 +59,17 @@ def test_finch_backend():
         assert_equal(result.todense(), np.sum(2 * np_eye, axis=0))
 
 
-@pytest.mark.parametrize("format", ["csc", "csr", "coo"])
-def test_asarray(backend, format):
-    arr = np.eye(5)
+@pytest.mark.parametrize("format, order", [("csc", "F"), ("csr", "C"), ("coo", "F"), ("coo", "C")])
+def test_asarray(backend, format, order):
+    arr = np.eye(5, order=order)
 
     result = sparse.asarray(arr, format=format)
 
     assert_equal(result.todense(), arr)
 
 
-@pytest.mark.parametrize("format_with_order", [("csc", "F"), ("csr", "C"), ("coo", "F"), ("coo", "C")])
-def test_scipy_sparse_dispatch(backend, format_with_order):
-    format, order = format_with_order
+@pytest.mark.parametrize("format, order", [("csc", "F"), ("csr", "C"), ("coo", "F"), ("coo", "C")])
+def test_scipy_sparse_dispatch(backend, format, order):
     x = np.eye(10, order=order) * 2
     y = np.ones((10, 1), order=order)
 
