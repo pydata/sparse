@@ -8,20 +8,20 @@ __array_api_version__ = "2022.12"
 
 
 class BackendType(Enum):
-    PyData = "PyData"
+    Numba = "Numba"
     Finch = "Finch"
 
 
 _ENV_VAR_NAME = "SPARSE_BACKEND"
 
-backend_var = ContextVar("backend", default=BackendType.PyData)
+backend_var = ContextVar("backend", default=BackendType.Numba)
 
 if _ENV_VAR_NAME in os.environ:
     backend_var.set(BackendType[os.environ[_ENV_VAR_NAME]])
 
 
 class Backend:
-    def __init__(self, backend=BackendType.PyData):
+    def __init__(self, backend=BackendType.Numba):
         self.backend = backend
         self.token = None
 
@@ -35,8 +35,8 @@ class Backend:
     @staticmethod
     def get_backend_module():
         backend = backend_var.get()
-        if backend == BackendType.PyData:
-            import sparse.pydata_backend as backend_module
+        if backend == BackendType.Numba:
+            import sparse.numba_backend as backend_module
         elif backend == BackendType.Finch:
             import sparse.finch_backend as backend_module
         else:
@@ -45,8 +45,8 @@ class Backend:
 
 
 def __getattr__(attr):
-    if attr == "pydata_backend":
-        import sparse.pydata_backend as backend_module
+    if attr == "numba_backend":
+        import sparse.numba_backend as backend_module
 
         return backend_module
     if attr == "finch_backend":

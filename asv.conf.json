@@ -15,7 +15,7 @@
     },
     {
       "env": {
-        "SPARSE_BACKEND": "PyData"
+        "SPARSE_BACKEND": "Numba"
       },
       "req": {
         "finch-tensor": ""
@@ -29,7 +29,7 @@
     "env": {
       "SPARSE_BACKEND": [
         "Finch",
-        "PyData"
+        "Numba"
       ]
     },
     "env_nobuild": {},

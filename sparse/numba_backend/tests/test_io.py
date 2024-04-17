@@ -1,6 +1,6 @@
 import sparse
 from sparse import load_npz, save_npz
-from sparse.pydata_backend._utils import assert_eq
+from sparse.numba_backend._utils import assert_eq
 
 import pytest
 

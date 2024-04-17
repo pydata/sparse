@@ -15,7 +15,7 @@ class Tensordot:
         rng = np.random.default_rng(0)
 
         random_kwargs = {"density": 0.01, "random_state": rng}
-        if sparse.BackendType.PyData == BACKEND:
+        if sparse.BackendType.Numba == BACKEND:
             random_kwargs["format"] = "gcxs"
 
         self.s1 = sparse.random((100, 10), **random_kwargs)
@@ -51,7 +51,7 @@ class SpMv:
         size, density = size_and_density
 
         random_kwargs = {"density": density, "random_state": rng}
-        if sparse.BackendType.PyData == BACKEND:
+        if sparse.BackendType.Numba == BACKEND:
             random_kwargs["format"] = "gcxs"
 
         self.M = sparse.random((size, size), **random_kwargs)
@@ -77,9 +77,9 @@ class SpMv:
                 def fn(tns1, tns2, tns3):
                     return tns1 @ tns2 + tns3
 
-        elif sparse.BackendType.PyData == BACKEND:
+        elif sparse.BackendType.Numba == BACKEND:
             if lazy_mode:
-                raise SkipNotImplemented("PyData doesn't have lazy mode")
+                raise SkipNotImplemented("Numba doesn't have lazy mode")
 
             def fn(tns1, tns2, tns3):
                 return tns1 @ tns2 + tns3
@@ -101,7 +101,7 @@ class Elemwise:
         rng = np.random.default_rng(0)
 
         random_kwargs = {"density": 0.01, "random_state": rng}
-        if sparse.BackendType.PyData == BACKEND:
+        if sparse.BackendType.Numba == BACKEND:
             random_kwargs["format"] = "gcxs"
 
         self.s1 = sparse.random((100, 10), **random_kwargs)

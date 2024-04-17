@@ -1,5 +1,5 @@
-from sparse.pydata_backend._compressed import convert
-from sparse.pydata_backend._utils import assert_eq
+from sparse.numba_backend._compressed import convert
+from sparse.numba_backend._utils import assert_eq
 
 import pytest
 from numba.typed import List

@@ -48,7 +48,7 @@ Repository = "https://github.com/pydata/sparse.git"
 Discussions = "https://github.com/pydata/sparse/discussions"
 
 [project.entry-points.numba_extensions]
-init = "sparse.pydata_backend._numba_extension:_init_extension"
+init = "sparse.numba_backend._numba_extension:_init_extension"
 
 [tool.setuptools.packages.find]
 where = ["."]

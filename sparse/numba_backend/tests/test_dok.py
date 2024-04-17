@@ -1,6 +1,6 @@
 import sparse
 from sparse import DOK
-from sparse.pydata_backend._utils import assert_eq
+from sparse.numba_backend._utils import assert_eq
 
 import pytest
 
