@@ -1,7 +1,7 @@
 import sparse
 from sparse import COO
-from sparse.pydata_backend._compressed.compressed import CSC, CSR, GCXS
-from sparse.pydata_backend._utils import assert_eq
+from sparse.numba_backend._compressed.compressed import CSC, CSR, GCXS
+from sparse.numba_backend._utils import assert_eq
 
 import pytest
 

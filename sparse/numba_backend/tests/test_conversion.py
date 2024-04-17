@@ -1,5 +1,5 @@
 import sparse
-from sparse.pydata_backend._utils import assert_eq
+from sparse.numba_backend._utils import assert_eq
 
 import pytest
 
@@ -10,8 +10,8 @@ FORMATS_ND = [
 ]
 
 FORMATS_2D = [
-    sparse.pydata_backend._compressed.CSC,
-    sparse.pydata_backend._compressed.CSR,
+    sparse.numba_backend._compressed.CSC,
+    sparse.numba_backend._compressed.CSR,
 ]
 
 FORMATS = FORMATS_2D + FORMATS_ND

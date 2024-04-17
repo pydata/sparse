@@ -1,6 +1,6 @@
 import sparse
-from sparse.pydata_backend._compressed import GCXS
-from sparse.pydata_backend._utils import assert_eq
+from sparse.numba_backend._compressed import GCXS
+from sparse.numba_backend._utils import assert_eq
 
 import pytest
 

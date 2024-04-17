@@ -5,8 +5,8 @@ import sys
 
 import sparse
 from sparse import COO, DOK
-from sparse.pydata_backend._settings import NEP18_ENABLED
-from sparse.pydata_backend._utils import assert_eq, html_table, random_value_array
+from sparse.numba_backend._settings import NEP18_ENABLED
+from sparse.numba_backend._utils import assert_eq, html_table, random_value_array
 
 import pytest
 
@@ -1365,10 +1365,10 @@ def auto_densify():
     from importlib import reload
 
     os.environ["SPARSE_AUTO_DENSIFY"] = "1"
-    reload(sparse.pydata_backend._settings)
+    reload(sparse.numba_backend._settings)
     yield
     del os.environ["SPARSE_AUTO_DENSIFY"]
-    reload(sparse.pydata_backend._settings)
+    reload(sparse.numba_backend._settings)
 
 
 def test_setting_into_numpy_slice():
@@ -1410,13 +1410,13 @@ def test_warn_on_too_dense():
     from importlib import reload
 
     os.environ["SPARSE_WARN_ON_TOO_DENSE"] = "1"
-    reload(sparse.pydata_backend._settings)
+    reload(sparse.numba_backend._settings)
 
     with pytest.warns(RuntimeWarning):
         sparse.random((3, 4, 5), density=1.0)
 
     del os.environ["SPARSE_WARN_ON_TOO_DENSE"]
-    reload(sparse.pydata_backend._settings)
+    reload(sparse.numba_backend._settings)
 
 
 def test_prune_coo():
