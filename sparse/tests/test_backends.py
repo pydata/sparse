@@ -80,3 +80,8 @@ def test_scipy_sparse_dispatch(backend, format, order):
     expected = np.linalg.solve(x, y.ravel())
 
     assert_almost_equal(actual, expected)
+
+    actual = splin.inv(x_sp)
+    expected = np.linalg.inv(x)
+
+    assert_almost_equal(actual.todense(), expected)
