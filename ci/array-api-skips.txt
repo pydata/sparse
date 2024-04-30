@@ -36,12 +36,6 @@ array_api_tests/test_signatures.py::test_func_signature[iinfo]
 array_api_tests/test_signatures.py::test_func_signature[result_type]
 
 # bitwise functions
-array_api_tests/test_signatures.py::test_func_signature[bitwise_left_shift]
-array_api_tests/test_signatures.py::test_func_signature[bitwise_invert]
-array_api_tests/test_signatures.py::test_func_signature[bitwise_right_shift]
-array_api_tests/test_signatures.py::test_func_signature[bitwise_and]
-array_api_tests/test_signatures.py::test_func_signature[bitwise_or]
-array_api_tests/test_signatures.py::test_func_signature[bitwise_xor]
 array_api_tests/test_signatures.py::test_func_signature[logical_and]
 array_api_tests/test_signatures.py::test_func_signature[logical_not]
 array_api_tests/test_signatures.py::test_func_signature[logical_or]
@@ -49,7 +43,6 @@ array_api_tests/test_signatures.py::test_func_signature[logical_xor]
 
 # other functions
 array_api_tests/test_signatures.py::test_func_signature[concat]
-array_api_tests/test_signatures.py::test_func_signature[permute_dims]
 array_api_tests/test_signatures.py::test_func_signature[reshape]
 array_api_tests/test_signatures.py::test_func_signature[argsort]
 array_api_tests/test_signatures.py::test_func_signature[sort]
