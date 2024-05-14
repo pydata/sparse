@@ -21,6 +21,8 @@ def benchmark(func, info, args):
 
 
 if __name__ == "__main__":
+    print("SDDMM Example:\n")
+
     a_sps = rng.random((LEN, LEN - 10)) * 10
     b_sps = rng.random((LEN - 10, LEN)) * 10
     s_sps = sps.random(LEN, LEN, format="coo", density=DENSITY, random_state=rng) * 10
