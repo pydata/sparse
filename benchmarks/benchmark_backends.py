@@ -4,7 +4,7 @@ import numpy as np
 
 from .utils import SkipNotImplemented
 
-TIMEOUT: float = 200.0
+TIMEOUT: float = 500.0
 BACKEND: sparse.BackendType = sparse.backend_var.get()
 
 
@@ -42,8 +42,7 @@ class Tensordot:
 
 class SpMv:
     timeout = TIMEOUT
-    # NOTE: https://github.com/willow-ahrens/Finch.jl/issues/488
-    params = [[True, False], [(10, 0.01)]]  # (1000, 0.01), (1_000_000, 1e-05)
+    params = [[True, False], [(50, 0.1)]]  # (1000, 0.01), (1_000_000, 1e-05)
     param_names = ["lazy_mode", "size_and_density"]
 
     def setup(self, lazy_mode, size_and_density):
@@ -55,9 +54,8 @@ class SpMv:
             random_kwargs["format"] = "gcxs"
 
         self.M = sparse.random((size, size), **random_kwargs)
-        # NOTE: Once https://github.com/willow-ahrens/Finch.jl/issues/487 is fixed change to (size, 1).
-        self.v1 = rng.normal(size=(size, 2))
-        self.v2 = rng.normal(size=(size, 2))
+        self.v1 = rng.normal(size=(size, 1))
+        self.v2 = rng.normal(size=(size, 1))
 
         if sparse.BackendType.Finch == BACKEND:
             import finch
