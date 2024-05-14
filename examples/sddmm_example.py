@@ -7,7 +7,7 @@ import scipy.sparse as sps
 
 LEN = 10000
 DENSITY = 0.0001
-ITERS = 5
+ITERS = 3
 rng = np.random.default_rng(0)
 
 
@@ -22,7 +22,7 @@ def benchmark(func, info, args):
 
 if __name__ == "__main__":
     a_sps = rng.random((LEN, LEN - 10)) * 10
-    b_sps = rng.random((LEN, LEN - 10)) * 10
+    b_sps = rng.random((LEN - 10, LEN)) * 10
     s_sps = sps.random(LEN, LEN, format="coo", density=DENSITY, random_state=rng) * 10
     s_sps.sum_duplicates()
 
@@ -30,11 +30,14 @@ if __name__ == "__main__":
     with sparse.Backend(backend=sparse.BackendType.Finch):
         s = sparse.asarray(s_sps)
         a = sparse.asarray(np.array(a_sps, order="F"))
-        b = sparse.asarray(np.array(b_sps, order="F"))
+        b = sparse.asarray(np.array(b_sps, order="C"))
 
         @sparse.compiled
         def sddmm_finch(s, a, b):
-            return sparse.sum(s[:, :, None] * (a[:, None, :] * b[None, :, :]), axis=-1)
+            return sparse.sum(
+                s[:, :, None] * (a[:, None, :] * sparse.permute_dims(b, (1, 0))[None, :, :]),
+                axis=-1,
+            )
 
         # Compile
         result_finch = sddmm_finch(s, a, b)
@@ -49,7 +52,7 @@ if __name__ == "__main__":
         b = b_sps
 
         def sddmm_numba(s, a, b):
-            return s * (a @ b.T)
+            return s * (a @ b)
 
         # Compile
         result_numba = sddmm_numba(s, a, b)
@@ -59,7 +62,7 @@ if __name__ == "__main__":
 
     # SciPy
     def sddmm_scipy(s, a, b):
-        return s.multiply(a @ b.T)
+        return s.multiply(a @ b)
 
     s = s_sps.asformat("csr")
     a = a_sps

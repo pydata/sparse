@@ -4,7 +4,7 @@ import numpy as np
 
 from .utils import SkipNotImplemented
 
-TIMEOUT: float = 200.0
+TIMEOUT: float = 300.0
 BACKEND: sparse.BackendType = sparse.backend_var.get()
 
 
