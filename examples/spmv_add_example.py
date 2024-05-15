@@ -21,7 +21,7 @@ def benchmark(func, info, args):
 
 
 if __name__ == "__main__":
-    print("SpMV Example:\n")
+    print("SpMv_add Example:\n")
 
     A_sps = sps.random(LEN - 10, LEN, format="csc", density=DENSITY, random_state=rng) * 10
     x_sps = rng.random((LEN, 1)) * 10
