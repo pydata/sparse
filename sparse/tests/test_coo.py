@@ -550,7 +550,7 @@ def test_advanced_indexing(index):
 
 
 def test_custom_dtype_slicing():
-    dt = np.dtype([("part1", np.float_), ("part2", np.int64, (2,)), ("part3", np.int64, (2, 2))])
+    dt = np.dtype([("part1", np.float64), ("part2", np.int64, (2,)), ("part3", np.int64, (2, 2))])
 
     x = np.zeros((2, 3, 4), dtype=dt)
     x[1, 1, 1] = (0.64, [4, 2], [[1, 2], [3, 0]])
@@ -800,7 +800,7 @@ def test_cache_csr():
 def test_empty_shape():
     x = COO(np.empty((0, 1), dtype=np.int8), [1.0])
     assert x.shape == ()
-    assert_eq(2 * x, np.float_(2.0))
+    assert_eq(2 * x, np.float64(2.0))
 
 
 def test_single_dimension():
@@ -876,7 +876,7 @@ def test_triul(shape, k):
 
 
 def test_empty_reduction():
-    x = np.zeros((2, 3, 4), dtype=np.float_)
+    x = np.zeros((2, 3, 4), dtype=np.float64)
     xs = COO.from_numpy(x)
 
     assert_eq(x.sum(axis=(0, 2)), xs.sum(axis=(0, 2)))
