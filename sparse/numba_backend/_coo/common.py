@@ -744,8 +744,6 @@ def roll(a, shift, axis=None):
     res : ndarray
         Output array, with the same shape as a.
     """
-    from numpy.core._exceptions import UFuncTypeError
-
     from .core import COO, as_coo
 
     a = as_coo(a)
@@ -786,7 +784,7 @@ def roll(a, shift, axis=None):
         for sh, ax in zip(shift, axis, strict=True):
             coords[ax] += sh
             coords[ax] %= a.shape[ax]
-    except UFuncTypeError as e:
+    except TypeError as e:
         if is_unsigned_dtype(coords.dtype):
             raise ValueError(
                 f"rolling with coords.dtype as {coords.dtype} is not safe. Try using a signed dtype."
