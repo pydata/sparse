@@ -1892,7 +1892,7 @@ def asnumpy(a, dtype=None, order=None):
 
     if isinstance(a, SparseArray):
         a = a.todense()
-    return np.array(a, dtype=dtype, copy=False, order=order)
+    return np.asarray(a, dtype=dtype, order=order)
 
 
 # this code was taken from numpy.moveaxis

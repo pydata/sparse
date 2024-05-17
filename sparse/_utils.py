@@ -1,5 +1,6 @@
 import functools
 import operator
+import warnings
 from collections.abc import Iterable
 from functools import reduce
 from numbers import Integral
@@ -614,7 +615,13 @@ def get_out_dtype(arr, scalar):
 
 
 def can_store(dtype, scalar):
-    return np.array(scalar, dtype=dtype) == np.array(scalar)
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            warnings.filterwarnings("error", "out-of-bound", DeprecationWarning)
+            return np.array(scalar, dtype=dtype) == np.array(scalar)
+    except (ValueError, OverflowError):
+        return False
 
 
 def is_unsigned_dtype(dtype):

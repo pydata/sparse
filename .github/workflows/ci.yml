@@ -6,7 +6,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python: ['3.8', '3.9', '3.10', '3.11']
+        python: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        pip_opts: ['']
         numba_boundscheck: [0]
         include:
           - os: macos-latest
@@ -16,6 +17,8 @@ jobs:
           - os: ubuntu-latest
             python: '3.10'
             numba_boundscheck: 1
+          - os: ubuntu-latest
+            pip_opts: "--pre -U"
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
@@ -46,6 +49,7 @@ jobs:
       - name: Install package
         run: |
           pip install -e .[tests]
+          pip install ${{ matrix.pip_opts }} numpy numba
       - name: Run tests
         run: |
           pytest --pyargs sparse
@@ -99,10 +103,12 @@ on:
     branches:
       - main
       - vnext
+      - 0.15-maint
   pull_request:
     branches:
       - main
       - vnext
+      - 0.15-maint
   # Also trigger on page_build, as well as release created events
   page_build:
   release:
