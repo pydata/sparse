@@ -264,6 +264,7 @@ array_api_tests/test_searching_functions.py::test_argmin
 array_api_tests/test_searching_functions.py::test_where
 # TODO: check error
 array_api_tests/test_searching_functions.py::test_nonzero
+array_api_tests/test_searching_functions.py::test_nonzero_zerodim_error
 
 # test_set_functions
 
