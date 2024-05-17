@@ -27,7 +27,6 @@ array_api_tests/test_signatures.py::test_func_signature[ones]
 array_api_tests/test_signatures.py::test_func_signature[ones_like]
 array_api_tests/test_signatures.py::test_func_signature[zeros]
 array_api_tests/test_signatures.py::test_func_signature[zeros_like]
-array_api_tests/test_signatures.py::test_func_signature[astype]
 # inspection functions
 array_api_tests/test_signatures.py::test_func_signature[isdtype]
 array_api_tests/test_signatures.py::test_func_signature[result_type]
@@ -128,7 +127,6 @@ array_api_tests/test_operators_and_elementwise_functions.py::test_subtract[__isu
 # type promotion differences
 array_api_tests/test_operators_and_elementwise_functions.py::test_add[__add__(x, s)]
 array_api_tests/test_operators_and_elementwise_functions.py::test_divide[__truediv__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_floor_divide[__floordiv__(x, s)]
 array_api_tests/test_operators_and_elementwise_functions.py::test_multiply[__mul__(x, s)]
 array_api_tests/test_operators_and_elementwise_functions.py::test_subtract[__sub__(x, s)]
 # ArgumentError: invalid rational: zero(...)//zero(...)
@@ -264,7 +262,6 @@ array_api_tests/test_searching_functions.py::test_argmin
 array_api_tests/test_searching_functions.py::test_where
 # TODO: check error
 array_api_tests/test_searching_functions.py::test_nonzero
-array_api_tests/test_searching_functions.py::test_nonzero_zerodim_error
 
 # test_set_functions
 
@@ -298,7 +295,6 @@ array_api_tests/test_special_cases.py::test_unary[log(x_i < 0) -> NaN]
 array_api_tests/test_special_cases.py::test_unary[log1p(x_i < -1) -> NaN]
 array_api_tests/test_special_cases.py::test_unary[log2(x_i < 0) -> NaN]
 array_api_tests/test_special_cases.py::test_unary[log10(x_i < 0) -> NaN]
-array_api_tests/test_special_cases.py::test_unary[sign((x_i is -0 or x_i == +0)) -> 0]
 array_api_tests/test_special_cases.py::test_unary[signbit(x_i is +0) -> False]
 array_api_tests/test_special_cases.py::test_unary[signbit(x_i is -0) -> True]
 array_api_tests/test_special_cases.py::test_unary[signbit(x_i is +infinity) -> False]
