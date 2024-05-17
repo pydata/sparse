@@ -622,7 +622,7 @@ def can_store(dtype, scalar):
             warnings.simplefilter("ignore")
             warnings.filterwarnings("error", "out-of-bound", DeprecationWarning)
             return np.array(scalar, dtype=dtype) == np.array(scalar)
-    except ValueError:
+    except (ValueError, OverflowError):
         return False
 
 
