@@ -38,7 +38,7 @@ tests = [
 ]
 tox = ["sparse[tests]", "tox"]
 all = ["sparse[docs,tox]", "matrepr"]
-finch = ["finch-tensor>=0.1.19"]
+finch = ["finch-tensor>=0.1.20"]
 
 [project.urls]
 Documentation = "https://sparse.pydata.org/"
