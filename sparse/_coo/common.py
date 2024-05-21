@@ -229,11 +229,9 @@ def stack(arrays, axis=0):
     shape.insert(axis, len(arrays))
 
     nnz = 0
-    dim = 0
     new = np.empty(shape=(coords.shape[1],), dtype=np.intp)
-    for x in arrays:
+    for dim, x in enumerate(arrays):
         new[nnz : x.nnz + nnz] = dim
-        dim += 1
         nnz += x.nnz
 
     coords = [coords[i] for i in range(coords.shape[0])]

@@ -2188,6 +2188,16 @@ def isnan(x, /):
     return x.isnan()
 
 
+@_support_numpy
+def imag(x, /):
+    return x.imag
+
+
+@_support_numpy
+def real(x, /):
+    return x.real
+
+
 def isfinite(x, /):
     return ~isinf(x)
 
