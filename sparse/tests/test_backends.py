@@ -3,7 +3,8 @@ import sparse
 import pytest
 
 import numpy as np
-import scipy.sparse as sp
+import scipy.sparse as sps
+import scipy.sparse.csgraph as spgraph
 import scipy.sparse.linalg as splin
 from numpy.testing import assert_almost_equal, assert_equal
 
@@ -32,7 +33,7 @@ def test_backend_contex_manager(backend):
 
 def test_finch_backend():
     np_eye = np.eye(5)
-    sp_arr = sp.csr_matrix(np_eye)
+    sp_arr = sps.csr_matrix(np_eye)
 
     with sparse.Backend(backend=sparse.BackendType.Finch):
         import finch
@@ -69,19 +70,116 @@ def test_asarray(backend, format, order):
 
 
 @pytest.mark.parametrize("format, order", [("csc", "F"), ("csr", "C"), ("coo", "F"), ("coo", "C")])
-def test_scipy_sparse_dispatch(backend, format, order):
+def test_scipy_sparse_linalg_dispatch(backend, format, order):
     x = np.eye(10, order=order) * 2
     y = np.ones((10, 1), order=order)
+    x_pydata = sparse.asarray(x, format=format)
+    y_pydata = sparse.asarray(y, format="coo")
+    # x_sp = sps.coo_matrix(x)
+    # y_sp = sps.coo_matrix(y)
 
-    x_sp = sparse.asarray(x, format=format)
-    y_sp = sparse.asarray(y, format="coo")
-
-    actual = splin.spsolve(x_sp, y_sp)
+    # spsolve
+    actual = splin.spsolve(x_pydata, y_pydata)
     expected = np.linalg.solve(x, y.ravel())
-
     assert_almost_equal(actual, expected)
 
-    actual = splin.inv(x_sp)
+    # inv
+    actual = splin.inv(x_pydata)
     expected = np.linalg.inv(x)
-
     assert_almost_equal(actual.todense(), expected)
+
+    # NOTE: https://github.com/scipy/scipy/pull/20759
+    # norm
+    # actual = splin.norm(x_pydata)
+    # expected = sp.linalg.norm(x)
+    # assert_almost_equal(actual, expected)
+
+    # NOTE: https://github.com/scipy/scipy/pull/20759
+    # lsqr
+    # actual_x, _ = splin.lsqr(x_pydata, y)[:2]
+    # expected_x, _ = sp.linalg.lstsq(x, y)[:2]
+    # assert_almost_equal(actual_x, expected_x.ravel())
+
+    # NOTE: https://github.com/scipy/scipy/pull/20759
+    # eigs
+    # actual_vals, _ = splin.eigs(x_pydata, k=3)
+    # expected_vals, _ = splin.eigs(x_sp, k=3)
+    # assert_almost_equal(actual_vals, expected_vals)
+
+
+@pytest.mark.parametrize("matrix_fn, format, order", [(sps.csc_matrix, "csc", "F")])
+def test_scipy_sparse_csgraph_dispatch(backend, matrix_fn, format, order):
+    graph = np.array(
+        [
+            [0, 1, 1, 0, 0],
+            [0, 0, 1, 0, 1],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1],
+            [0, 1, 0, 1, 0],
+        ],
+        order=order,
+    )
+    graph = matrix_fn(graph)
+
+    sp_graph = sparse.asarray(graph, format=format)
+
+    # connected_components
+    actual_n_components, actual_labels = spgraph.connected_components(sp_graph)
+    expected_n_components, expected_labels = spgraph.connected_components(graph)
+
+    assert actual_n_components == expected_n_components
+    assert_equal(actual_labels, expected_labels)
+
+    # laplacian
+    actual_lap = spgraph.laplacian(sp_graph)
+    expected_lap = spgraph.laplacian(graph)
+    assert_equal(actual_lap.todense(), expected_lap.toarray())
+
+    # shortest_path
+    actual_dist_matrix, actual_predecessors = spgraph.shortest_path(sp_graph, return_predecessors=True)
+    expected_dist_matrix, expected_predecessors = spgraph.shortest_path(graph, return_predecessors=True)
+    assert_equal(actual_dist_matrix, expected_dist_matrix)
+    assert_equal(actual_predecessors, expected_predecessors)
+
+    # breadth_first_tree
+    actual_bft = spgraph.breadth_first_tree(sp_graph, 0, directed=False)
+    expected_bft = spgraph.breadth_first_tree(graph, 0, directed=False)
+    assert_equal(actual_bft.todense(), expected_bft.toarray())
+
+    # dijkstra
+    actual_dist_matrix = spgraph.dijkstra(sp_graph, directed=False)
+    expected_dist_matrix = spgraph.dijkstra(graph, directed=False)
+    assert_equal(actual_dist_matrix, expected_dist_matrix)
+
+    # minimum_spanning_tree
+    actual_span_tree = spgraph.minimum_spanning_tree(sp_graph)
+    expected_span_tree = spgraph.minimum_spanning_tree(graph)
+    assert_equal(actual_span_tree.todense(), expected_span_tree.toarray())
+
+
+@pytest.mark.skip(reason="https://github.com/scikit-learn/scikit-learn/pull/29031")
+@pytest.mark.parametrize("matrix_fn, format, order", [(sps.csc_matrix, "csc", "F")])
+def test_scikit_learn_dispatch(backend, matrix_fn, format, order):
+    from sklearn.cluster import KMeans
+
+    graph = np.array(
+        [
+            [0, 1, 1, 0, 0],
+            [0, 0, 1, 0, 1],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1],
+            [0, 1, 0, 1, 0],
+        ],
+        order=order,
+    )
+    graph = matrix_fn(graph)
+
+    sp_graph = sparse.asarray(graph, format=format)
+
+    neigh = KMeans(n_clusters=2)
+    actual_labels = neigh.fit_predict(sp_graph)
+
+    neigh = KMeans(n_clusters=2)
+    expected_labels = neigh.fit_predict(graph)
+
+    assert_equal(actual_labels, expected_labels)

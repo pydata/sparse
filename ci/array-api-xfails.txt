@@ -303,7 +303,6 @@ array_api_tests/test_special_cases.py::test_unary[signbit(isfinite(x_i) and x_i 
 array_api_tests/test_special_cases.py::test_unary[signbit(isfinite(x_i) and x_i < 0) -> True]
 array_api_tests/test_special_cases.py::test_unary[signbit(x_i is NaN) -> False]
 array_api_tests/test_special_cases.py::test_unary[signbit(x_i is NaN) -> True]
-array_api_tests/test_special_cases.py::test_unary[sign((x_i is -0 or x_i == +0)) -> 0]
 array_api_tests/test_special_cases.py::test_unary[sin((x_i is +infinity or x_i == -infinity)) -> NaN]
 array_api_tests/test_special_cases.py::test_unary[sqrt(x_i < 0) -> NaN]
 array_api_tests/test_special_cases.py::test_unary[tan((x_i is +infinity or x_i == -infinity)) -> NaN]
