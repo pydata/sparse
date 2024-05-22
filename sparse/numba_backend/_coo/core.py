@@ -434,6 +434,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         ----------
         x : scipy.sparse.spmatrix
             The sparse matrix to construct the array from.
+        fill_value : scalar
+            The fill-value to use when converting.
 
         Returns
         -------
@@ -1160,6 +1162,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     def to_scipy_sparse(self, /, *, accept_fv=None):
         """
         Converts this :obj:`COO` object into a :obj:`scipy.sparse.coo_matrix`.
+
+        Parameters
+        ----------
+        accept_fv : scalar or list of scalar, optional
+            The list of accepted fill-values. The default accepts only zero.
 
         Returns
         -------

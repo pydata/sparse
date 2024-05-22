@@ -139,6 +139,8 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         ----------
         x : scipy.sparse.spmatrix
             The matrix to convert.
+        fill_value : scalar
+            The fill-value to use when converting.
 
         Returns
         -------

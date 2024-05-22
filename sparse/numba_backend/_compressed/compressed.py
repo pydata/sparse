@@ -478,10 +478,17 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     def to_scipy_sparse(self, accept_fv=None):
         """
         Converts this :obj:`GCXS` object into a :obj:`scipy.sparse.csr_matrix` or `scipy.sparse.csc_matrix`.
+
+        Parameters
+        ----------
+        accept_fv : scalar or list of scalar, optional
+            The list of accepted fill-values. The default accepts only zero.
+
         Returns
         -------
         :obj:`scipy.sparse.csr_matrix` or `scipy.sparse.csc_matrix`
             The converted Scipy sparse matrix.
+
         Raises
         ------
         ValueError
