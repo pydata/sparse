@@ -131,7 +131,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
             raise ValueError("data must be a dict.")
 
     @classmethod
-    def from_scipy_sparse(cls, x):
+    def from_scipy_sparse(cls, x, /, *, fill_value=None):
         """
         Create a :obj:`DOK` array from a :obj:`scipy.sparse.spmatrix`.
 
@@ -154,7 +154,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         """
         from sparse import COO
 
-        return COO.from_scipy_sparse(x).asformat(cls)
+        return COO.from_scipy_sparse(x, fill_value=fill_value).asformat(cls)
 
     @classmethod
     def from_coo(cls, x):
