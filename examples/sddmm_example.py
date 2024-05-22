@@ -6,7 +6,7 @@ import numpy as np
 import scipy.sparse as sps
 
 LEN = 10000
-DENSITY = 0.0001
+DENSITY = 0.00001
 ITERS = 3
 rng = np.random.default_rng(0)
 
