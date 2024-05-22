@@ -426,7 +426,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         return x
 
     @classmethod
-    def from_scipy_sparse(cls, x, fill_value=None):
+    def from_scipy_sparse(cls, x, /, *, fill_value=None):
         """
         Construct a :obj:`COO` array from a :obj:`scipy.sparse.spmatrix`
 

@@ -208,7 +208,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         return cls(arg, shape=shape, compressed_axes=compressed_axes, fill_value=fill_value)
 
     @classmethod
-    def from_scipy_sparse(cls, x, fill_value=None):
+    def from_scipy_sparse(cls, x, /, *, fill_value=None):
         if x.format == "csc":
             return cls((x.data, x.indices, x.indptr), shape=x.shape, compressed_axes=(1,), fill_value=fill_value)
 
@@ -908,7 +908,7 @@ class CSC(_Compressed2d):
         super().__init__(arg, shape=shape, compressed_axes=compressed_axes, fill_value=fill_value)
 
     @classmethod
-    def from_scipy_sparse(cls, x, fill_value=None):
+    def from_scipy_sparse(cls, x, /, *, fill_value=None):
         x = x.asformat("csc", copy=False)
         return cls((x.data, x.indices, x.indptr), shape=x.shape, fill_value=fill_value)
 
