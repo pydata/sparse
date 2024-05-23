@@ -33,7 +33,7 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
     if isinstance(x, COO) and isinstance(y, COO) and check_nnz:
         assert np.array_equal(x.coords, y.coords)
         assert check_equal(x.data, y.data, **kwargs)
-        assert x.fill_value == y.fill_value
+        assert x.fill_value == y.fill_value or (np.isnan(x.fill_value) and np.isnan(y.fill_value))
         return
 
     if hasattr(x, "todense"):
@@ -526,6 +526,31 @@ def check_compressed_axes(ndim, compressed_axes):
         raise ValueError("axes must be represented with integers")
     if min(compressed_axes) < 0 or max(compressed_axes) >= ndim:
         raise ValueError("axis out of range")
+
+
+def check_fill_value(x, /, *, accept_fv=None) -> None:
+    """Raises on incorrect fill-values.
+
+    Parameters
+    ----------
+    x : SparseArray
+        The array to check
+    accept_fv : scalar or list of scalar, optional
+        The list of accepted fill-values. The default accepts only zero.
+
+    Raises
+    ------
+    ValueError
+        If the fill-value doesn't match.
+    """
+    if accept_fv is None:
+        accept_fv = [0]
+
+    if not isinstance(accept_fv, Iterable):
+        accept_fv = [accept_fv]
+
+    if not any(equivalent(fv, x.fill_value) for fv in accept_fv):
+        raise ValueError(f"{x.fill_value=} but should be in {accept_fv}.")
 
 
 def check_zero_fill_value(*args):
