@@ -1,11 +1,10 @@
 import sparse
 from sparse._compressed import GCXS
-from sparse._utils import assert_eq
+from sparse._utils import assert_eq, equivalent
 
 import pytest
 
 import numpy as np
-import scipy
 
 
 @pytest.fixture(scope="module", params=["f8", "f4", "i8", "i4"])
@@ -177,18 +176,21 @@ def test_tranpose(a, b):
     assert_eq(x.transpose(b), s.transpose(b))
 
 
-def test_to_scipy_sparse():
-    s = sparse.random((3, 5), density=0.5, format="gcxs", compressed_axes=(0,))
-    a = s.to_scipy_sparse()
-    b = scipy.sparse.csr_matrix(s.todense())
+@pytest.mark.parametrize("fill_value_in", [0, np.inf, np.nan, 5, None])
+@pytest.mark.parametrize("fill_value_out", [0, np.inf, np.nan, 5, None])
+@pytest.mark.parametrize("format", [sparse.COO, sparse._compressed.CSR])
+def test_to_scipy_sparse(fill_value_in, fill_value_out, format):
+    s = sparse.random((3, 5), density=0.5, format=format, fill_value=fill_value_in)
 
-    assert_eq(a, b)
+    if not ((fill_value_in in {0, None} and fill_value_out in {0, None}) or equivalent(fill_value_in, fill_value_out)):
+        with pytest.raises(ValueError, match=r"fill_value=.* but should be in .*\."):
+            s.to_scipy_sparse(accept_fv=fill_value_out)
+        return
 
-    s = sparse.random((3, 5), density=0.5, format="gcxs", compressed_axes=(1,))
-    a = s.to_scipy_sparse()
-    b = scipy.sparse.csc_matrix(s.todense())
+    sps_matrix = s.to_scipy_sparse(accept_fv=fill_value_in)
+    s2 = format.from_scipy_sparse(sps_matrix, fill_value=fill_value_out)
 
-    assert_eq(a, b)
+    assert_eq(s, s2)
 
 
 def test_tocoo():

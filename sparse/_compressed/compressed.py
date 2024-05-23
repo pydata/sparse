@@ -11,9 +11,10 @@ from .._coo.common import linear_loc
 from .._coo.core import COO
 from .._sparse_array import SparseArray
 from .._utils import (
+    _zero_of_dtype,
     can_store,
     check_compressed_axes,
-    check_zero_fill_value,
+    check_fill_value,
     equivalent,
     normalize_axis,
 )
@@ -137,7 +138,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         shape=None,
         compressed_axes=None,
         prune=False,
-        fill_value=0,
+        fill_value=None,
         idx_dtype=None,
     ):
         if isinstance(arg, ss.spmatrix):
@@ -174,8 +175,11 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         self.shape = shape
 
+        if fill_value is None:
+            fill_value = _zero_of_dtype(self.data.dtype)
+
         self._compressed_axes = tuple(compressed_axes) if isinstance(compressed_axes, Iterable) else None
-        self.fill_value = fill_value
+        self.fill_value = self.data.dtype.type(fill_value)
 
         if prune:
             self._prune()
@@ -192,7 +196,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         return _copy.deepcopy(self) if deep else _copy.copy(self)
 
     @classmethod
-    def from_numpy(cls, x, compressed_axes=None, fill_value=0, idx_dtype=None):
+    def from_numpy(cls, x, compressed_axes=None, fill_value=None, idx_dtype=None):
         coo = COO.from_numpy(x, fill_value=fill_value, idx_dtype=idx_dtype)
         return cls.from_coo(coo, compressed_axes, idx_dtype)
 
@@ -202,12 +206,12 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         return cls(arg, shape=shape, compressed_axes=compressed_axes, fill_value=fill_value)
 
     @classmethod
-    def from_scipy_sparse(cls, x):
+    def from_scipy_sparse(cls, x, /, *, fill_value=None):
         if x.format == "csc":
-            return cls((x.data, x.indices, x.indptr), shape=x.shape, compressed_axes=(1,))
+            return cls((x.data, x.indices, x.indptr), shape=x.shape, compressed_axes=(1,), fill_value=fill_value)
 
         x = x.asformat("csr")
-        return cls((x.data, x.indices, x.indptr), shape=x.shape, compressed_axes=(0,))
+        return cls((x.data, x.indices, x.indptr), shape=x.shape, compressed_axes=(0,), fill_value=fill_value)
 
     @classmethod
     def from_iter(cls, x, shape=None, compressed_axes=None, fill_value=None, idx_dtype=None):
@@ -468,13 +472,20 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         return DOK.from_coo(self.tocoo())  # probably a temporary solution
 
-    def to_scipy_sparse(self):
+    def to_scipy_sparse(self, accept_fv=None):
         """
         Converts this :obj:`GCXS` object into a :obj:`scipy.sparse.csr_matrix` or `scipy.sparse.csc_matrix`.
+
+        Parameters
+        ----------
+        accept_fv : scalar or list of scalar, optional
+            The list of accepted fill-values. The default accepts only zero.
+
         Returns
         -------
         :obj:`scipy.sparse.csr_matrix` or `scipy.sparse.csc_matrix`
             The converted Scipy sparse matrix.
+
         Raises
         ------
         ValueError
@@ -483,8 +494,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             If all the array doesn't zero fill-values.
         """
 
-        check_zero_fill_value(self)
-
+        check_fill_value(self, accept_fv=accept_fv)
         if self.ndim != 2:
             raise ValueError("Can only convert a 2-dimensional array to a Scipy sparse matrix.")
 
@@ -857,9 +867,9 @@ class CSR(_Compressed2d):
         super().__init__(arg, shape=shape, compressed_axes=(0,), fill_value=fill_value)
 
     @classmethod
-    def from_scipy_sparse(cls, x):
+    def from_scipy_sparse(cls, x, /, *, fill_value=None):
         x = x.asformat("csr", copy=False)
-        return cls((x.data, x.indices, x.indptr), shape=x.shape)
+        return cls((x.data, x.indices, x.indptr), shape=x.shape, fill_value=fill_value)
 
     def transpose(self, axes: None = None, copy: bool = False) -> "CSC":
         if axes is not None:
@@ -882,9 +892,9 @@ class CSC(_Compressed2d):
         super().__init__(arg, shape=shape, compressed_axes=(1,), fill_value=fill_value)
 
     @classmethod
-    def from_scipy_sparse(cls, x):
+    def from_scipy_sparse(cls, x, /, *, fill_value=None):
         x = x.asformat("csc", copy=False)
-        return cls((x.data, x.indices, x.indptr), shape=x.shape)
+        return cls((x.data, x.indices, x.indptr), shape=x.shape, fill_value=fill_value)
 
     def transpose(self, axes: None = None, copy: bool = False) -> CSR:
         if axes is not None:

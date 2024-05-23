@@ -380,14 +380,6 @@ def test_reshape_errors(format):
         s.reshape((3, 5, 1), order="F")
 
 
-def test_to_scipy_sparse():
-    s = sparse.random((3, 5), density=0.5)
-    a = s.to_scipy_sparse()
-    b = scipy.sparse.coo_matrix(s.todense())
-
-    assert_eq(a, b)
-
-
 @pytest.mark.parametrize("a_ndim", [1, 2, 3])
 @pytest.mark.parametrize("b_ndim", [1, 2, 3])
 def test_kron(a_ndim, b_ndim):
