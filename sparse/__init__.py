@@ -43,16 +43,6 @@ class Backend:
             raise ValueError(f"Invalid backend identifier: {backend}")
         return backend_module
 
-    @staticmethod
-    def import_names_into_namespace():
-        backend = backend_var.get()
-        if backend == BackendType.Numba:
-            exec("from .numba_backend import *")
-        elif backend == BackendType.Finch:
-            exec("from .finch_backend import *")
-        else:
-            raise ValueError(f"Invalid backend identifier: {backend}")
-
 
 def __getattr__(attr):
     if attr == "numba_backend":
@@ -67,4 +57,5 @@ def __getattr__(attr):
     return getattr(Backend.get_backend_module(), attr)
 
 
-Backend.import_names_into_namespace()
+if backend_var.get() == BackendType.Numba:
+    from .numba_backend import COO, GCXS, SparseArray, elemwise  # noqa: F401
