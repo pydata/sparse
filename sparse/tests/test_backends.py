@@ -220,3 +220,10 @@ def test_scikit_learn_dispatch(backend, graph, matrix_fn, format, order):
     expected_labels = neigh.fit_predict(graph)
 
     assert_equal(actual_labels, expected_labels)
+
+
+
+def test_numba_direct_imports(backend):
+    if backend == sparse.BackendType.Finch:
+        pytest.skip("Finch not tested")
+    from sparse import COO, GCXS, SparseArray, elemwise  # noqa: F401
