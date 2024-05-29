@@ -18,15 +18,8 @@ array_api_tests/test_signatures.py::test_func_signature[linspace]
 array_api_tests/test_signatures.py::test_func_signature[meshgrid]
 array_api_tests/test_signatures.py::test_func_signature[tril]
 array_api_tests/test_signatures.py::test_func_signature[triu]
-# missing 'device' keyword
+# missing 'copy' keyword
 array_api_tests/test_signatures.py::test_func_signature[asarray]
-array_api_tests/test_signatures.py::test_func_signature[eye]
-array_api_tests/test_signatures.py::test_func_signature[full]
-array_api_tests/test_signatures.py::test_func_signature[full_like]
-array_api_tests/test_signatures.py::test_func_signature[ones]
-array_api_tests/test_signatures.py::test_func_signature[ones_like]
-array_api_tests/test_signatures.py::test_func_signature[zeros]
-array_api_tests/test_signatures.py::test_func_signature[zeros_like]
 # inspection functions
 array_api_tests/test_signatures.py::test_func_signature[isdtype]
 array_api_tests/test_signatures.py::test_func_signature[result_type]
@@ -41,9 +34,6 @@ array_api_tests/test_signatures.py::test_func_signature[flip]
 array_api_tests/test_signatures.py::test_func_signature[roll]
 array_api_tests/test_signatures.py::test_func_signature[squeeze]
 array_api_tests/test_signatures.py::test_func_signature[stack]
-array_api_tests/test_signatures.py::test_func_signature[conj]
-array_api_tests/test_signatures.py::test_func_signature[imag]
-array_api_tests/test_signatures.py::test_func_signature[real]
 array_api_tests/test_signatures.py::test_func_signature[matrix_transpose]
 array_api_tests/test_signatures.py::test_func_signature[vecdot]
 array_api_tests/test_signatures.py::test_func_signature[take]
@@ -135,9 +125,6 @@ array_api_tests/test_operators_and_elementwise_functions.py::test_floor_divide[_
 # throws for x < 1 instead of NaN
 array_api_tests/test_operators_and_elementwise_functions.py::test_acosh
 # not implemented
-array_api_tests/test_operators_and_elementwise_functions.py::test_conj
-array_api_tests/test_operators_and_elementwise_functions.py::test_imag
-array_api_tests/test_operators_and_elementwise_functions.py::test_real
 array_api_tests/test_operators_and_elementwise_functions.py::test_logical_not
 
 # test_data_type_functions
@@ -211,14 +198,11 @@ array_api_tests/test_has_names.py::test_has_names[sorting-sort]
 array_api_tests/test_has_names.py::test_has_names[data_type-isdtype]
 array_api_tests/test_has_names.py::test_has_names[data_type-result_type]
 array_api_tests/test_has_names.py::test_has_names[elementwise-clip]
-array_api_tests/test_has_names.py::test_has_names[elementwise-conj]
 array_api_tests/test_has_names.py::test_has_names[elementwise-copysign]
 array_api_tests/test_has_names.py::test_has_names[elementwise-hypot]
-array_api_tests/test_has_names.py::test_has_names[elementwise-imag]
 array_api_tests/test_has_names.py::test_has_names[elementwise-logical_not]
 array_api_tests/test_has_names.py::test_has_names[elementwise-maximum]
 array_api_tests/test_has_names.py::test_has_names[elementwise-minimum]
-array_api_tests/test_has_names.py::test_has_names[elementwise-real]
 array_api_tests/test_has_names.py::test_has_names[elementwise-signbit]
 array_api_tests/test_has_names.py::test_has_names[linear_algebra-matrix_transpose]
 array_api_tests/test_has_names.py::test_has_names[linear_algebra-vecdot]
