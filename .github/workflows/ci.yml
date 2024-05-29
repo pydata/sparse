@@ -142,6 +142,10 @@ jobs:
       run: |
         source ci/test_examples.sh
   array_api_tests:
+    strategy:
+      matrix:
+        backend: ['Numba', 'Finch']
+      fail-fast: false
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repo
@@ -150,7 +154,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: data-apis/array-api-tests
-        ref: '3cf8ef654c456d9fd1633d64e67b4470465940e9'  # Latest commit as of 2024-04-09
+        ref: '33f2d2ea2f3dd2b3ceeeb4519d55e08096184149'  # Latest commit as of 2024-05-29
         submodules: 'true'
         path: 'array-api-tests'
     - name: Set up Python
@@ -159,17 +163,17 @@ jobs:
         python-version: '3.11'
     - name: Install build and test dependencies from PyPI
       run: |
-        python -m pip install -r array-api-tests/requirements.txt
+        python -m pip install pytest-xdist -r array-api-tests/requirements.txt
     - name: Build and install Sparse
       run: |
         python -m pip install '.[finch]'
     - name: Run the test suite
       env:
         ARRAY_API_TESTS_MODULE: sparse
-        SPARSE_BACKEND: Finch
+        SPARSE_BACKEND: ${{ matrix.backend }}
       run: |
         cd ${GITHUB_WORKSPACE}/array-api-tests
-        pytest array_api_tests -v -c pytest.ini --ci --max-examples=2 --derandomize --disable-deadline -o xfail_strict=True --xfails-file ${GITHUB_WORKSPACE}/ci/array-api-xfails.txt --skips-file ${GITHUB_WORKSPACE}/ci/array-api-skips.txt
+        pytest array_api_tests -v -c pytest.ini -n 4 --ci --max-examples=2 --derandomize --disable-deadline -o xfail_strict=True --xfails-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-xfails.txt --skips-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-skips.txt
 on:
   # Trigger the workflow on push or pull request,
   # but only for the main branch

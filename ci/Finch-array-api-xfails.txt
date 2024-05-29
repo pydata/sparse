@@ -135,7 +135,7 @@ array_api_tests/test_data_type_functions.py::test_broadcast_to
 array_api_tests/test_data_type_functions.py::test_isdtype
 array_api_tests/test_data_type_functions.py::test_result_type
 # TODO: check error
-array_api_tests/test_data_type_functions.py::test_finfo[float32]
+array_api_tests/test_data_type_functions.py::test_finfo[Float32]
 
 # test_has_names
 
@@ -330,6 +330,7 @@ array_api_tests/test_statistical_functions.py::test_mean
 # TODO: check errors
 array_api_tests/test_statistical_functions.py::test_max
 array_api_tests/test_statistical_functions.py::test_min
+array_api_tests/test_statistical_functions.py::test_sum
 array_api_tests/test_statistical_functions.py::test_prod
 
 # test_utility_functions
