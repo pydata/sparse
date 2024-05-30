@@ -1362,12 +1362,7 @@ def _validate_coo_input(x: Any):
 
 @numba.jit(nopython=True, nogil=True)
 def _sort_coo(
-    coords: np.ndarray,
-    data: np.ndarray,
-    fill_value: float,
-    sort_axis_len: int,
-    descending: bool,
-    stable: bool,
+    coords: np.ndarray, data: np.ndarray, fill_value: float, sort_axis_len: int, descending: bool
 ) -> tuple[np.ndarray, np.ndarray]:
     assert coords.shape[0] == 2
     group_coords = coords[0, :]

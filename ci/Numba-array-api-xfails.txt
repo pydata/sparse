@@ -37,33 +37,15 @@ array_api_tests/test_has_names.py::test_has_names[creation-linspace]
 array_api_tests/test_has_names.py::test_has_names[creation-meshgrid]
 array_api_tests/test_has_names.py::test_has_names[sorting-argsort]
 array_api_tests/test_has_names.py::test_has_names[data_type-isdtype]
-array_api_tests/test_has_names.py::test_has_names[elementwise-conj]
 array_api_tests/test_has_names.py::test_has_names[array_method-__dlpack__]
 array_api_tests/test_has_names.py::test_has_names[array_method-__dlpack_device__]
 array_api_tests/test_has_names.py::test_has_names[array_method-__setitem__]
-array_api_tests/test_has_names.py::test_has_names[array_method-to_device]
-array_api_tests/test_has_names.py::test_has_names[array_attribute-device]
-array_api_tests/test_has_names.py::test_has_names[array_attribute-mT]
 array_api_tests/test_indexing_functions.py::test_take
 array_api_tests/test_linalg.py::test_vecdot
 array_api_tests/test_manipulation_functions.py::test_concat
-array_api_tests/test_operators_and_elementwise_functions.py::test_add[__add__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_add[__iadd__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_bitwise_left_shift[__lshift__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_bitwise_left_shift[__ilshift__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_bitwise_right_shift[__rshift__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_bitwise_right_shift[__irshift__(x, s)]
 array_api_tests/test_operators_and_elementwise_functions.py::test_ceil
-array_api_tests/test_operators_and_elementwise_functions.py::test_conj
-array_api_tests/test_operators_and_elementwise_functions.py::test_divide[__truediv__(x, s)]
 array_api_tests/test_operators_and_elementwise_functions.py::test_imag
-array_api_tests/test_operators_and_elementwise_functions.py::test_multiply[__mul__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_multiply[__imul__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_pow[__pow__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_pow[__ipow__(x, s)]
 array_api_tests/test_operators_and_elementwise_functions.py::test_real
-array_api_tests/test_operators_and_elementwise_functions.py::test_subtract[__sub__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_subtract[__isub__(x, s)]
 array_api_tests/test_operators_and_elementwise_functions.py::test_trunc
 array_api_tests/test_searching_functions.py::test_argmax
 array_api_tests/test_searching_functions.py::test_argmin
@@ -81,7 +63,6 @@ array_api_tests/test_signatures.py::test_func_signature[isdtype]
 array_api_tests/test_signatures.py::test_array_method_signature[__dlpack__]
 array_api_tests/test_signatures.py::test_array_method_signature[__dlpack_device__]
 array_api_tests/test_signatures.py::test_array_method_signature[__setitem__]
-array_api_tests/test_signatures.py::test_array_method_signature[to_device]
 array_api_tests/test_sorting_functions.py::test_argsort
 array_api_tests/test_sorting_functions.py::test_sort
 array_api_tests/test_special_cases.py::test_unary[isfinite(x_i is NaN) -> False]

@@ -849,6 +849,16 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         """
         return self.transpose(tuple(range(self.ndim))[::-1])
 
+    @property
+    def mT(self):
+        if self.ndim < 2:
+            raise ValueError("Cannot compute matrix transpose if `ndim < 2`.")
+
+        axis = list(range(self.ndim))
+        axis[-1], axis[-2] = axis[-2], axis[-1]
+
+        return self.transpose(axis)
+
     def swapaxes(self, axis1, axis2):
         """Returns array that has axes axis1 and axis2 swapped.
 

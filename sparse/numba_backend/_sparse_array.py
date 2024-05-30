@@ -48,6 +48,17 @@ class SparseArray:
     dtype = None
 
     @property
+    def device(self):
+        data = getattr(self, "data", None)
+        return getattr(data, "device", "cpu")
+
+    def to_device(self, device, /, *, stream=None):
+        if device != "cpu":
+            raise ValueError("Only `device='cpu'` is supported.")
+
+        return self
+
+    @property
     @abstractmethod
     def nnz(self):
         """
@@ -315,11 +326,11 @@ class SparseArray:
             return self.__array_function__(ufunc, (np.ndarray, type(self)), inputs, kwargs)
 
         if out is not None:
-            test_args = [np.empty(1, dtype=a.dtype) if hasattr(a, "dtype") else [a] for a in inputs]
+            test_args = [np.empty((1,), dtype=a.dtype) if hasattr(a, "dtype") else a for a in inputs]
             test_kwargs = kwargs.copy()
             if method == "reduce":
                 test_kwargs["axis"] = None
-            test_out = tuple(np.empty(1, dtype=a.dtype) for a in out)
+            test_out = tuple(np.empty((1,), dtype=a.dtype) for a in out)
             if len(test_out) == 1:
                 test_out = test_out[0]
             getattr(ufunc, method)(*test_args, out=test_out, **test_kwargs)

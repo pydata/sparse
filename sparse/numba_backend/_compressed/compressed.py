@@ -324,6 +324,16 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     def T(self):
         return self.transpose()
 
+    @property
+    def mT(self):
+        if self.ndim < 2:
+            raise ValueError("Cannot compute matrix transpose if `ndim < 2`.")
+
+        axis = list(range(self.ndim))
+        axis[-1], axis[-2] = axis[-2], axis[-1]
+
+        return self.transpose(axis)
+
     def __str__(self):
         summary = (
             f"<GCXS: shape={self.shape}, dtype={self.dtype}, nnz={self.nnz}, fill_value={self.fill_value}, "
