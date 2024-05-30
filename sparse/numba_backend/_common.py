@@ -29,6 +29,17 @@ def _is_scipy_sparse_obj(x):
     return False
 
 
+def _check_device(func):
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        device = kwargs.get("device", None)
+        if device not in {"cpu", None}:
+            raise ValueError("Device must be `'cpu'` or `None`.")
+        return func(*args, **kwargs)
+
+    return wrapped
+
+
 def _is_sparse(x):
     """
     Tests if the supplied argument is a SciPy sparse object, or one from this library.
@@ -1533,7 +1544,8 @@ def concatenate(arrays, axis=0, compressed_axes=None):
 concat = concatenate
 
 
-def eye(N, M=None, k=0, dtype=float, format="coo", **kwargs):
+@_check_device
+def eye(N, M=None, k=0, dtype=float, format="coo", *, device=None, **kwargs):
     """Return a 2-D array in the specified format with ones on the diagonal and zeros elsewhere.
 
     Parameters
@@ -1595,7 +1607,8 @@ def eye(N, M=None, k=0, dtype=float, format="coo", **kwargs):
     return COO(coords, data=data, shape=(N, M), has_duplicates=False, sorted=True).asformat(format, **kwargs)
 
 
-def full(shape, fill_value, dtype=None, format="coo", order="C", **kwargs):
+@_check_device
+def full(shape, fill_value, dtype=None, format="coo", order="C", *, device=None, **kwargs):
     """Return a SparseArray of given shape and type, filled with `fill_value`.
 
     Parameters
@@ -1649,7 +1662,8 @@ def full(shape, fill_value, dtype=None, format="coo", order="C", **kwargs):
     ).asformat(format, **kwargs)
 
 
-def full_like(a, fill_value, dtype=None, shape=None, format=None, **kwargs):
+@_check_device
+def full_like(a, fill_value, dtype=None, shape=None, format=None, *, device=None, **kwargs):
     """Return a full array with the same shape and type as a given array.
 
     Parameters
@@ -1692,7 +1706,7 @@ def full_like(a, fill_value, dtype=None, shape=None, format=None, **kwargs):
     )
 
 
-def zeros(shape, dtype=float, format="coo", **kwargs):
+def zeros(shape, dtype=float, format="coo", *, device=None, **kwargs):
     """Return a SparseArray of given shape and type, filled with zeros.
 
     Parameters
@@ -1721,10 +1735,10 @@ def zeros(shape, dtype=float, format="coo", **kwargs):
     array([[0, 0],
            [0, 0]])
     """
-    return full(shape, fill_value=0, dtype=np.dtype(dtype), format=format, **kwargs)
+    return full(shape, fill_value=0, dtype=np.dtype(dtype), format=format, device=device, **kwargs)
 
 
-def zeros_like(a, dtype=None, shape=None, format=None, **kwargs):
+def zeros_like(a, dtype=None, shape=None, format=None, *, device=None, **kwargs):
     """Return a SparseArray of zeros with the same shape and type as ``a``.
 
     Parameters
@@ -1750,10 +1764,10 @@ def zeros_like(a, dtype=None, shape=None, format=None, **kwargs):
     array([[0, 0, 0],
            [0, 0, 0]])
     """
-    return full_like(a, fill_value=0, dtype=dtype, shape=shape, format=format, **kwargs)
+    return full_like(a, fill_value=0, dtype=dtype, shape=shape, format=format, device=device, **kwargs)
 
 
-def ones(shape, dtype=float, format="coo", **kwargs):
+def ones(shape, dtype=float, format="coo", *, device=None, **kwargs):
     """Return a SparseArray of given shape and type, filled with ones.
 
     Parameters
@@ -1782,10 +1796,10 @@ def ones(shape, dtype=float, format="coo", **kwargs):
     array([[1, 1],
            [1, 1]])
     """
-    return full(shape, fill_value=1, dtype=np.dtype(dtype), format=format, **kwargs)
+    return full(shape, fill_value=1, dtype=np.dtype(dtype), format=format, device=device, **kwargs)
 
 
-def ones_like(a, dtype=None, shape=None, format=None, **kwargs):
+def ones_like(a, dtype=None, shape=None, format=None, *, device=None, **kwargs):
     """Return a SparseArray of ones with the same shape and type as ``a``.
 
     Parameters
@@ -1811,18 +1825,18 @@ def ones_like(a, dtype=None, shape=None, format=None, **kwargs):
     array([[1, 1, 1],
            [1, 1, 1]])
     """
-    return full_like(a, fill_value=1, dtype=dtype, shape=shape, format=format, **kwargs)
+    return full_like(a, fill_value=1, dtype=dtype, shape=shape, format=format, device=device, **kwargs)
 
 
-def empty(shape, dtype=float, format="coo", **kwargs):
-    return full(shape, fill_value=0, dtype=np.dtype(dtype), format=format, **kwargs)
+def empty(shape, dtype=float, format="coo", *, device=None, **kwargs):
+    return full(shape, fill_value=0, dtype=np.dtype(dtype), format=format, device=device, **kwargs)
 
 
 empty.__doc__ = zeros.__doc__
 
 
-def empty_like(a, dtype=None, shape=None, format=None, **kwargs):
-    return full_like(a, fill_value=0, dtype=dtype, shape=shape, format=format, **kwargs)
+def empty_like(a, dtype=None, shape=None, format=None, *, device=None, **kwargs):
+    return full_like(a, fill_value=0, dtype=dtype, shape=shape, format=format, device=device, **kwargs)
 
 
 empty_like.__doc__ = zeros_like.__doc__
@@ -2004,7 +2018,8 @@ def format_to_string(format):
     raise ValueError(f"invalid format: {format}")
 
 
-def asarray(obj, /, *, dtype=None, format="coo", device=None, copy=False):
+@_check_device
+def asarray(obj, /, *, dtype=None, format="coo", copy=False, device=None):
     """
     Convert the input to a sparse array.
 
@@ -2066,6 +2081,7 @@ def _support_numpy(func):
     we want to flag it and dispatch to NumPy.
     """
 
+    @wraps(func)
     def wrapper_func(*args, **kwargs):
         x = args[0]
         if isinstance(x, np.ndarray | np.number):
@@ -2130,12 +2146,29 @@ def reshape(x, /, shape, *, copy=None):
     return x.reshape(shape=shape)
 
 
+def conj(x, /):
+    return x.conj()
+
+
 def astype(x, dtype, /, *, copy=True):
     return x.astype(dtype, copy=copy)
 
 
 @_support_numpy
 def squeeze(x, /, axis=None):
+    """Remove singleton dimensions from array.
+
+    Parameters
+    ----------
+    x : SparseArray
+    axis : int or tuple[int, ...], optional
+        The singleton axes to remove. By default all singleton axes are removed.
+
+    Returns
+    -------
+    SparseArray
+        Array with singleton dimensions removed.
+    """
     return x.squeeze(axis=axis)
 
 

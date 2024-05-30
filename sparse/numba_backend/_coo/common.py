@@ -1243,7 +1243,7 @@ def unique_values(x, /):
     return values
 
 
-def sort(x, /, *, axis=-1, descending=False):
+def sort(x, /, *, axis=-1, descending=False, stable=False):
     """
     Returns a sorted copy of an input array ``x``.
 
@@ -1258,6 +1258,9 @@ def sort(x, /, *, axis=-1, descending=False):
         Sort order. If ``True``, the array must be sorted in descending order (by value).
         If ``False``, the array must be sorted in ascending order (by value).
         Default: ``False``.
+    stable : bool
+        Whether the sort is stable. Provided for compatibility with the Array API, only
+        ``False`` (the default) is currently supported.
 
     Returns
     -------
@@ -1279,11 +1282,13 @@ def sort(x, /, *, axis=-1, descending=False):
     array([ 2, 2, 1, 0, 0, -3])
 
     """
-
     from .._common import moveaxis
     from .core import COO
 
     x = _validate_coo_input(x)
+
+    if stable:
+        raise ValueError("`stable=True` isn't currently supported.")
 
     original_ndim = x.ndim
     if x.ndim == 1:
@@ -1362,6 +1367,7 @@ def _sort_coo(
     fill_value: float,
     sort_axis_len: int,
     descending: bool,
+    stable: bool,
 ) -> tuple[np.ndarray, np.ndarray]:
     assert coords.shape[0] == 2
     group_coords = coords[0, :]
