@@ -44,8 +44,6 @@ array_api_tests/test_indexing_functions.py::test_take
 array_api_tests/test_linalg.py::test_vecdot
 array_api_tests/test_manipulation_functions.py::test_concat
 array_api_tests/test_operators_and_elementwise_functions.py::test_ceil
-array_api_tests/test_operators_and_elementwise_functions.py::test_imag
-array_api_tests/test_operators_and_elementwise_functions.py::test_real
 array_api_tests/test_operators_and_elementwise_functions.py::test_trunc
 array_api_tests/test_searching_functions.py::test_argmax
 array_api_tests/test_searching_functions.py::test_argmin

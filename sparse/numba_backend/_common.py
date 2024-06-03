@@ -2205,6 +2205,14 @@ def nonzero(x, /):
     return x.nonzero()
 
 
+def imag(x, /):
+    return x.imag
+
+
+def real(x, /):
+    return x.real
+
+
 def vecdot(x1, x2, /, *, axis=-1):
     """
     Computes the (vector) dot product of two arrays.
