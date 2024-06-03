@@ -160,6 +160,7 @@ def concatenate(arrays, axis=0):
     check_consistent_fill_value(arrays)
 
     if axis is None:
+        axis = 0
         arrays = [x.flatten() for x in arrays]
 
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
