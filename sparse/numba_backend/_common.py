@@ -2157,12 +2157,13 @@ def squeeze(x, /, axis=None):
     Parameters
     ----------
     x : SparseArray
+        Input array.
     axis : int or tuple[int, ...], optional
         The singleton axes to remove. By default all singleton axes are removed.
 
     Returns
     -------
-    SparseArray
+    output : SparseArray
         Array with singleton dimensions removed.
     """
     return x.squeeze(axis=axis)
