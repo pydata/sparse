@@ -559,7 +559,7 @@ def check_fill_value(x, /, *, accept_fv=None) -> None:
     if not isinstance(accept_fv, Iterable):
         accept_fv = [accept_fv]
 
-    if not any(equivalent(fv, x.fill_value) for fv in accept_fv):
+    if not any(equivalent(fv, x.fill_value, loose=True) for fv in accept_fv):
         raise ValueError(f"{x.fill_value=} but should be in {accept_fv}.")
 
 

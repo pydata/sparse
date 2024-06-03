@@ -1793,14 +1793,19 @@ def test_expand_dims(axis):
 @pytest.mark.parametrize("fill_value", [-1, 0, 1, 3])
 @pytest.mark.parametrize("axis", [0, 1, -1])
 @pytest.mark.parametrize("descending", [False, True])
-def test_sort(arr, fill_value, axis, descending):
+@pytest.mark.parametrize(
+    "stable", [False, pytest.param(True, marks=pytest.mark.xfail(reason="Numba doesn't support `stable=True`."))]
+)
+def test_sort(arr, fill_value, axis, descending, stable):
     if axis >= arr.ndim:
         return
 
     s_arr = sparse.COO.from_numpy(arr, fill_value)
 
-    result = sparse.sort(s_arr, axis=axis, descending=descending)
-    expected = -np.sort(-arr, axis=axis) if descending else np.sort(arr, axis=axis)
+    kind = "mergesort" if stable else "quicksort"
+
+    result = sparse.sort(s_arr, axis=axis, descending=descending, stable=stable)
+    expected = -np.sort(-arr, axis=axis, kind=kind) if descending else np.sort(arr, axis=axis, kind=kind)
 
     np.testing.assert_equal(result.todense(), expected)
     # make sure no inplace changes happened
@@ -1868,7 +1873,8 @@ def test_matrix_transpose(ndim, density):
     expected = np.transpose(xd, axes=transpose_axes)
     actual = sparse.matrix_transpose(xs)
 
-    np.testing.assert_equal(actual.todense(), expected)
+    assert_eq(actual, expected)
+    assert_eq(xs.mT, expected)
 
 
 @pytest.mark.parametrize(
@@ -1913,3 +1919,48 @@ def test_vecdot(shape1, shape2, density, rng, is_complex):
     actual = sparse.vecdot(s1, s2, axis=axis)
 
     np.testing.assert_allclose(actual.todense(), expected)
+
+
+@pytest.mark.parametrize(
+    ("func", "args", "kwargs"),
+    [
+        (sparse.eye, (5,), {}),
+        (sparse.zeros, ((5,)), {}),
+        (sparse.ones, ((5,)), {}),
+        (sparse.full, ((5,), 5), {}),
+        (sparse.empty, ((5,)), {}),
+        (sparse.full_like, (5,), {}),
+        (sparse.ones_like, (), {}),
+        (sparse.zeros_like, (), {}),
+        (sparse.empty_like, (), {}),
+        (sparse.asarray, (), {}),
+    ],
+)
+def test_invalid_device(func, args, kwargs):
+    if func.__name__.endswith("_like") or func is sparse.asarray:
+        like = sparse.random((5, 5), density=0.5)
+        args = (like,) + args
+
+    with pytest.raises(ValueError, match="Device must be"):
+        func(*args, device="invalid_device", **kwargs)
+
+
+def test_device():
+    s = sparse.random((5, 5), density=0.5)
+    data = getattr(s, "data", None)
+    device = getattr(data, "device", "cpu")
+
+    assert s.device == device
+
+
+def test_to_device():
+    s = sparse.random((5, 5), density=0.5)
+    s2 = s.to_device(s.device)
+
+    assert s is s2
+
+
+def test_to_invalid_device():
+    s = sparse.random((5, 5), density=0.5)
+    with pytest.raises(ValueError, match=r"Only .* is supported."):
+        s.to_device("invalid_device")
