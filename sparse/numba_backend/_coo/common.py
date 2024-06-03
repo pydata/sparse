@@ -1260,8 +1260,7 @@ def sort(x, /, *, axis=-1, descending=False, stable=False):
         If ``False``, the array must be sorted in ascending order (by value).
         Default: ``False``.
     stable : bool
-        Whether the sort is stable. Provided for compatibility with the Array API, only
-        ``False`` (the default) is currently supported.
+        Whether the sort is stable. Only ``False`` is supported currently.
 
     Returns
     -------
