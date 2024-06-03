@@ -1478,6 +1478,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         (array([0, 1, 2, 3, 4]), array([0, 1, 2, 3, 4]))
         """
         check_zero_fill_value(self)
+        if self.ndim == 0:
+            raise ValueError("`nonzero` is undefined for `self.ndim == 0`.")
         return tuple(self.coords)
 
     def asformat(self, format, **kwargs):

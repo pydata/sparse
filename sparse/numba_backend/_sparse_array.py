@@ -390,13 +390,9 @@ class SparseArray:
         """
         axis = normalize_axis(axis, self.ndim)
         zero_reduce_result = method.reduce([self.fill_value, self.fill_value], **kwargs)
-        reduce_super_ufunc = None
-
-        if not equivalent(zero_reduce_result, self.fill_value):
-            reduce_super_ufunc = _reduce_super_ufunc.get(method)
-
-            if reduce_super_ufunc is None:
-                raise ValueError(f"Performing this reduction operation would produce a dense result: {method!s}")
+        reduce_super_ufunc = _reduce_super_ufunc.get(method)
+        if not equivalent(zero_reduce_result, self.fill_value) and reduce_super_ufunc is None:
+            raise ValueError(f"Performing this reduction operation would produce a dense result: {method!s}")
 
         if not isinstance(axis, tuple):
             axis = (axis,)

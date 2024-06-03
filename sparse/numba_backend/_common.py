@@ -2197,10 +2197,6 @@ def isnan(x, /):
     return x.isnan()
 
 
-def isfinite(x, /):
-    return ~isinf(x)
-
-
 def nonzero(x, /):
     return x.nonzero()
 
