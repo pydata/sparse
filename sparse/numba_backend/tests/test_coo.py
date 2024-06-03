@@ -1904,7 +1904,7 @@ def test_vecdot(shape1, shape2, density, rng, is_complex):
     s1 = sparse.random(shape1, density=density, data_rvs=data_rvs)
     s2 = sparse.random(shape2, density=density, data_rvs=data_rvs)
 
-    axis = rng.integers(max(s1.ndim, s2.ndim))
+    axis = rng.integers(min(s1.ndim, s2.ndim))
 
     x1 = s1.todense()
     x2 = s2.todense()
@@ -1915,8 +1915,13 @@ def test_vecdot(shape1, shape2, density, rng, is_complex):
 
         return np.sum(x1 * x2, axis=axis)
 
-    expected = np_vecdot(x1, x2, axis=axis)
+    if shape1[axis] != shape2[axis]:
+        with pytest.raises(ValueError, match="Shapes must match along"):
+            sparse.vecdot(s1, s2, axis=axis)
+        return
+
     actual = sparse.vecdot(s1, s2, axis=axis)
+    expected = np_vecdot(x1, x2, axis=axis)
 
     np.testing.assert_allclose(actual.todense(), expected)
 
