@@ -2146,10 +2146,6 @@ def reshape(x, /, shape, *, copy=None):
     return x.reshape(shape=shape)
 
 
-def conj(x, /):
-    return x.conj()
-
-
 def astype(x, dtype, /, *, copy=True):
     return x.astype(dtype, copy=copy)
 
