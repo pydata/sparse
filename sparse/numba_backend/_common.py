@@ -2225,6 +2225,9 @@ def vecdot(x1, x2, /, *, axis=-1):
     out : Union[SparseArray, numpy.ndarray]
         Sparse or 0-D array containing dot product.
     """
+    if x1.shape[axis] != x2.shape[axis]:
+        raise ValueError("Shapes must match along `axis`.")
+
     if np.issubdtype(x1.dtype, np.complexfloating):
         x1 = np.conjugate(x1)
 
