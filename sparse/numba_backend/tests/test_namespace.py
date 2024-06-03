@@ -43,6 +43,7 @@ def test_namespace():
         "complex64",
         "concat",
         "concatenate",
+        "conj",
         "cos",
         "cosh",
         "diagonal",

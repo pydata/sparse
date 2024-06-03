@@ -406,7 +406,7 @@ def normalize_axis(axis, ndim):
     raise ValueError(f"axis {axis} not understood")
 
 
-def equivalent(x, y):
+def equivalent(x, y, /, loose=False):
     """
     Checks the equivalence of two scalars or arrays with broadcasting. Assumes
     a consistent dtype.
@@ -432,17 +432,27 @@ def equivalent(x, y):
     >>> equivalent(np.inf, np.inf)
     True
     >>> equivalent(np.PZERO, np.NZERO)
-    True
+    False
     """
     x = np.asarray(x)
     y = np.asarray(y)
     # Can't contain NaNs
-    if any(np.issubdtype(x.dtype, t) for t in [np.integer, np.bool_, np.character]):
+    dt = np.result_type(x.dtype, y.dtype)
+    if not any(np.issubdtype(dt, t) for t in [np.floating, np.complexfloating]):
         return x == y
 
-    # Can contain NaNs
-    # FIXME: Complex floats and np.void with multiple values can't be compared properly.
-    return (x == y) | ((x != x) & (y != y))  # noqa: PLR0124
+    if loose:
+        if np.issubdtype(dt, np.complexfloating):
+            return equivalent(x.real, y.real) & equivalent(x.imag, y.imag)
+
+        # TODO: Rec array handling
+        return (x == y) | ((x != x) & (y != y))
+
+    if x.size == 0 or y.size == 0:
+        shape = np.broadcast_shapes(x.shape, y.shape)
+        return np.empty(shape, dtype=np.bool_)
+    x, y = np.broadcast_arrays(x[..., None], y[..., None])
+    return (x.astype(dt).view(np.uint8) == y.astype(dt).view(np.uint8)).all(axis=-1)
 
 
 # copied from zarr
@@ -549,7 +559,7 @@ def check_fill_value(x, /, *, accept_fv=None) -> None:
     if not isinstance(accept_fv, Iterable):
         accept_fv = [accept_fv]
 
-    if not any(equivalent(fv, x.fill_value) for fv in accept_fv):
+    if not any(equivalent(fv, x.fill_value, loose=True) for fv in accept_fv):
         raise ValueError(f"{x.fill_value=} but should be in {accept_fv}.")
 
 

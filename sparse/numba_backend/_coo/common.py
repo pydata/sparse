@@ -160,6 +160,7 @@ def concatenate(arrays, axis=0):
     check_consistent_fill_value(arrays)
 
     if axis is None:
+        axis = 0
         arrays = [x.flatten() for x in arrays]
 
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
@@ -1243,7 +1244,7 @@ def unique_values(x, /):
     return values
 
 
-def sort(x, /, *, axis=-1, descending=False):
+def sort(x, /, *, axis=-1, descending=False, stable=False):
     """
     Returns a sorted copy of an input array ``x``.
 
@@ -1258,6 +1259,8 @@ def sort(x, /, *, axis=-1, descending=False):
         Sort order. If ``True``, the array must be sorted in descending order (by value).
         If ``False``, the array must be sorted in ascending order (by value).
         Default: ``False``.
+    stable : bool
+        Whether the sort is stable. Only ``False`` is supported currently.
 
     Returns
     -------
@@ -1279,11 +1282,13 @@ def sort(x, /, *, axis=-1, descending=False):
     array([ 2, 2, 1, 0, 0, -3])
 
     """
-
     from .._common import moveaxis
     from .core import COO
 
     x = _validate_coo_input(x)
+
+    if stable:
+        raise ValueError("`stable=True` isn't currently supported.")
 
     original_ndim = x.ndim
     if x.ndim == 1:
@@ -1357,11 +1362,7 @@ def _validate_coo_input(x: Any):
 
 @numba.jit(nopython=True, nogil=True)
 def _sort_coo(
-    coords: np.ndarray,
-    data: np.ndarray,
-    fill_value: float,
-    sort_axis_len: int,
-    descending: bool,
+    coords: np.ndarray, data: np.ndarray, fill_value: float, sort_axis_len: int, descending: bool
 ) -> tuple[np.ndarray, np.ndarray]:
     assert coords.shape[0] == 2
     group_coords = coords[0, :]

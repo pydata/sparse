@@ -431,7 +431,7 @@ class _Elemwise:
                 processed_args.append(COO.from_scipy_sparse(arg))
             elif isscalar(arg) or isinstance(arg, np.ndarray):
                 # Faster and more reliable to pass ()-shaped ndarrays as scalars.
-                processed_args.append(np.asarray(arg))
+                processed_args.append(arg)
             elif isinstance(arg, SparseArray):
                 if not isinstance(arg, COO):
                     arg = arg.asformat(COO)
@@ -513,15 +513,22 @@ class _Elemwise:
         """
         from ._coo import COO
 
-        zero_args = tuple(
-            np.asarray(arg.fill_value, like=arg.data) if isinstance(arg, COO) else arg for arg in self.args
-        )
+        def get_zero_arg(x):
+            if isinstance(x, COO):
+                return np.atleast_1d(x.fill_value)
+
+            if isinstance(x, np.generic | np.ndarray):
+                return np.atleast_1d(x)
+
+            return x
+
+        zero_args = tuple(get_zero_arg(a) for a in self.args)
 
         # Some elemwise functions require a dtype argument, some abhorr it.
         try:
-            fill_value_array = self.func(*np.broadcast_arrays(*zero_args), dtype=self.dtype, **self.kwargs)
+            fill_value_array = self.func(*zero_args, dtype=self.dtype, **self.kwargs)
         except TypeError:
-            fill_value_array = self.func(*np.broadcast_arrays(*zero_args), **self.kwargs)
+            fill_value_array = self.func(*zero_args, **self.kwargs)
 
         try:
             fill_value = fill_value_array[(0,) * fill_value_array.ndim]
@@ -531,7 +538,7 @@ class _Elemwise:
             )
             fill_value = self.func(*zero_args, **self.kwargs)[()]
 
-        equivalent_fv = equivalent(fill_value, fill_value_array).all()
+        equivalent_fv = equivalent(fill_value, fill_value_array, loose=True).all()
         if not equivalent_fv and self.shape != self.ndarray_shape:
             raise ValueError(
                 "Performing a mixed sparse-dense operation that would result in a dense array. "
@@ -558,7 +565,7 @@ class _Elemwise:
         """
         from ._coo import COO
 
-        full_shape = _get_nary_broadcast_shape(*tuple(arg.shape for arg in self.args))
+        full_shape = _get_nary_broadcast_shape(*tuple(np.shape(arg) for arg in self.args))
         non_ndarray_shape = _get_nary_broadcast_shape(*tuple(arg.shape for arg in self.args if isinstance(arg, COO)))
         ndarray_shape = _get_nary_broadcast_shape(*tuple(arg.shape for arg in self.args if isinstance(arg, np.ndarray)))
 
@@ -587,7 +594,7 @@ class _Elemwise:
         ndarray_args = [arg for arg, m in zip(self.args, mask, strict=True) if m is None]
 
         matched_broadcast_shape = _get_nary_broadcast_shape(
-            *tuple(arg.shape for arg in itertools.chain(matched_args, ndarray_args))
+            *tuple(np.shape(arg) for arg in itertools.chain(matched_args, ndarray_args))
         )
 
         matched_arrays = self._match_coo(*matched_args, cache=self.cache, broadcast_shape=matched_broadcast_shape)
