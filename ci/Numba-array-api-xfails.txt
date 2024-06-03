@@ -68,4 +68,3 @@ array_api_tests/test_special_cases.py::test_nan_propagation[prod]
 array_api_tests/test_special_cases.py::test_nan_propagation[std]
 array_api_tests/test_special_cases.py::test_nan_propagation[sum]
 array_api_tests/test_special_cases.py::test_nan_propagation[var]
-array_api_tests/test_statistical_functions.py::test_mean

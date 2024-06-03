@@ -1878,23 +1878,20 @@ def test_matrix_transpose(ndim, density):
 
 
 @pytest.mark.parametrize(
-    "shape1, shape2",
+    ("shape1", "shape2", "axis"),
     [
-        ((2, 3, 4), (3, 4)),
-        ((3, 4), (2, 3, 4)),
-        ((3, 1, 4), (3, 2, 4)),
-        ((1, 3, 4), (3, 4)),
-        ((3, 4, 1), (3, 4, 2)),
-        ((1, 5), (5, 1)),
-        ((3, 1), (3, 4)),
-        ((3, 1), (1, 4)),
-        ((1, 4), (3, 4)),
-        ((2, 2, 2), (1, 1, 1)),
+        ((2, 3, 4), (3, 4), -2),
+        ((3, 4), (2, 3, 4), -1),
+        ((3, 1, 4), (3, 2, 4), 2),
+        ((1, 3, 4), (3, 4), -2),
+        ((3, 4, 1), (3, 4, 2), 0),
+        ((3, 1), (3, 4), -2),
+        ((1, 4), (3, 4), 1),
     ],
 )
 @pytest.mark.parametrize("density", [0.0, 0.1, 0.25, 1.0])
 @pytest.mark.parametrize("is_complex", [False, True])
-def test_vecdot(shape1, shape2, density, rng, is_complex):
+def test_vecdot(shape1, shape2, axis, density, rng, is_complex):
     def data_rvs(size):
         data = rng.random(size)
         if is_complex:
@@ -1903,8 +1900,6 @@ def test_vecdot(shape1, shape2, density, rng, is_complex):
 
     s1 = sparse.random(shape1, density=density, data_rvs=data_rvs)
     s2 = sparse.random(shape2, density=density, data_rvs=data_rvs)
-
-    axis = rng.integers(min(s1.ndim, s2.ndim))
 
     x1 = s1.todense()
     x2 = s2.todense()
@@ -1915,15 +1910,30 @@ def test_vecdot(shape1, shape2, density, rng, is_complex):
 
         return np.sum(x1 * x2, axis=axis)
 
-    if shape1[axis] != shape2[axis]:
-        with pytest.raises(ValueError, match="Shapes must match along"):
-            sparse.vecdot(s1, s2, axis=axis)
-        return
-
     actual = sparse.vecdot(s1, s2, axis=axis)
     expected = np_vecdot(x1, x2, axis=axis)
 
     np.testing.assert_allclose(actual.todense(), expected)
+
+
+@pytest.mark.parametrize(
+    ("shape1", "shape2", "axis"),
+    [
+        ((2, 3, 4), (3, 4), 0),
+        ((3, 4), (2, 3, 4), 0),
+        ((3, 1, 4), (3, 2, 4), -2),
+        ((1, 3, 4), (3, 4), -3),
+        ((3, 4, 1), (3, 4, 2), -1),
+        ((3, 1), (3, 4), 1),
+        ((1, 4), (3, 4), -2),
+    ],
+)
+def test_vecdot_invalid_axis(shape1, shape2, axis):
+    s1 = sparse.random(shape1, density=0.5)
+    s2 = sparse.random(shape2, density=0.5)
+
+    with pytest.raises(ValueError, match=r"Shapes must match along"):
+        sparse.vecdot(s1, s2, axis=axis)
 
 
 @pytest.mark.parametrize(

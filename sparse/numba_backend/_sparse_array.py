@@ -795,7 +795,7 @@ class SparseArray:
         if dtype is None and issubclass(self.dtype.type, np.integer | np.bool_):
             dtype = np.dtype("f8")
 
-        arrmean = self.sum(axis, dtype=dtype, keepdims=True)
+        arrmean = self.sum(axis, dtype=dtype, keepdims=True)[...]
         np.divide(arrmean, rcount, out=arrmean)
         x = self - arrmean
         if issubclass(self.dtype.type, np.complexfloating):

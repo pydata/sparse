@@ -687,7 +687,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     __repr__ = __str__
 
     def _reduce_calc(self, method, axis, keepdims=False, **kwargs):
-        if axis[0] is None:
+        if axis == (None,):
             axis = tuple(range(self.ndim))
         axis = tuple(a if a >= 0 else a + self.ndim for a in axis)
         neg_axis = tuple(ax for ax in range(self.ndim) if ax not in set(axis))
