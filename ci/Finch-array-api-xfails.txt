@@ -18,8 +18,6 @@ array_api_tests/test_signatures.py::test_func_signature[linspace]
 array_api_tests/test_signatures.py::test_func_signature[meshgrid]
 array_api_tests/test_signatures.py::test_func_signature[tril]
 array_api_tests/test_signatures.py::test_func_signature[triu]
-# missing 'copy' keyword
-array_api_tests/test_signatures.py::test_func_signature[asarray]
 # inspection functions
 array_api_tests/test_signatures.py::test_func_signature[isdtype]
 array_api_tests/test_signatures.py::test_func_signature[result_type]
