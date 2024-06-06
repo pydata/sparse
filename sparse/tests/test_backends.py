@@ -21,8 +21,8 @@ def test_backend_contex_manager(backend):
         def storage():
             return finch.Storage(finch.Dense(finch.SparseList(finch.SparseList(finch.Element(0.0)))), order="C")
 
-        x = x.to_device(storage())
-        y = y.to_device(storage())
+        x = x.to_storage(storage())
+        y = y.to_storage(storage())
     else:
         x.asformat("gcxs")
         y.asformat("gcxs")

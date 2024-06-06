@@ -18,8 +18,6 @@ array_api_tests/test_signatures.py::test_func_signature[linspace]
 array_api_tests/test_signatures.py::test_func_signature[meshgrid]
 array_api_tests/test_signatures.py::test_func_signature[tril]
 array_api_tests/test_signatures.py::test_func_signature[triu]
-# missing 'copy' keyword
-array_api_tests/test_signatures.py::test_func_signature[asarray]
 # inspection functions
 array_api_tests/test_signatures.py::test_func_signature[isdtype]
 array_api_tests/test_signatures.py::test_func_signature[result_type]
@@ -70,8 +68,6 @@ array_api_tests/test_signatures.py::test_extension_func_signature[linalg.vector_
 array_api_tests/test_signatures.py::test_array_method_signature[__dlpack__]
 array_api_tests/test_signatures.py::test_array_method_signature[__dlpack_device__]
 array_api_tests/test_signatures.py::test_array_method_signature[__setitem__]
-# missing 'stream' from signature
-array_api_tests/test_signatures.py::test_array_method_signature[to_device]
 
 # test_creation_functions
 
@@ -91,37 +87,10 @@ array_api_tests/test_array_object.py::test_setitem_masking
 
 # test_operators_and_elementwise_functions
 
-# inplace operators not supported
-array_api_tests/test_operators_and_elementwise_functions.py::test_add[__iadd__(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_add[__iadd__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_bitwise_and[__iand__(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_bitwise_and[__iand__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_bitwise_left_shift[__ilshift__(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_bitwise_left_shift[__ilshift__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_bitwise_or[__ior__(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_bitwise_or[__ior__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_bitwise_right_shift[__irshift__(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_bitwise_right_shift[__irshift__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_bitwise_xor[__ixor__(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_bitwise_xor[__ixor__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_divide[__itruediv__(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_divide[__itruediv__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_floor_divide[__ifloordiv__(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_floor_divide[__ifloordiv__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_multiply[__imul__(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_multiply[__imul__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_pow[__ipow__(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_pow[__ipow__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_subtract[__isub__(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_subtract[__isub__(x, s)]
-# type promotion differences
-array_api_tests/test_operators_and_elementwise_functions.py::test_add[__add__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_divide[__truediv__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_multiply[__mul__(x, s)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_subtract[__sub__(x, s)]
 # ArgumentError: invalid rational: zero(...)//zero(...)
 array_api_tests/test_operators_and_elementwise_functions.py::test_floor_divide[floor_divide(x1, x2)]
 array_api_tests/test_operators_and_elementwise_functions.py::test_floor_divide[__floordiv__(x1, x2)]
+array_api_tests/test_operators_and_elementwise_functions.py::test_floor_divide[__ifloordiv__(x1, x2)]
 # throws for x < 1 instead of NaN
 array_api_tests/test_operators_and_elementwise_functions.py::test_acosh
 # not implemented
@@ -211,7 +180,6 @@ array_api_tests/test_has_names.py::test_has_names[array_method-__dlpack__]
 array_api_tests/test_has_names.py::test_has_names[array_method-__dlpack_device__]
 array_api_tests/test_has_names.py::test_has_names[array_method-__setitem__]
 array_api_tests/test_has_names.py::test_has_names[array_attribute-T]
-array_api_tests/test_has_names.py::test_has_names[array_attribute-device]
 array_api_tests/test_has_names.py::test_has_names[array_attribute-mT]
 
 # test_indexing_functions

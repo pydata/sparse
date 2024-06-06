@@ -24,10 +24,10 @@ class Tensordot:
         if sparse.BackendType.Finch == BACKEND:
             import finch
 
-            self.s1 = self.s1.to_device(
+            self.s1 = self.s1.to_storage(
                 finch.Storage(finch.Dense(finch.SparseList(finch.Element(0.0))), order=self.s1.get_order())
             )
-            self.s2 = self.s2.to_device(
+            self.s2 = self.s2.to_storage(
                 finch.Storage(
                     finch.Dense(finch.SparseList(finch.SparseList(finch.Element(0.0)))),
                     order=self.s2.get_order(),
@@ -60,7 +60,7 @@ class SpMv:
         if sparse.BackendType.Finch == BACKEND:
             import finch
 
-            self.M = self.M.to_device(
+            self.M = self.M.to_storage(
                 finch.Storage(finch.Dense(finch.SparseList(finch.Element(0.0))), order=self.M.get_order())
             )
             self.v1 = finch.Tensor(self.v1)
@@ -108,10 +108,10 @@ class Elemwise:
         if sparse.BackendType.Finch == BACKEND:
             import finch
 
-            self.s1 = self.s1.to_device(
+            self.s1 = self.s1.to_storage(
                 finch.Storage(finch.Dense(finch.SparseList(finch.Element(0.0))), order=self.s1.get_order())
             )
-            self.s2 = self.s2.to_device(
+            self.s2 = self.s2.to_storage(
                 finch.Storage(
                     finch.Dense(finch.SparseList(finch.SparseList(finch.Element(0.0)))), order=self.s2.get_order()
                 )
