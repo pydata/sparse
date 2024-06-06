@@ -327,6 +327,3 @@ array_api_tests/test_special_cases.py::test_nan_propagation[var]
 
 # not implemented
 array_api_tests/test_statistical_functions.py::test_mean
-# returned dtype mismatch https://github.com/willow-ahrens/Finch.jl/issues/578
-array_api_tests/test_statistical_functions.py::test_max
-array_api_tests/test_statistical_functions.py::test_min
