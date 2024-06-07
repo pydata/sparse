@@ -4,40 +4,17 @@
   ],
   "build_command": [],
   "environment_type": "virtualenv",
-  "exclude": [
-    {
-      "env": {
-        "SPARSE_BACKEND": "Finch"
-      },
-      "req": {
-        "finch-tensor": null
-      }
-    },
-    {
-      "env": {
-        "SPARSE_BACKEND": "Numba"
-      },
-      "req": {
-        "finch-tensor": ""
-      }
-    }
-  ],
   "install_command": [
     "pip install --no-deps ."
   ],
   "matrix": {
     "env": {
       "SPARSE_BACKEND": [
-        "Finch",
         "Numba"
       ]
     },
     "env_nobuild": {},
     "req": {
-      "finch-tensor": [
-        "",
-        null
-      ],
       "numba": [
         ""
       ],
