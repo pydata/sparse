@@ -1,5 +1,3 @@
-import sparse
-
 import pytest
 
 import numpy as np
@@ -11,6 +9,8 @@ from numpy.testing import assert_almost_equal, assert_equal
 
 
 def test_backend_contex_manager(backend):
+    import sparse
+
     rng = np.random.default_rng(0)
     x = sparse.random((100, 10, 100), density=0.01, random_state=rng)
     y = sparse.random((100, 10, 100), density=0.01, random_state=rng)
@@ -32,37 +32,42 @@ def test_backend_contex_manager(backend):
     assert result.shape == ()
 
 
-def test_finch_backend():
+def test_finch_backend(backend):
+    import sparse
+
+    if backend != sparse.BackendType.Finch:
+        pytest.skip("Tested only for Finch backend")
+
+    import finch
+
     np_eye = np.eye(5)
     sp_arr = sps.csr_matrix(np_eye)
+    finch_dense = finch.Tensor(np_eye)
 
-    with sparse.Backend(backend=sparse.BackendType.Finch):
-        import finch
+    assert np.shares_memory(finch_dense.todense(), np_eye)
 
-        finch_dense = finch.Tensor(np_eye)
+    finch_arr = finch.Tensor(sp_arr)
 
-        assert np.shares_memory(finch_dense.todense(), np_eye)
+    assert_equal(finch_arr.todense(), np_eye)
 
-        finch_arr = finch.Tensor(sp_arr)
+    transposed = sparse.permute_dims(finch_arr, (1, 0))
 
-        assert_equal(finch_arr.todense(), np_eye)
+    assert_equal(transposed.todense(), np_eye.T)
 
-        transposed = sparse.permute_dims(finch_arr, (1, 0))
+    @sparse.compiled
+    def my_fun(tns1, tns2):
+        tmp = sparse.add(tns1, tns2)
+        return sparse.sum(tmp, axis=0)
 
-        assert_equal(transposed.todense(), np_eye.T)
+    result = my_fun(finch_dense, finch_arr)
 
-        @sparse.compiled
-        def my_fun(tns1, tns2):
-            tmp = sparse.add(tns1, tns2)
-            return sparse.sum(tmp, axis=0)
-
-        result = my_fun(finch_dense, finch_arr)
-
-        assert_equal(result.todense(), np.sum(2 * np_eye, axis=0))
+    assert_equal(result.todense(), np.sum(2 * np_eye, axis=0))
 
 
 @pytest.mark.parametrize("format, order", [("csc", "F"), ("csr", "C"), ("coo", "F"), ("coo", "C")])
 def test_asarray(backend, format, order):
+    import sparse
+
     arr = np.eye(5, order=order)
 
     result = sparse.asarray(arr, format=format)
@@ -72,6 +77,8 @@ def test_asarray(backend, format, order):
 
 @pytest.mark.parametrize("format, order", [("csc", "F"), ("csr", "C"), ("coo", "F"), ("coo", "C")])
 def test_scipy_spsolve(backend, format, order):
+    import sparse
+
     x = np.eye(10, order=order) * 2
     y = np.ones((10, 1), order=order)
     x_pydata = sparse.asarray(x, format=format)
@@ -84,6 +91,8 @@ def test_scipy_spsolve(backend, format, order):
 
 @pytest.mark.parametrize("format, order", [("csc", "F"), ("csr", "C"), ("coo", "F"), ("coo", "C")])
 def test_scipy_inv(backend, format, order):
+    import sparse
+
     x = np.eye(10, order=order) * 2
     x_pydata = sparse.asarray(x, format=format)
 
@@ -95,6 +104,8 @@ def test_scipy_inv(backend, format, order):
 @pytest.mark.skip(reason="https://github.com/scipy/scipy/pull/20759")
 @pytest.mark.parametrize("format, order", [("csc", "F"), ("csr", "C"), ("coo", "F"), ("coo", "C")])
 def test_scipy_norm(backend, format, order):
+    import sparse
+
     x = np.eye(10, order=order) * 2
     x_pydata = sparse.asarray(x, format=format)
 
@@ -106,6 +117,8 @@ def test_scipy_norm(backend, format, order):
 @pytest.mark.skip(reason="https://github.com/scipy/scipy/pull/20759")
 @pytest.mark.parametrize("format, order", [("csc", "F"), ("csr", "C"), ("coo", "F"), ("coo", "C")])
 def test_scipy_lsqr(backend, format, order):
+    import sparse
+
     x = np.eye(10, order=order) * 2
     y = np.ones((10, 1), order=order)
     x_pydata = sparse.asarray(x, format=format)
@@ -118,6 +131,8 @@ def test_scipy_lsqr(backend, format, order):
 @pytest.mark.skip(reason="https://github.com/scipy/scipy/pull/20759")
 @pytest.mark.parametrize("format, order", [("csc", "F"), ("csr", "C"), ("coo", "F"), ("coo", "C")])
 def test_scipy_eigs(backend, format, order):
+    import sparse
+
     x = np.eye(10, order=order) * 2
     x_pydata = sparse.asarray(x, format=format)
     x_sp = sps.coo_matrix(x)
@@ -132,6 +147,8 @@ def test_scipy_eigs(backend, format, order):
     [(sps.csc_matrix, "csc", "F"), (sps.csr_matrix, "csr", "C"), (sps.coo_matrix, "coo", "F")],
 )
 def test_scipy_connected_components(backend, graph, matrix_fn, format, order):
+    import sparse
+
     graph = matrix_fn(np.array(graph, order=order))
     sp_graph = sparse.asarray(graph, format=format)
 
@@ -146,6 +163,8 @@ def test_scipy_connected_components(backend, graph, matrix_fn, format, order):
     [(sps.csc_matrix, "csc", "F"), (sps.csr_matrix, "csr", "C"), (sps.coo_matrix, "coo", "F")],
 )
 def test_scipy_laplacian(backend, graph, matrix_fn, format, order):
+    import sparse
+
     graph = matrix_fn(np.array(graph, order=order))
     sp_graph = sparse.asarray(graph, format=format)
 
@@ -156,6 +175,8 @@ def test_scipy_laplacian(backend, graph, matrix_fn, format, order):
 
 @pytest.mark.parametrize("matrix_fn, format, order", [(sps.csc_matrix, "csc", "F"), (sps.csr_matrix, "csr", "C")])
 def test_scipy_shortest_path(backend, graph, matrix_fn, format, order):
+    import sparse
+
     graph = matrix_fn(np.array(graph, order=order))
     sp_graph = sparse.asarray(graph, format=format)
 
@@ -170,6 +191,8 @@ def test_scipy_shortest_path(backend, graph, matrix_fn, format, order):
     [(sps.csc_matrix, "csc", "F"), (sps.csr_matrix, "csr", "C"), (sps.coo_matrix, "coo", "F")],
 )
 def test_scipy_breadth_first_tree(backend, graph, matrix_fn, format, order):
+    import sparse
+
     graph = matrix_fn(np.array(graph, order=order))
     sp_graph = sparse.asarray(graph, format=format)
 
@@ -183,6 +206,8 @@ def test_scipy_breadth_first_tree(backend, graph, matrix_fn, format, order):
     [(sps.csc_matrix, "csc", "F"), (sps.csr_matrix, "csr", "C"), (sps.coo_matrix, "coo", "F")],
 )
 def test_scipy_dijkstra(backend, graph, matrix_fn, format, order):
+    import sparse
+
     graph = matrix_fn(np.array(graph, order=order))
     sp_graph = sparse.asarray(graph, format=format)
 
@@ -196,6 +221,8 @@ def test_scipy_dijkstra(backend, graph, matrix_fn, format, order):
     [(sps.csc_matrix, "csc", "F"), (sps.csr_matrix, "csr", "C"), (sps.coo_matrix, "coo", "F")],
 )
 def test_scipy_minimum_spanning_tree(backend, graph, matrix_fn, format, order):
+    import sparse
+
     graph = matrix_fn(np.array(graph, order=order))
     sp_graph = sparse.asarray(graph, format=format)
 
@@ -207,6 +234,8 @@ def test_scipy_minimum_spanning_tree(backend, graph, matrix_fn, format, order):
 @pytest.mark.skip(reason="https://github.com/scikit-learn/scikit-learn/pull/29031")
 @pytest.mark.parametrize("matrix_fn, format, order", [(sps.csc_matrix, "csc", "F")])
 def test_scikit_learn_dispatch(backend, graph, matrix_fn, format, order):
+    import sparse
+
     from sklearn.cluster import KMeans
 
     graph = matrix_fn(np.array(graph, order=order))

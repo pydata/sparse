@@ -1,3 +1,5 @@
+import importlib
+import os
 import time
 
 import sparse
@@ -29,34 +31,38 @@ if __name__ == "__main__":
     D_sps = rng.random((L_, J_)) * 10
     C_sps = rng.random((K_, J_)) * 10
 
-    # Finch
-    with sparse.Backend(backend=sparse.BackendType.Finch):
-        B = sparse.asarray(B_sps.todense(), format="csf")
-        D = sparse.asarray(np.array(D_sps, order="F"))
-        C = sparse.asarray(np.array(C_sps, order="F"))
+    # ======= Finch =======
+    os.environ[sparse._ENV_VAR_NAME] = "Finch"
+    importlib.reload(sparse)
 
-        @sparse.compiled
-        def mttkrp_finch(B, D, C):
-            return sparse.sum(B[:, :, :, None] * D[None, None, :, :] * C[None, :, None, :], axis=(1, 2))
+    B = sparse.asarray(B_sps.todense(), format="csf")
+    D = sparse.asarray(np.array(D_sps, order="F"))
+    C = sparse.asarray(np.array(C_sps, order="F"))
 
-        # Compile
-        result_finch = mttkrp_finch(B, D, C)
-        assert sparse.nonzero(result_finch)[0].size > 5
-        # Benchmark
-        benchmark(mttkrp_finch, info="Finch", args=[B, D, C])
+    @sparse.compiled
+    def mttkrp_finch(B, D, C):
+        return sparse.sum(B[:, :, :, None] * D[None, None, :, :] * C[None, :, None, :], axis=(1, 2))
 
-    # Numba
-    with sparse.Backend(backend=sparse.BackendType.Numba):
-        B = sparse.asarray(B_sps, format="gcxs")
-        D = D_sps
-        C = C_sps
+    # Compile
+    result_finch = mttkrp_finch(B, D, C)
+    assert sparse.nonzero(result_finch)[0].size > 5
+    # Benchmark
+    benchmark(mttkrp_finch, info="Finch", args=[B, D, C])
 
-        def mttkrp_numba(B, D, C):
-            return sparse.sum(B[:, :, :, None] * D[None, None, :, :] * C[None, :, None, :], axis=(1, 2))
+    # ======= Numba =======
+    os.environ[sparse._ENV_VAR_NAME] = "Numba"
+    importlib.reload(sparse)
 
-        # Compile
-        result_numba = mttkrp_numba(B, D, C)
-        # Benchmark
-        benchmark(mttkrp_numba, info="Numba", args=[B, D, C])
+    B = sparse.asarray(B_sps, format="gcxs")
+    D = D_sps
+    C = C_sps
+
+    def mttkrp_numba(B, D, C):
+        return sparse.sum(B[:, :, :, None] * D[None, None, :, :] * C[None, :, None, :], axis=(1, 2))
+
+    # Compile
+    result_numba = mttkrp_numba(B, D, C)
+    # Benchmark
+    benchmark(mttkrp_numba, info="Numba", args=[B, D, C])
 
     np.testing.assert_allclose(result_finch.todense(), result_numba.todense())
