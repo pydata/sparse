@@ -5,7 +5,7 @@ import numpy as np
 from .utils import SkipNotImplemented
 
 TIMEOUT: float = 500.0
-BACKEND: sparse.BackendType = sparse.backend_var.get()
+BACKEND: sparse.BackendType = sparse.backend
 
 
 class Tensordot:
