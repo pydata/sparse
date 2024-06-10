@@ -1,3 +1,5 @@
+import importlib
+import os
 import time
 
 import sparse
@@ -27,38 +29,42 @@ if __name__ == "__main__":
     x_sps = rng.random((LEN, 1)) * 10
     y_sps = rng.random((LEN - 10, 1)) * 10
 
-    # Finch
-    with sparse.Backend(backend=sparse.BackendType.Finch):
-        A = sparse.asarray(A_sps)
-        x = sparse.asarray(np.array(x_sps, order="C"))
-        y = sparse.asarray(np.array(y_sps, order="C"))
+    # ======= Finch =======
+    os.environ[sparse._ENV_VAR_NAME] = "Finch"
+    importlib.reload(sparse)
 
-        @sparse.compiled
-        def spmv_finch(A, x, y):
-            return sparse.sum(A[:, None, :] * sparse.permute_dims(x, (1, 0))[None, :, :], axis=-1) + y
+    A = sparse.asarray(A_sps)
+    x = sparse.asarray(np.array(x_sps, order="C"))
+    y = sparse.asarray(np.array(y_sps, order="C"))
 
-        # Compile
-        result_finch = spmv_finch(A, x, y)
-        assert sparse.nonzero(result_finch)[0].size > 5
-        # Benchmark
-        benchmark(spmv_finch, info="Finch", args=[A, x, y])
+    @sparse.compiled
+    def spmv_finch(A, x, y):
+        return sparse.sum(A[:, None, :] * sparse.permute_dims(x, (1, 0))[None, :, :], axis=-1) + y
 
-    # Numba
-    with sparse.Backend(backend=sparse.BackendType.Numba):
-        A = sparse.asarray(A_sps, format="csc")
-        x = x_sps
-        y = y_sps
+    # Compile
+    result_finch = spmv_finch(A, x, y)
+    assert sparse.nonzero(result_finch)[0].size > 5
+    # Benchmark
+    benchmark(spmv_finch, info="Finch", args=[A, x, y])
 
-        def spmv_numba(A, x, y):
-            return A @ x + y
+    # ======= Numba =======
+    os.environ[sparse._ENV_VAR_NAME] = "Numba"
+    importlib.reload(sparse)
 
-        # Compile
-        result_numba = spmv_numba(A, x, y)
-        assert sparse.nonzero(result_numba)[0].size > 5
-        # Benchmark
-        benchmark(spmv_numba, info="Numba", args=[A, x, y])
+    A = sparse.asarray(A_sps, format="csc")
+    x = x_sps
+    y = y_sps
 
-    # SciPy
+    def spmv_numba(A, x, y):
+        return A @ x + y
+
+    # Compile
+    result_numba = spmv_numba(A, x, y)
+    assert sparse.nonzero(result_numba)[0].size > 5
+    # Benchmark
+    benchmark(spmv_numba, info="Numba", args=[A, x, y])
+
+    # ======= SciPy =======
     def spmv_scipy(A, x, y):
         return A @ x + y
 

@@ -406,7 +406,7 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
     den -= nancount
 
     if (den == 0).any():
-        warnings.warn("Mean of empty slice", RuntimeWarning, stacklevel=2)
+        warnings.warn("Mean of empty slice", RuntimeWarning, stacklevel=1)
 
     num = np.sum(x2, axis=axis, dtype=dtype, keepdims=keepdims)
 
@@ -447,7 +447,7 @@ def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
     ar = x.reduce(np.fmax, axis=axis, keepdims=keepdims, dtype=dtype)
 
     if (isscalar(ar) and np.isnan(ar)) or np.isnan(ar.data).any():
-        warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=2)
+        warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=1)
 
     return ar
 
@@ -483,7 +483,7 @@ def nanmin(x, axis=None, keepdims=False, dtype=None, out=None):
     ar = x.reduce(np.fmin, axis=axis, keepdims=keepdims, dtype=dtype)
 
     if (isscalar(ar) and np.isnan(ar)) or np.isnan(ar.data).any():
-        warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=2)
+        warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=1)
 
     return ar
 
