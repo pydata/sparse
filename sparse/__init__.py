@@ -4,7 +4,7 @@ from enum import Enum
 
 from ._version import __version__, __version_tuple__  # noqa: F401
 
-__array_api_version__ = "2022.12"
+__array_api_version__ = "2023.12"
 
 
 class BackendType(Enum):
@@ -45,13 +45,7 @@ class Backend:
 
 
 def __getattr__(attr):
-    if attr == "numba_backend":
-        import sparse.numba_backend as backend_module
-
-        return backend_module
-    if attr == "finch_backend":
-        import sparse.finch_backend as backend_module
-
-        return backend_module
+    if attr == "numba_backend" or attr == "finch_backend":
+        raise AttributeError
 
     return getattr(Backend.get_backend_module(), attr)

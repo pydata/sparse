@@ -1,3 +1,5 @@
+import sparse.numba_backend._info as _info
+
 from numpy import (
     add,
     bitwise_and,
@@ -9,6 +11,7 @@ from numpy import (
     complex64,
     complex128,
     conj,
+    copysign,
     cos,
     cosh,
     divide,
@@ -23,6 +26,7 @@ from numpy import (
     floor_divide,
     greater,
     greater_equal,
+    hypot,
     iinfo,
     inf,
     int8,
@@ -41,6 +45,8 @@ from numpy import (
     logical_not,
     logical_or,
     logical_xor,
+    maximum,
+    minimum,
     multiply,
     nan,
     negative,
@@ -50,6 +56,7 @@ from numpy import (
     positive,
     remainder,
     sign,
+    signbit,
     sin,
     sinh,
     sqrt,
@@ -119,6 +126,7 @@ from ._common import (
     std,
     sum,
     tensordot,
+    unstack,
     var,
     vecdot,
     zeros,
@@ -157,9 +165,15 @@ from ._coo.common import (
     where,
 )
 from ._dok import DOK
+from ._info import capabilities, default_device, default_dtypes, devices, dtypes
 from ._io import load_npz, save_npz
 from ._umath import elemwise
 from ._utils import random
+
+
+def __array_namespace_info__():
+    return _info
+
 
 __all__ = [
     "COO",
@@ -196,6 +210,7 @@ __all__ = [
     "broadcast_arrays",
     "broadcast_to",
     "can_cast",
+    "capabilities",
     "ceil",
     "clip",
     "complex128",
@@ -203,12 +218,17 @@ __all__ = [
     "concat",
     "concatenate",
     "conj",
+    "copysign",
     "cos",
     "cosh",
+    "default_device",
+    "default_dtypes",
+    "devices",
     "diagonal",
     "diagonalize",
     "divide",
     "dot",
+    "dtypes",
     "e",
     "einsum",
     "elemwise",
@@ -230,6 +250,7 @@ __all__ = [
     "full_like",
     "greater",
     "greater_equal",
+    "hypot",
     "iinfo",
     "imag",
     "inf",
@@ -258,8 +279,10 @@ __all__ = [
     "matmul",
     "matrix_transpose",
     "max",
+    "maximum",
     "mean",
     "min",
+    "minimum",
     "moveaxis",
     "multiply",
     "nan",
@@ -291,6 +314,7 @@ __all__ = [
     "round",
     "save_npz",
     "sign",
+    "signbit",
     "sin",
     "sinh",
     "sort",
@@ -314,6 +338,7 @@ __all__ = [
     "uint8",
     "unique_counts",
     "unique_values",
+    "unstack",
     "var",
     "vecdot",
     "where",

@@ -155,7 +155,7 @@ def tensordot(a, b, axes=2, *, return_type=None):
     bs = b.shape
     ndb = b.ndim
     equal = True
-    if nda == 0 or ndb == 0:
+    if not (builtins.all(-nda <= ax < nda for ax in axes_a) and builtins.all(-ndb <= ax < ndb for ax in axes_b)):
         pos = int(nda != 0)
         raise ValueError(f"Input {pos} operand does not have enough dimensions")
     if na != nb:
@@ -2146,8 +2146,20 @@ def reshape(x, /, shape, *, copy=None):
     return x.reshape(shape=shape)
 
 
-def astype(x, dtype, /, *, copy=True):
+@_check_device
+def astype(x, dtype, /, *, copy=True, device=None):
     return x.astype(dtype, copy=copy)
+
+
+def unstack(x, /, *, axis=0):
+    axis = normalize_axis(axis, x.ndim)
+    out = []
+
+    for i in range(x.shape[axis]):
+        idx = (slice(None),) * axis + (i,)
+        out.append(x[idx])
+
+    return tuple(out)
 
 
 @_support_numpy
