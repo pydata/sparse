@@ -4,8 +4,6 @@ from enum import Enum
 
 from ._version import __version__, __version_tuple__  # noqa: F401
 
-__array_api_version__ = "2023.12"
-
 
 class BackendType(Enum):
     Numba = "Numba"

@@ -165,7 +165,6 @@ from ._coo.common import (
     where,
 )
 from ._dok import DOK
-from ._info import capabilities, default_device, default_dtypes, devices, dtypes
 from ._io import load_npz, save_npz
 from ._umath import elemwise
 from ._utils import random
@@ -175,7 +174,11 @@ def __array_namespace_info__():
     return _info
 
 
+__array_api_version__ = "2023.12"
+
+
 __all__ = [
+    "__array_api_version__",
     "COO",
     "DOK",
     "GCXS",
@@ -210,7 +213,6 @@ __all__ = [
     "broadcast_arrays",
     "broadcast_to",
     "can_cast",
-    "capabilities",
     "ceil",
     "clip",
     "complex128",
@@ -221,14 +223,10 @@ __all__ = [
     "copysign",
     "cos",
     "cosh",
-    "default_device",
-    "default_dtypes",
-    "devices",
     "diagonal",
     "diagonalize",
     "divide",
     "dot",
-    "dtypes",
     "e",
     "einsum",
     "elemwise",

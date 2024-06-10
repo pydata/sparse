@@ -154,7 +154,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: data-apis/array-api-tests
-        ref: 'd295a0a66cd82a43e84c1b8d73ca198cc45e9d23'  # Latest commit as of 2024-05-29
+        ref: 'd295a0a66cd82a43e84c1b8d73ca198cc45e9d23'  # Latest commit as of 2024-06-10
         submodules: 'true'
         path: 'array-api-tests'
     - name: Set up Python
