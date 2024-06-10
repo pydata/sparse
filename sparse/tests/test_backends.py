@@ -10,7 +10,7 @@ import scipy.sparse.linalg as splin
 from numpy.testing import assert_almost_equal, assert_equal
 
 
-def test_backend_contex_manager(backend):
+def test_backends(backend):
     rng = np.random.default_rng(0)
     x = sparse.random((100, 10, 100), density=0.01, random_state=rng)
     y = sparse.random((100, 10, 100), density=0.01, random_state=rng)
@@ -32,33 +32,34 @@ def test_backend_contex_manager(backend):
     assert result.shape == ()
 
 
-def test_finch_backend():
+def test_finch_lazy_backend(backend):
+    if backend != sparse.BackendType.Finch:
+        pytest.skip("Tested only for Finch backend")
+
+    import finch
+
     np_eye = np.eye(5)
     sp_arr = sps.csr_matrix(np_eye)
+    finch_dense = finch.Tensor(np_eye)
 
-    with sparse.Backend(backend=sparse.BackendType.Finch):
-        import finch
+    assert np.shares_memory(finch_dense.todense(), np_eye)
 
-        finch_dense = finch.Tensor(np_eye)
+    finch_arr = finch.Tensor(sp_arr)
 
-        assert np.shares_memory(finch_dense.todense(), np_eye)
+    assert_equal(finch_arr.todense(), np_eye)
 
-        finch_arr = finch.Tensor(sp_arr)
+    transposed = sparse.permute_dims(finch_arr, (1, 0))
 
-        assert_equal(finch_arr.todense(), np_eye)
+    assert_equal(transposed.todense(), np_eye.T)
 
-        transposed = sparse.permute_dims(finch_arr, (1, 0))
+    @sparse.compiled
+    def my_fun(tns1, tns2):
+        tmp = sparse.add(tns1, tns2)
+        return sparse.sum(tmp, axis=0)
 
-        assert_equal(transposed.todense(), np_eye.T)
+    result = my_fun(finch_dense, finch_arr)
 
-        @sparse.compiled
-        def my_fun(tns1, tns2):
-            tmp = sparse.add(tns1, tns2)
-            return sparse.sum(tmp, axis=0)
-
-        result = my_fun(finch_dense, finch_arr)
-
-        assert_equal(result.todense(), np.sum(2 * np_eye, axis=0))
+    assert_equal(result.todense(), np.sum(2 * np_eye, axis=0))
 
 
 @pytest.mark.parametrize("format, order", [("csc", "F"), ("csr", "C"), ("coo", "F"), ("coo", "C")])

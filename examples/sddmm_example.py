@@ -1,3 +1,5 @@
+import importlib
+import os
 import time
 
 import sparse
@@ -28,41 +30,45 @@ if __name__ == "__main__":
     s_sps = sps.random(LEN, LEN, format="coo", density=DENSITY, random_state=rng) * 10
     s_sps.sum_duplicates()
 
-    # Finch
-    with sparse.Backend(backend=sparse.BackendType.Finch):
-        s = sparse.asarray(s_sps)
-        a = sparse.asarray(np.array(a_sps, order="F"))
-        b = sparse.asarray(np.array(b_sps, order="C"))
+    # ======= Finch =======
+    os.environ[sparse._ENV_VAR_NAME] = "Finch"
+    importlib.reload(sparse)
 
-        @sparse.compiled
-        def sddmm_finch(s, a, b):
-            return sparse.sum(
-                s[:, :, None] * (a[:, None, :] * sparse.permute_dims(b, (1, 0))[None, :, :]),
-                axis=-1,
-            )
+    s = sparse.asarray(s_sps)
+    a = sparse.asarray(np.array(a_sps, order="F"))
+    b = sparse.asarray(np.array(b_sps, order="C"))
 
-        # Compile
-        result_finch = sddmm_finch(s, a, b)
-        assert sparse.nonzero(result_finch)[0].size > 5
-        # Benchmark
-        benchmark(sddmm_finch, info="Finch", args=[s, a, b])
+    @sparse.compiled
+    def sddmm_finch(s, a, b):
+        return sparse.sum(
+            s[:, :, None] * (a[:, None, :] * sparse.permute_dims(b, (1, 0))[None, :, :]),
+            axis=-1,
+        )
 
-    # Numba
-    with sparse.Backend(backend=sparse.BackendType.Numba):
-        s = sparse.asarray(s_sps)
-        a = a_sps
-        b = b_sps
+    # Compile
+    result_finch = sddmm_finch(s, a, b)
+    assert sparse.nonzero(result_finch)[0].size > 5
+    # Benchmark
+    benchmark(sddmm_finch, info="Finch", args=[s, a, b])
 
-        def sddmm_numba(s, a, b):
-            return s * (a @ b)
+    # ======= Numba =======
+    os.environ[sparse._ENV_VAR_NAME] = "Numba"
+    importlib.reload(sparse)
 
-        # Compile
-        result_numba = sddmm_numba(s, a, b)
-        assert sparse.nonzero(result_numba)[0].size > 5
-        # Benchmark
-        benchmark(sddmm_numba, info="Numba", args=[s, a, b])
+    s = sparse.asarray(s_sps)
+    a = a_sps
+    b = b_sps
 
-    # SciPy
+    def sddmm_numba(s, a, b):
+        return s * (a @ b)
+
+    # Compile
+    result_numba = sddmm_numba(s, a, b)
+    assert sparse.nonzero(result_numba)[0].size > 5
+    # Benchmark
+    benchmark(sddmm_numba, info="Numba", args=[s, a, b])
+
+    # ======= SciPy =======
     def sddmm_scipy(s, a, b):
         return s.multiply(a @ b)
 
