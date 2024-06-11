@@ -192,7 +192,7 @@ array_api_tests/test_indexing_functions.py::test_take
 # not implemented
 array_api_tests/test_linalg.py::test_matrix_transpose
 array_api_tests/test_linalg.py::test_vecdot
-# fails for a few cases
+# test suite draws two scalars
 array_api_tests/test_linalg.py::test_tensordot
 
 # test_manipulation_functions
