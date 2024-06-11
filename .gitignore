@@ -80,3 +80,6 @@ sandbox.py
 
 # Version file
 sparse/_version.py
+
+# Benchmark Results
+results/

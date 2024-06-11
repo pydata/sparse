@@ -1,28 +1,18 @@
-comment:
-  layout: "header, diff, changes, uncovered"
-
+comment: false
 coverage:
   status:
     project:
       default:
-          # Total project must not drop by more than 3%
-          target: auto
-          threshold: "3%"
+          # Total project must be 95%
+          target: '100%'
+          threshold: '5%'
 
     patch:
       default:
           # Patch coverage must be 92%
-          target: auto
-          threshold: "92%"
+          target: '100%'
+          threshold: '8%'
 
   precision: 2
   round: down
-  range: 70...98
-
-  ignore:
-    - sparse/tests/
-    - sparse/_version.py
-    - ^(?!sparse\/)
-
-codecov:
-  token: 8de77158-fc37-47be-930c-f98739f9e5bf
+  range: 80...98

@@ -32,6 +32,7 @@ tests = [
     "dask[array]",
     "pytest>=3.5",
     "pytest-cov",
+    "pytest-xdist",
     "pre-commit",
     "scipy",
     "sparse[finch]",
