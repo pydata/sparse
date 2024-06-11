@@ -1,8 +1,13 @@
+defaults:
+  run:
+    shell: bash -leo pipefail {0}
+
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
-    defaults:
-      run:
-        shell: bash -el {0}
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -18,6 +23,7 @@ jobs:
             python: '3.10'
             numba_boundscheck: 1
           - os: ubuntu-latest
+            python: '3.10'
             pip_opts: "--pre -U"
       fail-fast: false
     runs-on: ${{ matrix.os }}
@@ -27,65 +33,33 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-      - name: Cache conda
-        uses: actions/cache@v4
-        env:
-          # Increase this value to reset cache if ci/environment.yml has not changed
-          CACHE_NUMBER: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          path: ~/conda_pkgs_dir
-          key:
-            test-${{ matrix.os }}-conda-py${{ matrix.python }}-${{ env.CACHE_NUMBER }}-${{
-            hashFiles('ci/environment.yml') }}
-      - uses: julia-actions/setup-julia@v1
-        with:
-          version: '1.10.0'
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          activate-environment: sparse-dev
-          allow-softlinks: true
-          environment-file: ci/environment.yml
           python-version: ${{ matrix.python }}
-          miniforge-version: latest
+          cache: 'pip'
       - name: Install package
         run: |
           pip install -e .[tests]
           pip install ${{ matrix.pip_opts }} numpy numba
       - name: Run tests
         run: |
-          SPARSE_BACKEND=Numba pytest --pyargs sparse
-          SPARSE_BACKEND=Finch pytest --pyargs sparse/tests
+          SPARSE_BACKEND=Numba pytest --pyargs sparse --cov-report=xml:coverage_Numba.xml -n 4 -vvv
+          SPARSE_BACKEND=Finch pytest --pyargs sparse/tests --cov-report=xml:coverage_Finch.xml -n 4 -vvv
       - uses: codecov/codecov-action@v4
         if: always()
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action/composite@v2
-        if: always()
         with:
-          files: "**/test-*.xml"
+          files: ./**/coverage*.xml
   docs:
-    defaults:
-      run:
-        shell: bash -el {0}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-      - name: Cache conda
-        uses: actions/cache@v4
-        env:
-          # Increase this value to reset cache if ci/environment.yml has not changed
-          CACHE_NUMBER: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          path: ~/conda_pkgs_dir
-          key:
-            docs-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment.yml') }}
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          activate-environment: sparse-dev
-          allow-softlinks: true
-          environment-file: ci/environment.yml
           python-version: '3.10'
-          miniforge-version: latest
+          cache: 'pip'
       - name: Install package
         run: |
           pip install -e .[docs]
@@ -97,29 +71,15 @@ jobs:
           name: Documentation
           path: _build/html
   benchmarks:
-    defaults:
-      run:
-        shell: bash -el {0}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-      - name: Cache conda
-        uses: actions/cache@v4
-        env:
-          # Increase this value to reset cache if ci/environment.yml has not changed
-          CACHE_NUMBER: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          path: ~/conda_pkgs_dir
-          key:
-            benchmarks-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment.yml') }}
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          activate-environment: sparse-dev
-          allow-softlinks: true
-          environment-file: ci/environment.yml
           python-version: '3.10'
-          miniforge-version: latest
+          cache: 'pip'
       - name: Install asv
         run: |
           pip install asv
@@ -133,11 +93,13 @@ jobs:
     - name: Checkout Repo
       uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v5.1.0
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
+        cache: 'pip'
     - name: Build and install Sparse
       run: |
+        pip install -U setuptools wheel
         python -m pip install '.[finch]' scipy
     - name: Run examples
       run: |
@@ -159,9 +121,10 @@ jobs:
         submodules: 'true'
         path: 'array-api-tests'
     - name: Set up Python
-      uses: actions/setup-python@v5.1.0
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
+        cache: 'pip'
     - name: Install build and test dependencies from PyPI
       run: |
         python -m pip install pytest-xdist -r array-api-tests/requirements.txt

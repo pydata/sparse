@@ -1,5 +1,3 @@
-import os
-
 import sparse
 
 import pytest
@@ -9,7 +7,7 @@ import numpy as np
 
 @pytest.fixture(scope="session")
 def backend():
-    yield sparse.BackendType[os.environ[sparse._ENV_VAR_NAME]]
+    yield sparse.BACKEND
 
 
 @pytest.fixture(scope="module")
