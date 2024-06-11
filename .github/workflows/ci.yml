@@ -40,8 +40,8 @@ jobs:
           pip install ${{ matrix.pip_opts }} numpy numba
       - name: Run tests
         run: |
-          SPARSE_BACKEND=Numba pytest --pyargs sparse
-          SPARSE_BACKEND=Finch pytest --pyargs sparse/tests
+          SPARSE_BACKEND=Numba pytest --pyargs sparse -n 4 -vvv
+          SPARSE_BACKEND=Finch pytest --pyargs sparse/tests -n 4 -vvv
       - uses: codecov/codecov-action@v4
         if: always()
   docs:
