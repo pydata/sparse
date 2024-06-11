@@ -1,8 +1,9 @@
 import importlib
 import os
-import time
 
 import sparse
+
+from utils import benchmark
 
 import numpy as np
 
@@ -13,15 +14,6 @@ L_ = 100
 DENSITY = 0.0001
 ITERS = 3
 rng = np.random.default_rng(0)
-
-
-def benchmark(func, info, args):
-    print(info)
-    start = time.time()
-    for _ in range(ITERS):
-        func(*args)
-    elapsed = time.time() - start
-    print(f"Took {elapsed / ITERS} s.\n")
 
 
 if __name__ == "__main__":
@@ -45,9 +37,8 @@ if __name__ == "__main__":
 
     # Compile
     result_finch = mttkrp_finch(B, D, C)
-    assert sparse.nonzero(result_finch)[0].size > 5
     # Benchmark
-    benchmark(mttkrp_finch, info="Finch", args=[B, D, C])
+    benchmark(mttkrp_finch, args=[B, D, C], info="Finch", iters=ITERS)
 
     # ======= Numba =======
     os.environ[sparse._ENV_VAR_NAME] = "Numba"
@@ -63,6 +54,6 @@ if __name__ == "__main__":
     # Compile
     result_numba = mttkrp_numba(B, D, C)
     # Benchmark
-    benchmark(mttkrp_numba, info="Numba", args=[B, D, C])
+    benchmark(mttkrp_numba, args=[B, D, C], info="Numba", iters=ITERS)
 
     np.testing.assert_allclose(result_finch.todense(), result_numba.todense())
