@@ -48,6 +48,17 @@ class SparseArray:
     dtype = None
 
     @property
+    def device(self):
+        data = getattr(self, "data", None)
+        return getattr(data, "device", "cpu")
+
+    def to_device(self, device, /, *, stream=None):
+        if device != "cpu":
+            raise ValueError("Only `device='cpu'` is supported.")
+
+        return self
+
+    @property
     @abstractmethod
     def nnz(self):
         """
@@ -315,11 +326,11 @@ class SparseArray:
             return self.__array_function__(ufunc, (np.ndarray, type(self)), inputs, kwargs)
 
         if out is not None:
-            test_args = [np.empty(1, dtype=a.dtype) if hasattr(a, "dtype") else [a] for a in inputs]
+            test_args = [np.empty((1,), dtype=a.dtype) if hasattr(a, "dtype") else a for a in inputs]
             test_kwargs = kwargs.copy()
             if method == "reduce":
                 test_kwargs["axis"] = None
-            test_out = tuple(np.empty(1, dtype=a.dtype) for a in out)
+            test_out = tuple(np.empty((1,), dtype=a.dtype) for a in out)
             if len(test_out) == 1:
                 test_out = test_out[0]
             getattr(ufunc, method)(*test_args, out=test_out, **test_kwargs)
@@ -379,13 +390,9 @@ class SparseArray:
         """
         axis = normalize_axis(axis, self.ndim)
         zero_reduce_result = method.reduce([self.fill_value, self.fill_value], **kwargs)
-        reduce_super_ufunc = None
-
-        if not equivalent(zero_reduce_result, self.fill_value):
-            reduce_super_ufunc = _reduce_super_ufunc.get(method)
-
-            if reduce_super_ufunc is None:
-                raise ValueError(f"Performing this reduction operation would produce a dense result: {method!s}")
+        reduce_super_ufunc = _reduce_super_ufunc.get(method)
+        if not equivalent(zero_reduce_result, self.fill_value) and reduce_super_ufunc is None:
+            raise ValueError(f"Performing this reduction operation would produce a dense result: {method!s}")
 
         if not isinstance(axis, tuple):
             axis = (axis,)
@@ -788,7 +795,7 @@ class SparseArray:
         if dtype is None and issubclass(self.dtype.type, np.integer | np.bool_):
             dtype = np.dtype("f8")
 
-        arrmean = self.sum(axis, dtype=dtype, keepdims=True)
+        arrmean = self.sum(axis, dtype=dtype, keepdims=True)[...]
         np.divide(arrmean, rcount, out=arrmean)
         x = self - arrmean
         if issubclass(self.dtype.type, np.complexfloating):

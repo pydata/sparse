@@ -80,8 +80,6 @@ API
 
     full_like
 
-    isfinite
-
     isinf
 
     isnan

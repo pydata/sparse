@@ -32,13 +32,14 @@ tests = [
     "dask[array]",
     "pytest>=3.5",
     "pytest-cov",
+    "pytest-xdist",
     "pre-commit",
     "scipy",
     "sparse[finch]",
 ]
 tox = ["sparse[tests]", "tox"]
 all = ["sparse[docs,tox]", "matrepr"]
-finch = ["finch-tensor>=0.1.19"]
+finch = ["finch-tensor>=0.1.27"]
 
 [project.urls]
 Documentation = "https://sparse.pydata.org/"

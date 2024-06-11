@@ -33,7 +33,7 @@ def assert_eq(x, y, check_nnz=True, compare_dtype=True, **kwargs):
     if isinstance(x, COO) and isinstance(y, COO) and check_nnz:
         assert np.array_equal(x.coords, y.coords)
         assert check_equal(x.data, y.data, **kwargs)
-        assert x.fill_value == y.fill_value
+        assert x.fill_value == y.fill_value or (np.isnan(x.fill_value) and np.isnan(y.fill_value))
         return
 
     if hasattr(x, "todense"):
@@ -406,7 +406,7 @@ def normalize_axis(axis, ndim):
     raise ValueError(f"axis {axis} not understood")
 
 
-def equivalent(x, y):
+def equivalent(x, y, /, loose=False):
     """
     Checks the equivalence of two scalars or arrays with broadcasting. Assumes
     a consistent dtype.
@@ -432,17 +432,27 @@ def equivalent(x, y):
     >>> equivalent(np.inf, np.inf)
     True
     >>> equivalent(np.PZERO, np.NZERO)
-    True
+    False
     """
     x = np.asarray(x)
     y = np.asarray(y)
     # Can't contain NaNs
-    if any(np.issubdtype(x.dtype, t) for t in [np.integer, np.bool_, np.character]):
+    dt = np.result_type(x.dtype, y.dtype)
+    if not any(np.issubdtype(dt, t) for t in [np.floating, np.complexfloating]):
         return x == y
 
-    # Can contain NaNs
-    # FIXME: Complex floats and np.void with multiple values can't be compared properly.
-    return (x == y) | ((x != x) & (y != y))  # noqa: PLR0124
+    if loose:
+        if np.issubdtype(dt, np.complexfloating):
+            return equivalent(x.real, y.real) & equivalent(x.imag, y.imag)
+
+        # TODO: Rec array handling
+        return (x == y) | ((x != x) & (y != y))
+
+    if x.size == 0 or y.size == 0:
+        shape = np.broadcast_shapes(x.shape, y.shape)
+        return np.empty(shape, dtype=np.bool_)
+    x, y = np.broadcast_arrays(x[..., None], y[..., None])
+    return (x.astype(dt).view(np.uint8) == y.astype(dt).view(np.uint8)).all(axis=-1)
 
 
 # copied from zarr
@@ -526,6 +536,31 @@ def check_compressed_axes(ndim, compressed_axes):
         raise ValueError("axes must be represented with integers")
     if min(compressed_axes) < 0 or max(compressed_axes) >= ndim:
         raise ValueError("axis out of range")
+
+
+def check_fill_value(x, /, *, accept_fv=None) -> None:
+    """Raises on incorrect fill-values.
+
+    Parameters
+    ----------
+    x : SparseArray
+        The array to check
+    accept_fv : scalar or list of scalar, optional
+        The list of accepted fill-values. The default accepts only zero.
+
+    Raises
+    ------
+    ValueError
+        If the fill-value doesn't match.
+    """
+    if accept_fv is None:
+        accept_fv = [0]
+
+    if not isinstance(accept_fv, Iterable):
+        accept_fv = [accept_fv]
+
+    if not any(equivalent(fv, x.fill_value, loose=True) for fv in accept_fv):
+        raise ValueError(f"{x.fill_value=} but should be in {accept_fv}.")
 
 
 def check_zero_fill_value(*args):
@@ -622,7 +657,7 @@ def can_store(dtype, scalar):
             warnings.simplefilter("ignore")
             warnings.filterwarnings("error", "out-of-bound", DeprecationWarning)
             return np.array(scalar, dtype=dtype) == np.array(scalar)
-    except ValueError:
+    except (ValueError, OverflowError):
         return False
 
 

@@ -160,6 +160,7 @@ def concatenate(arrays, axis=0):
     check_consistent_fill_value(arrays)
 
     if axis is None:
+        axis = 0
         arrays = [x.flatten() for x in arrays]
 
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
@@ -405,7 +406,7 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
     den -= nancount
 
     if (den == 0).any():
-        warnings.warn("Mean of empty slice", RuntimeWarning, stacklevel=2)
+        warnings.warn("Mean of empty slice", RuntimeWarning, stacklevel=1)
 
     num = np.sum(x2, axis=axis, dtype=dtype, keepdims=keepdims)
 
@@ -446,7 +447,7 @@ def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
     ar = x.reduce(np.fmax, axis=axis, keepdims=keepdims, dtype=dtype)
 
     if (isscalar(ar) and np.isnan(ar)) or np.isnan(ar.data).any():
-        warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=2)
+        warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=1)
 
     return ar
 
@@ -482,7 +483,7 @@ def nanmin(x, axis=None, keepdims=False, dtype=None, out=None):
     ar = x.reduce(np.fmin, axis=axis, keepdims=keepdims, dtype=dtype)
 
     if (isscalar(ar) and np.isnan(ar)) or np.isnan(ar.data).any():
-        warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=2)
+        warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=1)
 
     return ar
 
@@ -744,8 +745,6 @@ def roll(a, shift, axis=None):
     res : ndarray
         Output array, with the same shape as a.
     """
-    from numpy.core._exceptions import UFuncTypeError
-
     from .core import COO, as_coo
 
     a = as_coo(a)
@@ -786,7 +785,7 @@ def roll(a, shift, axis=None):
         for sh, ax in zip(shift, axis, strict=True):
             coords[ax] += sh
             coords[ax] %= a.shape[ax]
-    except UFuncTypeError as e:
+    except TypeError as e:
         if is_unsigned_dtype(coords.dtype):
             raise ValueError(
                 f"rolling with coords.dtype as {coords.dtype} is not safe. Try using a signed dtype."
@@ -1245,7 +1244,7 @@ def unique_values(x, /):
     return values
 
 
-def sort(x, /, *, axis=-1, descending=False):
+def sort(x, /, *, axis=-1, descending=False, stable=False):
     """
     Returns a sorted copy of an input array ``x``.
 
@@ -1260,6 +1259,8 @@ def sort(x, /, *, axis=-1, descending=False):
         Sort order. If ``True``, the array must be sorted in descending order (by value).
         If ``False``, the array must be sorted in ascending order (by value).
         Default: ``False``.
+    stable : bool
+        Whether the sort is stable. Only ``False`` is supported currently.
 
     Returns
     -------
@@ -1281,11 +1282,13 @@ def sort(x, /, *, axis=-1, descending=False):
     array([ 2, 2, 1, 0, 0, -3])
 
     """
-
     from .._common import moveaxis
     from .core import COO
 
     x = _validate_coo_input(x)
+
+    if stable:
+        raise ValueError("`stable=True` isn't currently supported.")
 
     original_ndim = x.ndim
     if x.ndim == 1:
@@ -1359,11 +1362,7 @@ def _validate_coo_input(x: Any):
 
 @numba.jit(nopython=True, nogil=True)
 def _sort_coo(
-    coords: np.ndarray,
-    data: np.ndarray,
-    fill_value: float,
-    sort_axis_len: int,
-    descending: bool,
+    coords: np.ndarray, data: np.ndarray, fill_value: float, sort_axis_len: int, descending: bool
 ) -> tuple[np.ndarray, np.ndarray]:
     assert coords.shape[0] == 2
     group_coords = coords[0, :]

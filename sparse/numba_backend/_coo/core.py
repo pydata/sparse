@@ -15,6 +15,7 @@ from .._umath import broadcast_to
 from .._utils import (
     _zero_of_dtype,
     can_store,
+    check_fill_value,
     check_zero_fill_value,
     equivalent,
     normalize_axis,
@@ -425,7 +426,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         return x
 
     @classmethod
-    def from_scipy_sparse(cls, x):
+    def from_scipy_sparse(cls, x, /, *, fill_value=None):
         """
         Construct a :obj:`COO` array from a :obj:`scipy.sparse.spmatrix`
 
@@ -433,6 +434,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         ----------
         x : scipy.sparse.spmatrix
             The sparse matrix to construct the array from.
+        fill_value : scalar
+            The fill-value to use when converting.
 
         Returns
         -------
@@ -456,6 +459,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             shape=x.shape,
             has_duplicates=not x.has_canonical_format,
             sorted=x.has_canonical_format,
+            fill_value=fill_value,
         )
 
     @classmethod
@@ -683,7 +687,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     __repr__ = __str__
 
     def _reduce_calc(self, method, axis, keepdims=False, **kwargs):
-        if axis[0] is None:
+        if axis == (None,):
             axis = tuple(range(self.ndim))
         axis = tuple(a if a >= 0 else a + self.ndim for a in axis)
         neg_axis = tuple(ax for ax in range(self.ndim) if ax not in set(axis))
@@ -844,6 +848,16 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         (4, 3, 2)
         """
         return self.transpose(tuple(range(self.ndim))[::-1])
+
+    @property
+    def mT(self):
+        if self.ndim < 2:
+            raise ValueError("Cannot compute matrix transpose if `ndim < 2`.")
+
+        axis = list(range(self.ndim))
+        axis[-1], axis[-2] = axis[-2], axis[-1]
+
+        return self.transpose(axis)
 
     def swapaxes(self, axis1, axis2):
         """Returns array that has axes axis1 and axis2 swapped.
@@ -1155,9 +1169,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if len(self.data) != len(linear_loc):
             self.data = self.data[:end_idx].copy()
 
-    def to_scipy_sparse(self):
+    def to_scipy_sparse(self, /, *, accept_fv=None):
         """
         Converts this :obj:`COO` object into a :obj:`scipy.sparse.coo_matrix`.
+
+        Parameters
+        ----------
+        accept_fv : scalar or list of scalar, optional
+            The list of accepted fill-values. The default accepts only zero.
 
         Returns
         -------
@@ -1178,7 +1197,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         """
         import scipy.sparse
 
-        check_zero_fill_value(self)
+        check_fill_value(self, accept_fv=accept_fv)
 
         if self.ndim != 2:
             raise ValueError("Can only convert a 2-dimensional array to a Scipy sparse matrix.")
@@ -1459,6 +1478,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         (array([0, 1, 2, 3, 4]), array([0, 1, 2, 3, 4]))
         """
         check_zero_fill_value(self)
+        if self.ndim == 0:
+            raise ValueError("`nonzero` is undefined for `self.ndim == 0`.")
         return tuple(self.coords)
 
     def asformat(self, format, **kwargs):

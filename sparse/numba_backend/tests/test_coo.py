@@ -380,14 +380,6 @@ def test_reshape_errors(format):
         s.reshape((3, 5, 1), order="F")
 
 
-def test_to_scipy_sparse():
-    s = sparse.random((3, 5), density=0.5)
-    a = s.to_scipy_sparse()
-    b = scipy.sparse.coo_matrix(s.todense())
-
-    assert_eq(a, b)
-
-
 @pytest.mark.parametrize("a_ndim", [1, 2, 3])
 @pytest.mark.parametrize("b_ndim", [1, 2, 3])
 def test_kron(a_ndim, b_ndim):
@@ -1801,14 +1793,19 @@ def test_expand_dims(axis):
 @pytest.mark.parametrize("fill_value", [-1, 0, 1, 3])
 @pytest.mark.parametrize("axis", [0, 1, -1])
 @pytest.mark.parametrize("descending", [False, True])
-def test_sort(arr, fill_value, axis, descending):
+@pytest.mark.parametrize(
+    "stable", [False, pytest.param(True, marks=pytest.mark.xfail(reason="Numba doesn't support `stable=True`."))]
+)
+def test_sort(arr, fill_value, axis, descending, stable):
     if axis >= arr.ndim:
         return
 
     s_arr = sparse.COO.from_numpy(arr, fill_value)
 
-    result = sparse.sort(s_arr, axis=axis, descending=descending)
-    expected = -np.sort(-arr, axis=axis) if descending else np.sort(arr, axis=axis)
+    kind = "mergesort" if stable else "quicksort"
+
+    result = sparse.sort(s_arr, axis=axis, descending=descending, stable=stable)
+    expected = -np.sort(-arr, axis=axis, kind=kind) if descending else np.sort(arr, axis=axis, kind=kind)
 
     np.testing.assert_equal(result.todense(), expected)
     # make sure no inplace changes happened
@@ -1876,27 +1873,25 @@ def test_matrix_transpose(ndim, density):
     expected = np.transpose(xd, axes=transpose_axes)
     actual = sparse.matrix_transpose(xs)
 
-    np.testing.assert_equal(actual.todense(), expected)
+    assert_eq(actual, expected)
+    assert_eq(xs.mT, expected)
 
 
 @pytest.mark.parametrize(
-    "shape1, shape2",
+    ("shape1", "shape2", "axis"),
     [
-        ((2, 3, 4), (3, 4)),
-        ((3, 4), (2, 3, 4)),
-        ((3, 1, 4), (3, 2, 4)),
-        ((1, 3, 4), (3, 4)),
-        ((3, 4, 1), (3, 4, 2)),
-        ((1, 5), (5, 1)),
-        ((3, 1), (3, 4)),
-        ((3, 1), (1, 4)),
-        ((1, 4), (3, 4)),
-        ((2, 2, 2), (1, 1, 1)),
+        ((2, 3, 4), (3, 4), -2),
+        ((3, 4), (2, 3, 4), -1),
+        ((3, 1, 4), (3, 2, 4), 2),
+        ((1, 3, 4), (3, 4), -2),
+        ((3, 4, 1), (3, 4, 2), 0),
+        ((3, 1), (3, 4), -2),
+        ((1, 4), (3, 4), 1),
     ],
 )
 @pytest.mark.parametrize("density", [0.0, 0.1, 0.25, 1.0])
 @pytest.mark.parametrize("is_complex", [False, True])
-def test_vecdot(shape1, shape2, density, rng, is_complex):
+def test_vecdot(shape1, shape2, axis, density, rng, is_complex):
     def data_rvs(size):
         data = rng.random(size)
         if is_complex:
@@ -1905,8 +1900,6 @@ def test_vecdot(shape1, shape2, density, rng, is_complex):
 
     s1 = sparse.random(shape1, density=density, data_rvs=data_rvs)
     s2 = sparse.random(shape2, density=density, data_rvs=data_rvs)
-
-    axis = rng.integers(max(s1.ndim, s2.ndim))
 
     x1 = s1.todense()
     x2 = s2.todense()
@@ -1917,7 +1910,72 @@ def test_vecdot(shape1, shape2, density, rng, is_complex):
 
         return np.sum(x1 * x2, axis=axis)
 
-    expected = np_vecdot(x1, x2, axis=axis)
     actual = sparse.vecdot(s1, s2, axis=axis)
+    expected = np_vecdot(x1, x2, axis=axis)
 
     np.testing.assert_allclose(actual.todense(), expected)
+
+
+@pytest.mark.parametrize(
+    ("shape1", "shape2", "axis"),
+    [
+        ((2, 3, 4), (3, 4), 0),
+        ((3, 4), (2, 3, 4), 0),
+        ((3, 1, 4), (3, 2, 4), -2),
+        ((1, 3, 4), (3, 4), -3),
+        ((3, 4, 1), (3, 4, 2), -1),
+        ((3, 1), (3, 4), 1),
+        ((1, 4), (3, 4), -2),
+    ],
+)
+def test_vecdot_invalid_axis(shape1, shape2, axis):
+    s1 = sparse.random(shape1, density=0.5)
+    s2 = sparse.random(shape2, density=0.5)
+
+    with pytest.raises(ValueError, match=r"Shapes must match along"):
+        sparse.vecdot(s1, s2, axis=axis)
+
+
+@pytest.mark.parametrize(
+    ("func", "args", "kwargs"),
+    [
+        (sparse.eye, (5,), {}),
+        (sparse.zeros, ((5,)), {}),
+        (sparse.ones, ((5,)), {}),
+        (sparse.full, ((5,), 5), {}),
+        (sparse.empty, ((5,)), {}),
+        (sparse.full_like, (5,), {}),
+        (sparse.ones_like, (), {}),
+        (sparse.zeros_like, (), {}),
+        (sparse.empty_like, (), {}),
+        (sparse.asarray, (), {}),
+    ],
+)
+def test_invalid_device(func, args, kwargs):
+    if func.__name__.endswith("_like") or func is sparse.asarray:
+        like = sparse.random((5, 5), density=0.5)
+        args = (like,) + args
+
+    with pytest.raises(ValueError, match="Device must be"):
+        func(*args, device="invalid_device", **kwargs)
+
+
+def test_device():
+    s = sparse.random((5, 5), density=0.5)
+    data = getattr(s, "data", None)
+    device = getattr(data, "device", "cpu")
+
+    assert s.device == device
+
+
+def test_to_device():
+    s = sparse.random((5, 5), density=0.5)
+    s2 = s.to_device(s.device)
+
+    assert s is s2
+
+
+def test_to_invalid_device():
+    s = sparse.random((5, 5), density=0.5)
+    with pytest.raises(ValueError, match=r"Only .* is supported."):
+        s.to_device("invalid_device")

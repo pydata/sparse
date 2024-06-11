@@ -2,8 +2,6 @@ import sparse
 
 import numpy as np
 
-from .utils import skip_if_finch
-
 
 class TensordotSuiteDenseSparse:
     """
@@ -12,8 +10,6 @@ class TensordotSuiteDenseSparse:
     """
 
     def setup(self):
-        skip_if_finch()
-
         rng = np.random.default_rng(0)
         self.n = rng.random((100, 100))
         self.s = sparse.random((100, 100, 100, 100), density=0.01, random_state=rng)
@@ -32,8 +28,6 @@ class TensordotSuiteSparseSparse:
     """
 
     def setup(self):
-        skip_if_finch()
-
         rng = np.random.default_rng(0)
         self.s1 = sparse.random((100, 100), density=0.01, random_state=rng)
         self.s2 = sparse.random((100, 100, 100, 100), density=0.01, random_state=rng)
@@ -52,8 +46,6 @@ class TensordotSuiteSparseDense:
     """
 
     def setup(self):
-        skip_if_finch()
-
         rng = np.random.default_rng(0)
         self.s = sparse.random((100, 100, 100, 100), density=0.01, random_state=rng)
         self.n = rng.random((100, 100))
