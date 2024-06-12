@@ -87,10 +87,6 @@ array_api_tests/test_array_object.py::test_setitem_masking
 
 # test_operators_and_elementwise_functions
 
-# ArgumentError: invalid rational: zero(...)//zero(...)
-array_api_tests/test_operators_and_elementwise_functions.py::test_floor_divide[floor_divide(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_floor_divide[__floordiv__(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_floor_divide[__ifloordiv__(x1, x2)]
 # throws for x < 1 instead of NaN
 array_api_tests/test_operators_and_elementwise_functions.py::test_acosh
 # not implemented

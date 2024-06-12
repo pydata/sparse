@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     @sparse.compiled
     def sddmm_finch(a, b):
-        return sparse.sum(a[:, None, :] * sparse.permute_dims(b, (1, 0))[None, :, :], axis=-1)
+        return a @ b
 
     # Compile
     result_finch = sddmm_finch(a, b)
