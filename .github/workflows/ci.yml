@@ -100,7 +100,7 @@ jobs:
     - name: Build and install Sparse
       run: |
         pip install -U setuptools wheel
-        python -m pip install '.[finch]' scipy
+        python -m pip install '.[finch]' scipy networkx
     - name: Run examples
       run: |
         source ci/test_examples.sh

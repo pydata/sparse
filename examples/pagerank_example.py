@@ -1,3 +1,5 @@
+import importlib
+import os
 import time
 
 import sparse
@@ -53,6 +55,9 @@ def pagerank(G, alpha=0.85, max_iter=100, tol=1e-6) -> dict:
 if __name__ == "__main__":
     G = nx.DiGraph(nx.path_graph(4))
     ITERS = 3
+
+    os.environ[sparse._ENV_VAR_NAME] = "Finch"
+    importlib.reload(sparse)
 
     # compile
     pagerank(G)
