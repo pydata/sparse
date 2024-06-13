@@ -44,8 +44,6 @@ array_api_tests/test_indexing_functions.py::test_take
 array_api_tests/test_linalg.py::test_vecdot
 array_api_tests/test_operators_and_elementwise_functions.py::test_ceil
 array_api_tests/test_operators_and_elementwise_functions.py::test_trunc
-array_api_tests/test_searching_functions.py::test_argmax
-array_api_tests/test_searching_functions.py::test_argmin
 array_api_tests/test_set_functions.py::test_unique_all
 array_api_tests/test_set_functions.py::test_unique_inverse
 array_api_tests/test_signatures.py::test_func_signature[unique_all]

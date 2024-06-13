@@ -1456,7 +1456,7 @@ def _compute_minmax_args(
             if not found:
                 result_data.append(current_coord + 1)
 
-    return (result_indices, result_data)
+    return (result_indices, np.array(result_data, dtype=np.intp))
 
 
 def _arg_minmax_common(
