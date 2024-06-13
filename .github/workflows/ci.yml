@@ -30,6 +30,7 @@ jobs:
     env:
       PYTHON_VERSION: ${{ matrix.python }}
       NUMBA_BOUNDSCHECK: ${{ matrix.numba_boundscheck }}
+      PYTHONFAULTHANDLER: '${{ github.workspace }}/faulthandler.log'
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
