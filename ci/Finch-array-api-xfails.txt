@@ -11,10 +11,6 @@ array_api_tests/test_signatures.py::test_func_signature[unique_counts]
 array_api_tests/test_signatures.py::test_func_signature[unique_inverse]
 array_api_tests/test_signatures.py::test_func_signature[unique_values]
 # creation functions
-array_api_tests/test_signatures.py::test_func_signature[empty]
-array_api_tests/test_signatures.py::test_func_signature[empty_like]
-array_api_tests/test_signatures.py::test_func_signature[arange]
-array_api_tests/test_signatures.py::test_func_signature[linspace]
 array_api_tests/test_signatures.py::test_func_signature[meshgrid]
 array_api_tests/test_signatures.py::test_func_signature[tril]
 array_api_tests/test_signatures.py::test_func_signature[triu]
@@ -72,10 +68,6 @@ array_api_tests/test_signatures.py::test_array_method_signature[__setitem__]
 # test_creation_functions
 
 # not implemented
-array_api_tests/test_creation_functions.py::test_arange
-array_api_tests/test_creation_functions.py::test_empty
-array_api_tests/test_creation_functions.py::test_empty_like
-array_api_tests/test_creation_functions.py::test_linspace
 array_api_tests/test_creation_functions.py::test_meshgrid
 
 # test_array_object
@@ -87,10 +79,6 @@ array_api_tests/test_array_object.py::test_setitem_masking
 
 # test_operators_and_elementwise_functions
 
-# ArgumentError: invalid rational: zero(...)//zero(...)
-array_api_tests/test_operators_and_elementwise_functions.py::test_floor_divide[floor_divide(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_floor_divide[__floordiv__(x1, x2)]
-array_api_tests/test_operators_and_elementwise_functions.py::test_floor_divide[__ifloordiv__(x1, x2)]
 # throws for x < 1 instead of NaN
 array_api_tests/test_operators_and_elementwise_functions.py::test_acosh
 # not implemented
@@ -142,11 +130,7 @@ array_api_tests/test_has_names.py::test_has_names[set-unique_values]
 array_api_tests/test_has_names.py::test_has_names[searching-argmax]
 array_api_tests/test_has_names.py::test_has_names[searching-argmin]
 array_api_tests/test_has_names.py::test_has_names[searching-searchsorted]
-array_api_tests/test_has_names.py::test_has_names[creation-arange]
-array_api_tests/test_has_names.py::test_has_names[creation-empty]
-array_api_tests/test_has_names.py::test_has_names[creation-empty_like]
 array_api_tests/test_has_names.py::test_has_names[creation-from_dlpack]
-array_api_tests/test_has_names.py::test_has_names[creation-linspace]
 array_api_tests/test_has_names.py::test_has_names[creation-meshgrid]
 array_api_tests/test_has_names.py::test_has_names[creation-tril]
 array_api_tests/test_has_names.py::test_has_names[creation-triu]
