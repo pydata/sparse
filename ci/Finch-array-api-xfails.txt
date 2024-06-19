@@ -194,8 +194,6 @@ array_api_tests/test_manipulation_functions.py::test_stack
 # not implemented
 array_api_tests/test_searching_functions.py::test_argmax
 array_api_tests/test_searching_functions.py::test_argmin
-# `broadcast_to` is not defined in finch
-array_api_tests/test_searching_functions.py::test_where
 # 0D issue
 array_api_tests/test_searching_functions.py::test_nonzero
 

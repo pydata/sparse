@@ -1,2 +1,6 @@
+# `test_nonzero` name conflict
 array_api_tests/test_searching_functions.py::test_nonzero_zerodim_error
+# flaky test
 array_api_tests/test_special_cases.py::test_unary[sign((x_i is -0 or x_i == +0)) -> 0]
+# `broadcast_to` is not defined in Finch, hangs as xfail
+array_api_tests/test_searching_functions.py::test_where
