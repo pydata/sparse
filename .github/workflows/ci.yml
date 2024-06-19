@@ -138,7 +138,7 @@ jobs:
         SPARSE_BACKEND: ${{ matrix.backend }}
       run: |
         cd ${GITHUB_WORKSPACE}/array-api-tests
-        pytest array_api_tests -v -c pytest.ini --max-examples=2 --derandomize --disable-deadline -o xfail_strict=True --xfails-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-xfails.txt --skips-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-skips.txt
+        pytest array_api_tests -v -c pytest.ini -n 4 --max-examples=2 --derandomize --disable-deadline -o xfail_strict=True --xfails-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-xfails.txt --skips-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-skips.txt
 on:
   # Trigger the workflow on push or pull request,
   # but only for the main branch
