@@ -24,7 +24,7 @@ jobs:
             numba_boundscheck: 1
           - os: ubuntu-latest
             python: '3.10'
-            pip_opts: "--pre -U"
+            pip_opts: 'numpy<2'
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
@@ -42,7 +42,9 @@ jobs:
       - name: Install package
         run: |
           pip install -e .[tests]
-          pip install ${{ matrix.pip_opts }} numpy numba
+          if [ "${{ matrix.pip_opts }}" != "" ]; then
+            pip install "${{ matrix.pip_opts }}" numba
+          fi
       - name: Run tests
         run: |
           SPARSE_BACKEND=Numba pytest --pyargs sparse --cov-report=xml:coverage_Numba.xml -n 4 -vvv
