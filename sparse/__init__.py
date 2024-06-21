@@ -14,8 +14,12 @@ class BackendType(Enum):
 
 _ENV_VAR_NAME = "SPARSE_BACKEND"
 
-if _ENV_VAR_NAME in os.environ:
-    warnings.warn("Selectable backends feature in `sparse` might change in the future.", FutureWarning, stacklevel=1)
+if os.environ.get(_ENV_VAR_NAME, "") != "":
+    warnings.warn(
+        "Changing back-ends is a development feature, please do not rely on it in production.",
+        FutureWarning,
+        stacklevel=1,
+    )
     _backend_name = os.environ[_ENV_VAR_NAME]
 else:
     _backend_name = BackendType.Numba.value
