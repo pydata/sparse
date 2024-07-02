@@ -24,9 +24,7 @@ def _is_scipy_sparse_obj(x):
     """
     Tests if the supplied argument is a SciPy sparse object.
     """
-    if hasattr(x, "__module__") and x.__module__.startswith("scipy.sparse"):
-        return True
-    return False
+    return bool(hasattr(x, "__module__") and x.__module__.startswith("scipy.sparse"))
 
 
 def _check_device(func):
