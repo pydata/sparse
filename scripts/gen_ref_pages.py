@@ -8,7 +8,6 @@ nav = mkdocs_gen_files.Nav()
 
 root = Path(__file__).parent.parent
 src = root / "sparse/numba_backend/_coo"
-# breakpoint()
 
 for path in sorted(src.rglob("*.py")):
     module_path = path.relative_to(root).with_suffix("")
