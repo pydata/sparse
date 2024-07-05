@@ -24,8 +24,8 @@ plugins:
               inherited_members: yes
               members_order: alphabetical
               filters:
-              - "!^_+" 
+              - "!^_+"
 nav:
 - index.md
-- API: 
+- API:
     - api/*
