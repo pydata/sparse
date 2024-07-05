@@ -28,8 +28,8 @@ classifiers = [
 
 [project.optional-dependencies]
 docs = [
-        "mkdocs-material", 
-        "mkdocstrings", 
+        "mkdocs-material",
+        "mkdocstrings",
         "mkdocstrings[python]",
         "mkdocs-gen-files",
         "mkdocs-literate-nav",
