@@ -1,0 +1,31 @@
+site_name: sparse
+repo_url: https://github.com/pydata/sparse.git
+edit_uri: edit/main/docs/
+theme:
+  name: material
+  features:
+        - toc.integrate  # Table of contents is integrated on the left; does not appear separately on the right.
+
+markdown_extensions:
+  - tables
+
+plugins:
+- search
+- gen-files:
+    scripts:
+    - scripts/gen_ref_pages.py
+- literate-nav:
+    nav_file: SUMMARY.md
+- section-index
+- mkdocstrings:
+    handlers:
+          python:
+            options:
+              inherited_members: yes
+              members_order: alphabetical
+              filters:
+              - "!^_+" 
+nav:
+- index.md
+- API: 
+    - api/*

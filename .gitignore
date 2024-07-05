@@ -64,6 +64,9 @@ junit/
 docs/_build/
 _build/
 
+# mkdocs documentation
+site/
+
 # PyBuilder
 target/
 
