@@ -3,11 +3,18 @@ repo_url: https://github.com/pydata/sparse.git
 edit_uri: edit/main/docs/
 theme:
   name: material
+  logo: assets/images/logo.png
+  favicon: assets/images/logo.svg
   features:
-        - toc.integrate  # Table of contents is integrated on the left; does not appear separately on the right.
-
+        - toc.integrate
+        - navigation.tracking
+        - navigation.instant
+        - navigation.tabs
+        - navigation.footer
 markdown_extensions:
   - tables
+  - toc:
+      toc_depth: 2
 
 plugins:
 - search
@@ -27,5 +34,13 @@ plugins:
               - "!^_+"
 nav:
 - index.md
+- install.md
+- quickstart.md
+- construct.md
+- operations.md
 - API:
     - api/*
+- roadmap.md
+- contributing.md
+- changelog.md
+- conduct.md
