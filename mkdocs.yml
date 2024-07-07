@@ -9,6 +9,7 @@ theme:
         - toc.integrate
         - navigation.tracking
         - navigation.instant
+        - navigation.prune
         - navigation.tabs
         - navigation.footer
 markdown_extensions:
@@ -18,6 +19,7 @@ markdown_extensions:
 
 plugins:
 - search
+- autorefs
 - gen-files:
     scripts:
     - scripts/gen_ref_pages.py
@@ -27,8 +29,13 @@ plugins:
 - mkdocstrings:
     handlers:
           python:
+            import:
+            - https://numpy.org/doc/stable/objects.inv
+            #- http://docs.scipy.org/doc/scipy/reference
             options:
               inherited_members: yes
+              show_root_members_full_path: false
+              show_if_no_docstring: true
               members_order: alphabetical
               filters:
               - "!^_+"
@@ -39,7 +46,7 @@ nav:
 - construct.md
 - operations.md
 - API:
-    - api/*
+  - api/*
 - roadmap.md
 - contributing.md
 - changelog.md

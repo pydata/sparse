@@ -1,8 +1,9 @@
 # Sparse
 
 This implements sparse arrays of arbitrary dimension on top of
-[numpy](https://numpy.org/doc/stable/reference/index.html#module-numpy) and
-[scipy.sparse](https://docs.scipy.org/doc/scipy/reference/sparse.html#module-scipy.sparse). It generalizes the
+[numpy][] and
+[scipy.sparse][]
+(https://docs.scipy.org/doc/scipy/reference/sparse.html#module-scipy.sparse). It generalizes the
 [scipy.sparse.coo_matrix](https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.coo_matrix.html#scipy.sparse.coo_matrix) and
 [scipy.sparse.dok_matrix](https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.dok_matrix.html#scipy.sparse.dok_matrix) layouts, but
 extends beyond just rows and columns to an arbitrary number of
