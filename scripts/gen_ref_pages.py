@@ -17,12 +17,7 @@ for path in sorted(src.rglob("*.py")):
     parts = tuple(module_path.parts)
     if "tests" in parts:
         continue
-    # if parts[-1] == "common" or parts[-1] == "core":
-    #
-    #    nav[parts] = doc_path.as_posix()
-    #    with mkdocs_gen_files.open(full_doc_path, "w") as fd:
-    #        identifier = ".".join(parts)
-    #        print("::: " + identifier, file=fd)
+
     if parts[-1] == "__init__":
         parts = parts[:-1]
         doc_path = doc_path.with_name("index.md")
