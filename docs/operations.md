@@ -1,4 +1,4 @@
-.. currentmodule:: sparse
+# Operations
 
 Operations on :obj:`COO` and :obj:`GCXS` arrays
 ===============================================

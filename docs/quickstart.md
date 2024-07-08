@@ -1,23 +1,18 @@
-.. currentmodule:: sparse
+# Getting Started
 
-Getting Started
-===============
-
-Install
--------
+## Install
 
 If you haven't already, install the ``sparse`` library
 
-.. code-block:: bash
-
+```bash
    pip install sparse
+```
 
-Create
-------
+## Create
 
 To start, lets construct a sparse :obj:`COO` array from a :obj:`numpy.ndarray`:
 
-.. code-block:: python
+```python
 
    import numpy as np
    import sparse
@@ -26,11 +21,12 @@ To start, lets construct a sparse :obj:`COO` array from a :obj:`numpy.ndarray`:
    x[x < 0.9] = 0  # fill most of the array with zeros
 
    s = sparse.COO(x)  # convert to sparse array
+```
 
 These store the same information and support many of the same operations,
 but the sparse version takes up less space in memory
 
-.. code-block:: python
+```python
 
    >>> x.nbytes
    8000000
@@ -38,35 +34,38 @@ but the sparse version takes up less space in memory
    1102706
    >>> s
    <COO: shape=(100, 100, 100), dtype=float64, nnz=100246, fill_value=0.0>
+```
 
 For more efficient ways to construct sparse arrays,
 see documentation on :doc:`Constructing Arrays <construct>`.
 
-Compute
--------
+## Compute
 
 Many of the normal Numpy operations work on :obj:`COO` objects just like on :obj:`numpy.ndarray` objects.
 This includes arithmetic, :doc:`numpy.ufunc <numpy:reference/ufuncs>` operations, or functions like tensordot and transpose.
 
-.. code-block:: python
+```python
 
    >>> np.sin(s) + s.T * 1
    <COO: shape=(100, 100, 100), dtype=float64, nnz=189601, fill_value=0.0>
+```
 
 However, operations which map zero elements to nonzero will usually change the fill-value
 instead of raising an error.
 
-.. code-block:: python
+```python
 
    >>> y = s + 5
    <COO: shape=(100, 100, 100), dtype=float64, nnz=100246, fill_value=5.0>
+```
 
 However, if you're sure you want to convert a sparse array to a dense one,
-you can use the ``todense`` method (which will result in a :obj:`numpy.ndarray`):
+you can use the ``todense`` method (which will result in a [numpy.ndarray][]):
 
-.. code-block:: python
+```python
 
    y = s.todense() + 5
+```
 
-For more operations see the :doc:`Operations documentation <operations>`
-or the :doc:`API reference <generated/sparse>`.
+For more operations see the [operations][]
+or the [api][].
