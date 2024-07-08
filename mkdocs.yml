@@ -15,7 +15,7 @@ theme:
 markdown_extensions:
   - tables
   - toc:
-      toc_depth: 2
+      toc_depth: 3
 
 plugins:
 - search
@@ -31,12 +31,12 @@ plugins:
           python:
             import:
             - https://numpy.org/doc/stable/objects.inv
-            #- http://docs.scipy.org/doc/scipy/reference
             options:
               inherited_members: yes
               show_root_members_full_path: false
               show_if_no_docstring: true
-              members_order: alphabetical
+              members_order: source
+              docstring_style: sphinx  #This only helps to remove typing warnings
               filters:
               - "!^_+"
 nav:
