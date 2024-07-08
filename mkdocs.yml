@@ -31,6 +31,8 @@ plugins:
           python:
             import:
             - https://numpy.org/doc/stable/objects.inv
+            - https://docs.python.org/3/objects.inv
+            - https://docs.scipy.org/doc/scipy-1.14.0/objects.inv
             options:
               inherited_members: yes
               show_root_members_full_path: false
