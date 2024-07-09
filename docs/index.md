@@ -9,8 +9,8 @@ extends beyond just rows and columns to an arbitrary number of
 dimensions.
 
 Additionally, this project maintains compatibility with the
-[numpy.ndarray][]interface rather than the
-[numpy.matrix][]interface used in
+[numpy.ndarray][] interface rather than the
+[numpy.matrix][] interface used in
 [scipy.sparse][]
 
 These differences make this project useful in certain situations where

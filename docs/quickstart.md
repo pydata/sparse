@@ -10,7 +10,7 @@ If you haven't already, install the ``sparse`` library
 
 ## Create
 
-To start, lets construct a sparse :obj:`COO` array from a :obj:`numpy.ndarray`:
+To start, lets construct a sparse :obj:`COO` array from a [numpy.ndarray][]:
 
 ```python
 
@@ -41,7 +41,7 @@ see documentation on :doc:`Constructing Arrays <construct>`.
 
 ## Compute
 
-Many of the normal Numpy operations work on :obj:`COO` objects just like on :obj:`numpy.ndarray` objects.
+Many of the normal Numpy operations work on :obj:`COO` objects just like on [numpy.ndarray][] objects.
 This includes arithmetic, :doc:`numpy.ufunc <numpy:reference/ufuncs>` operations, or functions like tensordot and transpose.
 
 ```python
@@ -68,4 +68,4 @@ you can use the ``todense`` method (which will result in a [numpy.ndarray][]):
 ```
 
 For more operations see the [operations][]
-or the [api][].
+or the [api][sparse.api].
