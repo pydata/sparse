@@ -30,5 +30,5 @@ for path in sorted(src.rglob("*.py")):
     nav[parts] = doc_path.as_posix()
     mkdocs_gen_files.set_edit_path(full_doc_path, path.relative_to(root))
 
-with mkdocs_gen_files.open("api/SUMMARY.md", "w") as nav_file:
-    nav_file.writelines(nav.build_literate_nav())
+# with mkdocs_gen_files.open("api/SUMMARY.md", "w") as nav_file:
+#    nav_file.writelines(nav.build_literate_nav())
