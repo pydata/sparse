@@ -35,10 +35,8 @@ if __name__ == "__main__":
     def mttkrp_finch(B, D, C):
         return sparse.sum(B[:, :, :, None] * D[None, None, :, :] * C[None, :, None, :], axis=(1, 2))
 
-    # Compile
-    result_finch = mttkrp_finch(B, D, C)
-    # Benchmark
-    benchmark(mttkrp_finch, args=[B, D, C], info="Finch", iters=ITERS)
+    # Compile & Benchmark
+    result_finch = benchmark(mttkrp_finch, args=[B, D, C], info="Finch", iters=ITERS)
 
     # ======= Numba =======
     os.environ[sparse._ENV_VAR_NAME] = "Numba"
@@ -51,9 +49,7 @@ if __name__ == "__main__":
     def mttkrp_numba(B, D, C):
         return sparse.sum(B[:, :, :, None] * D[None, None, :, :] * C[None, :, None, :], axis=(1, 2))
 
-    # Compile
-    result_numba = mttkrp_numba(B, D, C)
-    # Benchmark
-    benchmark(mttkrp_numba, args=[B, D, C], info="Numba", iters=ITERS)
+    # Compile & Benchmark
+    result_numba = benchmark(mttkrp_numba, args=[B, D, C], info="Numba", iters=ITERS)
 
     np.testing.assert_allclose(result_finch.todense(), result_numba.todense())

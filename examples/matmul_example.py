@@ -33,10 +33,8 @@ if __name__ == "__main__":
     def sddmm_finch(a, b):
         return a @ b
 
-    # Compile
-    result_finch = sddmm_finch(a, b)
-    # Benchmark
-    benchmark(sddmm_finch, args=[a, b], info="Finch", iters=ITERS)
+    # Compile & Benchmark
+    result_finch = benchmark(sddmm_finch, args=[a, b], info="Finch", iters=ITERS)
 
     # ======= Numba =======
     os.environ[sparse._ENV_VAR_NAME] = "Numba"
@@ -48,10 +46,8 @@ if __name__ == "__main__":
     def sddmm_numba(a, b):
         return a @ b
 
-    # Compile
-    result_numba = sddmm_numba(a, b)
-    # Benchmark
-    benchmark(sddmm_numba, args=[a, b], info="Numba", iters=ITERS)
+    # Compile & Benchmark
+    result_numba = benchmark(sddmm_numba, args=[a, b], info="Numba", iters=ITERS)
 
     # ======= SciPy =======
     def sddmm_scipy(a, b):
@@ -60,9 +56,8 @@ if __name__ == "__main__":
     a = a_sps
     b = b_sps
 
-    result_scipy = sddmm_scipy(a, b)
-    # Benchmark
-    benchmark(sddmm_scipy, args=[a, b], info="SciPy", iters=ITERS)
+    # Compile & Benchmark
+    result_scipy = benchmark(sddmm_scipy, args=[a, b], info="SciPy", iters=ITERS)
 
     # np.testing.assert_allclose(result_numba.todense(), result_scipy.toarray())
     # np.testing.assert_allclose(result_finch.todense(), result_numba.todense())
