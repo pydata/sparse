@@ -34,10 +34,9 @@ if __name__ == "__main__":
         s2 = sparse.asarray(s2_sps.asformat("csc"), format="csc")
 
         func = getattr(sparse, func_name)
-        # Compile
-        result_finch = func(s1, s2)
-        # Benchmark
-        benchmark(func, args=[s1, s2], info="Finch", iters=ITERS)
+
+        # Compile & Benchmark
+        result_finch = benchmark(func, args=[s1, s2], info="Finch", iters=ITERS)
 
         # ======= Numba =======
         os.environ[sparse._ENV_VAR_NAME] = "Numba"
@@ -47,10 +46,9 @@ if __name__ == "__main__":
         s2 = sparse.asarray(s2_sps)
 
         func = getattr(sparse, func_name)
-        # Compile
-        result_numba = func(s1, s2)
-        # Benchmark
-        benchmark(func, args=[s1, s2], info="Numba", iters=ITERS)
+
+        # Compile & Benchmark
+        result_numba = benchmark(func, args=[s1, s2], info="Numba", iters=ITERS)
 
         # ======= SciPy =======
         s1 = s1_sps
@@ -63,9 +61,8 @@ if __name__ == "__main__":
         elif func_name == "greater_equal":
             func, args = operator.ge, [s1, s2]
 
-        result_scipy = func(*args)
-        # Benchmark
-        benchmark(func, args=args, info="SciPy", iters=ITERS)
+        # Compile & Benchmark
+        result_scipy = benchmark(func, args=args, info="SciPy", iters=ITERS)
 
         np.testing.assert_allclose(result_numba.todense(), result_scipy.toarray())
         np.testing.assert_allclose(result_finch.todense(), result_numba.todense())

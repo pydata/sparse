@@ -33,10 +33,8 @@ if __name__ == "__main__":
     def spmv_finch(A, x, y):
         return sparse.sum(A[:, None, :] * sparse.permute_dims(x, (1, 0))[None, :, :], axis=-1) + y
 
-    # Compile
-    result_finch = spmv_finch(A, x, y)
-    # Benchmark
-    benchmark(spmv_finch, args=[A, x, y], info="Finch", iters=ITERS)
+    # Compile & Benchmark
+    result_finch = benchmark(spmv_finch, args=[A, x, y], info="Finch", iters=ITERS)
 
     # ======= Numba =======
     os.environ[sparse._ENV_VAR_NAME] = "Numba"
@@ -49,11 +47,8 @@ if __name__ == "__main__":
     def spmv_numba(A, x, y):
         return A @ x + y
 
-    # Compile
-    result_numba = spmv_numba(A, x, y)
-    assert sparse.nonzero(result_numba)[0].size > 5
-    # Benchmark
-    benchmark(spmv_numba, args=[A, x, y], info="Numba", iters=ITERS)
+    # Compile & Benchmark
+    result_numba = benchmark(spmv_numba, args=[A, x, y], info="Numba", iters=ITERS)
 
     # ======= SciPy =======
     def spmv_scipy(A, x, y):
@@ -63,9 +58,8 @@ if __name__ == "__main__":
     x = x_sps
     y = y_sps
 
-    result_scipy = spmv_scipy(A, x, y)
-    # Benchmark
-    benchmark(spmv_scipy, args=[A, x, y], info="SciPy", iters=ITERS)
+    # Compile & Benchmark
+    result_scipy = benchmark(spmv_scipy, args=[A, x, y], info="SciPy", iters=ITERS)
 
     np.testing.assert_allclose(result_numba, result_scipy)
     np.testing.assert_allclose(result_finch.todense(), result_numba)
