@@ -6,7 +6,7 @@ You can construct [COO][sparse.COO] arrays from coordinates and value data.
 
 The `cords` parameter contains the indices where the data is nonzero,
 and the `data` parameter contains the data corresponding to those indices.
-For example, the following code will generate a :math:`5 \times 5` diagonal
+For example, the following code will generate a $5 \times 5$ diagonal
 matrix:
 
 ```python
@@ -121,20 +121,20 @@ do the following to get an equivalent [COO][sparse.COO] array:
 
 ## From [Numpy arrays][numpy.ndarray]
 
-To construct :obj:`COO` arrays from :obj:`numpy.ndarray`
-objects, you can use the :obj:`COO.from_numpy` method. As an
-example, if `x` is a :obj:`numpy.ndarray`, you can
-do the following to get an equivalent :obj:`COO` array:
+To construct [COO][sparse.COO] arrays from [numpy.ndarray][]
+objects, you can use the [COO.from_numpy][sparse.COO.from_numpy] method. As an
+example, if `x` is a [numpy.ndarray][], you can
+do the following to get an equivalent [COO][sparse.COO] array:
 
 ```python
 
    s = COO.from_numpy(x)
 ```
 
-Generating random :obj:`COO` objects
-------------------------------------
-The :obj:`sparse.random` method can be used to create random
-:obj:`COO` arrays. For example, the following will generate
+## Generating random [COO][sparse.COO] objects
+
+The [sparse.random][] method can be used to create random
+[COO][sparse.COO] arrays. For example, the following will generate
 a :math:`10 \times 10` matrix with :math:`10` nonzero entries,
 each in the interval :math:`[0, 1)`.
 
@@ -143,15 +143,15 @@ each in the interval :math:`[0, 1)`.
    s = sparse.random((10, 10), density=0.1)
 ```
 
-Building :obj:`COO` Arrays from :obj:`DOK` Arrays
--------------------------------------------------
-It's possible to build :obj:`COO` arrays from :obj:`DOK` arrays, if it is not
-easy to construct the `coords` and :obj:`data` in a simple way. :obj:`DOK`
-arrays provide a simple builder interface to build :obj:`COO` arrays, but at
+Building [COO][sparse.COO] Arrays from [DOK][sparse.DOK] Arrays
+
+It's possible to build [COO][sparse.COO] arrays from [DOK][sparse.DOK] arrays, if it is not
+easy to construct the `coords` and `data` in a simple way. [DOK][sparse.DOK]
+arrays provide a simple builder interface to build [COO][sparse.COO] arrays, but at
 this time, they can do little else.
 
 You can get started by defining the shape (and optionally, datatype) of the
-:obj:`DOK` array. If you do not specify a dtype, it is inferred from the value
+`DOK` array. If you do not specify a dtype, it is inferred from the value
 dictionary or is set to `dtype('float64')` if that is not present.
 
 ```python
@@ -176,9 +176,9 @@ DOK arrays also support fancy indexing assignment if and only if all dimensions 
    s[[0, 3], [0, 4], [0, 1]] = [1, 5]
 ```
 
-Alongside indexing assignment and retrieval, :obj:`DOK` arrays support any arbitrary broadcasting function
-to any number of arguments where the arguments can be :obj:`SparseArray` objects, :obj:`scipy.sparse.spmatrix`
-objects, or :obj:`numpy.ndarrays`.
+Alongside indexing assignment and retrieval, `DOK` arrays support any arbitrary broadcasting function
+to any number of arguments where the arguments can be `SparseArray` objects, `scipy.sparse.spmatrix`
+objects, or `numpy.ndarrays`.
 
 ```python
 
@@ -187,10 +187,10 @@ objects, or :obj:`numpy.ndarrays`.
    sparse.elemwise(np.add, x, y)
 ```
 
-:obj:`DOK` arrays also support standard ufuncs and operators, including comparison operators,
+`DOK` arrays also support standard ufuncs and operators, including comparison operators,
 in combination with other objects implementing the `numpy` `ndarray.__array_ufunc__` method. For example,
 the following code will perform elementwise equality comparison on the two arrays
-and return a new boolean :obj:`DOK` array.
+and return a new boolean `DOK` array.
 
 ```python
 
@@ -199,17 +199,17 @@ and return a new boolean :obj:`DOK` array.
    x == y
 ```
 
-:obj:`DOK` arrays are returned from elemwise functions and standard ufuncs if and only if all
-:obj:`SparseArray` objects are obj:`DOK` arrays. Otherwise, a :obj:`COO` array or dense array are returned.
+`DOK` arrays are returned from elemwise functions and standard ufuncs if and only if all
+`SparseArray` objects are obj:`DOK` arrays. Otherwise, a `COO` array or dense array are returned.
 
-At the end, you can convert the :obj:`DOK` array to a :obj:`COO` arrays.
+At the end, you can convert the `DOK` array to a `COO` arrays.
 
 ```python
 
    s3 = COO(s)
 ```
 
-In addition, it is possible to access single elements and slices of the :obj:`DOK` array
+In addition, it is possible to access single elements and slices of the `DOK` array
 using normal Numpy indexing, as well as fancy indexing if and only if all dimensions are indexed.
 Slicing and fancy indexing will always return a new DOK array.
 
@@ -220,20 +220,18 @@ Slicing and fancy indexing will always return a new DOK array.
    s[[0, 3], [0, 4], [0, 1]] # <DOK: shape=(2,), dtype=float64, nnz=2, fill_value=0.0>
 ```
 
-.. _converting:
+## Converting [COO][sparse.COO] objects to other Formats
 
-Converting :obj:`COO` objects to other Formats
-----------------------------------------------
-:obj:`COO` arrays can be converted to :doc:`Numpy arrays <numpy:reference/generated/numpy.ndarray>`,
-or to some :obj:`spmatrix <scipy.sparse.spmatrix>` subclasses via the following
+[COO][sparse.COO] arrays can be converted to [Numpy arrays][numpy.ndarray],
+or to some [spmatrix][scipy.sparse.spmatrix] subclasses via the following
 methods:
 
-* :obj:`COO.todense`: Converts to a :obj:`numpy.ndarray` unconditionally.
-* :obj:`COO.maybe_densify`: Converts to a :obj:`numpy.ndarray` based on
+* [COO.todense][sparse.COO.todense]: Converts to a [numpy.ndarray][] unconditionally.
+* [COO.maybe_densify][sparse.COO.maybe_densify]: Converts to a [numpy.ndarray][] based on
    certain constraints.
-* :obj:`COO.to_scipy_sparse`: Converts to a :obj:`scipy.sparse.coo_matrix` if
+* [COO.to_scipy_sparse][sparse.COO.to_scipy_sparse]: Converts to a [scipy.sparse.coo_matrix][] if
    the array is two dimensional.
-* :obj:`COO.tocsr`: Converts to a :obj:`scipy.sparse.csr_matrix` if
+* [COO.tocsr][sparse.COO.tocsr]: Converts to a [scipy.sparse.csr_matrix][] if
    the array is two dimensional.
-* :obj:`COO.tocsc`: Converts to a :obj:`scipy.sparse.csc_matrix` if
+* [COO.tocsc][sparse.COO.tocsc]: Converts to a [scipy.sparse.csc_matrix][] if
    the array is two dimensional.
