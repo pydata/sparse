@@ -2,10 +2,10 @@
 
 ## From coordinates and data
 
-You can construct [COO][sparse.numba_backend._coo.COO] arrays from coordinates and value data.
+You can construct [COO][sparse.COO] arrays from coordinates and value data.
 
-The [cords][sparse.numba_backend._coo.core.COO.coords] parameter contains the indices where the data is nonzero,
-and the :code:`data` parameter contains the data corresponding to those indices.
+The `cords` parameter contains the indices where the data is nonzero,
+and the `data` parameter contains the data corresponding to those indices.
 For example, the following code will generate a :math:`5 \times 5` diagonal
 matrix:
 
@@ -29,12 +29,12 @@ matrix:
      └                         ┘
 ```
 
-In general :code:`coords` should be a :code:`(ndim, nnz)` shaped
-array. Each row of :code:`coords` contains one dimension of the
+In general `coords` should be a `(ndim, nnz)` shaped
+array. Each row of `coords` contains one dimension of the
 desired sparse array, and each column contains the index
-corresponding to that nonzero element. :code:`data` contains
+corresponding to that nonzero element. `data` contains
 the nonzero elements of the array corresponding to the indices
-in :code:`coords`. Its shape should be :code:`(nnz,)`.
+in `coords`. Its shape should be `(nnz,)`.
 
 If ``data`` is the same across all the coordinates, it can be passed
 in as a scalar. For example, the following produces the :math:`4 \times 4`
@@ -60,13 +60,13 @@ identity matrix:
 ```
 
 You can, and should, pass in [numpy.ndarray][] objects for
-:code:`coords` and :code:`data`.
+`coords` and `data`.
 
 In this case, the shape of the resulting array was determined from
 the maximum index in each dimension. If the array extends beyond
-the maximum index in :code:`coords`, you should supply a shape
+the maximum index in `coords`, you should supply a shape
 explicitly. For example, if we did the following without the
-:code:`shape` keyword argument, it would result in a
+`shape` keyword argument, it would result in a
 :math:`4 \times 5` matrix, but maybe we wanted one that was actually
 :math:`5 \times 5`.
 
@@ -87,7 +87,7 @@ explicitly. For example, if we did the following without the
      └                         ┘
 ```
 
-:obj:`COO` arrays support arbitrary fill values. Fill values are the "default"
+[COO][sparse.COO] arrays support arbitrary fill values. Fill values are the "default"
 value, or value to not store. This can be given a value other than zero. For
 example, the following builds a (bad) representation of a :math:`2 \times 2`
 identity matrix. Note that not all operations are supported for operations
@@ -107,25 +107,23 @@ with nonzero fill values.
      └          ┘
 ```
 
-From [scipy.sparse.coo_matrix][]
+## From [scipy.sparse.spmatrix][]
 
-:std:doc:`Scipy sparse matrices <scipy:reference/generated/scipy.sparse.spmatrix>`
----------------------------------------------------------------------------------------
-To construct :obj:`COO` array from :obj:`spmatrix <scipy.sparse.spmatrix>`
-objects, you can use the :obj:`COO.from_scipy_sparse` method. As an
-example, if :code:`x` is a :obj:`scipy.sparse.spmatrix`, you can
-do the following to get an equivalent :obj:`COO` array:
+To construct [COO][sparse.COO] array from [spmatrix][scipy.sparse.spmatrix]
+objects, you can use the [COO.from_scipy_sparse][sparse.COO.from_scipy_sparse] method. As an
+example, if `x` is a [scipy.sparse.spmatrix][], you can
+do the following to get an equivalent [COO][sparse.COO] array:
 
 ```python
 
    s = COO.from_scipy_sparse(x)
 ```
 
-From :doc:`Numpy arrays <numpy:reference/generated/numpy.ndarray>`
-------------------------------------------------------------------
+## From [Numpy arrays][numpy.ndarray]
+
 To construct :obj:`COO` arrays from :obj:`numpy.ndarray`
 objects, you can use the :obj:`COO.from_numpy` method. As an
-example, if :code:`x` is a :obj:`numpy.ndarray`, you can
+example, if `x` is a :obj:`numpy.ndarray`, you can
 do the following to get an equivalent :obj:`COO` array:
 
 ```python
@@ -148,13 +146,13 @@ each in the interval :math:`[0, 1)`.
 Building :obj:`COO` Arrays from :obj:`DOK` Arrays
 -------------------------------------------------
 It's possible to build :obj:`COO` arrays from :obj:`DOK` arrays, if it is not
-easy to construct the :code:`coords` and :obj:`data` in a simple way. :obj:`DOK`
+easy to construct the `coords` and :obj:`data` in a simple way. :obj:`DOK`
 arrays provide a simple builder interface to build :obj:`COO` arrays, but at
 this time, they can do little else.
 
 You can get started by defining the shape (and optionally, datatype) of the
 :obj:`DOK` array. If you do not specify a dtype, it is inferred from the value
-dictionary or is set to :code:`dtype('float64')` if that is not present.
+dictionary or is set to `dtype('float64')` if that is not present.
 
 ```python
 
