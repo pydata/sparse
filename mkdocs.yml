@@ -20,13 +20,12 @@ markdown_extensions:
 
 plugins:
 - search
+- section-index
 - autorefs
 - gen-files:
     scripts:
     - scripts/gen_ref_pages.py
 - literate-nav
-    #nav_file: SUMMARY.md
-- section-index
 - mkdocstrings:
     handlers:
           python:
@@ -52,3 +51,4 @@ nav:
 - roadmap.md
 - contributing.md
 - changelog.md
+- conduct.md
