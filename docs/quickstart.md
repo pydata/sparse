@@ -10,7 +10,7 @@ If you haven't already, install the ``sparse`` library
 
 ## Create
 
-To start, lets construct a sparse :obj:`COO` array from a [numpy.ndarray][]:
+To start, lets construct a sparse [COO][sparse.COO] array from a [numpy.ndarray][]:
 
 ```python
 

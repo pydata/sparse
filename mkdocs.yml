@@ -14,13 +14,12 @@ theme:
         - navigation.footer
 markdown_extensions:
   - tables
-  - pymdownx.superfences
-  - admonition
+  - admonition # This line, pymdownx.details and pymdownx.superfences are used by warings
   - pymdownx.details
   - pymdownx.superfences
   - toc:
       toc_depth: 2
-  - pymdownx.arithmatex:
+  - pymdownx.arithmatex: # To display math content with KaTex
       generic: true
 
 extra_javascript:

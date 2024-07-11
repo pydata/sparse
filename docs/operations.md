@@ -44,14 +44,13 @@ For example, the following will add two arrays:
     Previously, :obj:`elemwise` was a method of the :obj:`COO` class. Now,
     it has been moved to the :obj:`sparse` module.
 
-.. _operations-auto-densification:
 
 **Auto-Densification**
 
 Operations that would result in dense matrices, such as
-operations with :doc:`Numpy arrays <numpy:reference/generated/numpy.ndarray>`
-raises a :obj:`ValueError`. For example, the following will raise a
-:obj:`ValueError` if :code:`x` is a :obj:`numpy.ndarray`:
+operations with [Numpy arrays][numpy.ndarray]
+raises a [ValueError][]. For example, the following will raise a
+[ValueError][] if `x` is a [numpy.ndarray][]:
 
 ```python
 
@@ -75,18 +74,18 @@ However, all of the following are valid operations.
 ```
 
 We also support operations with a nonzero fill value. These are operations
-that map zero values to nonzero values, such as :code:`x + 1` or :code:`~x`.
-In these cases, they will produce an output with a fill value of :code:`1` or :code:`True`,
-assuming the original array has a fill value of :code:`0` or :code:`False` respectively.
+that map zero values to nonzero values, such as `x + 1` or `~x`.
+In these cases, they will produce an output with a fill value of `1` or `True`,
+assuming the original array has a fill value of `0` or `False` respectively.
 
 If densification is needed, it must be explicit. In other words, you must call
-:obj:`SparseArray.todense` on the :obj:`SparseArray` object. If both operands are :obj:`SparseArray`,
+[sparse.SparseArray.todense][] on the [sparse.SparseArray][] object. If both operands are [sparse.SparseArray][],
 both must be densified.
 
 **Operations with NumPy arrays**
 
 In certain situations, operations with NumPy arrays are also supported. For example,
-the following will work if :code:`x` is :obj:`COO` and :code:`y` is a NumPy array:
+the following will work if `x` is [COO][sparse.COO] and `y` is a NumPy array:
 
 ```python
 
@@ -103,7 +102,7 @@ NumPy arrays:
 ## Operations with [scipy.sparse.spmatrix][]
 
 Certain operations with [scipy.sparse.spmatrix][] are also supported.
-For example, the following are all allowed if `y` is a :obj:`scipy.sparse.spmatrix`:
+For example, the following are all allowed if `y` is a [scipy.sparse.spmatrix][]:
 
 ```python
 
@@ -114,34 +113,35 @@ For example, the following are all allowed if `y` is a :obj:`scipy.sparse.spmatr
    x < y
 ```
 
-In general, operating on a :code:`scipy.sparse.spmatrix` is the same as operating
-on :obj:`COO` or :obj:`GCXS`, as long as it is to the right of the operator.
+In general, operating on a [scipy.sparse.spmatrix][] is the same as operating
+on [COO][sparse.COO] or [GCXS][sparse.GCXS], as long as it is to the right of the operator.
 
-.. note:: Results are not guaranteed if :code:`x` is a :obj:`scipy.sparse.spmatrix`.
-   For this reason, we recommend that all Scipy sparse matrices should be explicitly
-   converted to :obj:`COO` or :obj:`GCXS` before any operations.
+!!! note
+
+    Results are not guaranteed if :code:`x` is a :obj:`scipy.sparse.spmatrix`.
+    For this reason, we recommend that all Scipy sparse matrices should be explicitly
+    converted to :obj:`COO` or :obj:`GCXS` before any operations.
 
 
-Broadcasting
-------------
-All binary operators support :doc:`broadcasting <numpy:user/basics.broadcasting>`.
+## Broadcasting
+
+All binary operators support [broadcasting][numpy.broadcasting].
 This means that (under certain conditions) you can perform binary operations
 on arrays with unequal shape. Namely, when the shape is missing a dimension,
-or when a dimension is :code:`1`. For example, performing a binary operation
-on two :obj:`COO` arrays with shapes :code:`(4,)` and :code:`(5, 1)` yields
-an object of shape :code:`(5, 4)`. The same happens with arrays of shape
-:code:`(1, 4)` and :code:`(5, 1)`. However, :code:`(4, 1)` and :code:`(5, 1)`
-will raise a :obj:`ValueError`.
+or when a dimension is `1`. For example, performing a binary operation
+on two `COO` arrays with shapes `(4,)` and `(5, 1)` yields
+an object of shape `(5, 4)`. The same happens with arrays of shape
+`(1, 4)` and `(5, 1)`. However, `(4, 1)` and `(5, 1)`
+will raise a [ValueError][].If densification is needed,
 
-.. _operations-elemwise:
 
-Element-wise Operations
------------------------
-:obj:`COO` and :obj:`GCXS` arrays support a variety of element-wise operations. However, as
+## Element-wise Operations
+
+[COO][sparse.COO] and [GCXS][sparse.GCXS] arrays support a variety of element-wise operations. However, as
 with operators, operations that map zero to a nonzero value are not supported.
 
 To illustrate, the following are all possible, and will produce another
-:obj:`SparseArray`:
+[SparseArray][sparse.SparseArray]:
 
 ```python
 
