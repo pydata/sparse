@@ -6,7 +6,7 @@ You can construct [COO][sparse.COO] arrays from coordinates and value data.
 
 The `cords` parameter contains the indices where the data is nonzero,
 and the `data` parameter contains the data corresponding to those indices.
-For example, the following code will generate a $5 \times 5$ diagonal
+For example, the following code will generate a \(5 \times 5\) diagonal
 matrix:
 
 ```python
@@ -37,7 +37,7 @@ the nonzero elements of the array corresponding to the indices
 in `coords`. Its shape should be `(nnz,)`.
 
 If ``data`` is the same across all the coordinates, it can be passed
-in as a scalar. For example, the following produces the :math:`4 \times 4`
+in as a scalar. For example, the following produces the \(4 \times 4\)
 identity matrix:
 
 ```python
@@ -67,8 +67,8 @@ the maximum index in each dimension. If the array extends beyond
 the maximum index in `coords`, you should supply a shape
 explicitly. For example, if we did the following without the
 `shape` keyword argument, it would result in a
-:math:`4 \times 5` matrix, but maybe we wanted one that was actually
-:math:`5 \times 5`.
+\(4 \times 5\) matrix, but maybe we wanted one that was actually
+\(5 \times 5\).
 
 ```python
 
@@ -89,7 +89,7 @@ explicitly. For example, if we did the following without the
 
 [COO][sparse.COO] arrays support arbitrary fill values. Fill values are the "default"
 value, or value to not store. This can be given a value other than zero. For
-example, the following builds a (bad) representation of a :math:`2 \times 2`
+example, the following builds a (bad) representation of a \(2 \times 2\)
 identity matrix. Note that not all operations are supported for operations
 with nonzero fill values.
 
@@ -135,8 +135,8 @@ do the following to get an equivalent [COO][sparse.COO] array:
 
 The [sparse.random][] method can be used to create random
 [COO][sparse.COO] arrays. For example, the following will generate
-a :math:`10 \times 10` matrix with :math:`10` nonzero entries,
-each in the interval :math:`[0, 1)`.
+a :math:`10 \times 10` matrix with \(10\) nonzero entries,
+each in the interval $[0, 1)$.
 
 ```python
 
