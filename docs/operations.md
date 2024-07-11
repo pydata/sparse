@@ -1,12 +1,8 @@
 # Operations
 
-Operations on :obj:`COO` and :obj:`GCXS` arrays
-===============================================
+Operations on [COO][sparse.COO] and [GCXS][sparse.GCXS] arrays
 
-.. _operations-operators:
-
-Operators
----------
+## Operators
 
 :obj:`COO` and :obj:`GCXS` objects support a number of operations. They interact with scalars,
 :doc:`Numpy arrays <numpy:reference/generated/numpy.ndarray>`, other :obj:`COO` and :obj:`GCXS` objects,

@@ -6,7 +6,7 @@ You can construct [COO][sparse.COO] arrays from coordinates and value data.
 
 The `cords` parameter contains the indices where the data is nonzero,
 and the `data` parameter contains the data corresponding to those indices.
-For example, the following code will generate a \(5 \times 5\) diagonal
+For example, the following code will generate a $5 \times 5$ diagonal
 matrix:
 
 ```python
@@ -36,8 +36,8 @@ corresponding to that nonzero element. `data` contains
 the nonzero elements of the array corresponding to the indices
 in `coords`. Its shape should be `(nnz,)`.
 
-If ``data`` is the same across all the coordinates, it can be passed
-in as a scalar. For example, the following produces the \(4 \times 4\)
+If `data` is the same across all the coordinates, it can be passed
+in as a scalar. For example, the following produces the $4 \times 4$
 identity matrix:
 
 ```python
@@ -67,8 +67,8 @@ the maximum index in each dimension. If the array extends beyond
 the maximum index in `coords`, you should supply a shape
 explicitly. For example, if we did the following without the
 `shape` keyword argument, it would result in a
-\(4 \times 5\) matrix, but maybe we wanted one that was actually
-\(5 \times 5\).
+$4 \times 5$ matrix, but maybe we wanted one that was actually
+$5 \times 5$.
 
 ```python
 
@@ -89,7 +89,7 @@ explicitly. For example, if we did the following without the
 
 [COO][sparse.COO] arrays support arbitrary fill values. Fill values are the "default"
 value, or value to not store. This can be given a value other than zero. For
-example, the following builds a (bad) representation of a \(2 \times 2\)
+example, the following builds a (bad) representation of a $2 \times 2$
 identity matrix. Note that not all operations are supported for operations
 with nonzero fill values.
 
@@ -135,7 +135,7 @@ do the following to get an equivalent [COO][sparse.COO] array:
 
 The [sparse.random][] method can be used to create random
 [COO][sparse.COO] arrays. For example, the following will generate
-a :math:`10 \times 10` matrix with \(10\) nonzero entries,
+a $10 \times 10$ matrix with $10$ nonzero entries,
 each in the interval $[0, 1)$.
 
 ```python
@@ -151,7 +151,7 @@ arrays provide a simple builder interface to build [COO][sparse.COO] arrays, but
 this time, they can do little else.
 
 You can get started by defining the shape (and optionally, datatype) of the
-`DOK` array. If you do not specify a dtype, it is inferred from the value
+[DOK][sparse.DOK] array. If you do not specify a dtype, it is inferred from the value
 dictionary or is set to `dtype('float64')` if that is not present.
 
 ```python
@@ -176,9 +176,9 @@ DOK arrays also support fancy indexing assignment if and only if all dimensions 
    s[[0, 3], [0, 4], [0, 1]] = [1, 5]
 ```
 
-Alongside indexing assignment and retrieval, `DOK` arrays support any arbitrary broadcasting function
-to any number of arguments where the arguments can be `SparseArray` objects, `scipy.sparse.spmatrix`
-objects, or `numpy.ndarrays`.
+Alongside indexing assignment and retrieval, [DOK][sparse.DOK] arrays support any arbitrary broadcasting function
+to any number of arguments where the arguments can be [SparseArray][sparse.SparseArray] objects, [scipy.sparse.spmatrix][]
+objects, or [numpy.ndarray][].
 
 ```python
 
@@ -187,10 +187,10 @@ objects, or `numpy.ndarrays`.
    sparse.elemwise(np.add, x, y)
 ```
 
-`DOK` arrays also support standard ufuncs and operators, including comparison operators,
-in combination with other objects implementing the `numpy` `ndarray.__array_ufunc__` method. For example,
+[DOK][sparse.DOK] arrays also support standard ufuncs and operators, including comparison operators,
+in combination with other objects implementing the *numpy* *ndarray.\__array_ufunc\__* method. For example,
 the following code will perform elementwise equality comparison on the two arrays
-and return a new boolean `DOK` array.
+and return a new boolean [DOK][sparse.DOK] array.
 
 ```python
 
@@ -199,17 +199,17 @@ and return a new boolean `DOK` array.
    x == y
 ```
 
-`DOK` arrays are returned from elemwise functions and standard ufuncs if and only if all
-`SparseArray` objects are obj:`DOK` arrays. Otherwise, a `COO` array or dense array are returned.
+[DOK][sparse.DOK] arrays are returned from elemwise functions and standard ufuncs if and only if all
+[SparseArray][sparse.SparseArray] objects are [DOK][sparse.DOK] arrays. Otherwise, a [COO][sparse.COO] array or dense array are returned.
 
-At the end, you can convert the `DOK` array to a `COO` arrays.
+At the end, you can convert the [DOK][sparse.DOK] array to a [COO][sparse.COO] arrays.
 
 ```python
 
    s3 = COO(s)
 ```
 
-In addition, it is possible to access single elements and slices of the `DOK` array
+In addition, it is possible to access single elements and slices of the [DOK][sparse.DOK] array
 using normal Numpy indexing, as well as fancy indexing if and only if all dimensions are indexed.
 Slicing and fancy indexing will always return a new DOK array.
 
