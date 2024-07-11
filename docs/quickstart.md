@@ -37,12 +37,12 @@ but the sparse version takes up less space in memory
 ```
 
 For more efficient ways to construct sparse arrays,
-see documentation on :doc:`Constructing Arrays <construct>`.
+see documentation on [Construct sparse arrays][construct-sparse-arrays].
 
 ## Compute
 
-Many of the normal Numpy operations work on :obj:`COO` objects just like on [numpy.ndarray][] objects.
-This includes arithmetic, :doc:`numpy.ufunc <numpy:reference/ufuncs>` operations, or functions like tensordot and transpose.
+Many of the normal Numpy operations work on [COO][sparse.COO] objects just like on [numpy.ndarray][] objects.
+This includes arithmetic, [numpy.ufunc][] operations, or functions like tensordot and transpose.
 
 ```python
 
@@ -68,4 +68,4 @@ you can use the ``todense`` method (which will result in a [numpy.ndarray][]):
 ```
 
 For more operations see the [operations][]
-or the [api][sparse.api].
+or the [api][api].

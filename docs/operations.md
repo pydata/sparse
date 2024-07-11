@@ -4,59 +4,63 @@ Operations on [COO][sparse.COO] and [GCXS][sparse.GCXS] arrays
 
 ## Operators
 
-:obj:`COO` and :obj:`GCXS` objects support a number of operations. They interact with scalars,
-:doc:`Numpy arrays <numpy:reference/generated/numpy.ndarray>`, other :obj:`COO` and :obj:`GCXS` objects,
-and :obj:`scipy.sparse.spmatrix` objects, all following standard Python and Numpy
+[COO][sparse.COO] and [GCXS][sparse.GCXS] objects support a number of operations. They interact with scalars,
+[Numpy arrays][numpy.ndarray], other [COO][sparse.COO] and [GCXS][sparse.GCXS] objects,
+[scipy.sparse.spmatrix][] objects, all following standard Python and Numpy
 conventions.
 
 For example, the following Numpy expression produces equivalent
 results for both Numpy arrays, COO arrays, or a mix of the two:
 
-.. code-block:: python
+```python
 
    np.log(X.dot(beta.T) + 1)
+```
 
 However some operations are not supported, like operations that
 implicitly cause dense structures, or numpy functions that are not
 yet implemented for sparse arrays.
 
-.. code-block:: python
+```python
 
    np.linalg.cholesky(x)  # sparse cholesky not implemented
-
+```
 
 This page describes those valid operations, and their limitations.
 
-:obj:`elemwise`
-~~~~~~~~~~~~~~~
+**[elemwise][sparse.elemwise]**
+
 This function allows you to apply any arbitrary broadcasting function to any number of arguments
-where the arguments can be :obj:`SparseArray` objects or :obj:`scipy.sparse.spmatrix` objects.
+where the arguments can be [SparseArray][sparse.SparseArray] objects or [scipy.sparse.spmatrix][] objects.
 For example, the following will add two arrays:
 
-.. code-block:: python
+```python
 
    sparse.elemwise(np.add, x, y)
+```
 
+!!! warning
 
-.. warning:: Previously, :obj:`elemwise` was a method of the :obj:`COO` class. Now,
-   it has been moved to the :obj:`sparse` module.
+    Previously, :obj:`elemwise` was a method of the :obj:`COO` class. Now,
+    it has been moved to the :obj:`sparse` module.
 
 .. _operations-auto-densification:
 
-Auto-Densification
-~~~~~~~~~~~~~~~~~~
+**Auto-Densification**
+
 Operations that would result in dense matrices, such as
 operations with :doc:`Numpy arrays <numpy:reference/generated/numpy.ndarray>`
 raises a :obj:`ValueError`. For example, the following will raise a
 :obj:`ValueError` if :code:`x` is a :obj:`numpy.ndarray`:
 
-.. code-block:: python
+```python
 
    x + y
+```
 
 However, all of the following are valid operations.
 
-.. code-block:: python
+```python
 
    x + 0
    x != y
@@ -68,6 +72,7 @@ However, all of the following are valid operations.
    x == 0
    ~x
    x + 5
+```
 
 We also support operations with a nonzero fill value. These are operations
 that map zero values to nonzero values, such as :code:`x + 1` or :code:`~x`.
@@ -78,14 +83,15 @@ If densification is needed, it must be explicit. In other words, you must call
 :obj:`SparseArray.todense` on the :obj:`SparseArray` object. If both operands are :obj:`SparseArray`,
 both must be densified.
 
-Operations with NumPy arrays
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Operations with NumPy arrays**
+
 In certain situations, operations with NumPy arrays are also supported. For example,
 the following will work if :code:`x` is :obj:`COO` and :code:`y` is a NumPy array:
 
-.. code-block:: python
+```python
 
    x * y
+```
 
 The following conditions must be met when performing element-wise operations with
 NumPy arrays:
@@ -94,18 +100,19 @@ NumPy arrays:
   array must also be sparse.
 * Operating on the NumPy arrays must not increase the size when broadcasting the arrays.
 
-Operations with :obj:`scipy.sparse.spmatrix`
---------------------------------------------
-Certain operations with :obj:`scipy.sparse.spmatrix` are also supported.
-For example, the following are all allowed if :code:`y` is a :obj:`scipy.sparse.spmatrix`:
+## Operations with [scipy.sparse.spmatrix][]
 
-.. code-block:: python
+Certain operations with [scipy.sparse.spmatrix][] are also supported.
+For example, the following are all allowed if `y` is a :obj:`scipy.sparse.spmatrix`:
+
+```python
 
    x + y
    x - y
    x * y
    x > y
    x < y
+```
 
 In general, operating on a :code:`scipy.sparse.spmatrix` is the same as operating
 on :obj:`COO` or :obj:`GCXS`, as long as it is to the right of the operator.
@@ -136,7 +143,7 @@ with operators, operations that map zero to a nonzero value are not supported.
 To illustrate, the following are all possible, and will produce another
 :obj:`SparseArray`:
 
-.. code-block:: python
+```python
 
    np.abs(x)
    np.sin(x)
@@ -147,6 +154,7 @@ To illustrate, the following are all possible, and will produce another
    np.exp(x)
    np.cos(x)
    np.log(x)
+```
 
 As above, in the last three cases, an array with a nonzero fill value will be produced.
 
@@ -157,29 +165,30 @@ we check that operating on the array with zero would always produce a zero.
 
 .. _operations-reductions:
 
-Reductions
-----------
+## Reductions
+
 :obj:`COO` and :obj:`GCXS` objects support a number of reductions. However, not all important
 reductions are currently implemented (help welcome!) All of the following
 currently work:
 
-.. code-block:: python
+```python
 
    x.sum(axis=1)
    np.max(x)
    np.min(x, axis=(0, 2))
    x.prod()
-
+```
 
 :obj:`SparseArray.reduce`
-~~~~~~~~~~~~~~~~~~~~~~~~~
+
 This method can take an arbitrary :doc:`numpy.ufunc <numpy:reference/ufuncs>` and performs a
 reduction using that method. For example, the following will perform
 a sum:
 
-.. code-block:: python
+```python
 
    x.reduce(np.add, axis=1)
+```
 
 .. note::
    This library currently performs reductions by grouping together all
@@ -209,7 +218,7 @@ means that all of the following work like in Numpy, except that they will produc
 :obj:`SparseArray` arrays rather than :obj:`numpy.ndarray` objects, and will produce
 scalars where expected. Assume that :code:`z.shape` is :code:`(5, 6, 7)`
 
-.. code-block:: python
+```python
 
    z[0]
    z[1, 3]
@@ -217,16 +226,17 @@ scalars where expected. Assume that :code:`z.shape` is :code:`(5, 6, 7)`
    z[:3, :2, 3]
    z[::-1, 1, 3]
    z[-1]
+```
 
 All of the following will raise an :obj:`IndexError`, like in Numpy 1.13 and later.
 
-.. code-block:: python
+```python
 
    z[6]
    z[3, 6]
    z[1, 4, 8]
    z[-6]
-
+```
 
 Advanced Indexing
 ~~~~~~~~~~~~~~~~~
@@ -236,13 +246,13 @@ with a *single array*. Indexing a single array with multiple arrays is not suppo
 this time. As above, if  :code:`z.shape` is :code:`(5, 6, 7)`, all of the following will
 work like NumPy:
 
-.. code-block:: python
+```python
 
    z[[0, 1, 2]]
    z[1, [3]]
    z[1, 4, [3, 6]]
    z[:3, :2, [1, 5]]
-
+```
 
 Package Configuration
 ---------------------
