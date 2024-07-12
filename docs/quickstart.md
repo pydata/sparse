@@ -68,4 +68,4 @@ you can use the ``todense`` method (which will result in a [numpy.ndarray][]):
 ```
 
 For more operations see the [operations][operations-on-coo-and-gcxs-arrays]
-or the [API reference page](../../api/BACKEND/).
+or the [API reference page](../../api/backend).

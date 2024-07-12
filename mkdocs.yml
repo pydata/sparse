@@ -6,12 +6,16 @@ theme:
   logo: assets/images/logo.png
   favicon: assets/images/logo.svg
   features:
-        #- toc.integrate
         - navigation.tracking
         - navigation.instant
+        - navigation.instant.progress
         - navigation.prune
         - navigation.tabs
+        - navigation.tabs.sticky
         - navigation.footer
+        - navigation.indexes
+        - content.code.copy
+
 markdown_extensions:
   - tables
   - admonition # This line, pymdownx.details and pymdownx.superfences are used by warings
