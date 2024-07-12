@@ -3,7 +3,7 @@
 ## General Guidelines
 
 sparse is a community-driven project on GitHub. You can find our
-`repository on GitHub <:ghuser:`pydata/sparse`>`_. Feel
+[repository on GitHub](https://github.com/pydata/sparse). Feel
 free to open issues for new features or bugs, or open a pull request
 to fix a bug or add a new feature.
 
@@ -15,10 +15,9 @@ If you're not already familiar with it, we follow the [fork and pull model](http
 on GitHub.
 
 ## Filing Issues
--------------
 
-If you find a bug or would like a new feature, you might want to `consider
-filing a new issue on GitHub <:ghuser:`pydata/sparse/issues`>`_. Before
+If you find a bug or would like a new feature, you might want to *consider
+filing a new issue* on [GitHub](https://github.com/pydata/sparse/issues). Before
 you open a new issue, please make sure of the following:
 
 * This should go without saying, but make sure what you are requesting is within
@@ -82,30 +81,28 @@ documentation. If you are adding any private/public functions, it is best to
 add docstrings, to aid in reviewing code and also for the API reference.
 
 We use [Numpy style docstrings](https://numpydoc.readthedocs.io/en/latest/format.html)
-and [Materials for MkDocs](https://squidfunk.github.io/mkdocs-material) to document this library.
+and [Material for MkDocs](https://squidfunk.github.io/mkdocs-material) to document this library.
 MkDocs, in turn, uses [Markdown](https://www.markdownguide.org)
 as its markup language for adding code.
 
-We use the `Sphinx Autosummary extension <http://www.sphinx-doc.org/en/stable/ext/autosummary.html>`_
-to generate API references. In particular, you may want do look at the :code:`docs/generated`
-directory to see how these files look and where to add new functions, classes or modules.
-For example, if you add a new function to the :code:`sparse.COO` class, you would open up
-:code:`docs/generated/sparse.COO.rst`, and add in the name of the function where appropriate.
+We use [mkdoctrings](https://mkdocstrings.github.io/recipes) with the
+[mkdocs-gen-files plugin](https://oprypin.github.io/mkdocs-gen-files)
+to generate API references.
 
-To build the documentation, you can :code:`cd` into the :code:`docs` directory
-and run
+To build the documentation, you can run
 
-.. code-block:: bash
+```bash
 
-   sphinx-build -W -b html . _build/html
+   mkdocs build
+   mkdocs serve
+```
 
-After this, you can find an HTML version of the documentation in :code:`docs/_build/html/index.html`.
+After this, you can see a version of the documentation on your local server.
 
 Documentation for pull requests is automatically built on CircleCI and can be found in the build
 artifacts.
 
-Adding and Running Benchmarks
------------------------------
+## Adding and Running Benchmarks
 
-We use `Airspeed Velocity <https://asv.readthedocs.io/en/latest/>`_ to run benchmarks. We have it set
-up to use ``conda``, but you can edit the configuration locally if you so wish.
+We use [Airspeed Velocity](https://asv.readthedocs.io/en/latest) to run benchmarks. We have it set
+up to use `conda`, but you can edit the configuration locally if you so wish.

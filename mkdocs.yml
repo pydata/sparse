@@ -3,6 +3,9 @@ repo_url: https://github.com/pydata/sparse.git
 edit_uri: edit/main/docs/
 theme:
   name: material
+  palette:
+    primary: brown
+  font: false #prevent typefaces from being loaded from Google Fonts, to adhere to data privacy regulations
   logo: assets/images/logo.png
   favicon: assets/images/logo.svg
   features:
