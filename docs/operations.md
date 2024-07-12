@@ -1,6 +1,4 @@
-# Operations
-
-Operations on [COO][sparse.COO] and [GCXS][sparse.GCXS] arrays
+# Operations on [COO][sparse.COO] and [GCXS][sparse.GCXS] arrays
 
 ## Operators
 
@@ -41,8 +39,8 @@ For example, the following will add two arrays:
 
 !!! warning
 
-    Previously, :obj:`elemwise` was a method of the :obj:`COO` class. Now,
-    it has been moved to the :obj:`sparse` module.
+    Previously, [elemwise][sparse.elemwise] was a method of the [COO][sparse.COO] class. Now,
+    it has been moved to the [sparse][] module.
 
 
 **Auto-Densification**
@@ -79,7 +77,7 @@ In these cases, they will produce an output with a fill value of `1` or `True`,
 assuming the original array has a fill value of `0` or `False` respectively.
 
 If densification is needed, it must be explicit. In other words, you must call
-[sparse.SparseArray.todense][] on the [sparse.SparseArray][] object. If both operands are [sparse.SparseArray][],
+[SparseArray.todense][sparse.SparseArray.todense] on the [SparseArray][sparse.SparseArray] object. If both operands are [sparse.SparseArray][],
 both must be densified.
 
 **Operations with NumPy arrays**
@@ -118,14 +116,14 @@ on [COO][sparse.COO] or [GCXS][sparse.GCXS], as long as it is to the right of th
 
 !!! note
 
-    Results are not guaranteed if :code:`x` is a :obj:`scipy.sparse.spmatrix`.
+    Results are not guaranteed if `x` is a [scipy.sparse.spmatrix][].
     For this reason, we recommend that all Scipy sparse matrices should be explicitly
-    converted to :obj:`COO` or :obj:`GCXS` before any operations.
+    converted to [COO][sparse.COO] or [GCXS][sparse.GCXS] before any operations.
 
 
 ## Broadcasting
 
-All binary operators support [broadcasting][numpy.broadcasting].
+All binary operators support [broadcasting](https://numpy.org/doc/stable/user/basics.broadcasting.html).
 This means that (under certain conditions) you can perform binary operations
 on arrays with unequal shape. Namely, when the shape is missing a dimension,
 or when a dimension is `1`. For example, performing a binary operation
@@ -158,17 +156,16 @@ To illustrate, the following are all possible, and will produce another
 
 As above, in the last three cases, an array with a nonzero fill value will be produced.
 
-Notice that you can apply any unary or binary :doc:`numpy.ufunc <numpy:reference/ufuncs>` to :obj:`COO`
-arrays, and :obj:`numpy.ndarray` objects and scalars and it will work so
-long as the result is not dense. When applying to :obj:`numpy.ndarray` objects,
+Notice that you can apply any unary or binary [numpy.ufunc][] to [COO][sparse.COO]
+arrays, and [numpy.ndarray][] objects and scalars and it will work so
+long as the result is not dense. When applying to [numpy.ndarray][] objects,
 we check that operating on the array with zero would always produce a zero.
 
-.. _operations-reductions:
 
 ## Reductions
 
-:obj:`COO` and :obj:`GCXS` objects support a number of reductions. However, not all important
-reductions are currently implemented (help welcome!) All of the following
+[COO][sparse.COO] and [GCXS][sparse.GCXS] objects support a number of reductions. However, not all important
+reductions are currently implemented (help welcome!). All of the following
 currently work:
 
 ```python
@@ -179,9 +176,9 @@ currently work:
    x.prod()
 ```
 
-:obj:`SparseArray.reduce`
+[SparseArray.reduce][sparse.SparseArray.reduce]
 
-This method can take an arbitrary :doc:`numpy.ufunc <numpy:reference/ufuncs>` and performs a
+This method can take an arbitrary [numpy.ufunc][] and performs a
 reduction using that method. For example, the following will perform
 a sum:
 
@@ -190,33 +187,33 @@ a sum:
    x.reduce(np.add, axis=1)
 ```
 
-.. note::
-   This library currently performs reductions by grouping together all
-   coordinates along the supplied axes and reducing those. Then, if the
-   number in a group is deficient, it reduces an extra time with zero.
-   As a result, if reductions can change by adding multiple zeros to
-   it, this method won't be accurate. However, it works in most cases.
+!!! note
 
-Partial List of Supported Reductions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Although any binary :doc:`numpy.ufunc <numpy:reference/ufuncs>` should work for reductions, when calling
-in the form :code:`x.reduction()`, the following reductions are supported:
+    This library currently performs reductions by grouping together all
+    coordinates along the supplied axes and reducing those. Then, if the
+    number in a group is deficient, it reduces an extra time with zero.
+    As a result, if reductions can change by adding multiple zeros to
+    it, this method won't be accurate. However, it works in most cases.
 
-* :obj:`COO.sum`
-* :obj:`COO.max`
-* :obj:`COO.min`
-* :obj:`COO.prod`
+**Partial List of Supported Reductions**
 
-.. _operations-indexing:
+Although any binary [numpy.ufunc][] should work for reductions, when calling
+in the form `x.reduction()`, the following reductions are supported:
 
-Indexing
---------
-:obj:`COO` and :obj:`GCXS` arrays can be :obj:`indexed <numpy.doc.indexing>` just like regular
-:obj:`numpy.ndarray` objects. They support integer, slice and boolean indexing.
+* [COO.sum][sparse.COO.sum]
+* [COO.max][sparse.COO.max]
+* [COO.min][sparse.COO.min]
+* [COO.prod][sparse.COO.prod]
+
+
+## Indexing
+
+[COO][sparse.COO] and [GCXS][sparse.GCXS] arrays can be [indexed](https://numpy.org/doc/stable/user/basics.indexing.html)
+just like regular [numpy.ndarray][] objects. They support integer, slice and boolean indexing.
 However, currently, numpy advanced indexing is not properly supported. This
 means that all of the following work like in Numpy, except that they will produce
-:obj:`SparseArray` arrays rather than :obj:`numpy.ndarray` objects, and will produce
-scalars where expected. Assume that :code:`z.shape` is :code:`(5, 6, 7)`
+[SparseArray][sparse.SparseArray] arrays rather than [numpy.ndarray][] objects, and will produce
+scalars where expected. Assume that `z.shape` is `(5, 6, 7)`
 
 ```python
 
@@ -238,12 +235,11 @@ All of the following will raise an :obj:`IndexError`, like in Numpy 1.13 and lat
    z[-6]
 ```
 
-Advanced Indexing
-~~~~~~~~~~~~~~~~~
+**Advanced Indexing**
 
 Advanced indexing (indexing arrays with other arrays) is supported, but only for indexing
 with a *single array*. Indexing a single array with multiple arrays is not supported at
-this time. As above, if  :code:`z.shape` is :code:`(5, 6, 7)`, all of the following will
+this time. As above, if `z.shape` is `(5, 6, 7)`, all of the following will
 work like NumPy:
 
 ```python
@@ -254,26 +250,27 @@ work like NumPy:
    z[:3, :2, [1, 5]]
 ```
 
-Package Configuration
----------------------
 
-By default, when performing something like ``np.array(COO)``, we allow the array
-to be converted into a dense one. To prevent this and raise a :obj:`RuntimeError`
-instead, set the environment variable ``SPARSE_AUTO_DENSIFY`` to ``0``.
+**Package Configuration**
+
+By default, when performing something like `np.array(COO)`, we allow the array
+to be converted into a dense one. To prevent this and raise a [RuntimeError][]
+instead, set the environment variable `SPARSE_AUTO_DENSIFY` to `0`.
 
 If it is desired to raise a warning if creating a sparse array that takes no less
 memory than an equivalent desne array, set the environment variable
-``SPARSE_WARN_ON_TOO_DENSE`` to ``1``.
+`SPARSE_WARN_ON_TOO_DENSE` to `1`.
 
-.. _operations-other:
 
-Other Operations
-----------------
-:obj:`COO` and :obj:`GCXS` arrays support a number of other common operations. Among them are
-:obj:`dot`, :obj:`tensordot`, :obj:`einsum`, :obj:`concatenate`
-and :obj:`stack`, :obj:`transpose <COO.transpose>` and :obj:`reshape <COO.reshape>`.
-You can view the full list on the :doc:`API reference page <generated/sparse>`.
+## Other Operations
 
-.. note:: Some operations require zero fill-values (such as :obj:`nonzero <COO.nonzero>`)
-   and others (such as :obj:`concatenate`) require that all inputs have consistent fill-values.
-   For details, check the API reference.
+[COO][sparse.COO] and [GCXS][sparse.GCXS] arrays support a number of other common operations. Among them are
+[dot][sparse.dot], [tensordot][sparse.tensordot] [einsum][sparse.einsum], [concatenate][sparse.concatenate]
+and [stack][sparse.stack], [transpose][sparse.COO.transpose] and [reshape][sparse.COO.reshape].
+You can view the full list on the [API reference page](../../api/BACKEND/).
+
+!!! note
+
+    Some operations require zero fill-values (such as [nonzero][sparse.COO.nonzero])
+    and others (such as [concatenate][sparse.concatenate]) require that all inputs have consistent fill-values.
+    For details, check the API reference.

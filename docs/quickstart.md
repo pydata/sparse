@@ -67,5 +67,5 @@ you can use the ``todense`` method (which will result in a [numpy.ndarray][]):
    y = s.todense() + 5
 ```
 
-For more operations see the [operations][]
-or the [api][api].
+For more operations see the [operations][operations-on-coo-and-gcxs-arrays]
+or the [API reference page](../../api/BACKEND/).

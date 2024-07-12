@@ -6,7 +6,7 @@ theme:
   logo: assets/images/logo.png
   favicon: assets/images/logo.svg
   features:
-        - toc.integrate
+        #- toc.integrate
         - navigation.tracking
         - navigation.instant
         - navigation.prune
