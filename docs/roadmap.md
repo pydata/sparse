@@ -65,6 +65,7 @@ to support PyData/Sparse arrays. The same applies for linear algebra and `scipy.
 CuPy is a project that implements a large portion of NumPy’s ndarray interface on GPUs. We plan to integrate
 with CuPy so that it’s possible to accelerate sparse arrays on GPUs.
 
+[](){#completed}
 # Completed Tasks
 
 ## Dask Integration for High Scalability

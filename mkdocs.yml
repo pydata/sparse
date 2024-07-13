@@ -4,8 +4,8 @@ edit_uri: edit/main/docs/
 theme:
   name: material
   palette:
-    primary: brown
-  font: false #prevent typefaces from being loaded from Google Fonts, to adhere to data privacy regulations
+    primary: black
+  font: false #avoid Google Fonts to adhere to data privacy regulations
   logo: assets/images/logo.png
   favicon: assets/images/logo.svg
   features:
@@ -28,6 +28,7 @@ markdown_extensions:
       toc_depth: 2
   - pymdownx.arithmatex: # To display math content with KaTex
       generic: true
+  - attr_list # To be able to link to a header on another page
 
 extra_javascript:
   - javascripts/katex.js
@@ -59,6 +60,8 @@ plugins:
               members_order: source
               docstring_style: numpy
               filters: ["!^_"]
+extra_css:
+- css/mkdocstrings.css
 nav:
 - index.md
 - install.md
@@ -68,6 +71,7 @@ nav:
 - API:
   - api/*
 - roadmap.md
+# - completed-tasks.md
 - contributing.md
 - changelog.md
 - conduct.md
