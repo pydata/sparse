@@ -1464,7 +1464,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        :obj:`numpy.ndarray.nonzero` : NumPy equivalent function
+        [numpy.ndarray.nonzero][] : NumPy equivalent function
 
         Raises
         ------

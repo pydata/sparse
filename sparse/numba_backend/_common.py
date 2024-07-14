@@ -1876,13 +1876,18 @@ def outer(a, b, out=None):
 def asnumpy(a, dtype=None, order=None):
     """Returns a dense numpy array from an arbitrary source array.
 
-    Args:
-        a: Arbitrary object that can be converted to :class:`numpy.ndarray`.
-        order ({'C', 'F', 'A'}): The desired memory layout of the output
-            array. When ``order`` is 'A', it uses 'F' if ``a`` is
-            fortran-contiguous and 'C' otherwise.
-    Returns:
-        numpy.ndarray: Converted array on the host memory.
+    Parameters
+    ----------
+    a: array_like
+       Arbitrary object that can be converted to [numpy.ndarray][].
+    order: ({'C', 'F', 'A'})
+       The desired memory layout of the output
+       array. When ``order`` is 'A', it uses 'F' if ``a`` is
+       fortran-contiguous and 'C' otherwise.
+
+    Returns
+    -------
+    numpy.ndarray: Converted array on the host memory.
     """
     from ._sparse_array import SparseArray
 

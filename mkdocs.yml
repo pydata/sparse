@@ -37,6 +37,7 @@ extra_javascript:
 
 extra_css:
   - https://unpkg.com/katex@0/dist/katex.min.css
+  - css/mkdocstrings.css
 
 plugins:
 - search
@@ -60,8 +61,7 @@ plugins:
               members_order: source
               docstring_style: numpy
               filters: ["!^_"]
-extra_css:
-- css/mkdocstrings.css
+
 nav:
 - index.md
 - install.md

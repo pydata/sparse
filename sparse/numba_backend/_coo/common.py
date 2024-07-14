@@ -584,7 +584,7 @@ def argwhere(a):
 
     See Also
     --------
-    :obj:`where`, :obj:`COO.nonzero`
+    [where][sparse.where], [COO.nonzero][sparse.COO.nonzero]
 
     Examples
     --------
