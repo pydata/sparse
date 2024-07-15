@@ -24,6 +24,7 @@ markdown_extensions:
   - admonition # This line, pymdownx.details and pymdownx.superfences are used by warings
   - pymdownx.details
   - pymdownx.superfences
+  - codehilite
   - toc:
       toc_depth: 2
   - pymdownx.arithmatex: # To display math content with KaTex

@@ -102,8 +102,8 @@ class SparseArray:
 
         See Also
         --------
-        DOK.ndim : Equivalent property for :obj:`DOK` arrays.
-        numpy.ndarray.ndim : Numpy equivalent property.
+            [DOK.ndim][sparse.DOK.ndim] : Equivalent property for [DOK][sparse.DOK] arrays.
+            [numpy.ndarray.ndim][] : Numpy equivalent property.
 
         Examples
         --------
@@ -130,7 +130,7 @@ class SparseArray:
 
         See Also
         --------
-        numpy.ndarray.size : Numpy equivalent property.
+            [numpy.ndarray.size][] : Numpy equivalent property.
 
         Examples
         --------
@@ -157,8 +157,8 @@ class SparseArray:
 
         See Also
         --------
-        COO.size : Number of elements.
-        COO.nnz : Number of nonzero elements.
+            COO.size : Number of elements.
+            COO.nnz : Number of nonzero elements.
 
         Examples
         --------

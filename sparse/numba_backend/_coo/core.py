@@ -37,23 +37,23 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         Should have shape (number of dimensions, number of non-zeros).
     data : numpy.ndarray (COO.nnz,)
         An array of Values. A scalar can also be supplied if the data is the same across
-        all coordinates. If not given, defers to :obj:`as_coo`.
+        all coordinates. If not given, defers to [as_coo][sparse.as_coo].
     shape : tuple[int] (COO.ndim,)
         The shape of the array.
     has_duplicates : bool, optional
-        A value indicating whether the supplied value for :code:`coords` has
-        duplicates. Note that setting this to `False` when :code:`coords` does have
-        duplicates may result in undefined behaviour. See :obj:`COO.sum_duplicates`
+        A value indicating whether the supplied value for [coords][sparse.COO.coords] has
+        duplicates. Note that setting this to `False` when `coords` does have
+        duplicates may result in undefined behaviour. See `COO.sum_duplicates`.
     sorted : bool, optional
         A value indicating whether the values in `coords` are sorted. Note
-        that setting this to `True` when :code:`coords` isn't sorted may
-        result in undefined behaviour. See :obj:`COO.sort_indices`.
+        that setting this to `True` when [coords][sparse.COO.coords] isn't sorted may
+        result in undefined behaviour. See `COO.sort_indices`.
     prune : bool, optional
         A flag indicating whether or not we should prune any fill-values present in
-        ``data``.
+        `data`.
     cache : bool, optional
         Whether to enable cacheing for various operations. See
-        :obj:`COO.enable_caching`
+        `COO.enable_caching`.
     fill_value: scalar, optional
         The fill value for this array.
 
@@ -62,18 +62,18 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     coords : numpy.ndarray (ndim, nnz)
         An array holding the coordinates of every nonzero element.
     data : numpy.ndarray (nnz,)
-        An array holding the values corresponding to :obj:`COO.coords`.
+        An array holding the values corresponding to [COO.coords][sparse.COO.coords].
     shape : tuple[int] (ndim,)
         The dimensions of this array.
 
     See Also
     --------
-    DOK : A mostly write-only sparse array.
-    as_coo : Convert any given format to :obj:`COO`.
+        [DOK][sparse.DOK]: A mostly write-only sparse array.
+        [as_coo][sparse.as_coo]: Convert any given format to [COO][sparse.COO].
 
     Examples
     --------
-    You can create :obj:`COO` objects from Numpy arrays.
+    You can create [COO][sparse.COO] objects from Numpy arrays.
 
     >>> x = np.eye(4, dtype=np.uint8)
     >>> x[2, 3] = 5
@@ -86,7 +86,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     array([[0, 1, 2, 2, 3],
            [0, 1, 2, 3, 3]])
 
-    :obj:`COO` objects support basic arithmetic and binary operations.
+    [COO][sparse.COO] objects support basic arithmetic and binary operations.
 
     >>> x2 = np.eye(4, dtype=np.uint8)
     >>> x2[3, 2] = 5
@@ -113,12 +113,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
            [0, 0, 1, 5],
            [0, 0, 0, 0]], dtype=uint8)
 
-    :obj:`COO` objects also support dot products and reductions.
+    [COO][sparse.COO] objects also support dot products and reductions.
 
     >>> s.dot(s.T).sum(axis=0).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([ 1,  1, 31,  6], dtype=uint64)
 
-    You can use Numpy :code:`ufunc` operations on :obj:`COO` arrays as well.
+    You can use Numpy `ufunc` operations on [COO][sparse.COO] arrays as well.
 
     >>> np.sum(s, axis=1).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([1, 1, 6, 1], dtype=uint64)
@@ -134,7 +134,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     >>> np.exp(s)
     <COO: shape=(4, 4), dtype=float16, nnz=5, fill_value=1.0>
 
-    You can also create :obj:`COO` arrays from coordinates and data.
+    You can also create [COO][sparse.COO] arrays from coordinates and data.
 
     >>> coords = [[0, 0, 0, 1, 1], [0, 1, 2, 0, 3], [0, 3, 2, 0, 1]]
     >>> data = [1, 2, 3, 4, 5]
@@ -175,7 +175,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     array([[4, 0],
            [0, 2]])
 
-    You can convert :obj:`DOK` arrays to :obj:`COO` arrays.
+    You can convert [DOK][sparse.DOK] arrays to [COO][sparse.COO] arrays.
 
     >>> from sparse import DOK
     >>> s6 = DOK((5, 5), dtype=np.int64)
