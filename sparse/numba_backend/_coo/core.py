@@ -578,7 +578,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     def nnz(self):
         """
         The number of nonzero elements in this array. Note that any duplicates in
-        `coords` are counted multiple times. To avoid this, call [COO.sum_duplicates][sparse.COO.sum_duplicates].
+        `coords` are counted multiple times.
 
         Returns
         -------
@@ -613,8 +613,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         str
             The storage format of this array.
         See Also
-        -------
-        scipy.sparse.dok_matrix.format : The Scipy equivalent property.
+        --------
+        [scipy.sparse.dok_matrix.format][] : The Scipy equivalent property.
         Examples
         -------
         >>> import sparse
@@ -640,7 +640,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        numpy.ndarray.nbytes : The equivalent Numpy property.
+        [numpy.ndarray.nbytes][] : The equivalent Numpy property.
 
         Examples
         --------
@@ -814,14 +814,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        :obj:`COO.transpose` :
+        - [COO.transpose][sparse.COO.transpose] :
             A method where you can specify the order of the axes.
-        numpy.ndarray.T :
+        - [numpy.ndarray.T][] :
             Numpy equivalent property.
 
         Examples
         --------
-        We can change the order of the dimensions of any :obj:`COO` array with this
+        We can change the order of the dimensions of any [COO][sparse.COO] array with this
         function.
 
         >>> x = np.add.outer(np.arange(5), np.arange(5)[::-1])

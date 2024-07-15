@@ -1879,11 +1879,11 @@ def asnumpy(a, dtype=None, order=None):
     Parameters
     ----------
     a: array_like
-       Arbitrary object that can be converted to [numpy.ndarray][].
+        Arbitrary object that can be converted to [numpy.ndarray][].
     order: ({'C', 'F', 'A'})
-       The desired memory layout of the output
-       array. When ``order`` is 'A', it uses 'F' if ``a`` is
-       fortran-contiguous and 'C' otherwise.
+        The desired memory layout of the output
+        array. When ``order`` is 'A', it uses 'F' if ``a`` is
+        fortran-contiguous and 'C' otherwise.
 
     Returns
     -------

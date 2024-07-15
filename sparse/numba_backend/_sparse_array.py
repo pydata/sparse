@@ -384,9 +384,9 @@ class SparseArray:
 
         See Also
         --------
-        numpy.ufunc.reduce : A similar Numpy method.
-        COO.reduce : This method implemented on COO arrays.
-        GCXS.reduce : This method implemented on GCXS arrays.
+        - [numpy.ufunc.reduce][] : A similar Numpy method.
+        - [COO.reduce][sparse.COO.reduce] : This method implemented on COO arrays.
+        - [GCXS.reduce][sparse.GCXS.reduce] : This method implemented on GCXS arrays.
         """
         axis = normalize_axis(axis, self.ndim)
         zero_reduce_result = method.reduce([self.fill_value, self.fill_value], **kwargs)
@@ -450,8 +450,8 @@ class SparseArray:
 
         See Also
         --------
-        :obj:`numpy.sum` : Equivalent numpy function.
-        scipy.sparse.coo_matrix.sum : Equivalent Scipy function.
+        - [numpy.sum][] : Equivalent numpy function.
+        - [scipy.sparse.coo_matrix.sum][] : Equivalent Scipy function.
         """
         return np.add.reduce(self, out=out, axis=axis, keepdims=keepdims, dtype=dtype)
 
@@ -475,8 +475,8 @@ class SparseArray:
 
         See Also
         --------
-        :obj:`numpy.max` : Equivalent numpy function.
-        scipy.sparse.coo_matrix.max : Equivalent Scipy function.
+        - [numpy.max][] : Equivalent numpy function.
+        - [scipy.sparse.coo_matrix.max][] : Equivalent Scipy function.
         """
         return np.maximum.reduce(self, out=out, axis=axis, keepdims=keepdims)
 
@@ -500,7 +500,7 @@ class SparseArray:
 
         See Also
         --------
-        :obj:`numpy.any` : Equivalent numpy function.
+        [numpy.any][] : Equivalent numpy function.
         """
         return np.logical_or.reduce(self, out=out, axis=axis, keepdims=keepdims)
 
@@ -522,7 +522,7 @@ class SparseArray:
 
         See Also
         --------
-        :obj:`numpy.all` : Equivalent numpy function.
+        [numpy.all][] : Equivalent numpy function.
         """
         return np.logical_and.reduce(self, out=out, axis=axis, keepdims=keepdims)
 
@@ -546,8 +546,8 @@ class SparseArray:
 
         See Also
         --------
-        :obj:`numpy.min` : Equivalent numpy function.
-        scipy.sparse.coo_matrix.min : Equivalent Scipy function.
+        - [numpy.min][] : Equivalent numpy function.
+        - [scipy.sparse.coo_matrix.min][] : Equivalent Scipy function.
         """
         return np.minimum.reduce(self, out=out, axis=axis, keepdims=keepdims)
 
@@ -573,7 +573,7 @@ class SparseArray:
 
         See Also
         --------
-        :obj:`numpy.prod` : Equivalent numpy function.
+        [numpy.prod][] : Equivalent numpy function.
         """
         return np.multiply.reduce(self, out=out, axis=axis, keepdims=keepdims, dtype=dtype)
 
@@ -583,9 +583,9 @@ class SparseArray:
 
         See Also
         --------
-        :obj:`numpy.round` :
+        - [numpy.round][] :
             NumPy equivalent ufunc.
-        :obj:`COO.elemwise` :
+        - [elemwise][sparse.elemwise] :
             Apply an arbitrary element-wise function to one or two
             arguments.
         """
@@ -604,8 +604,8 @@ class SparseArray:
 
         See Also
         --------
-        sparse.clip : For full documentation and more details.
-        numpy.clip : Equivalent NumPy function.
+        - [sparse.clip][] : For full documentation and more details.
+        - [numpy.clip][] : Equivalent NumPy function.
         """
         if min is None and max is None:
             raise ValueError("One of max or min must be given.")
@@ -619,11 +619,11 @@ class SparseArray:
 
         See Also
         --------
-        scipy.sparse.coo_matrix.astype :
+        - [scipy.sparse.coo_matrix.astype][] :
             SciPy sparse equivalent function
-        numpy.ndarray.astype :
+        - [numpy.ndarray.astype][] :
             NumPy equivalent ufunc.
-        :obj:`COO.elemwise` :
+        - [elemwise][sparse.elemwise] :
             Apply an arbitrary element-wise function to one or two
             arguments.
         """
@@ -652,8 +652,8 @@ class SparseArray:
 
         See Also
         --------
-        numpy.ndarray.mean : Equivalent numpy method.
-        scipy.sparse.coo_matrix.mean : Equivalent Scipy method.
+        - [numpy.ndarray.mean][] : Equivalent numpy method.
+        - [scipy.sparse.coo_matrix.mean][] : Equivalent Scipy method.
 
         Notes
         -----
@@ -740,12 +740,7 @@ class SparseArray:
 
         See Also
         --------
-        numpy.ndarray.var : Equivalent numpy method.
-
-        Notes
-        -----
-        * This function internally calls :obj:`COO.sum_duplicates` to bring the
-          array into canonical form.
+        [numpy.ndarray.var][] : Equivalent numpy method.
 
         Examples
         --------
@@ -837,16 +832,11 @@ class SparseArray:
 
         See Also
         --------
-        numpy.ndarray.std : Equivalent numpy method.
-
-        Notes
-        -----
-        * This function internally calls :obj:`COO.sum_duplicates` to bring the
-          array into canonical form.
+        [numpy.ndarray.std][] : Equivalent numpy method.
 
         Examples
         --------
-        You can use :obj:`COO.std` to compute the standard deviation of an array
+        You can use [COO.std][sparse.COO.std] to compute the standard deviation of an array
         across any dimension.
 
         >>> from sparse import COO
