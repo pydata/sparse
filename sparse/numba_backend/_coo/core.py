@@ -345,14 +345,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     @classmethod
     def from_numpy(cls, x, fill_value=None, idx_dtype=None):
         """
-        Convert the given :obj:`numpy.ndarray` to a :obj:`COO` object.
+        Convert the given [numpy.ndarray][] to a [COO][sparse.COO] object.
 
         Parameters
         ----------
         x : np.ndarray
             The dense array to convert.
         fill_value : scalar
-            The fill value of the constructed :obj:`COO` array. Zero if
+            The fill value of the constructed [COO][sparse.COO] array. Zero if
             unspecified.
 
         Returns
@@ -390,8 +390,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     def todense(self):
         """
-        Convert this :obj:`COO` array to a dense :obj:`numpy.ndarray`. Note that
-        this may take a large amount of memory if the :obj:`COO` object's :code:`shape`
+        Convert this [COO][sparse.COO] array to a dense [numpy.ndarray][]. Note that
+        this may take a large amount of memory if the `COO` object's `shape`
         is large.
 
         Returns
@@ -401,8 +401,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        DOK.todense : Equivalent :obj:`DOK` array method.
-        scipy.sparse.coo_matrix.todense : Equivalent Scipy method.
+        - [DOK.todense][sparse.DOK.todense] : Equivalent `DOK` array method.
+        - [scipy.sparse.coo_matrix.todense][] : Equivalent Scipy method.
 
         Examples
         --------
@@ -428,7 +428,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     @classmethod
     def from_scipy_sparse(cls, x, /, *, fill_value=None):
         """
-        Construct a :obj:`COO` array from a :obj:`scipy.sparse.spmatrix`
+        Construct a [COO][sparse.COO] array from a [scipy.sparse.spmatrix][]
 
         Parameters
         ----------
@@ -440,7 +440,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         Returns
         -------
         COO
-            The converted :obj:`COO` object.
+            The converted [COO][sparse.COO] object.
 
         Examples
         --------
@@ -465,13 +465,13 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     @classmethod
     def from_iter(cls, x, shape=None, fill_value=None, dtype=None):
         """
-        Converts an iterable in certain formats to a :obj:`COO` array. See examples
+        Converts an iterable in certain formats to a [COO][sparse.COO] array. See examples
         for details.
 
         Parameters
         ----------
         x : Iterable or Iterator
-            The iterable to convert to :obj:`COO`.
+            The iterable to convert to [COO][sparse.COO].
         shape : tuple[int], optional
             The shape of the array.
         fill_value : scalar
@@ -482,11 +482,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         Returns
         -------
         out : COO
-            The output :obj:`COO` array.
+            The output [COO][sparse.COO] array.
 
         Examples
         --------
-        You can convert items of the format ``[((i, j, k), value), ((i, j, k), value)]`` to :obj:`COO`.
+        You can convert items of the format ``[((i, j, k), value), ((i, j, k), value)]`` to [COO][sparse.COO].
         Here, the first part represents the coordinate and the second part represents the value.
 
         >>> x = [((0, 0), 1), ((1, 1), 1)]
@@ -511,7 +511,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         array([[1, 0],
                [0, 1]])
 
-        You can also pass in a :obj:`collections.Iterator` object.
+        You can also pass in a `collections.Iterator` object.
 
         >>> x = [((0, 0), 1), ((1, 1), 1)].__iter__()
         >>> s = COO.from_iter(x)
@@ -735,12 +735,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        :obj:`COO.T` : A quick property to reverse the order of the axes.
-        numpy.ndarray.transpose : Numpy equivalent function.
+        - [COO.T][sparse.COO.T] : A quick property to reverse the order of the axes.
+        - [numpy.ndarray.transpose][] : Numpy equivalent function.
 
         Examples
         --------
-        We can change the order of the dimensions of any :obj:`COO` array with this
+        We can change the order of the dimensions of any [COO][sparse.COO] array with this
         function.
 
         >>> x = np.add.outer(np.arange(5), np.arange(5)[::-1])
@@ -888,7 +888,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     def dot(self, other):
         """
-        Performs the equivalent of :code:`x.dot(y)` for :obj:`COO`.
+        Performs the equivalent of `x.dot(y)` for [COO][sparse.COO].
 
         Parameters
         ----------
@@ -908,9 +908,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        dot : Equivalent function for two arguments.
-        :obj:`numpy.dot` : Numpy equivalent function.
-        scipy.sparse.coo_matrix.dot : Scipy equivalent function.
+        - [dot][sparse.dot] : Equivalent function for two arguments.
+        - [numpy.dot][] : Numpy equivalent function.
+        - [scipy.sparse.coo_matrix.dot][] : Scipy equivalent function.
 
         Examples
         --------
@@ -978,7 +978,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         Notes
         -----
-        The :code:`order` parameter is provided just for compatibility with
+        The `order` parameter is provided just for compatibility with
         Numpy and isn't actually supported.
 
         Examples
@@ -1009,11 +1009,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        numpy.ndarray.reshape : The equivalent Numpy function.
+        [numpy.ndarray.reshape][] : The equivalent Numpy function.
 
         Notes
         -----
-        The :code:`order` parameter is provided just for compatibility with
+        The `order` parameter is provided just for compatibility with
         Numpy and isn't actually supported.
 
         Examples
@@ -1133,7 +1133,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        numpy.ndarray.resize : The equivalent Numpy function.
+        [numpy.ndarray.resize][] : The equivalent Numpy function.
 
         """
         warnings.warn("resize is deprecated on all SpraseArray objects.", DeprecationWarning, stacklevel=1)
@@ -1171,7 +1171,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     def to_scipy_sparse(self, /, *, accept_fv=None):
         """
-        Converts this :obj:`COO` object into a :obj:`scipy.sparse.coo_matrix`.
+        Converts this [COO][sparse.COO] object into a [scipy.sparse.coo_matrix][].
 
         Parameters
         ----------
@@ -1180,7 +1180,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         Returns
         -------
-        :obj:`scipy.sparse.coo_matrix`
+        scipy.sparse.coo_matrix
             The converted Scipy sparse matrix.
 
         Raises
@@ -1192,8 +1192,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        COO.tocsr : Convert to a :obj:`scipy.sparse.csr_matrix`.
-        COO.tocsc : Convert to a :obj:`scipy.sparse.csc_matrix`.
+        - [COO.tocsr][sparse.COO.tocsr] : Convert to a [scipy.sparse.csr_matrix][].
+        - [COO.tocsc][sparse.COO.tocsc] : Convert to a [scipy.sparse.csc_matrix][].
         """
         import scipy.sparse
 
@@ -1221,7 +1221,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     def tocsr(self):
         """
-        Converts this array to a :obj:`scipy.sparse.csr_matrix`.
+        Converts this array to a [scipy.sparse.csr_matrix][].
 
         Returns
         -------
@@ -1237,9 +1237,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        COO.tocsc : Convert to a :obj:`scipy.sparse.csc_matrix`.
-        COO.to_scipy_sparse : Convert to a :obj:`scipy.sparse.coo_matrix`.
-        scipy.sparse.coo_matrix.tocsr : Equivalent Scipy function.
+        - [COO.tocsc][sparse.COO.tocsc] : Convert to a [scipy.sparse.csc_matrix][].
+        - [COO.to_scipy_sparse][sparse.COO.to_scipy_sparse] : Convert to a [scipy.sparse.coo_matrix][].
+        - [scipy.sparse.coo_matrix.tocsr][] : Equivalent Scipy function.
         """
         check_zero_fill_value(self)
 
@@ -1261,7 +1261,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     def tocsc(self):
         """
-        Converts this array to a :obj:`scipy.sparse.csc_matrix`.
+        Converts this array to a [scipy.sparse.csc_matrix][].
 
         Returns
         -------
@@ -1277,9 +1277,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        COO.tocsr : Convert to a :obj:`scipy.sparse.csr_matrix`.
-        COO.to_scipy_sparse : Convert to a :obj:`scipy.sparse.coo_matrix`.
-        scipy.sparse.coo_matrix.tocsc : Equivalent Scipy function.
+        - [COO.tocsr][sparse.COO.tocsr] : Convert to a [scipy.sparse.csr_matrix][].
+        - [COO.to_scipy_sparse][sparse.COO.to_scipy_sparse] : Convert to a [scipy.sparse.coo_matrix][].
+        - [scipy.sparse.coo_matrix.tocsc][] : Equivalent Scipy function.
         """
         check_zero_fill_value(self)
 
@@ -1381,7 +1381,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     def broadcast_to(self, shape):
         """
-        Performs the equivalent of :obj:`numpy.broadcast_to` for :obj:`COO`. Note that
+        Performs the equivalent of [numpy.broadcast_to][] for [COO][sparse.COO]. Note that
         this function returns a new array instead of a view.
 
         Parameters
@@ -1401,7 +1401,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        :obj:`numpy.broadcast_to` : NumPy equivalent function
+        [numpy.broadcast_to][] : NumPy equivalent function
         """
         return broadcast_to(self, shape)
 

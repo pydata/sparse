@@ -240,7 +240,7 @@ class SparseArray:
     @abstractmethod
     def todense(self):
         """
-        Convert this :obj:`SparseArray` array to a dense :obj:`numpy.ndarray`. Note that
+        Convert this [SparseArray][sparse.SparseArray] array to a dense [numpy.ndarray][]. Note that
         this may take a large amount of memory and time.
 
         Returns
@@ -250,9 +250,9 @@ class SparseArray:
 
         See Also
         --------
-        DOK.todense : Equivalent :obj:`DOK` array method.
-        COO.todense : Equivalent :obj:`COO` array method.
-        scipy.sparse.coo_matrix.todense : Equivalent Scipy method.
+        - [DOK.todense][sparse.DOK.todense] : Equivalent `DOK` array method.
+        - [COO.todense][sparse.COO.todense] : Equivalent `COO` array method.
+        - [scipy.sparse.coo_matrix.todense][] : Equivalent Scipy method.
 
         Examples
         --------
@@ -657,14 +657,12 @@ class SparseArray:
 
         Notes
         -----
-        * This function internally calls :obj:`COO.sum_duplicates` to bring the
-          array into canonical form.
-        * The :code:`out` parameter is provided just for compatibility with
+        * The `out` parameter is provided just for compatibility with
           Numpy and isn't actually supported.
 
         Examples
         --------
-        You can use :obj:`COO.mean` to compute the mean of an array across any
+        You can use [COO.mean][sparse.COO.mean] to compute the mean of an array across any
         dimension.
 
         >>> from sparse import COO
@@ -674,7 +672,7 @@ class SparseArray:
         >>> s2.todense()  # doctest: +SKIP
         array([0.5, 1.5, 0., 0.])
 
-        You can also use the :code:`keepdims` argument to keep the dimensions
+        You can also use the `keepdims` argument to keep the dimensions
         after the mean.
 
         >>> s3 = s.mean(axis=0, keepdims=True)
@@ -744,7 +742,7 @@ class SparseArray:
 
         Examples
         --------
-        You can use :obj:`COO.var` to compute the variance of an array across any
+        You can use `COO.var` to compute the variance of an array across any
         dimension.
 
         >>> from sparse import COO
@@ -754,7 +752,7 @@ class SparseArray:
         >>> s2.todense()  # doctest: +SKIP
         array([0.6875, 0.1875])
 
-        You can also use the :code:`keepdims` argument to keep the dimensions
+        You can also use the `keepdims` argument to keep the dimensions
         after the variance.
 
         >>> s3 = s.var(axis=0, keepdims=True)
@@ -946,8 +944,8 @@ class SparseArray:
 
         See Also
         --------
-        [numpy.ndarray.conj][] : NumPy equivalent method.
-        [numpy.conj][] : NumPy equivalent function.
+        - [numpy.ndarray.conj][] : NumPy equivalent method.
+        - [numpy.conj][] : NumPy equivalent function.
         """
         return np.conj(self)
 
