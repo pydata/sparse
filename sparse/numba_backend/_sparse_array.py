@@ -102,8 +102,8 @@ class SparseArray:
 
         See Also
         --------
-            [DOK.ndim][sparse.DOK.ndim] : Equivalent property for [DOK][sparse.DOK] arrays.
-            [numpy.ndarray.ndim][] : Numpy equivalent property.
+        - [DOK.ndim][sparse.DOK.ndim] : Equivalent property for [DOK][sparse.DOK] arrays.
+        - [numpy.ndarray.ndim][] : Numpy equivalent property.
 
         Examples
         --------
@@ -130,7 +130,7 @@ class SparseArray:
 
         See Also
         --------
-            [numpy.ndarray.size][] : Numpy equivalent property.
+        [numpy.ndarray.size][] : Numpy equivalent property.
 
         Examples
         --------
@@ -157,8 +157,8 @@ class SparseArray:
 
         See Also
         --------
-            COO.size : Number of elements.
-            COO.nnz : Number of nonzero elements.
+        - [COO.size][sparse.COO.size] : Number of elements.
+        - [COO.nnz][sparse.COO.nnz] : Number of nonzero elements.
 
         Examples
         --------
@@ -901,8 +901,8 @@ class SparseArray:
 
         See Also
         --------
-        numpy.ndarray.real : NumPy equivalent attribute.
-        numpy.real : NumPy equivalent function.
+        - [numpy.ndarray.real][] : NumPy equivalent attribute.
+        - [numpy.real][] : NumPy equivalent function.
         """
         return self.__array_ufunc__(np.real, "__call__", self)
 
@@ -928,8 +928,8 @@ class SparseArray:
 
         See Also
         --------
-        numpy.ndarray.imag : NumPy equivalent attribute.
-        numpy.imag : NumPy equivalent function.
+        - [numpy.ndarray.imag][] : NumPy equivalent attribute.
+        - [numpy.imag][] : NumPy equivalent function.
         """
         return self.__array_ufunc__(np.imag, "__call__", self)
 
@@ -956,8 +956,8 @@ class SparseArray:
 
         See Also
         --------
-        numpy.ndarray.conj : NumPy equivalent method.
-        numpy.conj : NumPy equivalent function.
+        [numpy.ndarray.conj][] : NumPy equivalent method.
+        [numpy.conj][] : NumPy equivalent function.
         """
         return np.conj(self)
 

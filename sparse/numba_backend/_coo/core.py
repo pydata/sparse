@@ -68,8 +68,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     See Also
     --------
-        [DOK][sparse.DOK]: A mostly write-only sparse array.
-        [as_coo][sparse.as_coo]: Convert any given format to [COO][sparse.COO].
+    - [DOK][sparse.DOK]: A mostly write-only sparse array.
+    - [as_coo][sparse.as_coo]: Convert any given format to [COO][sparse.COO].
 
     Examples
     --------
@@ -560,8 +560,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        numpy.ndarray.dtype : Numpy equivalent property.
-        scipy.sparse.coo_matrix.dtype : Scipy equivalent property.
+        - [numpy.ndarray.dtype][] : Numpy equivalent property.
+        - [scipy.sparse.coo_matrix.dtype][] : Scipy equivalent property.
 
         Examples
         --------
@@ -578,7 +578,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     def nnz(self):
         """
         The number of nonzero elements in this array. Note that any duplicates in
-        :code:`coords` are counted multiple times. To avoid this, call :obj:`COO.sum_duplicates`.
+        `coords` are counted multiple times. To avoid this, call [COO.sum_duplicates][sparse.COO.sum_duplicates].
 
         Returns
         -------
@@ -587,9 +587,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        DOK.nnz : Equivalent :obj:`DOK` array property.
-        numpy.count_nonzero : A similar Numpy function.
-        scipy.sparse.coo_matrix.nnz : The Scipy equivalent property.
+        - [DOK.nnz][sparse.DOK.nnz] : Equivalent [DOK][sparse.DOK] array property.
+        - [numpy.count_nonzero][] : A similar Numpy function.
+        - [scipy.sparse.coo_matrix.nnz][] : The Scipy equivalent property.
 
         Examples
         --------
