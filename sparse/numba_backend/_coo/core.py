@@ -43,7 +43,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     has_duplicates : bool, optional
         A value indicating whether the supplied value for [coords][sparse.COO.coords] has
         duplicates. Note that setting this to `False` when `coords` does have
-        duplicates may result in undefined behaviour. See `COO.sum_duplicates`.
+        duplicates may result in undefined behaviour.
     sorted : bool, optional
         A value indicating whether the values in `coords` are sorted. Note
         that setting this to `True` when [coords][sparse.COO.coords] isn't sorted may
@@ -53,7 +53,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         `data`.
     cache : bool, optional
         Whether to enable cacheing for various operations. See
-        `COO.enable_caching`.
+        [COO.enable_caching][sparse.COO.enable_caching].
     fill_value: scalar, optional
         The fill value for this array.
 
@@ -995,7 +995,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     def reshape(self, shape, order="C"):
         """
-        Returns a new :obj:`COO` array that is a reshaped version of this array.
+        Returns a new [COO][sparse.COO] array that is a reshaped version of this array.
 
         Parameters
         ----------
@@ -1407,7 +1407,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     def maybe_densify(self, max_size=1000, min_density=0.25):
         """
-        Converts this :obj:`COO` array to a :obj:`numpy.ndarray` if not too
+        Converts this [COO][sparse.COO] array to a [numpy.ndarray][] if not too
         costly.
 
         Parameters

@@ -742,7 +742,7 @@ class SparseArray:
 
         Examples
         --------
-        You can use `COO.var` to compute the variance of an array across any
+        You can use [COO.var][sparse.COO.var] to compute the variance of an array across any
         dimension.
 
         >>> from sparse import COO
@@ -844,7 +844,7 @@ class SparseArray:
         >>> s2.todense()  # doctest: +SKIP
         array([0.8291562, 0.4330127])
 
-        You can also use the :code:`keepdims` argument to keep the dimensions
+        You can also use the `keepdims` argument to keep the dimensions
         after the standard deviation.
 
         >>> s3 = s.std(axis=0, keepdims=True)

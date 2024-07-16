@@ -28,7 +28,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
     Attributes
     ----------
     dtype : numpy.dtype
-        The datatype of this array. Can be :code:`None` if no elements
+        The datatype of this array. Can be `None` if no elements
         have been set yet.
     shape : tuple[int]
         The shape of this array.
@@ -38,11 +38,11 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
     See Also
     --------
-    COO : A read-only sparse array.
+    [COO][sparse.COO] : A read-only sparse array.
 
     Examples
     --------
-    You can create :obj:`DOK` objects from Numpy arrays.
+    You can create [DOK][sparse.DOK] objects from Numpy arrays.
 
     >>> x = np.eye(5, dtype=np.uint8)
     >>> x[2, 3] = 5
@@ -57,7 +57,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
     >>> s2
     <DOK: shape=(5, 5), dtype=int64, nnz=4, fill_value=0>
 
-    You can convert :obj:`DOK` arrays to :obj:`COO` arrays, or :obj:`numpy.ndarray`
+    You can convert [DOK][sparse.DOK] arrays to [COO][sparse.COO] arrays, or [numpy.ndarray][]
     objects.
 
     >>> from sparse import COO
@@ -78,7 +78,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
     >>> s5
     <DOK: shape=(4, 4), dtype=uint8, nnz=4, fill_value=0>
 
-    You can also create :obj:`DOK` arrays from a shape and a dict of
+    You can also create [DOK][sparse.DOK] arrays from a shape and a dict of
     values. Zeros are automatically ignored.
 
     >>> values = {
@@ -133,7 +133,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
     @classmethod
     def from_scipy_sparse(cls, x, /, *, fill_value=None):
         """
-        Create a :obj:`DOK` array from a :obj:`scipy.sparse.spmatrix`.
+        Create a [DOK][sparse.DOK] array from a [scipy.sparse.spmatrix][].
 
         Parameters
         ----------
@@ -145,7 +145,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         Returns
         -------
         DOK
-            The equivalent :obj:`DOK` array.
+            The equivalent [DOK][sparse.DOK] array.
 
         Examples
         --------
@@ -161,7 +161,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
     @classmethod
     def from_coo(cls, x):
         """
-        Get a :obj:`DOK` array from a :obj:`COO` array.
+        Get a [DOK][sparse.DOK] array from a [COO][sparse.COO] array.
 
         Parameters
         ----------
@@ -171,7 +171,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         Returns
         -------
         DOK
-            The equivalent :obj:`DOK` array.
+            The equivalent [DOK][sparse.DOK] array.
 
         Examples
         --------
@@ -190,12 +190,12 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
     def to_coo(self):
         """
-        Convert this :obj:`DOK` array to a :obj:`COO` array.
+        Convert this [DOK][sparse.DOK] array to a [COO][sparse.COO] array.
 
         Returns
         -------
         COO
-            The equivalent :obj:`COO` array.
+            The equivalent [COO][sparse.COO] array.
 
         Examples
         --------
@@ -214,7 +214,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
     @classmethod
     def from_numpy(cls, x):
         """
-        Get a :obj:`DOK` array from a Numpy array.
+        Get a [DOK][sparse.DOK] array from a Numpy array.
 
         Parameters
         ----------
@@ -224,7 +224,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         Returns
         -------
         DOK
-            The equivalent :obj:`DOK` array.
+            The equivalent [DOK][sparse.DOK] array.
 
         Examples
         --------
@@ -255,9 +255,9 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
         See Also
         --------
-        COO.nnz : Equivalent :obj:`COO` array property.
-        numpy.count_nonzero : A similar Numpy function.
-        scipy.sparse.dok_matrix.nnz : The Scipy equivalent property.
+        - [COO.nnz][sparse.COO.nnz] : Equivalent [COO][sparse.COO] array property.
+        - [numpy.count_nonzero][] : A similar Numpy function.
+        - [scipy.sparse.coo_matrix.nnz][] : The Scipy equivalent property.
 
         Examples
         --------
@@ -281,7 +281,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
             The storage format of this array.
         See Also
         -------
-        scipy.sparse.dok_matrix.format : The Scipy equivalent property.
+        [scipy.sparse.dok_matrix.format][] : The Scipy equivalent property.
         Examples
         -------
         >>> import sparse
@@ -307,7 +307,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
         See Also
         --------
-        numpy.ndarray.nbytes : The equivalent Numpy property.
+        [numpy.ndarray.nbytes][] : The equivalent Numpy property.
 
         Examples
         --------
@@ -439,7 +439,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
     def todense(self):
         """
-        Convert this :obj:`DOK` array into a Numpy array.
+        Convert this [DOK][sparse.DOK] array into a Numpy array.
 
         Returns
         -------
@@ -448,8 +448,8 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
         See Also
         --------
-        COO.todense : Equivalent :obj:`COO` array method.
-        scipy.sparse.dok_matrix.todense : Equivalent Scipy method.
+        - [COO.todense][sparse.COO.todense] : Equivalent `COO` array method.
+        - [scipy.sparse.coo_matrix.todense][] : Equivalent Scipy method.
 
         Examples
         --------
@@ -511,7 +511,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
     def reshape(self, shape, order="C"):
         """
-        Returns a new :obj:`DOK` array that is a reshaped version of this array.
+        Returns a new [DOK][sparse.DOK] array that is a reshaped version of this array.
 
         Parameters
         ----------
@@ -525,11 +525,11 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
         See Also
         --------
-        numpy.ndarray.reshape : The equivalent Numpy function.
+        [numpy.ndarray.reshape][] : The equivalent Numpy function.
 
         Notes
         -----
-        The :code:`order` parameter is provided just for compatibility with
+        The `order` parameter is provided just for compatibility with
         Numpy and isn't actually supported.
 
         Examples
