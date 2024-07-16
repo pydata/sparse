@@ -82,8 +82,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     A sparse multidimensional array.
 
     This is stored in GCXS format, a generalization of the GCRS/GCCS formats
-    from 'Efficient storage scheme for n-dimensional sparse array: GCRS/GCCS':
-    https://ieeexplore.ieee.org/document/7237032. GCXS generalizes the CRS/CCS
+    from [Efficient storage scheme for n-dimensional sparse array: GCRS/GCCS](https://ieeexplore.ieee.org/document/7237032)
+    . GCXS generalizes the CRS/CCS
     sparse matrix formats.
 
     For arrays with ndim == 2, GCXS is the same CSR/CSC.
