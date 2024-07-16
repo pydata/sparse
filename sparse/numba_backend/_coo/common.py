@@ -216,7 +216,7 @@ def stack(arrays, axis=0):
 
     See Also
     --------
-    numpy.stack : NumPy equivalent function
+    [numpy.stack][] : NumPy equivalent function
     """
     from .core import COO
 
@@ -274,7 +274,7 @@ def triu(x, k=0):
 
     See Also
     --------
-    numpy.triu : NumPy equivalent function
+    - [numpy.triu][] : NumPy equivalent function
     """
     from .core import COO
 
@@ -315,7 +315,7 @@ def tril(x, k=0):
 
     See Also
     --------
-    numpy.tril : NumPy equivalent function
+    - [numpy.tril][] : NumPy equivalent function
     """
     from .core import COO
 
@@ -540,18 +540,18 @@ def where(condition, x=None, y=None):
     Returns
     -------
     COO
-        The output array with selected values if ``x`` and ``y`` are given;
+        The output array with selected values if `x` and `y` are given;
         else where the array is nonzero.
 
     Raises
     ------
     ValueError
         If the operation would produce a dense result; or exactly one of
-        ``x`` and ``y`` are given.
+        `x` and `y` are given.
 
     See Also
     --------
-    numpy.where : Equivalent Numpy function.
+    [numpy.where][] : Equivalent Numpy function.
     """
     from .._umath import elemwise
 

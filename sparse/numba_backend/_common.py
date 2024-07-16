@@ -91,7 +91,7 @@ def check_class_nan(test):
 
 def tensordot(a, b, axes=2, *, return_type=None):
     """
-    Perform the equivalent of :obj:`numpy.tensordot`.
+    Perform the equivalent of [numpy.tensordot][].
 
     Parameters
     ----------
@@ -114,7 +114,7 @@ def tensordot(a, b, axes=2, *, return_type=None):
 
     See Also
     --------
-    numpy.tensordot : NumPy equivalent function
+    - [numpy.tensordot][] : NumPy equivalent function
     """
     from ._compressed import GCXS
 
@@ -1486,7 +1486,7 @@ def stack(arrays, axis=0, compressed_axes=None):
 
     See Also
     --------
-    numpy.stack : NumPy equivalent function
+    [numpy.stack][]: NumPy equivalent function
     """
     from ._compressed import GCXS
 
