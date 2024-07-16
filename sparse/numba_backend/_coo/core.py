@@ -952,7 +952,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        :obj:`numpy.flatnonzero` : Equivalent Numpy function.
+        [numpy.flatnonzero][] : Equivalent Numpy function.
 
         Examples
         --------
@@ -969,7 +969,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     def flatten(self, order="C"):
         """
-        Returns a new :obj:`COO` array that is a flattened version of this array.
+        Returns a new [COO][sparse.COO] array that is a flattened version of this array.
 
         Returns
         -------
@@ -1556,7 +1556,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
 def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
     """
-    Converts any given format to :obj:`COO`. See the "See Also" section for details.
+    Converts any given format to [COO][sparse.COO]. See the "See Also" section for details.
 
     Parameters
     ----------
@@ -1568,18 +1568,18 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
     Returns
     -------
     out : COO
-        The converted :obj:`COO` array.
+        The converted [COO][sparse.COO] array.
 
     See Also
     --------
-    SparseArray.asformat :
+    - [SparseArray.asformat][sparse.SparseArray.asformat] :
         A utility function to convert between formats in this library.
-    COO.from_numpy :
-        Convert a Numpy array to :obj:`COO`.
-    COO.from_scipy_sparse :
-        Convert a SciPy sparse matrix to :obj:`COO`.
-    COO.from_iter :
-        Convert an iterable to :obj:`COO`.
+    - [COO.from_numpy][sparse.COO.from_numpy] :
+        Convert a Numpy array to [COO][sparse.COO].
+    - [COO.from_scipy_sparse][sparse.COO.from_scipy_sparse] :
+        Convert a SciPy sparse matrix to [COO][sparse.COO].
+    - [COO.from_iter][sparse.COO.from_iter] :
+        Convert an iterable to [COO][sparse.COO].
     """
     from .._common import _is_scipy_sparse_obj
 

@@ -264,8 +264,8 @@ def random(
 
     See Also
     --------
-    :obj:`scipy.sparse.rand` : Equivalent Scipy function.
-    :obj:`numpy.random.rand` : Similar Numpy function.
+    - [scipy.sparse.rand][] : Equivalent Scipy function.
+    - [numpy.random.rand][] : Similar Numpy function.
 
     Examples
     --------

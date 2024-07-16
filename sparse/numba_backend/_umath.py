@@ -37,14 +37,14 @@ def elemwise(func, *args, **kwargs):
 
     See Also
     --------
-    :obj:`numpy.ufunc` :
-        A similar Numpy construct. Note that any :code:`ufunc` can be used
-        as the :code:`func` input to this function.
+    [numpy.ufunc][] :
+        A similar Numpy construct. Note that any `ufunc` can be used
+        as the `func` input to this function.
 
     Notes
     -----
     Previously, operations with Numpy arrays were sometimes supported. Now,
-    it is necessary to convert Numpy arrays to :obj:`COO` objects.
+    it is necessary to convert Numpy arrays to [COO][sparse.COO] objects.
     """
 
     return _Elemwise(func, *args, **kwargs).get_result()

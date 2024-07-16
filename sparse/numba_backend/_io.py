@@ -69,8 +69,8 @@ def save_npz(filename, matrix, compressed=True):
 
 
 def load_npz(filename):
-    """Load a sparse matrix in numpy's ``.npz`` format from disk.
-    Note: This is not binary compatible with scipy's ``save_npz()``
+    """Load a sparse matrix in numpy's `.npz` format from disk.
+    Note: This is not binary compatible with scipy's `save_npz()`
     output. This binary format is not currently stable.
     Will only load files saved by this package.
 
@@ -78,24 +78,24 @@ def load_npz(filename):
     ----------
     filename : file-like object, string, or pathlib.Path
         The file to read. File-like objects must support the
-        ``seek()`` and ``read()`` methods.
+        `seek()` and `read()` methods.
 
     Returns
     -------
     SparseArray
-        The sparse matrix at path ``filename``.
+        The sparse matrix at path `filename`.
 
     Examples
     --------
-    See :obj:`save_npz` for usage examples.
+    See [save_npz][sparse.save_npz] for usage examples.
 
     See Also
     --------
-    save_npz
-    scipy.sparse.save_npz
-    scipy.sparse.load_npz
-    numpy.savez
-    numpy.load
+    - [save_npz][sparse.save_npz]
+    - [scipy.sparse.save_npz][]
+    - [scipy.sparse.load_npz][]
+    - [numpy.savez][]
+    - [numpy.load][]
 
     """
 

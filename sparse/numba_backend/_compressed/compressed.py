@@ -420,7 +420,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def tocoo(self):
         """
-        Convert this :obj:`GCXS` array to a :obj:`COO`.
+        Convert this [GCXS][sparse.GCXS] array to a [COO][sparse.COO].
 
         Returns
         -------
@@ -457,8 +457,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def todense(self):
         """
-        Convert this :obj:`GCXS` array to a dense :obj:`numpy.ndarray`. Note that
-        this may take a large amount of memory if the :obj:`GCXS` object's :code:`shape`
+        Convert this [GCXS][sparse.GCXS] array to a dense [numpy.ndarray][]. Note that
+        this may take a large amount of memory if the [GCXS][sparse.GCXS] object's `shape`
         is large.
 
         Returns
@@ -468,8 +468,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         See Also
         --------
-        - [DOK.todense][sparse.DOK.todense] : Equivalent `DOK` array method.
-        - [COO.todense][sparse.COO.todense] : Equivalent :obj:`COO` array method.
+        - [DOK.todense][sparse.DOK.todense] : Equivalent [DOK][sparse.DOK] array method.
+        - [COO.todense][sparse.COO.todense] : Equivalent [COO][sparse.COO] array method.
         - [scipy.sparse.coo_matrix.todense][] : Equivalent Scipy method.
 
         """
@@ -765,7 +765,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def dot(self, other):
         """
-        Performs the equivalent of :code:`x.dot(y)` for :obj:`GCXS`.
+        Performs the equivalent of `x.dot(y)` for [GCXS][sparse.GCXS].
 
         Parameters
         ----------

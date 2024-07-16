@@ -63,7 +63,7 @@ class SparseArray:
     def nnz(self):
         """
         The number of nonzero elements in this array. Note that any duplicates in
-        :code:`coords` are counted multiple times. To avoid this, call :obj:`COO.sum_duplicates`.
+        `coords` are counted multiple times.
 
         Returns
         -------

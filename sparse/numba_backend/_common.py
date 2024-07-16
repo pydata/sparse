@@ -202,12 +202,12 @@ def tensordot(a, b, axes=2, *, return_type=None):
 
 
 def matmul(a, b):
-    """Perform the equivalent of :obj:`numpy.matmul` on two arrays.
+    """Perform the equivalent of [numpy.matmul][] on two arrays.
 
     Parameters
     ----------
     a, b : Union[SparseArray, np.ndarray, scipy.sparse.spmatrix]
-        The arrays to perform the :code:`matmul` operation on.
+        The arrays to perform the `matmul` operation on.
 
     Returns
     -------
@@ -221,8 +221,8 @@ def matmul(a, b):
 
     See Also
     --------
-    numpy.matmul : NumPy equivalent function.
-    COO.__matmul__ : Equivalent function for COO objects.
+    - [numpy.matmul][] : NumPy equivalent function.
+    - `COO.__matmul__`: Equivalent function for COO objects.
     """
     check_zero_fill_value(a, b)
     if not hasattr(a, "ndim") or not hasattr(b, "ndim"):
@@ -281,12 +281,12 @@ def matmul(a, b):
 
 def dot(a, b):
     """
-    Perform the equivalent of :obj:`numpy.dot` on two arrays.
+    Perform the equivalent of [numpy.dot][] on two arrays.
 
     Parameters
     ----------
     a, b : Union[SparseArray, np.ndarray, scipy.sparse.spmatrix]
-        The arrays to perform the :code:`dot` operation on.
+        The arrays to perform the `dot` operation on.
 
     Returns
     -------
@@ -300,8 +300,8 @@ def dot(a, b):
 
     See Also
     --------
-    numpy.dot : NumPy equivalent function.
-    COO.dot : Equivalent function for COO objects.
+    - [numpy.dot][] : NumPy equivalent function.
+    - [COO.dot][sparse.COO.dot] : Equivalent function for COO objects.
     """
     check_zero_fill_value(a, b)
     if not hasattr(a, "ndim") or not hasattr(b, "ndim"):
@@ -1384,7 +1384,7 @@ def _einsum_single(lhs, rhs, operand):
 
 def einsum(*operands, **kwargs):
     """
-    Perform the equivalent of :obj:`numpy.einsum`.
+    Perform the equivalent of [numpy.einsum][].
 
     Parameters
     ----------
@@ -1397,7 +1397,7 @@ def einsum(*operands, **kwargs):
         These are the arrays for the operation.
     dtype : data-type, optional
         If provided, forces the calculation to use the data type specified.
-        Default is ``None``.
+        Default is `None`.
     **kwargs : dict, optional
         Any additional arguments to pass to the function.
 
@@ -1525,7 +1525,7 @@ def concatenate(arrays, axis=0, compressed_axes=None):
 
     See Also
     --------
-    numpy.concatenate : NumPy equivalent function
+    [numpy.concatenate][] : NumPy equivalent function
     """
     from ._compressed import GCXS
 
@@ -1949,7 +1949,7 @@ def moveaxis(a, source, destination):
 
 def pad(array, pad_width, mode="constant", **kwargs):
     """
-    Performs the equivalent of :obj:`numpy.pad` for :obj:`SparseArray`. Note that
+    Performs the equivalent of [numpy.pad][] for [SparseArray][sparse.SparseArray]. Note that
     this function returns a new array instead of a view.
 
     Parameters
@@ -1983,7 +1983,7 @@ def pad(array, pad_width, mode="constant", **kwargs):
 
     See Also
     --------
-    :obj:`numpy.pad` : NumPy equivalent function
+    [numpy.pad][] : NumPy equivalent function
 
     """
     if not isinstance(array, SparseArray):
