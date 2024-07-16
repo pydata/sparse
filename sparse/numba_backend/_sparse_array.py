@@ -72,9 +72,9 @@ class SparseArray:
 
         See Also
         --------
-        DOK.nnz : Equivalent :obj:`DOK` array property.
-        numpy.count_nonzero : A similar Numpy function.
-        scipy.sparse.coo_matrix.nnz : The Scipy equivalent property.
+        - [DOK.nnz][sparse.DOK.nnz] : Equivalent [DOK][sparse.DOK] array property.
+        - [numpy.count_nonzero][] : A similar Numpy function.
+        - [scipy.sparse.coo_matrix.nnz][] : The Scipy equivalent property.
 
         Examples
         --------
