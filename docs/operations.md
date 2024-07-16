@@ -225,7 +225,7 @@ scalars where expected. Assume that `z.shape` is `(5, 6, 7)`
    z[-1]
 ```
 
-All of the following will raise an :obj:`IndexError`, like in Numpy 1.13 and later.
+All of the following will raise an `IndexError`, like in Numpy 1.13 and later.
 
 ```python
 

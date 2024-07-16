@@ -47,7 +47,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     sorted : bool, optional
         A value indicating whether the values in `coords` are sorted. Note
         that setting this to `True` when [coords][sparse.COO.coords] isn't sorted may
-        result in undefined behaviour. See `COO.sort_indices`.
+        result in undefined behaviour.
     prune : bool, optional
         A flag indicating whether or not we should prune any fill-values present in
         `data`.
@@ -511,7 +511,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         array([[1, 0],
                [0, 1]])
 
-        You can also pass in a `collections.Iterator` object.
+        You can also pass in a [collections.abc.Iterator][] object.
 
         >>> x = [((0, 0), 1), ((1, 1), 1)].__iter__()
         >>> s = COO.from_iter(x)

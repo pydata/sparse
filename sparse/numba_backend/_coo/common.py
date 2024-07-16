@@ -21,7 +21,7 @@ from .._utils import (
 
 def asCOO(x, name="asCOO", check=True):
     """
-    Convert the input to :obj:`COO`. Passes through :obj:`COO` objects as-is.
+    Convert the input to [COO][sparse.COO]. Passes through [COO][sparse.COO] objects as-is.
 
     Parameters
     ----------
@@ -35,12 +35,12 @@ def asCOO(x, name="asCOO", check=True):
     Returns
     -------
     COO
-        The converted :obj:`COO` array.
+        The converted [COO][sparse.COO] array.
 
     Raises
     ------
     ValueError
-        If ``check`` is true and a dense input is supplied.
+        If `check` is true and a dense input is supplied.
     """
     from .._common import _is_sparse
     from .core import COO
@@ -212,7 +212,7 @@ def stack(arrays, axis=0):
     Raises
     ------
     ValueError
-        If all elements of :code:`arrays` don't have the same fill-value.
+        If all elements of `arrays` don't have the same fill-value.
 
     See Also
     --------
@@ -270,7 +270,7 @@ def triu(x, k=0):
     Raises
     ------
     ValueError
-        If :code:`x` doesn't have zero fill-values.
+        If `x` doesn't have zero fill-values.
 
     See Also
     --------
@@ -311,7 +311,7 @@ def tril(x, k=0):
     Raises
     ------
     ValueError
-        If :code:`x` doesn't have zero fill-values.
+        If `x` doesn't have zero fill-values.
 
     See Also
     --------
@@ -525,7 +525,7 @@ def where(condition, x=None, y=None):
     If ``x`` and ``y`` are not given, returns indices where ``condition``
     is nonzero.
 
-    Performs the equivalent of :obj:`numpy.where`.
+    Performs the equivalent of [numpy.where][].
 
     Parameters
     ----------
@@ -896,7 +896,7 @@ def diagonalize(a, axis=0):
     >>> x_diag.shape
     (2, 3, 4, 3)
 
-    :obj:`diagonalize` is the inverse of :obj:`diagonal`
+    [diagonalize][sparse.diagonalize] is the inverse of [diagonal][sparse.diagonal]
 
     >>> a = sparse.random((3, 3, 3, 3, 3), density=0.3)
     >>> a_diag = sparse.diagonalize(a, axis=2)

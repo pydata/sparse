@@ -19,8 +19,8 @@ def elemwise(func, *args, **kwargs):
     func : Callable
         The function to apply. Must support broadcasting.
     *args : tuple, optional
-        The arguments to the function. Can be :obj:`SparseArray` objects
-        or :obj:`scipy.sparse.spmatrix` objects.
+        The arguments to the function. Can be [SparseArray][sparse.SparseArray] objects
+        or [scipy.sparse.spmatrix][] objects.
     **kwargs : dict, optional
         Any additional arguments to pass to the function.
 
@@ -343,7 +343,7 @@ def _get_matching_coords(coords, params):
 
 def broadcast_to(x, shape):
     """
-    Performs the equivalent of :obj:`numpy.broadcast_to` for :obj:`COO`. Note that
+    Performs the equivalent of `numpy.broadcast_to` for `COO`. Note that
     this function returns a new array instead of a view.
 
     Parameters

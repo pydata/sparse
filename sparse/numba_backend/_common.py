@@ -96,7 +96,7 @@ def tensordot(a, b, axes=2, *, return_type=None):
     Parameters
     ----------
     a, b : Union[SparseArray, np.ndarray, scipy.sparse.spmatrix]
-        The arrays to perform the :code:`tensordot` operation on.
+        The arrays to perform the `tensordot` operation on.
     axes : tuple[Union[int, tuple[int], Union[int, tuple[int]], optional
         The axes to match when performing the sum.
     return_type : {None, COO, np.ndarray}, optional
@@ -1482,7 +1482,7 @@ def stack(arrays, axis=0, compressed_axes=None):
     Raises
     ------
     ValueError
-        If all elements of :code:`arrays` don't have the same fill-value.
+        If all elements of `arrays` don't have the same fill-value.
 
     See Also
     --------
@@ -1521,7 +1521,7 @@ def concatenate(arrays, axis=0, compressed_axes=None):
     Raises
     ------
     ValueError
-        If all elements of :code:`arrays` don't have the same fill-value.
+        If all elements of `arrays` don't have the same fill-value.
 
     See Also
     --------
