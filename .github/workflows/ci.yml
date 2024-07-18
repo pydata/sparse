@@ -63,7 +63,7 @@ jobs:
         with:
           python-version: '3.10'
           cache: 'pip'
-      - run: pip install -r docs/requirements.txt -e .
+      - run: pip install -e ".[docs]"
       - name: Run tests
         run: |
           mkdocs build
