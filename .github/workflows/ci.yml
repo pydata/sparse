@@ -65,10 +65,10 @@ jobs:
           cache: 'pip'
       - name: Install package
         run: |
-          pip install -e '.[docs]'
+          - run: pip install -r docs/requirements.txt -e .
       - name: Run tests
         run: |
-          sphinx-build -W -b html docs/ _build/html
+          mkdocs build
       - uses: actions/upload-artifact@v4
         with:
           name: Documentation
