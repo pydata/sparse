@@ -94,4 +94,4 @@ pydata-ecosystem-based workflows.
 
 ## LICENSE
 
-This library is licensed under BSD-3
+This library is licensed under BSD-3.
