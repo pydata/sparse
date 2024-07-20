@@ -243,7 +243,7 @@ def random(
     nnz : int, optional
         Number of nonzero elements in the generated array.
         Mutually exclusive with `density`.
-    random_state : Union[numpy.random.Generator, int], optional
+    random_state : Union[`numpy.random.Generator, int`], optional
         Random number generator or random seed. If not given, the
         singleton numpy.random will be used. This random state will be used
         for sampling the sparsity structure, but not necessarily for sampling
@@ -264,8 +264,8 @@ def random(
 
     See Also
     --------
-    - [scipy.sparse.rand][] : Equivalent Scipy function.
-    - [numpy.random.rand][] : Similar Numpy function.
+    - [`scipy.sparse.rand`][] : Equivalent Scipy function.
+    - [`numpy.random.rand`][] : Similar Numpy function.
 
     Examples
     --------

@@ -72,9 +72,9 @@ class SparseArray:
 
         See Also
         --------
-        - [DOK.nnz][sparse.DOK.nnz] : Equivalent [DOK][sparse.DOK] array property.
-        - [numpy.count_nonzero][] : A similar Numpy function.
-        - [scipy.sparse.coo_matrix.nnz][] : The Scipy equivalent property.
+        - [`sparse.DOK.nnz`][] : Equivalent [`sparse.DOK`][] array property.
+        - [`numpy.count_nonzero`][] : A similar Numpy function.
+        - [`scipy.sparse.coo_matrix.nnz`][] : The Scipy equivalent property.
 
         Examples
         --------
@@ -102,8 +102,8 @@ class SparseArray:
 
         See Also
         --------
-        - [DOK.ndim][sparse.DOK.ndim] : Equivalent property for [DOK][sparse.DOK] arrays.
-        - [numpy.ndarray.ndim][] : Numpy equivalent property.
+        - [`sparse.DOK.ndim`][] : Equivalent property for [`sparse.DOK`][] arrays.
+        - [`numpy.ndarray.ndim`][] : Numpy equivalent property.
 
         Examples
         --------
@@ -130,7 +130,7 @@ class SparseArray:
 
         See Also
         --------
-        [numpy.ndarray.size][] : Numpy equivalent property.
+        [`numpy.ndarray.size`][] : Numpy equivalent property.
 
         Examples
         --------
@@ -157,8 +157,8 @@ class SparseArray:
 
         See Also
         --------
-        - [COO.size][sparse.COO.size] : Number of elements.
-        - [COO.nnz][sparse.COO.nnz] : Number of nonzero elements.
+        - [`sparse.COO.size`][] : Number of elements.
+        - [`sparse.COO.nnz`][] : Number of nonzero elements.
 
         Examples
         --------
@@ -240,7 +240,7 @@ class SparseArray:
     @abstractmethod
     def todense(self):
         """
-        Convert this [SparseArray][sparse.SparseArray] array to a dense [numpy.ndarray][]. Note that
+        Convert this [`sparse.SparseArray`][] array to a dense [`numpy.ndarray`][]. Note that
         this may take a large amount of memory and time.
 
         Returns
@@ -250,9 +250,9 @@ class SparseArray:
 
         See Also
         --------
-        - [DOK.todense][sparse.DOK.todense] : Equivalent `DOK` array method.
-        - [COO.todense][sparse.COO.todense] : Equivalent `COO` array method.
-        - [scipy.sparse.coo_matrix.todense][] : Equivalent Scipy method.
+        - [`sparse.DOK.todense`][] : Equivalent `DOK` array method.
+        - [`sparse.COO.todense`][] : Equivalent `COO` array method.
+        - [`scipy.sparse.coo_matrix.todense`][] : Equivalent Scipy method.
 
         Examples
         --------
@@ -384,9 +384,9 @@ class SparseArray:
 
         See Also
         --------
-        - [numpy.ufunc.reduce][] : A similar Numpy method.
-        - [COO.reduce][sparse.COO.reduce] : This method implemented on COO arrays.
-        - [GCXS.reduce][sparse.GCXS.reduce] : This method implemented on GCXS arrays.
+        - [`numpy.ufunc.reduce`][] : A similar Numpy method.
+        - [`sparse.COO.reduce`][] : This method implemented on COO arrays.
+        - [`sparse.GCXS.reduce`][] : This method implemented on GCXS arrays.
         """
         axis = normalize_axis(axis, self.ndim)
         zero_reduce_result = method.reduce([self.fill_value, self.fill_value], **kwargs)
@@ -450,8 +450,8 @@ class SparseArray:
 
         See Also
         --------
-        - [numpy.sum][] : Equivalent numpy function.
-        - [scipy.sparse.coo_matrix.sum][] : Equivalent Scipy function.
+        - [`numpy.sum`][] : Equivalent numpy function.
+        - [`scipy.sparse.coo_matrix.sum`][] : Equivalent Scipy function.
         """
         return np.add.reduce(self, out=out, axis=axis, keepdims=keepdims, dtype=dtype)
 
@@ -475,8 +475,8 @@ class SparseArray:
 
         See Also
         --------
-        - [numpy.max][] : Equivalent numpy function.
-        - [scipy.sparse.coo_matrix.max][] : Equivalent Scipy function.
+        - [`numpy.max`][] : Equivalent numpy function.
+        - [`scipy.sparse.coo_matrix.max`][] : Equivalent Scipy function.
         """
         return np.maximum.reduce(self, out=out, axis=axis, keepdims=keepdims)
 
@@ -500,7 +500,7 @@ class SparseArray:
 
         See Also
         --------
-        [numpy.any][] : Equivalent numpy function.
+        [`numpy.any`][] : Equivalent numpy function.
         """
         return np.logical_or.reduce(self, out=out, axis=axis, keepdims=keepdims)
 
@@ -522,7 +522,7 @@ class SparseArray:
 
         See Also
         --------
-        [numpy.all][] : Equivalent numpy function.
+        [`numpy.all`][] : Equivalent numpy function.
         """
         return np.logical_and.reduce(self, out=out, axis=axis, keepdims=keepdims)
 
@@ -546,8 +546,8 @@ class SparseArray:
 
         See Also
         --------
-        - [numpy.min][] : Equivalent numpy function.
-        - [scipy.sparse.coo_matrix.min][] : Equivalent Scipy function.
+        - [`numpy.min`][] : Equivalent numpy function.
+        - [`scipy.sparse.coo_matrix.min`][] : Equivalent Scipy function.
         """
         return np.minimum.reduce(self, out=out, axis=axis, keepdims=keepdims)
 
@@ -573,7 +573,7 @@ class SparseArray:
 
         See Also
         --------
-        [numpy.prod][] : Equivalent numpy function.
+        [`numpy.prod`][] : Equivalent numpy function.
         """
         return np.multiply.reduce(self, out=out, axis=axis, keepdims=keepdims, dtype=dtype)
 
@@ -583,9 +583,9 @@ class SparseArray:
 
         See Also
         --------
-        - [numpy.round][] :
+        - [`numpy.round`][] :
             NumPy equivalent ufunc.
-        - [elemwise][sparse.elemwise] :
+        - [`sparse.elemwise`][] :
             Apply an arbitrary element-wise function to one or two
             arguments.
         """
@@ -605,7 +605,7 @@ class SparseArray:
         See Also
         --------
         - [sparse.clip][] : For full documentation and more details.
-        - [numpy.clip][] : Equivalent NumPy function.
+        - [`numpy.clip`][] : Equivalent NumPy function.
         """
         if min is None and max is None:
             raise ValueError("One of max or min must be given.")
@@ -619,11 +619,11 @@ class SparseArray:
 
         See Also
         --------
-        - [scipy.sparse.coo_matrix.astype][] :
+        - [`scipy.sparse.coo_matrix.astype`][] :
             SciPy sparse equivalent function
-        - [numpy.ndarray.astype][] :
+        - [`numpy.ndarray.astype`][] :
             NumPy equivalent ufunc.
-        - [elemwise][sparse.elemwise] :
+        - [`sparse.elemwise`][] :
             Apply an arbitrary element-wise function to one or two
             arguments.
         """
@@ -652,8 +652,8 @@ class SparseArray:
 
         See Also
         --------
-        - [numpy.ndarray.mean][] : Equivalent numpy method.
-        - [scipy.sparse.coo_matrix.mean][] : Equivalent Scipy method.
+        - [`numpy.ndarray.mean`][] : Equivalent numpy method.
+        - [`scipy.sparse.coo_matrix.mean`][] : Equivalent Scipy method.
 
         Notes
         -----
@@ -662,7 +662,7 @@ class SparseArray:
 
         Examples
         --------
-        You can use [COO.mean][sparse.COO.mean] to compute the mean of an array across any
+        You can use [`sparse.COO.mean`][] to compute the mean of an array across any
         dimension.
 
         >>> from sparse import COO
@@ -738,11 +738,11 @@ class SparseArray:
 
         See Also
         --------
-        [numpy.ndarray.var][] : Equivalent numpy method.
+        [`numpy.ndarray.var`][] : Equivalent numpy method.
 
         Examples
         --------
-        You can use [COO.var][sparse.COO.var] to compute the variance of an array across any
+        You can use [`sparse.COO.var`][] to compute the variance of an array across any
         dimension.
 
         >>> from sparse import COO
@@ -830,11 +830,11 @@ class SparseArray:
 
         See Also
         --------
-        [numpy.ndarray.std][] : Equivalent numpy method.
+        [`numpy.ndarray.std`][] : Equivalent numpy method.
 
         Examples
         --------
-        You can use [COO.std][sparse.COO.std] to compute the standard deviation of an array
+        You can use [`sparse.COO.std`][] to compute the standard deviation of an array
         across any dimension.
 
         >>> from sparse import COO
@@ -889,8 +889,8 @@ class SparseArray:
 
         See Also
         --------
-        - [numpy.ndarray.real][] : NumPy equivalent attribute.
-        - [numpy.real][] : NumPy equivalent function.
+        - [`numpy.ndarray.real`][] : NumPy equivalent attribute.
+        - [`numpy.real`][] : NumPy equivalent function.
         """
         return self.__array_ufunc__(np.real, "__call__", self)
 
@@ -916,8 +916,8 @@ class SparseArray:
 
         See Also
         --------
-        - [numpy.ndarray.imag][] : NumPy equivalent attribute.
-        - [numpy.imag][] : NumPy equivalent function.
+        - [`numpy.ndarray.imag`][] : NumPy equivalent attribute.
+        - [`numpy.imag`][] : NumPy equivalent function.
         """
         return self.__array_ufunc__(np.imag, "__call__", self)
 
@@ -944,8 +944,8 @@ class SparseArray:
 
         See Also
         --------
-        - [numpy.ndarray.conj][] : NumPy equivalent method.
-        - [numpy.conj][] : NumPy equivalent function.
+        - [`numpy.ndarray.conj`][] : NumPy equivalent method.
+        - [`numpy.conj`][] : NumPy equivalent function.
         """
         return np.conj(self)
 

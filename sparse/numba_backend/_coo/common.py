@@ -21,7 +21,7 @@ from .._utils import (
 
 def asCOO(x, name="asCOO", check=True):
     """
-    Convert the input to [COO][sparse.COO]. Passes through [COO][sparse.COO] objects as-is.
+    Convert the input to [`sparse.COO`][]. Passes through [`sparse.COO`][] objects as-is.
 
     Parameters
     ----------
@@ -35,7 +35,7 @@ def asCOO(x, name="asCOO", check=True):
     Returns
     -------
     COO
-        The converted [COO][sparse.COO] array.
+        The converted [`sparse.COO`][] array.
 
     Raises
     ------
@@ -153,7 +153,7 @@ def concatenate(arrays, axis=0):
 
     See Also
     --------
-    [numpy.concatenate][] : NumPy equivalent function
+    [`numpy.concatenate`][] : NumPy equivalent function
     """
     from .core import COO
 
@@ -216,7 +216,7 @@ def stack(arrays, axis=0):
 
     See Also
     --------
-    [numpy.stack][] : NumPy equivalent function
+    [`numpy.stack`][] : NumPy equivalent function
     """
     from .core import COO
 
@@ -274,7 +274,7 @@ def triu(x, k=0):
 
     See Also
     --------
-    - [numpy.triu][] : NumPy equivalent function
+    - [`numpy.triu`][] : NumPy equivalent function
     """
     from .core import COO
 
@@ -315,7 +315,7 @@ def tril(x, k=0):
 
     See Also
     --------
-    - [numpy.tril][] : NumPy equivalent function
+    - [`numpy.tril`][] : NumPy equivalent function
     """
     from .core import COO
 
@@ -354,8 +354,8 @@ def nansum(x, axis=None, keepdims=False, dtype=None, out=None):
 
     See Also
     --------
-    - [COO.sum][sparse.COO.sum] : Function without ``NaN`` skipping.
-    - [numpy.nansum][] : Equivalent Numpy function.
+    - [`sparse.COO.sum`][] : Function without ``NaN`` skipping.
+    - [`numpy.nansum`][] : Equivalent Numpy function.
     """
     assert out is None
     x = asCOO(x, name="nansum")
@@ -384,8 +384,8 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
 
     See Also
     --------
-    - [COO.mean][sparse.COO.mean] : Function without `NaN` skipping.
-    - [numpy.nanmean][] : Equivalent Numpy function.
+    - [`sparse.COO.mean`][] : Function without `NaN` skipping.
+    - [`numpy.nanmean`][] : Equivalent Numpy function.
     """
     assert out is None
     x = asCOO(x, name="nanmean")
@@ -438,8 +438,8 @@ def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
 
     See Also
     --------
-    - [COO.max][sparse.COO.max] : Function without `NaN` skipping.
-    - [numpy.nanmax][] : Equivalent Numpy function.
+    - [`sparse.COO.max`][] : Function without `NaN` skipping.
+    - [`numpy.nanmax`][] : Equivalent Numpy function.
     """
     assert out is None
     x = asCOO(x, name="nanmax")
@@ -474,8 +474,8 @@ def nanmin(x, axis=None, keepdims=False, dtype=None, out=None):
 
     See Also
     --------
-    - [COO.min][sparse.COO.min] : Function without `NaN` skipping.
-    - [numpy.nanmin][] : Equivalent Numpy function.
+    - [`sparse.COO.min`][] : Function without `NaN` skipping.
+    - [`numpy.nanmin`][] : Equivalent Numpy function.
     """
     assert out is None
     x = asCOO(x, name="nanmin")
@@ -511,8 +511,8 @@ def nanprod(x, axis=None, keepdims=False, dtype=None, out=None):
 
     See Also
     --------
-    - [COO.prod][sparse.COO.prod] : Function without `NaN` skipping.
-    - [numpy.nanprod][] : Equivalent Numpy function.
+    - [`sparse.COO.prod`][] : Function without `NaN` skipping.
+    - [`numpy.nanprod`][] : Equivalent Numpy function.
     """
     assert out is None
     x = asCOO(x)
@@ -525,7 +525,7 @@ def where(condition, x=None, y=None):
     If ``x`` and ``y`` are not given, returns indices where ``condition``
     is nonzero.
 
-    Performs the equivalent of [numpy.where][].
+    Performs the equivalent of [`numpy.where`][].
 
     Parameters
     ----------
@@ -551,7 +551,7 @@ def where(condition, x=None, y=None):
 
     See Also
     --------
-    [numpy.where][] : Equivalent Numpy function.
+    [`numpy.where`][] : Equivalent Numpy function.
     """
     from .._umath import elemwise
 
@@ -584,7 +584,7 @@ def argwhere(a):
 
     See Also
     --------
-    [where][sparse.where], [COO.nonzero][sparse.COO.nonzero]
+    [`sparse.where`][], [`sparse.COO.nonzero`][]
 
     Examples
     --------
@@ -684,7 +684,7 @@ def _replace_nan(array, value):
 def nanreduce(x, method, identity=None, axis=None, keepdims=False, **kwargs):
     """
     Performs an `NaN` skipping reduction on this array. See the documentation
-    on [COO.reduce][sparse.COO.reduce] for examples.
+    on [`sparse.COO.reduce`][] for examples.
 
     Parameters
     ----------
@@ -714,7 +714,7 @@ def nanreduce(x, method, identity=None, axis=None, keepdims=False, **kwargs):
 
     See Also
     --------
-    [COO.reduce][sparse.COO.reduce] : Similar method without `NaN` skipping functionality.
+    [`sparse.COO.reduce`][] : Similar method without `NaN` skipping functionality.
     """
     arr = _replace_nan(x, method.identity if identity is None else identity)
     return arr.reduce(method, axis, keepdims, **kwargs)
@@ -802,7 +802,7 @@ def roll(a, shift, axis=None):
 
 def diagonal(a, offset=0, axis1=0, axis2=1):
     """
-    Extract diagonal from a COO array. The equivalent of [numpy.diagonal][].
+    Extract diagonal from a COO array. The equivalent of [`numpy.diagonal`][].
 
     Parameters
     ----------
@@ -847,7 +847,7 @@ def diagonal(a, offset=0, axis1=0, axis2=1):
 
     See Also
     --------
-    [numpy.diagonal][] : NumPy equivalent function
+    [`numpy.diagonal`][] : NumPy equivalent function
     """
     from .core import COO
 
@@ -872,7 +872,7 @@ def diagonalize(a, axis=0):
 
     !!! warning
 
-        [diagonalize][sparse.diagonalize] is not [numpy][] compatible as there is no direct [numpy][] equivalent. The
+        [`sparse.diagonalize`][] is not [numpy][] compatible as there is no direct [numpy][] equivalent. The
         API may change in the future.
 
     Parameters
@@ -896,7 +896,7 @@ def diagonalize(a, axis=0):
     >>> x_diag.shape
     (2, 3, 4, 3)
 
-    [diagonalize][sparse.diagonalize] is the inverse of [diagonal][sparse.diagonal]
+    [`sparse.diagonalize`][] is the inverse of [`sparse.diagonal`][]
 
     >>> a = sparse.random((3, 3, 3, 3, 3), density=0.3)
     >>> a_diag = sparse.diagonalize(a, axis=2)
@@ -910,7 +910,7 @@ def diagonalize(a, axis=0):
 
     See Also
     --------
-    [numpy.diag][] : NumPy equivalent for 1D array
+    [`numpy.diag`][] : NumPy equivalent for 1D array
     """
     from .core import COO, as_coo
 
@@ -942,7 +942,7 @@ def isposinf(x, out=None):
 
     See Also
     --------
-    [numpy.isposinf][] : The NumPy equivalent
+    [`numpy.isposinf`][] : The NumPy equivalent
     """
     from .core import elemwise
 
@@ -969,7 +969,7 @@ def isneginf(x, out=None):
 
     See Also
     --------
-    [numpy.isneginf][] : The NumPy equivalent
+    [`numpy.isneginf`][] : The NumPy equivalent
     """
     from .core import elemwise
 
@@ -982,7 +982,7 @@ def result_type(*arrays_and_dtypes):
 
     See Also
     --------
-    [numpy.result_type][] : The NumPy equivalent
+    [`numpy.result_type`][] : The NumPy equivalent
     """
     return np.result_type(*(_as_result_type_arg(x) for x in arrays_and_dtypes))
 

@@ -41,11 +41,11 @@ def save_npz(filename, matrix, compressed=True):
 
     See Also
     --------
-    - [load_npz][sparse.load_npz]
-    - [scipy.sparse.save_npz][]
-    - [scipy.sparse.load_npz][]
-    - [numpy.savez][]
-    - [numpy.load][]
+    - [`sparse.load_npz`][]
+    - [`scipy.sparse.save_npz`][]
+    - [`scipy.sparse.load_npz`][]
+    - [`numpy.savez`][]
+    - [`numpy.load`][]
 
     """
 
@@ -87,15 +87,15 @@ def load_npz(filename):
 
     Examples
     --------
-    See [save_npz][sparse.save_npz] for usage examples.
+    See [`sparse.save_npz`][] for usage examples.
 
     See Also
     --------
-    - [save_npz][sparse.save_npz]
-    - [scipy.sparse.save_npz][]
-    - [scipy.sparse.load_npz][]
-    - [numpy.savez][]
-    - [numpy.load][]
+    - [`sparse.save_npz`][]
+    - [`scipy.sparse.save_npz`][]
+    - [`scipy.sparse.load_npz`][]
+    - [`numpy.savez`][]
+    - [`numpy.load`][]
 
     """
 

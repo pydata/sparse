@@ -91,7 +91,7 @@ def check_class_nan(test):
 
 def tensordot(a, b, axes=2, *, return_type=None):
     """
-    Perform the equivalent of [numpy.tensordot][].
+    Perform the equivalent of [`numpy.tensordot`][].
 
     Parameters
     ----------
@@ -114,7 +114,7 @@ def tensordot(a, b, axes=2, *, return_type=None):
 
     See Also
     --------
-    - [numpy.tensordot][] : NumPy equivalent function
+    - [`numpy.tensordot`][] : NumPy equivalent function
     """
     from ._compressed import GCXS
 
@@ -202,7 +202,7 @@ def tensordot(a, b, axes=2, *, return_type=None):
 
 
 def matmul(a, b):
-    """Perform the equivalent of [numpy.matmul][] on two arrays.
+    """Perform the equivalent of [`numpy.matmul`][] on two arrays.
 
     Parameters
     ----------
@@ -221,7 +221,7 @@ def matmul(a, b):
 
     See Also
     --------
-    - [numpy.matmul][] : NumPy equivalent function.
+    - [`numpy.matmul`][] : NumPy equivalent function.
     - `COO.__matmul__`: Equivalent function for COO objects.
     """
     check_zero_fill_value(a, b)
@@ -281,7 +281,7 @@ def matmul(a, b):
 
 def dot(a, b):
     """
-    Perform the equivalent of [numpy.dot][] on two arrays.
+    Perform the equivalent of [`numpy.dot`][] on two arrays.
 
     Parameters
     ----------
@@ -300,8 +300,8 @@ def dot(a, b):
 
     See Also
     --------
-    - [numpy.dot][] : NumPy equivalent function.
-    - [COO.dot][sparse.COO.dot] : Equivalent function for COO objects.
+    - [`numpy.dot`][] : NumPy equivalent function.
+    - [`sparse.COO.dot`][] : Equivalent function for COO objects.
     """
     check_zero_fill_value(a, b)
     if not hasattr(a, "ndim") or not hasattr(b, "ndim"):
@@ -1384,7 +1384,7 @@ def _einsum_single(lhs, rhs, operand):
 
 def einsum(*operands, **kwargs):
     """
-    Perform the equivalent of [numpy.einsum][].
+    Perform the equivalent of [`numpy.einsum`][].
 
     Parameters
     ----------
@@ -1486,7 +1486,7 @@ def stack(arrays, axis=0, compressed_axes=None):
 
     See Also
     --------
-    [numpy.stack][]: NumPy equivalent function
+    [`numpy.stack`][]: NumPy equivalent function
     """
     from ._compressed import GCXS
 
@@ -1525,7 +1525,7 @@ def concatenate(arrays, axis=0, compressed_axes=None):
 
     See Also
     --------
-    [numpy.concatenate][] : NumPy equivalent function
+    [`numpy.concatenate`][] : NumPy equivalent function
     """
     from ._compressed import GCXS
 
@@ -1879,7 +1879,7 @@ def asnumpy(a, dtype=None, order=None):
     Parameters
     ----------
     a: array_like
-        Arbitrary object that can be converted to [numpy.ndarray][].
+        Arbitrary object that can be converted to [`numpy.ndarray`][].
     order: ({'C', 'F', 'A'})
         The desired memory layout of the output
         array. When ``order`` is 'A', it uses 'F' if ``a`` is
@@ -1949,7 +1949,7 @@ def moveaxis(a, source, destination):
 
 def pad(array, pad_width, mode="constant", **kwargs):
     """
-    Performs the equivalent of [numpy.pad][] for [SparseArray][sparse.SparseArray]. Note that
+    Performs the equivalent of [`sparse.SparseArray`][]. Note that
     this function returns a new array instead of a view.
 
     Parameters
@@ -1983,7 +1983,7 @@ def pad(array, pad_width, mode="constant", **kwargs):
 
     See Also
     --------
-    [numpy.pad][] : NumPy equivalent function
+    [`numpy.pad`][] : NumPy equivalent function
 
     """
     if not isinstance(array, SparseArray):
