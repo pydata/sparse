@@ -55,9 +55,9 @@ def save_npz(filename, matrix, compressed=True):
         "fill_value": matrix.fill_value,
     }
 
-    if type(matrix) == COO:
+    if type(matrix) is COO:
         nodes["coords"] = matrix.coords
-    elif type(matrix) == GCXS:
+    elif type(matrix) is GCXS:
         nodes["indices"] = matrix.indices
         nodes["indptr"] = matrix.indptr
         nodes["compressed_axes"] = matrix.compressed_axes
