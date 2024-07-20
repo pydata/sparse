@@ -44,7 +44,7 @@ after forking and cloning the repository:
 
 ```bash
 
-   pip install -e .[all]
+pip install -e .[all]
 ```
 
 ## Running/Adding Unit Tests
@@ -59,7 +59,7 @@ configured your environment, you can just `cd` to the root of your repository an
 
 ```bash
 
-   pytest --pyargs sparse
+pytest --pyargs sparse
 ```
 
 This automatically checks code style and functionality, and prints code coverage,
@@ -93,8 +93,8 @@ To build the documentation, you can run
 
 ```bash
 
-   mkdocs build
-   mkdocs serve
+mkdocs build
+mkdocs serve
 ```
 
 After this, you can see a version of the documentation on your local server.

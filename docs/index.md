@@ -2,22 +2,22 @@
 
 This implements sparse arrays of arbitrary dimension on top of
 [numpy][] and
-[scipy.sparse][]. It generalizes the
-[scipy.sparse.coo_matrix][] and
-[scipy.sparse.dok_matrix][] layouts, but
+[`scipy.sparse`][]. It generalizes the
+[`scipy.sparse.coo_matrix`][] and
+[`scipy.sparse.dok_matrix`][] layouts, but
 extends beyond just rows and columns to an arbitrary number of
 dimensions.
 
 Additionally, this project maintains compatibility with the
-[numpy.ndarray][] interface rather than the
-[numpy.matrix][] interface used in
-[scipy.sparse][]
+[`numpy.ndarray`][] interface rather than the
+[`numpy.matrix`][] interface used in
+[`scipy.sparse`][]
 
 These differences make this project useful in certain situations where
 scipy.sparse matrices are not well suited, but it should not be
 considered a full replacement. The data structures in pydata/sparse
 complement and can be used in conjunction with the fast linear algebra
-routines inside scipy.sparse. A format conversion or copy may be
+routines inside [`scipy.sparse`][]. A format conversion or copy may be
 required.
 
 ## Motivation
@@ -87,7 +87,7 @@ across many use cases.
 
 Together these formats cover a wide array of applications of sparsity.
 Additionally, with each format complying with the
-[numpy.ndarray][] interface and following
+[`numpy.ndarray`][] interface and following
 the appropriate dispatching protocols, pydata/sparse arrays can interact
 with other array libraries and seamlessly take part in
 pydata-ecosystem-based workflows.
