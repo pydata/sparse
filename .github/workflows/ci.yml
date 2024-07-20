@@ -53,24 +53,6 @@ jobs:
         if: always()
         with:
           files: ./**/coverage*.xml
-  docs:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-          cache: 'pip'
-      - run: pip install -e ".[docs]"
-      - name: Run tests
-        run: |
-          mkdocs build
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Documentation
-          path: _build/html
   benchmarks:
     runs-on: ubuntu-latest
     steps:
