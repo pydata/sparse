@@ -1,0 +1,76 @@
+site_name: sparse
+repo_url: https://github.com/pydata/sparse.git
+edit_uri: edit/main/docs/
+theme:
+  name: material
+  palette:
+    primary: black
+  font: false #avoid Google Fonts to adhere to data privacy regulations
+  logo: assets/images/logo.png
+  favicon: assets/images/logo.svg
+  features:
+        - navigation.tracking
+        - navigation.instant
+        - navigation.instant.progress
+        - navigation.prune
+        - navigation.footer
+        - navigation.indexes
+        - content.code.copy
+
+markdown_extensions:
+  - tables
+  - admonition # This line, pymdownx.details and pymdownx.superfences are used by warings
+  - pymdownx.details
+  - pymdownx.superfences
+  - codehilite
+  - toc:
+      toc_depth: 2
+  - pymdownx.arithmatex: # To display math content with KaTex
+      generic: true
+  - attr_list # To be able to link to a header on another page
+
+extra_javascript:
+  - javascripts/katex.js
+  - https://unpkg.com/katex@0/dist/katex.min.js
+  - https://unpkg.com/katex@0/dist/contrib/auto-render.min.js
+
+extra_css:
+  - https://unpkg.com/katex@0/dist/katex.min.css
+  - css/mkdocstrings.css
+
+plugins:
+- search
+- section-index
+- autorefs
+- gen-files:
+    scripts:
+    - scripts/gen_ref_pages.py
+- literate-nav
+- mkdocstrings:
+    handlers:
+          python:
+            import:
+            - https://numpy.org/doc/stable/objects.inv
+            - https://docs.python.org/3/objects.inv
+            - https://docs.scipy.org/doc/scipy/objects.inv
+            options:
+              inherited_members: yes
+              show_root_members_full_path: false
+              show_if_no_docstring: true
+              members_order: source
+              docstring_style: numpy
+              filters: ["!^_"]
+
+nav:
+- index.md
+- install.md
+- quickstart.md
+- construct.md
+- operations.md
+- API:
+  - api/*
+- roadmap.md
+# - completed-tasks.md
+- contributing.md
+- changelog.md
+- conduct.md

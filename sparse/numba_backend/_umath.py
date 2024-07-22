@@ -19,8 +19,8 @@ def elemwise(func, *args, **kwargs):
     func : Callable
         The function to apply. Must support broadcasting.
     *args : tuple, optional
-        The arguments to the function. Can be :obj:`SparseArray` objects
-        or :obj:`scipy.sparse.spmatrix` objects.
+        The arguments to the function. Can be [`sparse.SparseArray`][] objects
+        or [`scipy.sparse.spmatrix`][] objects.
     **kwargs : dict, optional
         Any additional arguments to pass to the function.
 
@@ -37,14 +37,14 @@ def elemwise(func, *args, **kwargs):
 
     See Also
     --------
-    :obj:`numpy.ufunc` :
-        A similar Numpy construct. Note that any :code:`ufunc` can be used
-        as the :code:`func` input to this function.
+    [`numpy.ufunc`][] :
+        A similar Numpy construct. Note that any `ufunc` can be used
+        as the `func` input to this function.
 
     Notes
     -----
     Previously, operations with Numpy arrays were sometimes supported. Now,
-    it is necessary to convert Numpy arrays to :obj:`COO` objects.
+    it is necessary to convert Numpy arrays to [`sparse.COO`][] objects.
     """
 
     return _Elemwise(func, *args, **kwargs).get_result()
@@ -313,7 +313,7 @@ def _get_matching_coords(coords, params):
 
     Parameters
     ----------
-    coords : list[numpy.ndarray]
+    coords : list[`numpy.ndarray`]
         The input coordinates.
     params : list[Union[bool, none]]
         The broadcast parameters.
@@ -343,7 +343,7 @@ def _get_matching_coords(coords, params):
 
 def broadcast_to(x, shape):
     """
-    Performs the equivalent of :obj:`numpy.broadcast_to` for :obj:`COO`. Note that
+    Performs the equivalent of `numpy.broadcast_to` for `COO`. Note that
     this function returns a new array instead of a view.
 
     Parameters

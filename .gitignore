@@ -60,9 +60,8 @@ junit/
 # Django stuff:
 *.log
 
-# Sphinx documentation
-docs/_build/
-_build/
+# mkdocs documentation
+site/
 
 # PyBuilder
 target/

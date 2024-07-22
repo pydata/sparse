@@ -5,17 +5,17 @@ from ._coo.core import COO
 
 
 def save_npz(filename, matrix, compressed=True):
-    """Save a sparse matrix to disk in numpy's ``.npz`` format.
-    Note: This is not binary compatible with scipy's ``save_npz()``.
+    """Save a sparse matrix to disk in numpy's `.npz` format.
+    Note: This is not binary compatible with scipy's `save_npz()`.
     This binary format is not currently stable. Will save a file
-    that can only be opend with this package's ``load_npz()``.
+    that can only be opend with this package's `load_npz()`.
 
     Parameters
     ----------
     filename : string or file
         Either the file name (string) or an open file (file-like object)
         where the data will be saved. If file is a string or a Path, the
-        ``.npz`` extension will be appended to the file name if it is not
+        `.npz` extension will be appended to the file name if it is not
         already there
     matrix : SparseArray
         The matrix to save to disk
@@ -41,11 +41,11 @@ def save_npz(filename, matrix, compressed=True):
 
     See Also
     --------
-    load_npz
-    scipy.sparse.save_npz
-    scipy.sparse.load_npz
-    numpy.savez
-    numpy.load
+    - [`sparse.load_npz`][]
+    - [`scipy.sparse.save_npz`][]
+    - [`scipy.sparse.load_npz`][]
+    - [`numpy.savez`][]
+    - [`numpy.load`][]
 
     """
 
@@ -69,8 +69,8 @@ def save_npz(filename, matrix, compressed=True):
 
 
 def load_npz(filename):
-    """Load a sparse matrix in numpy's ``.npz`` format from disk.
-    Note: This is not binary compatible with scipy's ``save_npz()``
+    """Load a sparse matrix in numpy's `.npz` format from disk.
+    Note: This is not binary compatible with scipy's `save_npz()`
     output. This binary format is not currently stable.
     Will only load files saved by this package.
 
@@ -78,24 +78,24 @@ def load_npz(filename):
     ----------
     filename : file-like object, string, or pathlib.Path
         The file to read. File-like objects must support the
-        ``seek()`` and ``read()`` methods.
+        `seek()` and `read()` methods.
 
     Returns
     -------
     SparseArray
-        The sparse matrix at path ``filename``.
+        The sparse matrix at path `filename`.
 
     Examples
     --------
-    See :obj:`save_npz` for usage examples.
+    See [`sparse.save_npz`][] for usage examples.
 
     See Also
     --------
-    save_npz
-    scipy.sparse.save_npz
-    scipy.sparse.load_npz
-    numpy.savez
-    numpy.load
+    - [`sparse.save_npz`][]
+    - [`scipy.sparse.save_npz`][]
+    - [`scipy.sparse.load_npz`][]
+    - [`numpy.savez`][]
+    - [`numpy.load`][]
 
     """
 

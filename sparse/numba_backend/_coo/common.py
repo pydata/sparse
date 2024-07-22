@@ -21,7 +21,7 @@ from .._utils import (
 
 def asCOO(x, name="asCOO", check=True):
     """
-    Convert the input to :obj:`COO`. Passes through :obj:`COO` objects as-is.
+    Convert the input to [`sparse.COO`][]. Passes through [`sparse.COO`][] objects as-is.
 
     Parameters
     ----------
@@ -35,12 +35,12 @@ def asCOO(x, name="asCOO", check=True):
     Returns
     -------
     COO
-        The converted :obj:`COO` array.
+        The converted [`sparse.COO`][] array.
 
     Raises
     ------
     ValueError
-        If ``check`` is true and a dense input is supplied.
+        If `check` is true and a dense input is supplied.
     """
     from .._common import _is_sparse
     from .core import COO
@@ -149,11 +149,11 @@ def concatenate(arrays, axis=0):
     Raises
     ------
     ValueError
-        If all elements of :code:`arrays` don't have the same fill-value.
+        If all elements of `arrays` don't have the same fill-value.
 
     See Also
     --------
-    numpy.concatenate : NumPy equivalent function
+    [`numpy.concatenate`][] : NumPy equivalent function
     """
     from .core import COO
 
@@ -212,11 +212,11 @@ def stack(arrays, axis=0):
     Raises
     ------
     ValueError
-        If all elements of :code:`arrays` don't have the same fill-value.
+        If all elements of `arrays` don't have the same fill-value.
 
     See Also
     --------
-    numpy.stack : NumPy equivalent function
+    [`numpy.stack`][] : NumPy equivalent function
     """
     from .core import COO
 
@@ -270,11 +270,11 @@ def triu(x, k=0):
     Raises
     ------
     ValueError
-        If :code:`x` doesn't have zero fill-values.
+        If `x` doesn't have zero fill-values.
 
     See Also
     --------
-    numpy.triu : NumPy equivalent function
+    - [`numpy.triu`][] : NumPy equivalent function
     """
     from .core import COO
 
@@ -311,11 +311,11 @@ def tril(x, k=0):
     Raises
     ------
     ValueError
-        If :code:`x` doesn't have zero fill-values.
+        If `x` doesn't have zero fill-values.
 
     See Also
     --------
-    numpy.tril : NumPy equivalent function
+    - [`numpy.tril`][] : NumPy equivalent function
     """
     from .core import COO
 
@@ -354,8 +354,8 @@ def nansum(x, axis=None, keepdims=False, dtype=None, out=None):
 
     See Also
     --------
-    :obj:`COO.sum` : Function without ``NaN`` skipping.
-    numpy.nansum : Equivalent Numpy function.
+    - [`sparse.COO.sum`][] : Function without ``NaN`` skipping.
+    - [`numpy.nansum`][] : Equivalent Numpy function.
     """
     assert out is None
     x = asCOO(x, name="nansum")
@@ -364,7 +364,7 @@ def nansum(x, axis=None, keepdims=False, dtype=None, out=None):
 
 def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
     """
-    Performs a ``NaN`` skipping mean operation along the given axes. Uses all axes by default.
+    Performs a `NaN` skipping mean operation along the given axes. Uses all axes by default.
 
     Parameters
     ----------
@@ -384,8 +384,8 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
 
     See Also
     --------
-    :obj:`COO.mean` : Function without ``NaN`` skipping.
-    numpy.nanmean : Equivalent Numpy function.
+    - [`sparse.COO.mean`][] : Function without `NaN` skipping.
+    - [`numpy.nanmean`][] : Equivalent Numpy function.
     """
     assert out is None
     x = asCOO(x, name="nanmean")
@@ -418,7 +418,7 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
 
 def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
     """
-    Maximize along the given axes, skipping ``NaN`` values. Uses all axes by default.
+    Maximize along the given axes, skipping `NaN` values. Uses all axes by default.
 
     Parameters
     ----------
@@ -438,8 +438,8 @@ def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
 
     See Also
     --------
-    :obj:`COO.max` : Function without ``NaN`` skipping.
-    numpy.nanmax : Equivalent Numpy function.
+    - [`sparse.COO.max`][] : Function without `NaN` skipping.
+    - [`numpy.nanmax`][] : Equivalent Numpy function.
     """
     assert out is None
     x = asCOO(x, name="nanmax")
@@ -474,8 +474,8 @@ def nanmin(x, axis=None, keepdims=False, dtype=None, out=None):
 
     See Also
     --------
-    :obj:`COO.min` : Function without ``NaN`` skipping.
-    numpy.nanmin : Equivalent Numpy function.
+    - [`sparse.COO.min`][] : Function without `NaN` skipping.
+    - [`numpy.nanmin`][] : Equivalent Numpy function.
     """
     assert out is None
     x = asCOO(x, name="nanmin")
@@ -490,7 +490,7 @@ def nanmin(x, axis=None, keepdims=False, dtype=None, out=None):
 
 def nanprod(x, axis=None, keepdims=False, dtype=None, out=None):
     """
-    Performs a product operation along the given axes, skipping ``NaN`` values.
+    Performs a product operation along the given axes, skipping `NaN` values.
     Uses all axes by default.
 
     Parameters
@@ -511,8 +511,8 @@ def nanprod(x, axis=None, keepdims=False, dtype=None, out=None):
 
     See Also
     --------
-    :obj:`COO.prod` : Function without ``NaN`` skipping.
-    numpy.nanprod : Equivalent Numpy function.
+    - [`sparse.COO.prod`][] : Function without `NaN` skipping.
+    - [`numpy.nanprod`][] : Equivalent Numpy function.
     """
     assert out is None
     x = asCOO(x)
@@ -525,7 +525,7 @@ def where(condition, x=None, y=None):
     If ``x`` and ``y`` are not given, returns indices where ``condition``
     is nonzero.
 
-    Performs the equivalent of :obj:`numpy.where`.
+    Performs the equivalent of [`numpy.where`][].
 
     Parameters
     ----------
@@ -540,18 +540,18 @@ def where(condition, x=None, y=None):
     Returns
     -------
     COO
-        The output array with selected values if ``x`` and ``y`` are given;
+        The output array with selected values if `x` and `y` are given;
         else where the array is nonzero.
 
     Raises
     ------
     ValueError
         If the operation would produce a dense result; or exactly one of
-        ``x`` and ``y`` are given.
+        `x` and `y` are given.
 
     See Also
     --------
-    numpy.where : Equivalent Numpy function.
+    [`numpy.where`][] : Equivalent Numpy function.
     """
     from .._umath import elemwise
 
@@ -584,7 +584,7 @@ def argwhere(a):
 
     See Also
     --------
-    :obj:`where`, :obj:`COO.nonzero`
+    [`sparse.where`][], [`sparse.COO.nonzero`][]
 
     Examples
     --------
@@ -683,8 +683,8 @@ def _replace_nan(array, value):
 
 def nanreduce(x, method, identity=None, axis=None, keepdims=False, **kwargs):
     """
-    Performs an ``NaN`` skipping reduction on this array. See the documentation
-    on :obj:`COO.reduce` for examples.
+    Performs an `NaN` skipping reduction on this array. See the documentation
+    on [`sparse.COO.reduce`][] for examples.
 
     Parameters
     ----------
@@ -714,7 +714,7 @@ def nanreduce(x, method, identity=None, axis=None, keepdims=False, **kwargs):
 
     See Also
     --------
-    COO.reduce : Similar method without ``NaN`` skipping functionality.
+    [`sparse.COO.reduce`][] : Similar method without `NaN` skipping functionality.
     """
     arr = _replace_nan(x, method.identity if identity is None else identity)
     return arr.reduce(method, axis, keepdims, **kwargs)
@@ -802,7 +802,7 @@ def roll(a, shift, axis=None):
 
 def diagonal(a, offset=0, axis1=0, axis2=1):
     """
-    Extract diagonal from a COO array. The equivalent of :obj:`numpy.diagonal`.
+    Extract diagonal from a COO array. The equivalent of [`numpy.diagonal`][].
 
     Parameters
     ----------
@@ -847,7 +847,7 @@ def diagonal(a, offset=0, axis1=0, axis2=1):
 
     See Also
     --------
-    :obj:`numpy.diagonal` : NumPy equivalent function
+    [`numpy.diagonal`][] : NumPy equivalent function
     """
     from .core import COO
 
@@ -870,8 +870,10 @@ def diagonalize(a, axis=0):
     """
     Diagonalize a COO array. The new dimension is appended at the end.
 
-    .. WARNING:: :obj:`diagonalize` is not :obj:`numpy` compatible as there is no direct :obj:`numpy` equivalent. The
-      API may change in the future.
+    !!! warning
+
+        [`sparse.diagonalize`][] is not [numpy][] compatible as there is no direct [numpy][] equivalent. The
+        API may change in the future.
 
     Parameters
     ----------
@@ -894,7 +896,7 @@ def diagonalize(a, axis=0):
     >>> x_diag.shape
     (2, 3, 4, 3)
 
-    :obj:`diagonalize` is the inverse of :obj:`diagonal`
+    [`sparse.diagonalize`][] is the inverse of [`sparse.diagonal`][]
 
     >>> a = sparse.random((3, 3, 3, 3, 3), density=0.3)
     >>> a_diag = sparse.diagonalize(a, axis=2)
@@ -908,7 +910,7 @@ def diagonalize(a, axis=0):
 
     See Also
     --------
-    :obj:`numpy.diag` : NumPy equivalent for 1D array
+    [`numpy.diag`][] : NumPy equivalent for 1D array
     """
     from .core import COO, as_coo
 
@@ -922,7 +924,7 @@ def diagonalize(a, axis=0):
 
 def isposinf(x, out=None):
     """
-    Test element-wise for positive infinity, return result as sparse ``bool`` array.
+    Test element-wise for positive infinity, return result as sparse `bool` array.
 
     Parameters
     ----------
@@ -940,7 +942,7 @@ def isposinf(x, out=None):
 
     See Also
     --------
-    numpy.isposinf : The NumPy equivalent
+    [`numpy.isposinf`][] : The NumPy equivalent
     """
     from .core import elemwise
 
@@ -949,7 +951,7 @@ def isposinf(x, out=None):
 
 def isneginf(x, out=None):
     """
-    Test element-wise for negative infinity, return result as sparse ``bool`` array.
+    Test element-wise for negative infinity, return result as sparse `bool` array.
 
     Parameters
     ----------
@@ -967,7 +969,7 @@ def isneginf(x, out=None):
 
     See Also
     --------
-    numpy.isneginf : The NumPy equivalent
+    [`numpy.isneginf`][] : The NumPy equivalent
     """
     from .core import elemwise
 
@@ -980,7 +982,7 @@ def result_type(*arrays_and_dtypes):
 
     See Also
     --------
-    numpy.result_type : The NumPy equivalent
+    [`numpy.result_type`][] : The NumPy equivalent
     """
     return np.result_type(*(_as_result_type_arg(x) for x in arrays_and_dtypes))
 

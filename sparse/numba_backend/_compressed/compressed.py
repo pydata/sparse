@@ -78,12 +78,12 @@ def _from_coo(x, compressed_axes=None, idx_dtype=None):
 
 
 class GCXS(SparseArray, NDArrayOperatorsMixin):
-    """
+    r"""
     A sparse multidimensional array.
 
     This is stored in GCXS format, a generalization of the GCRS/GCCS formats
-    from 'Efficient storage scheme for n-dimensional sparse array: GCRS/GCCS':
-    https://ieeexplore.ieee.org/document/7237032. GCXS generalizes the CRS/CCS
+    from [Efficient storage scheme for n-dimensional sparse array: GCRS/GCCS](
+    https://ieeexplore.ieee.org/document/7237032). GCXS generalizes the CRS/CCS
     sparse matrix formats.
 
     For arrays with ndim == 2, GCXS is the same CSR/CSC.
@@ -117,7 +117,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     Attributes
     ----------
     data : numpy.ndarray (nnz,)
-        An array holding the nonzero values corresponding to :obj:`GCXS.indices`.
+        An array holding the nonzero values corresponding to `indices`.
     indices : numpy.ndarray (nnz,)
         An array holding the coordinates of every nonzero element along uncompressed dimensions.
     indptr : numpy.ndarray
@@ -127,7 +127,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     See Also
     --------
-    DOK : A mostly write-only sparse array.
+    [`sparse.DOK`][] : A mostly write-only sparse array.
     """
 
     __array_priority__ = 12
@@ -235,8 +235,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         See Also
         --------
-        numpy.ndarray.dtype : Numpy equivalent property.
-        scipy.sparse.csr_matrix.dtype : Scipy equivalent property.
+        - [`numpy.ndarray.dtype`][] : Numpy equivalent property.
+        - [`scipy.sparse.csr_matrix.dtype`][] : Scipy equivalent property.
         """
         return self.data.dtype
 
@@ -252,10 +252,10 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         See Also
         --------
-        COO.nnz : Equivalent :obj:`COO` array property.
-        DOK.nnz : Equivalent :obj:`DOK` array property.
-        numpy.count_nonzero : A similar Numpy function.
-        scipy.sparse.csr_matrix.nnz : The Scipy equivalent property.
+        - [`sparse.COO.nnz`][] : Equivalent [`sparse.COO`][] array property.
+        - [`sparse.DOK.nnz`][] : Equivalent [`sparse.DOK`][] array property.
+        - [`numpy.count_nonzero`][] : A similar Numpy function.
+        - [`scipy.sparse.coo_matrix.nnz`][] : The Scipy equivalent property.
         """
         return self.data.shape[0]
 
@@ -263,13 +263,16 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     def format(self):
         """
         The storage format of this array.
+
         Returns
         -------
         str
             The storage format of this array.
+
         See Also
         -------
-        scipy.sparse.dok_matrix.format : The Scipy equivalent property.
+        [`scipy.sparse.dok_matrix.format`][] : The Scipy equivalent property.
+
         Examples
         -------
         >>> import sparse
@@ -295,7 +298,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         See Also
         --------
-        numpy.ndarray.nbytes : The equivalent Numpy property.
+        [`numpy.ndarray.nbytes`][] : The equivalent Numpy property.
         """
         return self.data.nbytes + self.indices.nbytes + self.indptr.nbytes
 
@@ -418,7 +421,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def tocoo(self):
         """
-        Convert this :obj:`GCXS` array to a :obj:`COO`.
+        Convert this [`sparse.GCXS`][] array to a [`sparse.COO`][].
 
         Returns
         -------
@@ -455,8 +458,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def todense(self):
         """
-        Convert this :obj:`GCXS` array to a dense :obj:`numpy.ndarray`. Note that
-        this may take a large amount of memory if the :obj:`GCXS` object's :code:`shape`
+        Convert this [`sparse.GCXS`][] array to a dense [`numpy.ndarray`][]. Note that
+        this may take a large amount of memory if the [`sparse.GCXS`][] object's `shape`
         is large.
 
         Returns
@@ -466,9 +469,10 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         See Also
         --------
-        DOK.todense : Equivalent :obj:`DOK` array method.
-        COO.todense : Equivalent :obj:`COO` array method.
-        scipy.sparse.coo_matrix.todense : Equivalent Scipy method.
+        - [`sparse.DOK.todense`][] : Equivalent [`sparse.DOK`][] array method.
+        - [`sparse.COO.todense`][] : Equivalent [`sparse.COO`][] array method.
+        - [`scipy.sparse.coo_matrix.todense`][] : Equivalent Scipy method.
+
         """
         if self.compressed_axes is None:
             out = np.full(self.shape, self.fill_value, self.dtype)
@@ -487,7 +491,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def to_scipy_sparse(self, accept_fv=None):
         """
-        Converts this :obj:`GCXS` object into a :obj:`scipy.sparse.csr_matrix` or `scipy.sparse.csc_matrix`.
+        Converts this [`sparse.GCXS`][] object into a [`scipy.sparse.csr_matrix`][] or [`scipy.sparse.csc_matrix`][].
 
         Parameters
         ----------
@@ -496,7 +500,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         Returns
         -------
-        :obj:`scipy.sparse.csr_matrix` or `scipy.sparse.csc_matrix`
+        scipy.sparse.csr_matrix or scipy.sparse.csc_matrix
             The converted Scipy sparse matrix.
 
         Raises
@@ -562,22 +566,26 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def maybe_densify(self, max_size=1000, min_density=0.25):
         """
-        Converts this :obj:`GCXS` array to a :obj:`numpy.ndarray` if not too
+        Converts this [`sparse.GCXS`][] array to a [`numpy.ndarray`][] if not too
         costly.
+
         Parameters
         ----------
         max_size : int
             Maximum number of elements in output
         min_density : float
             Minimum density of output
+
         Returns
         -------
         numpy.ndarray
             The dense array.
+
         See Also
         --------
-        sparse.GCXS.todense: Converts to Numpy function without checking the cost.
-        sparse.COO.maybe_densify: The equivalent COO function.
+        - [sparse.GCXS.todense][]: Converts to Numpy function without checking the cost.
+        - [sparse.COO.maybe_densify][]: The equivalent COO function.
+
         Raises
         -------
         ValueError
@@ -591,7 +599,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def flatten(self, order="C"):
         """
-        Returns a new :obj:`GCXS` array that is a flattened version of this array.
+        Returns a new [`sparse.GCXS`][] array that is a flattened version of this array.
 
         Returns
         -------
@@ -600,7 +608,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         Notes
         -----
-        The :code:`order` parameter is provided just for compatibility with
+        The `order` parameter is provided just for compatibility with
         Numpy and isn't actually supported.
         """
         if order not in {"C", None}:
@@ -610,7 +618,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def reshape(self, shape, order="C", compressed_axes=None):
         """
-        Returns a new :obj:`GCXS` array that is a reshaped version of this array.
+        Returns a new [`sparse.GCXS`][] array that is a reshaped version of this array.
 
         Parameters
         ----------
@@ -627,12 +635,12 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         See Also
         --------
-        numpy.ndarray.reshape : The equivalent Numpy function.
-        sparse.COO.reshape : The equivalent COO function.
+        - [`numpy.ndarray.reshape`][] : The equivalent Numpy function.
+        - [sparse.COO.reshape][] : The equivalent COO function.
 
         Notes
         -----
-        The :code:`order` parameter is provided just for compatibility with
+        The `order` parameter is provided just for compatibility with
         Numpy and isn't actually supported.
 
         """
@@ -694,8 +702,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         See Also
         --------
-        :obj:`GCXS.T` : A quick property to reverse the order of the axes.
-        numpy.ndarray.transpose : Numpy equivalent function.
+        - [`sparse.GCXS.T`][] : A quick property to reverse the order of the axes.
+        - [`numpy.ndarray.transpose`][] : Numpy equivalent function.
         """
         if axes is None:
             axes = list(reversed(range(self.ndim)))
@@ -758,7 +766,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def dot(self, other):
         """
-        Performs the equivalent of :code:`x.dot(y)` for :obj:`GCXS`.
+        Performs the equivalent of `x.dot(y)` for [`sparse.GCXS`][].
 
         Parameters
         ----------
@@ -778,9 +786,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         See Also
         --------
-        dot : Equivalent function for two arguments.
-        :obj:`numpy.dot` : Numpy equivalent function.
-        scipy.sparse.csr_matrix.dot : Scipy equivalent function.
+        - [`sparse.dot`][] : Equivalent function for two arguments.
+        - [`numpy.dot`][] : Numpy equivalent function.
+        - [`scipy.sparse.coo_matrix.dot`][] : Scipy equivalent function.
         """
         from .._common import dot
 
