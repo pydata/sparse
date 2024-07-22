@@ -13,8 +13,6 @@ theme:
         - navigation.instant
         - navigation.instant.progress
         - navigation.prune
-        - navigation.tabs
-        - navigation.tabs.sticky
         - navigation.footer
         - navigation.indexes
         - content.code.copy

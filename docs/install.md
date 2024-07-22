@@ -11,7 +11,7 @@ directly::
 ```bash
 pip install git+https://github.com/pydata/sparse
 ```
-Or by cloning the repository and installing locally::
+Or by cloning the repository and installing locally:
 ```bash
 git clone https://github.com/pydata/sparse.git
 cd sparse/
