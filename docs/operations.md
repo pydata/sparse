@@ -77,7 +77,7 @@ In these cases, they will produce an output with a fill value of `1` or `True`,
 assuming the original array has a fill value of `0` or `False` respectively.
 
 If densification is needed, it must be explicit. In other words, you must call
-[`sparse.SparseArray.todense`][] on the [`sparse.SparseArray`][] object. If both operands are [sparse.SparseArray][],
+[`sparse.SparseArray.todense`][] on the [`sparse.SparseArray`][] object. If both operands are [`sparse.SparseArray`][],
 both must be densified.
 
 **Operations with NumPy arrays**

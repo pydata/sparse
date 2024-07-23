@@ -851,6 +851,40 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     @property
     def mT(self):
+        """
+        Transpose of a matrix (or a stack of matrices).
+        If an array instance has fewer than two dimensions, an error should be raised.
+
+        Returns
+        -------
+        COO
+            array whose last two dimensions (axes) are permuted in reverse order relative to
+            original array (i.e., for an array instance having shape (..., M, N), the returned
+            array must have shape (..., N, M)). The returned array must have the same data
+            type as the original array.
+
+        See Also
+        --------
+        - [`sparse.COO.transpose`][] :
+            A method where you can specify the order of the axes.
+        - [`numpy.ndarray.mT`][] :
+            Numpy equivalent property.
+
+        Examples
+        --------
+        >>> x = np.arange(8).reshape((2, 2, 2))
+        >>> x  # doctest: +NORMALIZE_WHITESPACE
+        array([[[0, 1],
+                [2, 3]],
+               [[4, 5],
+                [6, 7]]])
+        >>> s = COO.from_numpy(x)
+        >>> s.mT.todense()  # doctest: +NORMALIZE_WHITESPACE
+        array([[[0, 2],
+                [1, 3]],
+               [[4, 6],
+                [5, 7]]])
+        """
         if self.ndim < 2:
             raise ValueError("Cannot compute matrix transpose if `ndim < 2`.")
 
