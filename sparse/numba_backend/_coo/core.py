@@ -852,13 +852,16 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     @property
     def mT(self):
         """
-        Returns the matrix transpose as a new array.
-        The matrix transpose is the transpose of the last two dimensions, even if the array is of higher dimension
+        Transpose of a matrix (or a stack of matrices).
+        If an array instance has fewer than two dimensions, an error should be raised.
 
         Returns
         -------
         COO
-            The new array with the matrix transpose.
+            array whose last two dimensions (axes) are permuted in reverse order relative to
+            original array (i.e., for an array instance having shape (..., M, N), the returned
+            array must have shape (..., N, M)). The returned array must have the same data
+            type as the original array.
 
         See Also
         --------
@@ -869,7 +872,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         Examples
         --------
-
         >>> x = np.arange(8).reshape((2, 2, 2))
         >>> x  # doctest: +NORMALIZE_WHITESPACE
         array([[[0, 1],
