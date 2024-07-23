@@ -851,6 +851,38 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     @property
     def mT(self):
+        """
+        Returns the matrix transpose as a new array.
+        The matrix transpose is the transpose of the last two dimensions, even if the array is of higher dimension
+
+        Returns
+        -------
+        COO
+            The new array with the matrix transpose.
+
+        See Also
+        --------
+        - [`sparse.COO.transpose`][] :
+            A method where you can specify the order of the axes.
+        - [`numpy.ndarray.mT`][] :
+            Numpy equivalent property.
+
+        Examples
+        --------
+
+        >>> x = np.arange(8).reshape((2, 2, 2))
+        >>> x  # doctest: +NORMALIZE_WHITESPACE
+        array([[[0, 1],
+                [2, 3]],
+               [[4, 5],
+                [6, 7]]])
+        >>> s = COO.from_numpy(x)
+        >>> s.mT.todense()  # doctest: +NORMALIZE_WHITESPACE
+        array([[[0, 2],
+                [1, 3]],
+               [[4, 6],
+                [5, 7]]])
+        """
         if self.ndim < 2:
             raise ValueError("Cannot compute matrix transpose if `ndim < 2`.")
 
