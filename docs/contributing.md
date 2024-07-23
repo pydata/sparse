@@ -47,6 +47,17 @@ after forking and cloning the repository:
 pip install -e .[all]
 ```
 
+## Pull requests
+
+Please adhere to the following guidelines:
+
+1. Start your pull request title with a [conventional commit](https://www.conventionalcommits.org/) tag. This helps us add your contribution to the right section of the changelog. We use "Type" from the [Angular convention](https://github.com/angular/angular/blob/22b96b9/CONTRIBUTING.md#type).<br>
+    TLDR:<br>
+    The PR title should start with any of this abbreviatons: `build`, `chore`, `ci`, `depr`,
+    `docs`, `feat`, `fix`, `perf`, `refactor`, `release`, `test`. Add a `!`at the end, if it is a breaking change. For example `refactor!`.
+2. This text will end up in the changelog.
+3. Please follow the instructions in the pull request form and submit.
+
 ## Running/Adding Unit Tests
 
 It is best if all new functionality and/or bug fixes have unit tests added
