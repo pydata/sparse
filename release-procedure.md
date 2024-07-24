@@ -7,6 +7,7 @@
   ```bash
   git push pydata main --tags
   ```
+  When you open the PR on GitHub, make sure the title of the PR starts with "release".
 
 * Upload to PyPI
   ```bash
