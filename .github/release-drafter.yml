@@ -1,4 +1,4 @@
-exclude-labels: 
+exclude-labels:
   # When PR will not be classified if it has these labels
   - skip changelog
   - release
