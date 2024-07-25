@@ -1,0 +1,66 @@
+exclude-labels:
+  # When PR will not be classified if it has these labels
+  - skip changelog
+  - release
+name-template: 'Sparse v$RESOLVED_VERSION'
+
+change-template: '- $TITLE (#$NUMBER)'
+
+autolabeler:
+  - label: breaking
+    title:
+      # Example: feat!: ...
+      - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)(\(.*\))?\!\: /'
+  - label: build
+    title:
+      - '/^(build)/'
+  - label: internal
+    title:
+      - '/^(chore|ci|refactor|test)/'
+  - label: deprecation
+    title:
+      - '/^depr/'
+  - label: documentation
+    title:
+      - '/^(docs|docstring)/'
+  - label: enhancement
+    title:
+      - '/^feat/'
+  - label: fix
+    title:
+      - '/^fix/'
+  - label: performance
+    title:
+      - '/^perf/'
+  - label: release
+    title:
+      - '/^release/'
+  - label: 'skip changelog'
+    title:
+      - '/^\[pre-commit.ci\]/'
+categories:
+  - title: Highlights
+    labels: highlight
+  - title: Breaking changes
+    labels:
+      - breaking
+      - breaking python
+  - title: Deprecations
+    labels: deprecation
+  - title: Performance improvements
+    labels: performance
+  - title: Enhancements
+    labels: enhancement
+  - title: Bug fixes
+    labels: fix
+  - title: Documentation
+    labels: documentation
+  - title: Build system
+    labels: build
+  - title: Other improvements
+    labels: internal
+
+template: |
+  ## Changes
+
+  $CHANGES
