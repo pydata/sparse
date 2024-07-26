@@ -4,7 +4,8 @@ edit_uri: edit/main/docs/
 theme:
   name: material
   palette:
-    primary: black
+    primary: custom
+    accent: cyan
   font: false #avoid Google Fonts to adhere to data privacy regulations
   logo: assets/images/logo.png
   favicon: assets/images/logo.svg
@@ -65,6 +66,7 @@ plugins:
 
 nav:
 - index.md
+- introduction.md
 - install.md
 - quickstart.md
 - construct.md

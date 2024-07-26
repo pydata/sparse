@@ -16,27 +16,24 @@ dimensions.
 <br>
 
 <div class="grid" markdown>
+  ![Sparse](./assets/images/logo.png){width=20%, align=left}
+  <a text- href="introduction" class="card">Introduction</a> 
+  { .card }
+  
+  ![Sparse](./assets/images/undraw_education_f8ru.png){width=20%, align=left}
+  <a href="#" class="card">Tutorials</a>
+  { .card }
 
-<p><a style="font-weight:bold" href="introduction" class="card">Introduction</a>
+  <a href="construct" class="card">How-to guides</a>
   { .card }
-</p>
-<p><a href="#" class="card">Tutorials</a>
-  { .card }
-</p>
 
-<p><a href="construct" class="card">How-to guides</a>
+  <a href="API/BACKEND" style: class="card">API</a>
   { .card }
-</p>
 
-<p><a href="API/BACKEND" style: class="card">Reference</a>
+  <a href="#" style: class="card">Explanation </a>
   { .card }
-</p>
-<p><a href="#" style: class="card">Explanation </a>
+ 
+  <a href="#" style: class="card">Something here </a>
   { .card }
-</p>
-
-<p><a href="#" style: class="card">Something here </a>
-  { .card }
-</p>
 
 </div>
