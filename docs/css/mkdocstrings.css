@@ -4,6 +4,10 @@
     --md-primary-fg-color--dark:  #335365;
   }
 
+  .md-tabs__item {
+    font-weight: bolder;
+  }
+
   .grid {
     font-weight: bolder;
     font-size: 160%;
