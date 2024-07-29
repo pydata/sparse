@@ -16,7 +16,7 @@ dimensions.
 <br>
 ![Sparse](./assets/images/logo.png){width=20%, align=left}
 <div class="grid" markdown>
-  
+
   ![Sparse](./assets/images/conference-room-icon.png){width=10%, align=left}
   <a href="Introduction" style: class="card">Introduction </a>
   { .card }
@@ -24,7 +24,7 @@ dimensions.
   ![Sparse](./assets/images/install-software-download-icon.png){width=10%, align=left}
   <a href="Install" style: class="card">Install</a>
   { .card }
-  
+
   ![Sparse](./assets/images/open-book-icon.png){width=10%, align=left}
   <a href="#" class="card">Tutorials</a>
   { .card }

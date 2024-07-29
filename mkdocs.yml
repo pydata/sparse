@@ -70,15 +70,17 @@ plugins:
                 filters: ["!^_"]
                 group_by_category: true
                 show_category_heading: true
-  
+
   - mkdocs-jupyter:
       include_source: True
-  
+
 nav:
   - Home: index.md
   - Introduction: introduction.md
   - Install: install.md
-  - Tutorials: examples/sparse_finch.ipynb
+  - Tutorials: #examples/sparse_finch.ipynb
+    - examples.md
+    - examples/sparse_finch.ipynb
   - How to guides:
     - how-to-guides.md
     - quickstart.md
@@ -92,19 +94,3 @@ nav:
     - completed-tasks.md
     - changelog.md
     - conduct.md
-
-#- index.md
-#- introduction.md
-#- install.md
-#- quickstart.md
-#- construct.md
-#- operations.md
-#- API:
-#  - api/*
-#- roadmap.md
-## - completed-tasks.md
-#- contributing.md
-#- changelog.md
-#- conduct.md
-#- Notebook page: examples/sparse_finch.ipynb
-#- examples-test.md

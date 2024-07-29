@@ -72,7 +72,7 @@ the performance of these.
 * `CSR` and `CSC` specializations of [`sparse.GCXS`][] (PR [#442](https://github.com/pydata/sparse/pull/442), thanks [@ivirshup](https://github.com/ivirshup))
   For now, this is experimental undocumented API, and subject to change.
 * Fix a number of bugs (PR [#407](https://github.com/pydata/sparse/pull/407), Issue [#406](https://github.com/pydata/sparse/issues/406))
-* Add [nnz][] parameter to [`sparse.random`][] (PR [#410](https://github.com/pydata/sparse/pull/410), thanks [@emilmelnikov](https://github.com/emilmelnikov))
+* Add `nnz` parameter to [`sparse.random`][] (PR [#410](https://github.com/pydata/sparse/pull/410), thanks [@emilmelnikov](https://github.com/emilmelnikov))
 
 0.11.2 / 2020-09-04
 -------------------
