@@ -34,7 +34,7 @@ dimensions.
   { .card }
 
   ![Sparse](./assets/images/repair-fix-repairing-icon.png){width=10%, align=left}
-  <a href="api/backend/" style: class="card">API</a>
+  <a href="api/BACKEND/" style: class="card">API</a>
   { .card }
 
  ![Sparse](./assets/images/group-discussion-icon.png){width=10%, align=left}
