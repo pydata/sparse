@@ -34,7 +34,7 @@ docs = [
         "mkdocs-gen-files",
         "mkdocs-literate-nav",
         "mkdocs-section-index",
-        "mkdocs-jupiter",
+        "mkdocs-jupyter",
         "scipy",
 ]
 tests = [
