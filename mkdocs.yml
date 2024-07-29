@@ -1,6 +1,7 @@
 site_name: sparse
 repo_url: https://github.com/pydata/sparse.git
 edit_uri: edit/main/docs/
+#use_directory_urls: false
 theme:
   name: material
   palette:
@@ -10,12 +11,16 @@ theme:
   logo: assets/images/logo.png
   favicon: assets/images/logo.svg
   features:
+        - navigation.tabs
+        - navigation.tabs.sticky
         - navigation.tracking
         - navigation.instant
         - navigation.instant.progress
         - navigation.prune
         - navigation.footer
         - navigation.indexes
+        - navigation.expand
+        - navigation.top # adds a back-to-top button when user scrolls up
         - content.code.copy
 
 markdown_extensions:
@@ -41,40 +46,65 @@ extra_css:
   - css/mkdocstrings.css
 
 plugins:
-- search
-- section-index
-- autorefs
-- gen-files:
-    scripts:
-    - scripts/gen_ref_pages.py
-- literate-nav
-- mkdocstrings:
-    handlers:
-          python:
-            import:
-            - https://numpy.org/doc/stable/objects.inv
-            - https://docs.python.org/3/objects.inv
-            - https://docs.scipy.org/doc/scipy/objects.inv
-            options:
-              inherited_members: yes
-              show_root_members_full_path: false
-              show_if_no_docstring: true
-              members_order: source
-              docstring_style: numpy
-              show_source: true
-              filters: ["!^_"]
-
+  - search
+  - section-index
+  - autorefs
+  - gen-files:
+      scripts:
+      - scripts/gen_ref_pages.py
+  - literate-nav
+  - mkdocstrings:
+      handlers:
+            python:
+              import:
+              - https://numpy.org/doc/stable/objects.inv
+              - https://docs.python.org/3/objects.inv
+              - https://docs.scipy.org/doc/scipy/objects.inv
+              options:
+                inherited_members: yes
+                show_root_members_full_path: false
+                show_if_no_docstring: true
+                members_order: source
+                docstring_style: numpy
+                show_source: true
+                filters: ["!^_"]
+                group_by_category: true
+                show_category_heading: true
+  
+  - mkdocs-jupyter:
+      include_source: True
+  
 nav:
-- index.md
-- introduction.md
-- install.md
-- quickstart.md
-- construct.md
-- operations.md
-- API:
-  - api/*
-- roadmap.md
-# - completed-tasks.md
-- contributing.md
-- changelog.md
-- conduct.md
+  - Home: index.md
+  - Introduction: introduction.md
+  - Install: install.md
+  - Tutorials: examples/sparse_finch.ipynb
+  - How to guides:
+    - how-to-guides.md
+    - quickstart.md
+    - construct.md
+    - operations.md
+  - API:
+    - api/*
+  - Contributing:
+    - contributing.md
+    - roadmap.md
+    - completed-tasks.md
+    - changelog.md
+    - conduct.md
+
+#- index.md
+#- introduction.md
+#- install.md
+#- quickstart.md
+#- construct.md
+#- operations.md
+#- API:
+#  - api/*
+#- roadmap.md
+## - completed-tasks.md
+#- contributing.md
+#- changelog.md
+#- conduct.md
+#- Notebook page: examples/sparse_finch.ipynb
+#- examples-test.md
