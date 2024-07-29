@@ -1,7 +1,5 @@
-Changelog
-=========
+# Changelog
 
-.. currentmodule:: sparse
 
 0.15.1 / 2024-01-10
 -------------------
@@ -9,8 +7,8 @@ Changelog
 
 0.15.0 / 2024-01-09
 -------------------
-* Fix regression where :obj:`DeprecationWarning`s were being fired unexpectedly. (PR [#581](https://github.com/pydata/sparse/pull/581) thanks [@hameerabbasi](https://github.com/hameerabbasi))
-* Extended :obj:`sparse.einsum` support (PR [#579](https://github.com/pydata/sparse/pull/579) thanks [@HadrienNU](https://github.com/HadrienNU))
+* Fix regression where [DeprecationWarning][]s were being fired unexpectedly. (PR [#581](https://github.com/pydata/sparse/pull/581) thanks [@hameerabbasi](https://github.com/hameerabbasi))
+* Extended [`sparse.einsum`][] support (PR [#579](https://github.com/pydata/sparse/pull/579) thanks [@HadrienNU](https://github.com/HadrienNU))
 * General code clean-up (PR [#586](https://github.com/pydata/sparse/pull/586) thanks [@MHRasmy](https://github.com/MHRasmy), PR [#598](https://github.com/pydata/sparse/pull/598) thanks [@jamestwebber](https://github.com/jamestwebber))
 * Bug fixes with respect to NumPy compatibility  (PR [#598](https://github.com/pydata/sparse/pull/598) thanks [@hameerabbasi](https://github.com/hameerabbasi), PR [#609](https://github.com/pydata/sparse/pull/609) thanks [@Illviljan](https://github.com/Illviljan), PR [#620](https://github.com/pydata/sparse/pull/620) thanks [@mtsokol](https://github.com/mtsokol))
 * Bug fixes with respect to GCXS (PR [#611](https://github.com/pydata/sparse/pull/611) thanks [@EuGig](https://github.com/EuGig), PR [#601](https://github.com/pydata/sparse/pull/601) thanks [@jamestwebber](https://github.com/jamestwebber))
@@ -22,7 +20,7 @@ Changelog
 
 0.14.0 / 2023-02-24
 -------------------
-* :obj:`sparse.einsum` support (PR [#564](https://github.com/pydata/sparse/pull/564) thanks
+* [`sparse.einsum`][] support (PR [#564](https://github.com/pydata/sparse/pull/564) thanks
   [@jcmgray](https://github.com/jcmgray))
 * Some bug-fixes (PR [#524](https://github.com/pydata/sparse/pull/524), PR [#527](https://github.com/pydata/sparse/pull/527), PR [#555](https://github.com/pydata/sparse/pull/555) thanks [@hameerabbasi](https://github.com/hameerabbasi), PR [#569](https://github.com/pydata/sparse/pull/569), thanks [@jamestwebber](https://github.com/jamestwebber), PR [#534](https://github.com/pydata/sparse/pull/534), thanks [@sarveshbhatnagar](https://github.com/sarveshbhatnagar))
 * Some performance improvements (PR [#570](https://github.com/pydata/sparse/pull/570), thanks [@jamestwebber](https://github.com/jamestwebber), PR [#540](https://github.com/pydata/sparse/pull/540), thanks [@smldub](https://github.com/smldub)).
@@ -31,20 +29,20 @@ Changelog
 0.13.0 / 2021-08-28
 -------------------
 
-* GCXS improvements and changes. (PR [#448](https://github.com/pydata/sparse/pull/448), PR [#450](https://github.com/pydata/sparse/pull/450), PR [#455](https://github.com/pydata/sparse/pull/455), thanks
+* [`sparse.GCXS`][] improvements and changes. (PR [#448](https://github.com/pydata/sparse/pull/448), PR [#450](https://github.com/pydata/sparse/pull/450), PR [#455](https://github.com/pydata/sparse/pull/455), thanks
   [@sayandip18](https://github.com/sayandip18)).
 * Maintainence fixes (PR [#462](https://github.com/pydata/sparse/pull/462), PR [#466](https://github.com/pydata/sparse/pull/466), :commit:`1ccb85da581be65a0345b399e00fd3c325700d95`,
   :commit:`5547b4e92dc8d61492e9dc10ba00175c1a6637fa`
   :commit:`00c0e5514de2aab8b9a0be16b5da470b091d9eb9`, :commit:`fcd3020dd08c7022a44f709173fe23969d3e8f7c`,
   thanks [@hameerabbasi](https://github.com/hameerabbasi))
-* :obj:`sparse.DOK.from_scipy_sparse` method (PR [#464](https://github.com/pydata/sparse/pull/464), Issue [#463](https://github.com/pydata/sparse/issues/463), thanks
+* [`sparse.DOK.from_scipy_sparse`][] method (PR [#464](https://github.com/pydata/sparse/pull/464), Issue [#463](https://github.com/pydata/sparse/issues/463), thanks
   [@hameerabbasi](https://github.com/hameerabbasi)).
 * Black re-formatting (PR [#471](https://github.com/pydata/sparse/pull/471), PR [#484](https://github.com/pydata/sparse/pull/484), thanks [@GenevieveBuckley](https://github.com/GenevieveBuckley), [@sayandip18](https://github.com/sayandip18))
-* Add :obj:`sparse.pad` (PR [#474](https://github.com/pydata/sparse/pull/474), Issue [#438](https://github.com/pydata/sparse/issues/438), thanks [@H4R5H1T-007](https://github.com/H4R5H1T-007))
+* Add [`sparse.pad`][] (PR [#474](https://github.com/pydata/sparse/pull/474), Issue [#438](https://github.com/pydata/sparse/issues/438), thanks [@H4R5H1T-007](https://github.com/H4R5H1T-007))
 * Switch to GitHub Actions (:compare:`5547b4e92dc8d61492e9dc10ba00175c1a6637fa..a332f22c96a96e5ab9b4384342df67e8f3966f85`)
 * Fix a number of bugs in format conversion. (PR [#504](https://github.com/pydata/sparse/pull/504), Issue [#503](https://github.com/pydata/sparse/issues/503), thanks
   [@hameerabbasi](https://github.com/hameerabbasi))
-* Fix bug in :obj:`sparse.matmul` for higher-dimensional arrays. (PR [#508](https://github.com/pydata/sparse/pull/508),
+* Fix bug in [`sparse.matmul`][] for higher-dimensional arrays. (PR [#508](https://github.com/pydata/sparse/pull/508),
   Issue [#506](https://github.com/pydata/sparse/issues/506), thanks [@sayandip18](https://github.com/sayandip18)).
 * Fix scalar conversion to COO (Issue [#510](https://github.com/pydata/sparse/issues/510), PR [#511](https://github.com/pydata/sparse/pull/511), thanks [@hameerabbasi](https://github.com/hameerabbasi))
 * Fix OOB memory accesses (Issue [#515](https://github.com/pydata/sparse/issues/515), :commit:`1e24a7e29786e888dee4c02153309986ae4b5dde`
@@ -62,39 +60,39 @@ Changelog
 -------------------
 
 There are a number of large changes in this release. For example, we have implemented the
-:obj:`GCXS` type, and its specializations :obj:`CSR` and :obj:`CSC`. We plan on gradually improving
+[`sparse.GCXS`][] type, and its specializations [`sparse.CSR`][] and [`sparse.CSC`][]. We plan on gradually improving
 the performance of these.
 
-* A number of :obj:`GCXS` fixes and additions (PR [#409](https://github.com/pydata/sparse/pull/409), PR [#407](https://github.com/pydata/sparse/pull/407), PR [#414](https://github.com/pydata/sparse/pull/414),
+* A number of [`sparse.GCXS`][] fixes and additions (PR [#409](https://github.com/pydata/sparse/pull/409), PR [#407](https://github.com/pydata/sparse/pull/407), PR [#414](https://github.com/pydata/sparse/pull/414),
   PR [#417](https://github.com/pydata/sparse/pull/417), PR [#419](https://github.com/pydata/sparse/pull/419) thanks [@daletovar](https://github.com/daletovar))
 * Ability to change the index dtype for better storage characteristics. (PR [#441](https://github.com/pydata/sparse/pull/441),
   thanks [@daletovar](https://github.com/daletovar))
-* Some work on :obj:`DOK` arrays to bring them closer to the other formats (PR [#435](https://github.com/pydata/sparse/pull/435),
+* Some work on [`sparse.DOK`][] arrays to bring them closer to the other formats (PR [#435](https://github.com/pydata/sparse/pull/435),
   PR [#437](https://github.com/pydata/sparse/pull/437), PR [#439](https://github.com/pydata/sparse/pull/439), PR [#440](https://github.com/pydata/sparse/pull/440), thanks [@DragaDoncila](https://github.com/DragaDoncila))
-* :obj:`CSR` and :obj:`CSC` specializations of :obj:`GCXS` (PR [#442](https://github.com/pydata/sparse/pull/442), thanks [@ivirshup](https://github.com/ivirshup))
+* [`sparse.CSR`][] and [`sparse.CSC`] specializations of [`sparse.GCXS`][] (PR [#442](https://github.com/pydata/sparse/pull/442), thanks [@ivirshup](https://github.com/ivirshup))
   For now, this is experimental undocumented API, and subject to change.
 * Fix a number of bugs (PR [#407](https://github.com/pydata/sparse/pull/407), Issue [#406](https://github.com/pydata/sparse/issues/406))
-* Add ``nnz`` parameter to :obj:`sparse.random` (PR [#410](https://github.com/pydata/sparse/pull/410), thanks [@emilmelnikov](https://github.com/emilmelnikov))
+* Add [nnz][] parameter to [`sparse.random`][] (PR [#410](https://github.com/pydata/sparse/pull/410), thanks [@emilmelnikov](https://github.com/emilmelnikov))
 
 0.11.2 / 2020-09-04
 -------------------
 
-* Fix :obj:`TypingError` on :obj:`sparse.dot` with complex dtypes. (Issue [#403](https://github.com/pydata/sparse/issues/403), PR [#404](https://github.com/pydata/sparse/pull/404))
+* Fix [TypingError] on [`sparse.dot`][] with complex dtypes. (Issue [#403](https://github.com/pydata/sparse/issues/403), PR [#404](https://github.com/pydata/sparse/pull/404))
 
 0.11.1 / 2020-08-31
 -------------------
 
-* Fix :obj:`ValueError` on :obj:`sparse.dot` with extremely small values. (Issue [#398](https://github.com/pydata/sparse/issues/398), PR [#399](https://github.com/pydata/sparse/pull/399))
+* Fix [ValueError] on [`sparse.dot`][] with extremely small values. (Issue [#398](https://github.com/pydata/sparse/issues/398), PR [#399](https://github.com/pydata/sparse/pull/399))
 
 0.11.0 / 2020-08-18
 -------------------
 
-* Improve the performance of :obj:`sparse.dot`. (Issue [#331](https://github.com/pydata/sparse/issues/331), PR [#389](https://github.com/pydata/sparse/pull/389), thanks [@daletovar](https://github.com/daletovar))
-* Added the :obj:`COO.swapaxes` method. (PR [#344](https://github.com/pydata/sparse/pull/344), thanks [@lueckem](https://github.com/lueckem))
+* Improve the performance of [`sparse.dot`][]. (Issue [#331](https://github.com/pydata/sparse/issues/331), PR [#389](https://github.com/pydata/sparse/pull/389), thanks [@daletovar](https://github.com/daletovar))
+* Added the [`sparse.COO.swapaxes`][] method. (PR [#344](https://github.com/pydata/sparse/pull/344), thanks [@lueckem](https://github.com/lueckem))
 * Added multi-axis 1-D indexing support. (PR [#343](https://github.com/pydata/sparse/pull/343), thanks [@mikeymezher](https://github.com/mikeymezher))
-* Fix :obj:`outer` for arrays that weren't one-dimensional. (Issue [#346](https://github.com/pydata/sparse/issues/346), PR [#347](https://github.com/pydata/sparse/pull/347))
-* Add ``casting`` kwarg to :obj:`COO.astype`. (Issue [#391](https://github.com/pydata/sparse/issues/391), PR [#392](https://github.com/pydata/sparse/pull/392))
-* Fix for :obj:`COO` constructor accepting invalid inputs. (Issue [#385](https://github.com/pydata/sparse/issues/385), PR [#386](https://github.com/pydata/sparse/pull/386))
+* Fix `outer` for arrays that weren't one-dimensional. (Issue [#346](https://github.com/pydata/sparse/issues/346), PR [#347](https://github.com/pydata/sparse/pull/347))
+* Add `casting` kwarg to [`sparse.COO.astype`][]. (Issue [#391](https://github.com/pydata/sparse/issues/391), PR [#392](https://github.com/pydata/sparse/pull/392))
+* Fix for [COO][] constructor accepting invalid inputs. (Issue [#385](https://github.com/pydata/sparse/issues/385), PR [#386](https://github.com/pydata/sparse/pull/386))
 
 0.10.0 / 2020-05-13
 -------------------
@@ -102,7 +100,7 @@ the performance of these.
 * Fixed a bug where converting an empty DOK array to COO leads
   to an incorrect dtype. (Issue [#314](https://github.com/pydata/sparse/issues/314), PR [#315](https://github.com/pydata/sparse/pull/315))
 * Change code formatter to black. (PR [#284](https://github.com/pydata/sparse/pull/284))
-* Add :obj:`COO.flatten` and :obj:`sparse.outer`. (Issue [#316](https://github.com/pydata/sparse/issues/316), PR [#317](https://github.com/pydata/sparse/pull/317)).
+* Add [COO.flatten]` and [`sparse.outer`][]. (Issue [#316](https://github.com/pydata/sparse/issues/316), PR [#317](https://github.com/pydata/sparse/pull/317)).
 * Remove broadcasting restriction between sparse arrays and dense arrays.
   (Issue [#306](https://github.com/pydata/sparse/issues/306), PR [#318](https://github.com/pydata/sparse/pull/318))
 * Implement deterministic dask tokenization. (Issue [#300](https://github.com/pydata/sparse/issues/300), PR [#320](https://github.com/pydata/sparse/pull/320), thanks
@@ -117,7 +115,7 @@ the performance of these.
   PR [#333](https://github.com/pydata/sparse/pull/333), thanks [@guilhermeleobas](https://github.com/guilhermeleobas)).
 * Maintainence fixes for Sphinx 3.0 and Numba 0.49, and dropping support for
   Python 3.5. (PR [#337](https://github.com/pydata/sparse/pull/337)).
-* Fixed signature for :obj:`numpy.clip`.
+* Fixed signature for [numpy.clip][].
 
 0.9.1 / 2020-01-23
 ------------------
@@ -125,16 +123,16 @@ the performance of these.
 * Fixed a bug where indexing with an empty list could lead
   to issues. (Issue [#281](https://github.com/pydata/sparse/issues/281), PR [#282](https://github.com/pydata/sparse/pull/282))
 * Change code formatter to black. (PR [#284](https://github.com/pydata/sparse/pull/284))
-* Add the :obj:`diagonal` and :obj:`diagonalize` functions.
+* Add the [`diagonal`][] and [`diagonalize][] functions.
   (Issue [#288](https://github.com/pydata/sparse/issues/288), PR [#289](https://github.com/pydata/sparse/pull/289), thanks [@pettni](https://github.com/pettni))
 * Add HTML repr for notebooks. (PR [#283](https://github.com/pydata/sparse/pull/283), thanks [@daletovar](https://github.com/daletovar))
-* Avoid making copy of ``coords`` when making a new :obj:`COO`
+* Avoid making copy of ``coords`` when making a new [`sparse.COO`][]
   array.
 * Add stack and concatenate for GCXS. (Issue [#301](https://github.com/pydata/sparse/issues/301), PR [#303](https://github.com/pydata/sparse/pull/303), thanks
   [@daletovar](https://github.com/daletovar)).
 * Fix issue where functions dispatching to an attribute access wouldn't
   work with ``__array_function__``. (Issue [#308](https://github.com/pydata/sparse/issues/308), PR [#309](https://github.com/pydata/sparse/pull/309)).
-* Add partial support for constructing and mirroring :obj:`COO` objects to
+* Add partial support for constructing and mirroring [`sparse.COO`][] objects to
   Numba.
 
 0.8.0 / 2019-08-26
@@ -187,8 +185,8 @@ This was mainly a contributor-driven release.
 
 The full list of changes can be found below:
 
-* Fixed a bug where going between :obj:`sparse.DOK` and
-  :obj:`sparse.COO` caused fill-values to be lost.
+* Fixed a bug where going between [`sparse.DOK`][] and
+  [`sparse.COO`][] caused fill-values to be lost.
   (Issue [#225](https://github.com/pydata/sparse/issues/225), PR [#226](https://github.com/pydata/sparse/pull/226)).
 * Fixed warning for a matrix that was incorrectly considered
   too dense. (Issue [#228](https://github.com/pydata/sparse/issues/228), PR [#229](https://github.com/pydata/sparse/pull/229))
@@ -229,46 +227,46 @@ an attempt is made to automatically densify an array. To densify, use the explic
 0.5.0 / 2018-10-12
 ------------------
 
-* Added :code:`COO.real`, :code:`COO.imag`, and :code:`COO.conj` (PR [#196](https://github.com/pydata/sparse/pull/196)).
-* Added :code:`sparse.kron` function (PR [#194](https://github.com/pydata/sparse/pull/194), PR [#195](https://github.com/pydata/sparse/pull/195)).
-* Added :code:`order` parameter to :code:`COO.reshape` to make it work with
-  :code:`np.reshape` (PR [#193](https://github.com/pydata/sparse/pull/193)).
-* Added :code:`COO.mean` and :code:`sparse.nanmean` (PR [#190](https://github.com/pydata/sparse/pull/190)).
-* Added :code:`sparse.full` and :code:`sparse.full_like` (PR [#189](https://github.com/pydata/sparse/pull/189)).
-* Added :code:`COO.clip` method (PR [#185](https://github.com/pydata/sparse/pull/185)).
-* Added :code:`COO.copy` method, and changed pickle of :code:`COO` to not
+* Added `COO.real`, `COO.imag`, and `COO.conj` (PR [#196](https://github.com/pydata/sparse/pull/196)).
+* Added `sparse.kron` function (PR [#194](https://github.com/pydata/sparse/pull/194), PR [#195](https://github.com/pydata/sparse/pull/195)).
+* Added `order` parameter to `COO.reshape` to make it work with
+  `np.reshape` (PR [#193](https://github.com/pydata/sparse/pull/193)).
+* Added `COO.mean` and `sparse.nanmean` (PR [#190](https://github.com/pydata/sparse/pull/190)).
+* Added `sparse.full` and `sparse.full_like` (PR [#189](https://github.com/pydata/sparse/pull/189)).
+* Added `COO.clip` method (PR [#185](https://github.com/pydata/sparse/pull/185)).
+* Added `COO.copy` method, and changed pickle of `COO` to not
   include its cache (PR [#184](https://github.com/pydata/sparse/pull/184)).
-* Added :code:`sparse.eye`, :code:`sparse.zeros`, :code:`sparse.zeros_like`,
-  :code:`sparse.ones`, and :code:`sparse.ones_like` (PR [#183](https://github.com/pydata/sparse/pull/183)).
+* Added `sparse.eye`, `sparse.zeros`, `sparse.zeros_like`,
+  `sparse.ones`, and `sparse.ones_like` (PR [#183](https://github.com/pydata/sparse/pull/183)).
 
 0.4.1 / 2018-09-12
 ------------------
 
-* Allow mixed :code:`ndarray`-:code:`COO` operations if the result is sparse
+* Allow mixed `ndarray`-`COO` operations if the result is sparse
   (Issue [#124](https://github.com/pydata/sparse/issues/124), via PR [#182](https://github.com/pydata/sparse/pull/182)).
 * Allow specifying a fill-value when converting from NumPy arrays
   (Issue [#179](https://github.com/pydata/sparse/issues/179), via PR [#180](https://github.com/pydata/sparse/pull/180)).
-* Added :code:`COO.any` and :code:`COO.all` methods (PR [#175](https://github.com/pydata/sparse/pull/175)).
-* Indexing for :code:`COO` now accepts a single one-dimensional array index
+* Added `COO.any` and `COO.all` methods (PR [#175](https://github.com/pydata/sparse/pull/175)).
+* Indexing for `COO` now accepts a single one-dimensional array index
   (PR [#172](https://github.com/pydata/sparse/pull/172)).
-* The fill-value can now be something other than zero or :code:`False`
+* The fill-value can now be something other than zero or `False`
   (PR [#165](https://github.com/pydata/sparse/pull/165)).
-* Added a :code:`sparse.roll` function (PR [#160](https://github.com/pydata/sparse/pull/160)).
+* Added a `sparse.roll` function (PR [#160](https://github.com/pydata/sparse/pull/160)).
 * Numba code now releases the GIL. This leads to better multi-threaded
   performance in Dask (PR [#159](https://github.com/pydata/sparse/pull/159)).
-* A number of bugs occurred, so to resolve them, :code:`COO.coords.dtype` is
-  always :code:`np.int64`.  :code:`COO`, therefore, uses more memory than
+* A number of bugs occurred, so to resolve them, `COO.coords.dtype` is
+  always `np.int64`.  `COO`, therefore, uses more memory than
   before (PR [#158](https://github.com/pydata/sparse/pull/158)).
-* Add support for saving and loading :code:`COO` files from disk (Issue [#153](https://github.com/pydata/sparse/issues/153),
+* Add support for saving and loading `COO` files from disk (Issue [#153](https://github.com/pydata/sparse/issues/153),
   via PR [#154](https://github.com/pydata/sparse/pull/154)).
-* Support :code:`COO.nonzero` and :code:`np.argwhere` (Issue [#145](https://github.com/pydata/sparse/issues/145), via
+* Support `COO.nonzero` and `np.argwhere` (Issue [#145](https://github.com/pydata/sparse/issues/145), via
   PR [#148](https://github.com/pydata/sparse/pull/148)).
 * Allow faux in-place operations (Issue [#80](https://github.com/pydata/sparse/issues/80), via PR [#146](https://github.com/pydata/sparse/pull/146)).
-* :code:`COO` is now always canonical (PR [#141](https://github.com/pydata/sparse/pull/141)).
+* `COO` is now always canonical (PR [#141](https://github.com/pydata/sparse/pull/141)).
 * Improve indexing performance (PR [#128](https://github.com/pydata/sparse/pull/128)).
 * Improve element-wise performance (PR [#127](https://github.com/pydata/sparse/pull/127)).
 * Reductions now support a negative axis (Issue [#117](https://github.com/pydata/sparse/issues/117), via PR [#118](https://github.com/pydata/sparse/pull/118)).
-* Match behaviour of :code:`ufunc.reduce` from NumPy (Issue [#107](https://github.com/pydata/sparse/issues/107), via
+* Match behaviour of `ufunc.reduce` from NumPy (Issue [#107](https://github.com/pydata/sparse/issues/107), via
   PR [#108](https://github.com/pydata/sparse/pull/108)).
 
 0.3.1 / 2018-04-12
@@ -280,37 +278,37 @@ an attempt is made to automatically densify an array. To densify, use the explic
 ------------------
 
 * Add NaN-skipping aggregations (PR [#102](https://github.com/pydata/sparse/pull/102)).
-* Add equivalent to :code:`np.where` (PR [#102](https://github.com/pydata/sparse/pull/102)).
+* Add equivalent to `np.where` (PR [#102](https://github.com/pydata/sparse/pull/102)).
 * N-input universal functions now work (PR [#98](https://github.com/pydata/sparse/pull/98)).
-* Make :code:`dot` more consistent with NumPy (PR [#96](https://github.com/pydata/sparse/pull/96)).
-* Create a base class :code:`SparseArray` (PR [#92](https://github.com/pydata/sparse/pull/92)).
+* Make `dot` more consistent with NumPy (PR [#96](https://github.com/pydata/sparse/pull/96)).
+* Create a base class `SparseArray` (PR [#92](https://github.com/pydata/sparse/pull/92)).
 * Minimum NumPy version is now 1.13 (PR [#90](https://github.com/pydata/sparse/pull/90)).
-* Fix a bug where setting a :code:`DOK` element to zero did nothing
+* Fix a bug where setting a `DOK` element to zero did nothing
   (Issue [#93](https://github.com/pydata/sparse/issues/93), via PR [#94](https://github.com/pydata/sparse/pull/94)).
 
 0.2.0 / 2018-01-25
 ------------------
 
-* Support faster :code:`np.array(COO)` (PR [#87](https://github.com/pydata/sparse/pull/87)).
-* Add :code:`DOK` type (PR [#85](https://github.com/pydata/sparse/pull/85)).
+* Support faster `np.array(COO)` (PR [#87](https://github.com/pydata/sparse/pull/87)).
+* Add `DOK` type (PR [#85](https://github.com/pydata/sparse/pull/85)).
 * Fix sum for large arrays (Issue [#82](https://github.com/pydata/sparse/issues/82), via PR [#83](https://github.com/pydata/sparse/pull/83)).
-* Support :code:`.size` and :code:`.density` (PR [#69](https://github.com/pydata/sparse/pull/69)).
+* Support `.size` and `.density` (PR [#69](https://github.com/pydata/sparse/pull/69)).
 * Documentation added for the package (PR [#43](https://github.com/pydata/sparse/pull/43)).
 * Minimum required SciPy version is now 0.19 (PR [#70](https://github.com/pydata/sparse/pull/70)).
-* :code:`len(COO)` now works (PR [#68](https://github.com/pydata/sparse/pull/68)).
-* :code:`scalar op COO` now works for all operators (PR [#67](https://github.com/pydata/sparse/pull/67)).
-* Validate axes for :code:`.transpose()` (PR [#61](https://github.com/pydata/sparse/pull/61)).
+* `len(COO)` now works (PR [#68](https://github.com/pydata/sparse/pull/68)).
+* `scalar op COO` now works for all operators (PR [#67](https://github.com/pydata/sparse/pull/67)).
+* Validate axes for `.transpose()` (PR [#61](https://github.com/pydata/sparse/pull/61)).
 * Extend indexing support (PR [#57](https://github.com/pydata/sparse/pull/57)).
-* Add :code:`random` function for generating random sparse arrays (PR [#41](https://github.com/pydata/sparse/pull/41)).
-* :code:`COO(COO)` now copies the original object (PR [#55](https://github.com/pydata/sparse/pull/55)).
-* NumPy universal functions and reductions now work on :code:`COO` arrays
+* Add `random` function for generating random sparse arrays (PR [#41](https://github.com/pydata/sparse/pull/41)).
+* `COO(COO)` now copies the original object (PR [#55](https://github.com/pydata/sparse/pull/55)).
+* NumPy universal functions and reductions now work on `COO` arrays
   (PR [#49](https://github.com/pydata/sparse/pull/49)).
 * Fix concatenate and stack for large arrays (Issue [#32](https://github.com/pydata/sparse/issues/32), via PR [#51](https://github.com/pydata/sparse/pull/51)).
-* Fix :code:`nnz` for scalars (Issue [#47](https://github.com/pydata/sparse/issues/47), via PR [#48](https://github.com/pydata/sparse/pull/48)).
+* Fix `nnz` for scalars (Issue [#47](https://github.com/pydata/sparse/issues/47), via PR [#48](https://github.com/pydata/sparse/pull/48)).
 * Support more operators and remove all special cases (PR [#46](https://github.com/pydata/sparse/pull/46)).
-* Add support for :code:`triu` and :code:`tril` (PR [#40](https://github.com/pydata/sparse/pull/40)).
-* Add support for Ellipsis (:code:`...`) and :code:`None` when indexing
+* Add support for `triu` and `tril` (PR [#40](https://github.com/pydata/sparse/pull/40)).
+* Add support for Ellipsis (`...`) and `None` when indexing
   (PR [#37](https://github.com/pydata/sparse/pull/37)).
-* Add support for bitwise bindary operations like :code:`&` and :code:`|`
+* Add support for bitwise bindary operations like `&` and `|`
   (PR [#38](https://github.com/pydata/sparse/pull/38)).
 * Support broadcasting in element-wise operations (PR [#35](https://github.com/pydata/sparse/pull/35)).
