@@ -7,7 +7,7 @@
 
 0.15.0 / 2024-01-09
 -------------------
-* Fix regression where [DeprecationWarning][]s were being fired unexpectedly. (PR [#581](https://github.com/pydata/sparse/pull/581) thanks [@hameerabbasi](https://github.com/hameerabbasi))
+* Fix regression where [`DeprecationWarning`][]s were being fired unexpectedly. (PR [#581](https://github.com/pydata/sparse/pull/581) thanks [@hameerabbasi](https://github.com/hameerabbasi))
 * Extended [`sparse.einsum`][] support (PR [#579](https://github.com/pydata/sparse/pull/579) thanks [@HadrienNU](https://github.com/HadrienNU))
 * General code clean-up (PR [#586](https://github.com/pydata/sparse/pull/586) thanks [@MHRasmy](https://github.com/MHRasmy), PR [#598](https://github.com/pydata/sparse/pull/598) thanks [@jamestwebber](https://github.com/jamestwebber))
 * Bug fixes with respect to NumPy compatibility  (PR [#598](https://github.com/pydata/sparse/pull/598) thanks [@hameerabbasi](https://github.com/hameerabbasi), PR [#609](https://github.com/pydata/sparse/pull/609) thanks [@Illviljan](https://github.com/Illviljan), PR [#620](https://github.com/pydata/sparse/pull/620) thanks [@mtsokol](https://github.com/mtsokol))
@@ -60,7 +60,7 @@
 -------------------
 
 There are a number of large changes in this release. For example, we have implemented the
-[`sparse.GCXS`][] type, and its specializations [`sparse.CSR`][] and [`sparse.CSC`][]. We plan on gradually improving
+[`sparse.GCXS`][] type, and its specializations `CSR` and `CSC`. We plan on gradually improving
 the performance of these.
 
 * A number of [`sparse.GCXS`][] fixes and additions (PR [#409](https://github.com/pydata/sparse/pull/409), PR [#407](https://github.com/pydata/sparse/pull/407), PR [#414](https://github.com/pydata/sparse/pull/414),
@@ -69,7 +69,7 @@ the performance of these.
   thanks [@daletovar](https://github.com/daletovar))
 * Some work on [`sparse.DOK`][] arrays to bring them closer to the other formats (PR [#435](https://github.com/pydata/sparse/pull/435),
   PR [#437](https://github.com/pydata/sparse/pull/437), PR [#439](https://github.com/pydata/sparse/pull/439), PR [#440](https://github.com/pydata/sparse/pull/440), thanks [@DragaDoncila](https://github.com/DragaDoncila))
-* [`sparse.CSR`][] and [`sparse.CSC`] specializations of [`sparse.GCXS`][] (PR [#442](https://github.com/pydata/sparse/pull/442), thanks [@ivirshup](https://github.com/ivirshup))
+* `CSR` and `CSC` specializations of [`sparse.GCXS`][] (PR [#442](https://github.com/pydata/sparse/pull/442), thanks [@ivirshup](https://github.com/ivirshup))
   For now, this is experimental undocumented API, and subject to change.
 * Fix a number of bugs (PR [#407](https://github.com/pydata/sparse/pull/407), Issue [#406](https://github.com/pydata/sparse/issues/406))
 * Add [nnz][] parameter to [`sparse.random`][] (PR [#410](https://github.com/pydata/sparse/pull/410), thanks [@emilmelnikov](https://github.com/emilmelnikov))
@@ -77,12 +77,12 @@ the performance of these.
 0.11.2 / 2020-09-04
 -------------------
 
-* Fix [TypingError] on [`sparse.dot`][] with complex dtypes. (Issue [#403](https://github.com/pydata/sparse/issues/403), PR [#404](https://github.com/pydata/sparse/pull/404))
+* Fix `TypingError` on [`sparse.dot`][] with complex dtypes. (Issue [#403](https://github.com/pydata/sparse/issues/403), PR [#404](https://github.com/pydata/sparse/pull/404))
 
 0.11.1 / 2020-08-31
 -------------------
 
-* Fix [ValueError] on [`sparse.dot`][] with extremely small values. (Issue [#398](https://github.com/pydata/sparse/issues/398), PR [#399](https://github.com/pydata/sparse/pull/399))
+* Fix [`ValueError`][] on [`sparse.dot`][] with extremely small values. (Issue [#398](https://github.com/pydata/sparse/issues/398), PR [#399](https://github.com/pydata/sparse/pull/399))
 
 0.11.0 / 2020-08-18
 -------------------
@@ -92,7 +92,7 @@ the performance of these.
 * Added multi-axis 1-D indexing support. (PR [#343](https://github.com/pydata/sparse/pull/343), thanks [@mikeymezher](https://github.com/mikeymezher))
 * Fix `outer` for arrays that weren't one-dimensional. (Issue [#346](https://github.com/pydata/sparse/issues/346), PR [#347](https://github.com/pydata/sparse/pull/347))
 * Add `casting` kwarg to [`sparse.COO.astype`][]. (Issue [#391](https://github.com/pydata/sparse/issues/391), PR [#392](https://github.com/pydata/sparse/pull/392))
-* Fix for [COO][] constructor accepting invalid inputs. (Issue [#385](https://github.com/pydata/sparse/issues/385), PR [#386](https://github.com/pydata/sparse/pull/386))
+* Fix for [`sparse.COO`][] constructor accepting invalid inputs. (Issue [#385](https://github.com/pydata/sparse/issues/385), PR [#386](https://github.com/pydata/sparse/pull/386))
 
 0.10.0 / 2020-05-13
 -------------------
@@ -100,7 +100,7 @@ the performance of these.
 * Fixed a bug where converting an empty DOK array to COO leads
   to an incorrect dtype. (Issue [#314](https://github.com/pydata/sparse/issues/314), PR [#315](https://github.com/pydata/sparse/pull/315))
 * Change code formatter to black. (PR [#284](https://github.com/pydata/sparse/pull/284))
-* Add [COO.flatten]` and [`sparse.outer`][]. (Issue [#316](https://github.com/pydata/sparse/issues/316), PR [#317](https://github.com/pydata/sparse/pull/317)).
+* Add [`sparse.COO.flatten`] and `outer`. (Issue [#316](https://github.com/pydata/sparse/issues/316), PR [#317](https://github.com/pydata/sparse/pull/317)).
 * Remove broadcasting restriction between sparse arrays and dense arrays.
   (Issue [#306](https://github.com/pydata/sparse/issues/306), PR [#318](https://github.com/pydata/sparse/pull/318))
 * Implement deterministic dask tokenization. (Issue [#300](https://github.com/pydata/sparse/issues/300), PR [#320](https://github.com/pydata/sparse/pull/320), thanks
@@ -123,7 +123,7 @@ the performance of these.
 * Fixed a bug where indexing with an empty list could lead
   to issues. (Issue [#281](https://github.com/pydata/sparse/issues/281), PR [#282](https://github.com/pydata/sparse/pull/282))
 * Change code formatter to black. (PR [#284](https://github.com/pydata/sparse/pull/284))
-* Add the [`diagonal`][] and [`diagonalize][] functions.
+* Add the [`sparse.diagonal`][] and [`sparse.diagonalize`][] functions.
   (Issue [#288](https://github.com/pydata/sparse/issues/288), PR [#289](https://github.com/pydata/sparse/pull/289), thanks [@pettni](https://github.com/pettni))
 * Add HTML repr for notebooks. (PR [#283](https://github.com/pydata/sparse/pull/283), thanks [@daletovar](https://github.com/daletovar))
 * Avoid making copy of ``coords`` when making a new [`sparse.COO`][]
