@@ -6,7 +6,7 @@ hide:
 
 # Sparse
 This project implements sparse arrays of arbitrary dimension on top of
-[numpy][] and
+[`numpy`][] and
 [`scipy.sparse`][]. It generalizes the
 [`scipy.sparse.coo_matrix`][] and
 [`scipy.sparse.dok_matrix`][] layouts, but
@@ -30,7 +30,7 @@ dimensions.
   { .card }
 
   ![Sparse](./assets/images/check-list-icon.png){width=10%, align=left}
-  <a href="construct/" class="card">How-to guides</a>
+  <a href="how-to-guides/" class="card">How-to guides</a>
   { .card }
 
   ![Sparse](./assets/images/repair-fix-repairing-icon.png){width=10%, align=left}
