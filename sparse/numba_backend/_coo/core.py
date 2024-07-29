@@ -486,7 +486,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         Examples
         --------
-        You can convert items of the format ``[`sparse.COO`][].
+        You can convert items of the format [`sparse.COO`][].
         Here, the first part represents the coordinate and the second part represents the value.
 
         >>> x = [((0, 0), 1), ((1, 1), 1)]
@@ -511,7 +511,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         array([[1, 0],
                [0, 1]])
 
-        You can also pass in a [collections.abc.Iterator][] object.
+        You can also pass in a [`collections.abc.Iterator`][] object.
 
         >>> x = [((0, 0), 1), ((1, 1), 1)].__iter__()
         >>> s = COO.from_iter(x)
