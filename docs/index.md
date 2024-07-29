@@ -18,11 +18,11 @@ dimensions.
 <div class="grid" markdown>
 
   ![Sparse](./assets/images/conference-room-icon.png){width=10%, align=left}
-  <a href="Introduction/" style: class="card">Introduction </a>
+  <a href="introduction/" style: class="card">Introduction </a>
   { .card }
 
   ![Sparse](./assets/images/install-software-download-icon.png){width=10%, align=left}
-  <a href="Install/" style: class="card">Install</a>
+  <a href="install/" style: class="card">Install</a>
   { .card }
 
   ![Sparse](./assets/images/open-book-icon.png){width=10%, align=left}
@@ -34,12 +34,11 @@ dimensions.
   { .card }
 
   ![Sparse](./assets/images/repair-fix-repairing-icon.png){width=10%, align=left}
-  <a href="API/BACKEND/" style: class="card">API</a>
+  <a href="api/backend/" style: class="card">API</a>
   { .card }
 
-
  ![Sparse](./assets/images/group-discussion-icon.png){width=10%, align=left}
-  <a href="Contributing" style: class="card">Contributing </a>
+  <a href="contributing" style: class="card">Contributing </a>
   { .card }
 
 </div>
