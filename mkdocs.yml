@@ -75,9 +75,12 @@ plugins:
       include_source: True
 
 nav:
-  - Home: index.md
-  - Introduction: introduction.md
-  - Install: install.md
+  - Home: 
+    - index.md
+  - Introduction: 
+    - introduction.md
+  - Install: 
+    - install.md
   - Tutorials: #examples/sparse_finch.ipynb
     - examples.md
     - examples/sparse_finch.ipynb
