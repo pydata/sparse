@@ -1,3 +1,3 @@
 # Code of Conduct
 
-Please see [`docs/conduct.md`](docs/conduct.rst)
+Please see [`docs/conduct.md`](docs/conduct.md)
