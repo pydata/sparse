@@ -1,5 +1,5 @@
 <!--
-# Thanks for contributing a pull request! 
+# Thanks for contributing a pull request!
 ## Please make sure you see our contribution guidelines: https://github.com/pydata/sparse/blob/main/docs/contributing.md
 
 Your PR title should start with any of this abbreviatons: `build`, `chore`, `ci`, `depr`, `docs`, `feat`, `fix`, `perf`, `refactor`, `release`, `test`. Add a `!`at the end, if it is a breaking change.
@@ -15,15 +15,15 @@ Your PR title should start with any of this abbreviatons: `build`, `chore`, `ci`
 - [ ] 🧪 Test
 - [ ] 🛠️ Other
 
-## Related issues 
+## Related issues
 
-- Related issue # 
+- Related issue #
 - Closes #
 
 ## Checklist
 
 - [ ] Code follows style guide
-- [ ] Tests added 
+- [ ] Tests added
 - [ ] Documented the changes
 
 ## If you have comments or can explain your changes, please do so below.
