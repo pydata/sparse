@@ -26,4 +26,7 @@ Your PR title should start with any of these abbreviatons: `build`, `chore`, `ci
 - [ ] Tests added
 - [ ] Documented the changes
 
-## If you have comments or can explain your changes, please do so below.
+***
+
+## Please explain your changes below.
+
