@@ -39,28 +39,31 @@ autolabeler:
     title:
       - '/^\[pre-commit.ci\]/'
 categories:
-  - title: Highlights
+  - title: 📣 Highlights
     labels: highlight
-  - title: Breaking changes
+  - title: 🧨 Breaking changes
     labels:
       - breaking
       - breaking python
-  - title: Deprecations
+  - title: 🚧 Deprecations
     labels: deprecation
-  - title: Performance improvements
+  - title: 🪄 Performance improvements
     labels: performance
-  - title: Enhancements
+  - title: 🎊 Enhancements
     labels: enhancement
-  - title: Bug fixes
+  - title: 🐞 Bug fixes
     labels: fix
-  - title: Documentation
+  - title: 📚 Documentation
     labels: documentation
-  - title: Build system
+  - title: 🧰 Build system
     labels: build
-  - title: Other improvements
+  - title: 🔧 Other improvements
     labels: internal
 
 template: |
   ## Changes
 
   $CHANGES
+
+  Thank you to all our contributors for making this release possible!
+  $CONTRIBUTORS
