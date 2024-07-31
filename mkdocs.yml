@@ -76,7 +76,7 @@ plugins:
       execute: true
   #- mknotebooks:
   #    execute: false
-      
+
 
 nav:
   - Home:
