@@ -74,9 +74,7 @@ plugins:
   - mkdocs-jupyter:
       include_source: true
       execute: true
-  #- mknotebooks:
-  #    execute: false
-
+      #kernel_name: sparse-dea
 
 nav:
   - Home:
@@ -87,8 +85,8 @@ nav:
     - install.md
   - Tutorials: #examples/sparse_finch.ipynb
     - examples.md
-    #- examples/sparse_finch.ipynb
     - examples/my_jupyter.ipynb
+    - examples/elemwise_example.py
   - How to guides:
     - how-to-guides.md
     - quickstart.md

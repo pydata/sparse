@@ -4,17 +4,16 @@ import os
 
 import sparse
 
-from utils import benchmark
-
 import numpy as np
 import scipy.sparse as sps
+
+from ..utils import benchmark
 
 LEN = 10000
 DENSITY = 0.001
 ITERS = 3
 rng = np.random.default_rng(0)
 
-# This H1 header will be the the title.
 
 if __name__ == "__main__":
     print("Elementwise Example:\n")
