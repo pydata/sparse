@@ -72,7 +72,11 @@ plugins:
                 show_category_heading: true
 
   - mkdocs-jupyter:
-      include_source: True
+      include_source: true
+      execute: true
+  #- mknotebooks:
+  #    execute: false
+      
 
 nav:
   - Home:
@@ -83,7 +87,8 @@ nav:
     - install.md
   - Tutorials: #examples/sparse_finch.ipynb
     - examples.md
-    - examples/sparse_finch.ipynb
+    #- examples/sparse_finch.ipynb
+    - examples/my_jupyter.ipynb
   - How to guides:
     - how-to-guides.md
     - quickstart.md
