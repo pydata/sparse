@@ -74,7 +74,7 @@ plugins:
   - mkdocs-jupyter:
       include_source: true
       execute: true
-      #kernel_name: sparse-dea
+      kernel_name: sparse-dea
 
 nav:
   - Home:
