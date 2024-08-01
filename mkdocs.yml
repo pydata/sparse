@@ -72,7 +72,9 @@ plugins:
                 show_category_heading: true
 
   - mkdocs-jupyter:
-      include_source: True
+      include_source: true
+      execute: true
+      ignore: ["__init__.py", "utils.py", "gen_logo.py"]
 
 nav:
   - Home:
@@ -81,9 +83,9 @@ nav:
     - introduction.md
   - Install:
     - install.md
-  - Tutorials: #examples/sparse_finch.ipynb
+  - Tutorials:
     - examples.md
-    - examples/sparse_finch.ipynb
+    - examples/*
   - How to guides:
     - how-to-guides.md
     - quickstart.md
