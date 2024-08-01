@@ -3,7 +3,7 @@ import operator
 import os
 
 import sparse
-from docs.examples.utils import benchmark
+from utils import benchmark
 
 import numpy as np
 import scipy.sparse as sps
