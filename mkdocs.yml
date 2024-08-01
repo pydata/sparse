@@ -75,7 +75,6 @@ plugins:
       include_source: true
       execute: true
       ignore: ["__init__.py", "utils.py", "gen_logo.py"]
-      #kernel_name: sparse-dea
 
 nav:
   - Home:
