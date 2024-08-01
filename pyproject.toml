@@ -36,6 +36,7 @@ docs = [
         "mkdocs-section-index",
         "mkdocs-jupyter",
         "scipy",
+        "sparse[finch]",
 ]
 tests = [
     "dask[array]",
