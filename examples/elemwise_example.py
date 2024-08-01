@@ -3,6 +3,7 @@ import operator
 import os
 
 import sparse
+
 from utils import benchmark
 
 import numpy as np
