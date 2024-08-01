@@ -74,7 +74,8 @@ plugins:
   - mkdocs-jupyter:
       include_source: true
       execute: true
-      kernel_name: sparse-dea
+      ignore: ["__init__.py", "utils.py", "gen_logo.py"]
+      #kernel_name: sparse-dea
 
 nav:
   - Home:
@@ -83,10 +84,9 @@ nav:
     - introduction.md
   - Install:
     - install.md
-  - Tutorials: #examples/sparse_finch.ipynb
+  - Tutorials:
     - examples.md
-    - examples/my_jupyter.ipynb
-    - examples/elemwise_example.py
+    - examples/*
   - How to guides:
     - how-to-guides.md
     - quickstart.md
