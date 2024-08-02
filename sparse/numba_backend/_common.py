@@ -2114,6 +2114,33 @@ def permute_dims(x, /, axes=None):
 
 
 def max(x, /, *, axis=None, keepdims=False):
+    """
+    Calculates the maximum value of the input array ``x``.
+
+    Parameters
+    ----------
+    x: array
+        input array of a real-valued data type.
+    axis: Optional[Union[int, Tuple[int, ...]]]
+        axis or axes along which maximum values are computed.
+        By default, the maximum value are computed over the entire array.
+        If a tuple of integers, maximum values are computed over multiple axes. Default: ``None``.
+    keepdims: bool
+        If ``True``, the reduced axes (dimensions) are included in the result as singleton dimensions.
+        Accordingly, the result is compatible with the input array.
+        Otherwise, if ``False``, the reduced axes (dimensions) must not be included in the result. Default: ``False``.
+
+    Returns
+    -------
+    out: array
+        if the maximum value was computed over the entire array, a zero-dimensional array containing the maximum value.
+        Otherwise, a non-zero-dimensional array containing the maximum values.
+        The returned array has the same data type as ``x``.
+
+    Special Cases
+    -------------
+    For floating-point operands, if ``x_i`` is ``NaN``, the maximum value is ``NaN`` (i.e., ``NaN`` values propagate).
+    """
     return x.max(axis=axis, keepdims=keepdims)
 
 
