@@ -2140,6 +2140,15 @@ def max(x, /, *, axis=None, keepdims=False):
     Special Cases
     -------------
     For floating-point operands, if ``x_i`` is ``NaN``, the maximum value is ``NaN`` (i.e., ``NaN`` values propagate).
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import sparse
+    >>> a = sparse.COO.from_numpy(np.array([[0, 1], [2, 0]]))
+    >>> o = sparse.max(a, axis=1)
+    >>> o.todense()
+    array([1, 2])
     """
     return x.max(axis=axis, keepdims=keepdims)
 
