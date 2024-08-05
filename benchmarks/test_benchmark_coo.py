@@ -8,7 +8,7 @@ def test_MatrixMultiplySuite(benchmark):
     x = sparse.random((3, 3), density=0.01, random_state=rng)
     y = sparse.random((3, 3), density=0.01, random_state=rng)
 
-    # self.x @ self.y  # Numba compilation
+    x @ y  # Numba compilation
 
     @benchmark
     def test_matmul():
