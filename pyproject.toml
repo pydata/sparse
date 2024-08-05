@@ -50,8 +50,8 @@ tests = [
 ]
 tox = ["sparse[tests]", "tox"]
 notebooks = ["sparse[tests]", "nbmake", "matplotlib"]
-all = ["sparse[docs,tox,notebooks]", "matrepr"]
 finch = ["finch-tensor>=0.1.31"]
+all = ["sparse[docs,tox,notebooks,finch]", "matrepr"]
 
 [project.urls]
 Documentation = "https://sparse.pydata.org/"

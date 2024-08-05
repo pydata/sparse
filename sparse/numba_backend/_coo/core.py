@@ -440,6 +440,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         Examples
         --------
+        >>> import scipy.sparse
         >>> x = scipy.sparse.rand(6, 3, density=0.2)
         >>> s = COO.from_scipy_sparse(x)
         >>> np.array_equal(x.todense(), s.todense())
