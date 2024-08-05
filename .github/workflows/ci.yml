@@ -53,23 +53,7 @@ jobs:
         if: always()
         with:
           files: ./**/coverage*.xml
-  benchmarks:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-          cache: 'pip'
-      - name: Install asv
-        run: |
-          pip install asv
-          asv machine --yes
-      - name: Run benchmarks
-        run: |
-          asv run --quick
+
   examples:
     runs-on: ubuntu-latest
     steps:
