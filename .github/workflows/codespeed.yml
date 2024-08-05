@@ -20,7 +20,7 @@ jobs:
           python-version: "3.9"
 
       - name: Install dependencies
-        run: pip install -e .[all]
+        run: pip install ".[all]"
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v3
