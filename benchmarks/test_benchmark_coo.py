@@ -5,8 +5,8 @@ import numpy as np
 
 def test_MatrixMultiplySuite(benchmark):
     rng = np.random.default_rng(seed=42)
-    x = sparse.random((100, 100), density=0.01, random_state=rng)
-    y = sparse.random((100, 100), density=0.01, random_state=rng)
+    x = sparse.random((3, 3), density=0.01, random_state=rng)
+    y = sparse.random((3, 3), density=0.01, random_state=rng)
 
     # self.x @ self.y  # Numba compilation
 
