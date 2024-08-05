@@ -30,7 +30,7 @@ markdown_extensions:
   - pymdownx.superfences
   - codehilite
   - toc:
-      toc_depth: 2
+      toc_depth: 3
   - pymdownx.arithmatex: # To display math content with KaTex
       generic: true
   - attr_list # To be able to link to a header on another page, use grids
