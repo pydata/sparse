@@ -10,6 +10,7 @@ from numba import literal_unroll
 
 import numpy as np
 
+from ._coo.core import COO
 from ._coo.common import asCOO
 from ._sparse_array import SparseArray
 from ._utils import (
@@ -2143,8 +2144,6 @@ def max(x, /, *, axis=None, keepdims=False):
 
     Examples
     --------
-    >>> import numpy as np
-    >>> import sparse
     >>> a = sparse.COO.from_numpy(np.array([[0, 1], [2, 0]]))
     >>> o = sparse.max(a, axis=1)
     >>> o.todense()
