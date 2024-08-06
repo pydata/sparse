@@ -1,0 +1,43 @@
+name: Feature request
+description: Form to request a new feature
+title: "Enh: "
+labels: ["enhancement", "needs triage"]
+
+body:
+- type: markdown
+  attributes:
+    value: >
+        ## Thanks for helping us improve sparse!
+- type: markdown
+  attributes:
+    value: >
+       ### Before submitting a request, please check if it has already been discused in the
+       [list of issues](https://github.com/pydata/sparse/issues).
+- type: textarea
+  attributes:
+    label: Please describe the purpose of the new feature or describe the problem to solve.
+    description: >
+       A clear description of the objective.
+  validations:
+       required: true
+- type: textarea
+  attributes:
+    label: Suggest a solution if possible.
+    description: >
+       Please suggest a solution if you can.
+  validations:
+       required: false
+- type: textarea
+  attributes:
+    label: If you have tried alternatives, please describe them below.
+    description: >
+       What you have tried if applicable.
+- type: textarea
+  attributes:
+    label: Additional information that may help us understand your needs.
+    description: >
+       Context, screenshots, or any useful information.
+- type: markdown
+  attributes:
+    value: >
+        ### If you are interested in opening a pull request to fix this, please let us know.

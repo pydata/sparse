@@ -1,0 +1,21 @@
+name: Question/Support
+description: A question about how to use this library.
+title: "Usage: "
+labels: "usage"
+
+body:
+- type: markdown
+  attributes:
+    value: >
+        ## Thank you for your interest in sparse
+- type: textarea
+  attributes:
+    label: Please provide a description of what you'd like to do.
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Example Code
+    description: >
+      Syntactically valid Python code that shows what you want to do,
+      possibly with placeholder functions or methods.
