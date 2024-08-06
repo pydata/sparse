@@ -20,6 +20,8 @@ body:
       - label: >
           I have confirmed this bug exists on the latest version of sparse.
         required: true
+      - label: >
+            I have confirmed this bug exists on the main branch of sparse.
 - type: textarea
   attributes:
     label: Describe the bug
