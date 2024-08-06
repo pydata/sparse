@@ -1,6 +1,7 @@
 name: Bug report
 description: Report to help us reproduce the bug
 title: "Bug: "
+labels: "needs triage"
 
 body:
 - type: markdown
@@ -45,12 +46,11 @@ body:
 - type: textarea
   attributes:
     label: Please describe your system.
-    render: shell
-    placeholder: |
+    value: |
       1. OS and version: [e.g. Windows 10]
-      2. `sparse` version (`sparse.__version__`)
-      3. NumPy version (`np.__version__`)
-      4. Numba version (`numba.__version__`)
+      2. Sparse version (sparse.__version__)
+      3. NumPy version (np.__version__)
+      4. Numba version (numba.__version__)
   validations:
     required: true
 - type: textarea
