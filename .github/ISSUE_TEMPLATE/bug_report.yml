@@ -1,18 +1,28 @@
 name: Bug report
 description: Report to help us reproduce the bug
 title: "Bug: "
-labels: "needs triage"
+labels: ["bug", "needs triage"]
 
 body:
 - type: markdown
   attributes:
     value: >
         ## Thanks for taking the time to fill out this report
-- type: markdown
+- type: checkboxes
+  id: checks
   attributes:
-    value: >
-       ### Before submitting a bug, please make sure it has not been reported in the
-       [list of issues](https://github.com/pydata/sparse/issues).
+    label: sparse version checks
+    options:
+      - label: >
+           I checked that this issue has not been reported before
+           [list of issues](https://github.com/pydata/sparse/issues).
+        required: true
+      - label: >
+          I have confirmed this bug exists on the latest version of sparse.
+        required: true
+      - label: >
+            I have confirmed this bug exists on the main branch of sparse.
+        required: true
 - type: textarea
   attributes:
     label: Describe the bug
@@ -48,7 +58,7 @@ body:
     label: Please describe your system.
     value: |
       1. OS and version: [e.g. Windows 10]
-      2. Sparse version (sparse.__version__)
+      2. sparse version (sparse.__version__)
       3. NumPy version (np.__version__)
       4. Numba version (numba.__version__)
   validations:

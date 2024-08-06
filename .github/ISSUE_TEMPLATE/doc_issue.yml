@@ -1,6 +1,7 @@
 name: Documentation improvement
 description: Report to improve the docs. You could also directly open a PR with your suggestions.
 title: "Doc: "
+labels: ["docs", "needs triage"]
 
 body:
 - type: markdown

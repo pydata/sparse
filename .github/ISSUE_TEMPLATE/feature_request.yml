@@ -1,7 +1,7 @@
 name: Feature request
 description: Form to request a new feature
 title: "Enh: "
-labels: "needs triage"
+labels: ["enhancement", "needs triage"]
 
 body:
 - type: markdown
