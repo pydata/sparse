@@ -1,26 +1,60 @@
----
 name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: type:bug
-assignees: ''
+description: Report to help us reproduce the bug
+title: "Bug: "
 
----
-
-**Describe the bug**
-A clear and concise description of what the bug is.
-
-**To Reproduce**
-Steps to reproduce the behavior.
-
-**Expected behavior**
-A clear and concise description of what you expected to happen.
-
-**System**
- - OS and version: [e.g. Windows 10]
- - `sparse` version (`sparse.__version__`)
- - NumPy version (`np.__version__`)
- - Numba version (`numba.__version__`)
-
-**Additional context**
-Add any other context about the problem here.
+body:
+- type: markdown
+  attributes:
+    value: >
+        ## Thanks for taking the time to fill out this report
+- type: markdown
+  attributes:
+    value: >
+       ### Before submitting a bug, please make sure it has not been reported in the
+       [list of issues](https://github.com/pydata/sparse/issues).
+- type: textarea
+  attributes:
+    label: Describe the bug
+    description: >
+       A clear and concise description of what the bug is.
+  validations:
+       required: true
+- type: textarea
+  attributes:
+    label: Steps or code to reproduce the bug
+    description: |
+       Please add a minimal code example to reproduce the bug.
+  validations:
+       required: true
+- type: textarea
+  attributes:
+    label: Expected results
+    description: >
+       Please paste or describe the expected results.
+    placeholder: >
+        Example: No error is thrown.
+  validations:
+        required: true
+- type: textarea
+  attributes:
+    label: Actual results
+    description: |
+      Please paste or describe the results you observe instead of the expected results.
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Please describe your system.
+    render: shell
+    placeholder: |
+      1. OS and version: [e.g. Windows 10]
+      2. `sparse` version (`sparse.__version__`)
+      3. NumPy version (`np.__version__`)
+      4. Numba version (`numba.__version__`)
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Relevant log output
+    description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+    render: shell
