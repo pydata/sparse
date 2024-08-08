@@ -10,10 +10,9 @@ DENSITY = 0.01
 SEED = 42
 
 
-@pytest.fixture(scope="module")
-@pytest.mark.parametrize("side", [100, 500, 1000])
-@pytest.mark.parametrize("rank", [1, 2, 3, 4])
-def elemwise_args(side: int, rank: int):
+@pytest.fixture(scope="module", side=[100, 500, 1000], rank=[1, 2, 3, 4])
+def elemwise_args(request):
+    side, rank = request.side, request.rank
     if side**rank >= 2**26:
         pytest.skip()
     rng = np.random.default_rng(seed=SEED)
