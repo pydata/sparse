@@ -15,7 +15,7 @@ import itertools
 
 @pytest.fixture(scope="module", params=itertools.product([100, 500, 1000], [1, 2, 3, 4]))
 def elemwise_args(request):
-    side, rank = request.params
+    side, rank = request.param
     if side**rank >= 2**26:
         pytest.skip()
     rng = np.random.default_rng(seed=SEED)
