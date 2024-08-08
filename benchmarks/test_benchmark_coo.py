@@ -12,6 +12,7 @@ SEED = 42
 
 import itertools
 
+
 @pytest.fixture(scope="module", params=itertools.product([100, 500, 1000], [1, 2, 3, 4]))
 def elemwise_args(request):
     side, rank = request.params
