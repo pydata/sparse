@@ -1,3 +1,4 @@
+import itertools
 import operator
 
 import sparse
@@ -10,10 +11,12 @@ DENSITY = 0.01
 SEED = 42
 
 
-import itertools
+def elemwise_test_name(param):
+    side, rank = param
+    return f"{side=}-{rank=}"
 
 
-@pytest.fixture(scope="module", params=itertools.product([100, 500, 1000], [1, 2, 3, 4]))
+@pytest.fixture(scope="module", params=itertools.product([100, 500, 1000], [1, 2, 3, 4]), ids=elemwise_test_name)
 def elemwise_args(request):
     side, rank = request.param
     if side**rank >= 2**26:
