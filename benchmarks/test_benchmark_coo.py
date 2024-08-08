@@ -10,7 +10,9 @@ DENSITY = 0.01
 SEED = 42
 
 
-@pytest.fixture(scope="module", side=[100, 500, 1000], rank=[1, 2, 3, 4])
+import itertools
+
+@pytest.fixture(scope="module", params=itertools.product([100, 500, 1000], [1, 2, 3, 4]))
 def elemwise_args(request):
     side, rank = request.side, request.rank
     if side**rank >= 2**26:
