@@ -11,6 +11,23 @@ DENSITY = 0.01
 SEED = 42
 
 
+def side_ids(side):
+    return f"{side=}"
+
+
+@pytest.mark.parametrize("side", [100, 500, 1000], ids=side_ids)
+def test_matmul(benchmark, side):
+    rng = np.random.default_rng(seed=SEED)
+    x = sparse.random((side, side), density=DENSITY, random_state=rng)
+    y = sparse.random((side, side), density=DENSITY, random_state=rng)
+
+    x @ y  # Numba compilation
+
+    @benchmark
+    def bench():
+        x @ y
+
+
 def elemwise_test_name(param):
     side, rank = param
     return f"{side=}-{rank=}"
@@ -36,3 +53,83 @@ def test_elemwise(benchmark, f, elemwise_args):
     @benchmark
     def bench():
         f(x, y)
+
+
+@pytest.fixture(scope="module", params=[100, 500, 1000], ids=side_ids)
+def elemwise_broadcast_args(request):
+    side = request.param
+    rng = np.random.default_rng(seed=SEED)
+    if side**side >= 2**26:
+        pytest.skip()
+    x = sparse.random((side, 1, side), density=DENSITY, random_state=rng)
+    y = sparse.random((side, side), density=DENSITY, random_state=rng)
+    return x, y
+
+
+@pytest.mark.parametrize("f", [operator.add, operator.mul])
+def test_elemwise_broadcast_args(benchmark, f, elemwise_broadcast_args):
+    x, y = elemwise_broadcast_args
+    f(x, y)
+
+    @benchmark
+    def bench():
+        f(x, y)
+
+
+@pytest.fixture(scope="module", params=[100, 500, 1000], ids=side_ids)
+def indexing_args(request):
+    side = request.param
+    rng = np.random.default_rng(seed=SEED)
+    if side**side >= 2**26:
+        pytest.skip()
+
+    x = sparse.random((side, side, side), density=0.01, random_state=rng)
+
+    # Numba compilation
+    x[5]
+
+    return x, side
+
+
+def time_index_scalar(benchmark, indexing_args):
+    x, side = indexing_args
+
+    @benchmark
+    def bench():
+        x[side / 2, side / 2, side / 2]
+
+
+def time_index_slice(benchmark, indexing_args):
+    x, side = indexing_args
+
+    @benchmark
+    def bench():
+        x[: side / 2]
+
+
+def time_index_slice2(benchmark, indexing_args):
+    x, side = indexing_args
+
+    @benchmark
+    def bench():
+        x[: side / 2, : side / 2]
+
+
+def time_index_slice3(benchmark, indexing_args):
+    x, side = indexing_args
+
+    @benchmark
+    def bench():
+        x[: side / 2, : side / 2, : side / 2]
+
+
+def time_index_fancy(benchmark, indexing_args):
+    x, side = indexing_args
+    rng = np.random.default_rng(seed=SEED)
+    index = rng.integers(0, side, int(side / 2))
+
+    x[index]  # Numba compilation
+
+    @benchmark
+    def bench():
+        x[index]
