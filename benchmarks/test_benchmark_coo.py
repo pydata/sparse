@@ -16,6 +16,8 @@ def side_ids(side):
 
 @pytest.mark.parametrize("side", [100, 500, 1000], ids=side_ids)
 def test_matmul(benchmark, side, seed):
+    if side**2 >= 2**26:
+        pytest.skip()
     rng = np.random.default_rng(seed=seed)
     x = sparse.random((side, side), density=DENSITY, random_state=rng)
     y = sparse.random((side, side), density=DENSITY, random_state=rng)
@@ -57,9 +59,9 @@ def test_elemwise(benchmark, f, elemwise_args):
 @pytest.fixture(params=[100, 500, 1000], ids=side_ids)
 def elemwise_broadcast_args(request, seed):
     side = request.param
-    rng = np.random.default_rng(seed=seed)
     if side**2 >= 2**26:
         pytest.skip()
+    rng = np.random.default_rng(seed=seed)
     x = sparse.random((side, 1, side), density=DENSITY, random_state=rng)
     y = sparse.random((side, side), density=DENSITY, random_state=rng)
     return x, y
@@ -78,9 +80,9 @@ def test_elemwise_broadcast(benchmark, f, elemwise_broadcast_args):
 @pytest.fixture(params=[100, 500, 1000], ids=side_ids)
 def indexing_args(request, seed):
     side = request.param
-    rng = np.random.default_rng(seed=seed)
     if side**3 >= 2**26:
         pytest.skip()
+    rng = np.random.default_rng(seed=seed)
 
     return sparse.random((side, side, side), density=DENSITY, random_state=rng)
 
