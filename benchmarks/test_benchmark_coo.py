@@ -7,7 +7,8 @@ import pytest
 
 import numpy as np
 
-from .utils import SEED, DENSITY
+from .utils import DENSITY, SEED
+
 
 def side_ids(side):
     return f"{side=}"
@@ -81,16 +82,14 @@ def indexing_args(request):
     if side**side >= 2**26:
         pytest.skip()
 
-    x = sparse.random((side, side, side), density=DENSITY, random_state=rng)
-
-    return x
+    return sparse.random((side, side, side), density=DENSITY, random_state=rng)
 
 
 def test_index_scalar(benchmark, indexing_args):
     x = indexing_args
     side = x.shape([0])
 
-    x[5] # Numba compilation
+    x[5]  # Numba compilation
 
     @benchmark
     def bench():
@@ -101,7 +100,7 @@ def test_index_slice(benchmark, indexing_args):
     x = indexing_args
     side = x.shape([0])
 
-    x[5] # Numba compilation
+    x[5]  # Numba compilation
 
     @benchmark
     def bench():
@@ -112,7 +111,7 @@ def test_index_slice2(benchmark, indexing_args):
     x = indexing_args
     side = x.shape([0])
 
-    x[5] # Numba compilation
+    x[5]  # Numba compilation
 
     @benchmark
     def bench():
@@ -123,7 +122,7 @@ def test_index_slice3(benchmark, indexing_args):
     x = indexing_args
     side = x.shape([0])
 
-    x[5] # Numba compilation
+    x[5]  # Numba compilation
 
     @benchmark
     def bench():
