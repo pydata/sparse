@@ -3,9 +3,6 @@ import time
 from collections.abc import Callable, Iterable
 from typing import Any
 
-DENSITY = 0.01
-SEED = 42
-
 CI_MODE = bool(int(os.getenv("CI_MODE", default="0")))
 
 
