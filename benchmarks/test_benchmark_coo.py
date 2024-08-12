@@ -15,8 +15,8 @@ def side_ids(side):
 
 
 @pytest.mark.parametrize("side", [100, 500, 1000], ids=side_ids)
-def test_matmul(benchmark, side, seed):
-    if side**2 >= 2**26:
+def test_matmul(benchmark, side, seed, max_size):
+    if side**2 >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
     x = sparse.random((side, side), density=DENSITY, random_state=rng)
@@ -35,9 +35,9 @@ def elemwise_test_name(param):
 
 
 @pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3, 4]), ids=elemwise_test_name)
-def elemwise_args(request, seed):
+def elemwise_args(request, seed, max_size):
     side, rank = request.param
-    if side**rank >= 2**26:
+    if side**rank >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
     shape = (side,) * rank
@@ -57,9 +57,9 @@ def test_elemwise(benchmark, f, elemwise_args):
 
 
 @pytest.fixture(params=[100, 500, 1000], ids=side_ids)
-def elemwise_broadcast_args(request, seed):
+def elemwise_broadcast_args(request, seed, max_size):
     side = request.param
-    if side**2 >= 2**26:
+    if side**2 >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
     x = sparse.random((side, 1, side), density=DENSITY, random_state=rng)
@@ -78,24 +78,24 @@ def test_elemwise_broadcast(benchmark, f, elemwise_broadcast_args):
 
 
 @pytest.fixture(params=[100, 500, 1000], ids=side_ids)
-def indexing_args(request, seed):
+def indexing_args(request, seed, max_size):
     side = request.param
-    if side**3 >= 2**26:
+    if side**3 >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
 
     return sparse.random((side, side, side), density=DENSITY, random_state=rng)
 
-
-def test_index_scalar(benchmark, indexing_args):
+@pytest.mark.parametrize("ndim", [1, 2, 3])
+def test_index_scalar(benchmark, ndim, indexing_args):
     x = indexing_args
     side = x.shape[0]
 
-    x[side // 2, side // 2, side // 2]  # Numba compilation
+    x[(side // 2,) * ndim]  # Numba compilation
 
     @benchmark
     def bench():
-        x[side // 2, side // 2, side // 2]
+        x[(side // 2,) * ndim]
 
 
 def test_index_slice(benchmark, indexing_args):
