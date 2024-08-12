@@ -91,13 +91,13 @@ def indexing_args(request, seed, max_size):
 def test_index_scalar(benchmark, indexing_args):
     x = indexing_args
     side = x.shape[0]
-    ndim = len(x.shape)
+    rank = len(x.shape)
 
-    x[(side // 2,) * ndim]  # Numba compilation
+    x[(side // 2,) * rank]  # Numba compilation
 
     @benchmark
     def bench():
-        x[(side // 2,) * ndim]
+        x[(side // 2,) * rank]
 
 
 def test_index_slice(benchmark, indexing_args):
