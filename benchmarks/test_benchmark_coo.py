@@ -91,7 +91,7 @@ def indexing_args(request, seed, max_size):
 def test_index_scalar(benchmark, indexing_args):
     x = indexing_args
     side = x.shape[0]
-    rank = len(x.shape)
+    rank = x.ndim
 
     x[(side // 2,) * rank]  # Numba compilation
 
@@ -103,7 +103,7 @@ def test_index_scalar(benchmark, indexing_args):
 def test_index_slice(benchmark, indexing_args):
     x = indexing_args
     side = x.shape[0]
-    rank = len(x.shape)
+    rank = x.ndim
 
     x[(slice(side // 2),) * rank]  # Numba compilation
 
@@ -115,7 +115,7 @@ def test_index_slice(benchmark, indexing_args):
 def test_index_fancy(benchmark, indexing_args, seed):
     x = indexing_args
     side = x.shape[0]
-    rank = len(x.shape)
+    rank = x.ndim
     rng = np.random.default_rng(seed=seed)
     index = rng.integers((side // 2,) * rank)
 
