@@ -29,12 +29,12 @@ def test_matmul(benchmark, side, seed, max_size):
         x @ y
 
 
-def elemwise_test_name(param):
+def id_of_test(param):
     side, rank = param
     return f"{side=}-{rank=}"
 
 
-@pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3, 4]), ids=elemwise_test_name)
+@pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3, 4]), ids=id_of_test)
 def elemwise_args(request, seed, max_size):
     side, rank = request.param
     if side**rank >= max_size:
@@ -77,19 +77,21 @@ def test_elemwise_broadcast(benchmark, f, elemwise_broadcast_args):
         f(x, y)
 
 
-@pytest.fixture(params=[100, 500, 1000], ids=side_ids)
+@pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3]), ids=id_of_test)
 def indexing_args(request, seed, max_size):
-    side = request.param
+    side, rank = request.param
     if side**3 >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
+    shape = (side,) * rank
+    x = sparse.random(shape, density=DENSITY, random_state=rng)
+    return x
 
-    return sparse.random((side, side, side), density=DENSITY, random_state=rng)
 
-@pytest.mark.parametrize("ndim", [1, 2, 3])
-def test_index_scalar(benchmark, ndim, indexing_args):
+def test_index_scalar(benchmark, indexing_args):
     x = indexing_args
     side = x.shape[0]
+    ndim = len(x.shape)
 
     x[(side // 2,) * ndim]  # Numba compilation
 
@@ -101,41 +103,21 @@ def test_index_scalar(benchmark, ndim, indexing_args):
 def test_index_slice(benchmark, indexing_args):
     x = indexing_args
     side = x.shape[0]
+    rank = len(x.shape)
 
-    x[: side // 2]  # Numba compilation
-
-    @benchmark
-    def bench():
-        x[: side // 2]
-
-
-def test_index_slice2(benchmark, indexing_args):
-    x = indexing_args
-    side = x.shape[0]
-
-    x[: side // 2, : side // 2]  # Numba compilation
+    x[(slice(side // 2),) * rank]  # Numba compilation
 
     @benchmark
     def bench():
-        x[: side // 2, : side // 2]
-
-
-def test_index_slice3(benchmark, indexing_args):
-    x = indexing_args
-    side = x.shape[0]
-
-    x[: side // 2, : side // 2, : side // 2]  # Numba compilation
-
-    @benchmark
-    def bench():
-        x[: side // 2, : side // 2, : side // 2]
+        x[(slice(side // 2),) * rank]
 
 
 def test_index_fancy(benchmark, indexing_args, seed):
     x = indexing_args
     side = x.shape[0]
+    rank = len(x.shape)
     rng = np.random.default_rng(seed=seed)
-    index = rng.integers(0, side, side // 2)
+    index = rng.integers((side // 2,) * rank)
 
     x[index]  # Numba compilation
 
