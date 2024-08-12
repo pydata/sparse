@@ -10,7 +10,7 @@ from numba import literal_unroll
 
 import numpy as np
 
-from ._coo.common import asCOO
+from ._coo import as_coo
 from ._sparse_array import SparseArray
 from ._utils import (
     _zero_of_dtype,
@@ -18,6 +18,9 @@ from ._utils import (
     equivalent,
     normalize_axis,
 )
+
+_EINSUM_SYMBOLS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+_EINSUM_SYMBOLS_SET = set(_EINSUM_SYMBOLS)
 
 
 def _is_scipy_sparse_obj(x):
@@ -189,7 +192,12 @@ def tensordot(a, b, axes=2, *, return_type=None):
     oldb = [bs[axis] for axis in notin]
 
     if builtins.any(dim == 0 for dim in chain(newshape_a, newshape_b)):
-        res = asCOO(np.empty(olda + oldb), check=False)
+        from sparse import COO
+
+        dt = (np.empty((), dtype=a.dtype) + np.empty((), dtype=b.dtype)).dtype
+        res = COO(
+            np.empty((len(olda) + len(oldb), 0), dtype=np.uintp), data=np.empty(0, dtype=dt), shape=tuple(olda + oldb)
+        )
         if isinstance(a, np.ndarray) or isinstance(b, np.ndarray):
             res = res.todense()
 
@@ -309,9 +317,9 @@ def dot(a, b):
 
     if a.ndim == 1 and b.ndim == 1:
         if isinstance(a, SparseArray):
-            a = asCOO(a)
+            a = as_coo(a)
         if isinstance(b, SparseArray):
-            b = asCOO(b)
+            b = as_coo(b)
         return (a * b).sum()
 
     a_axis = -1
@@ -1182,7 +1190,7 @@ def _parse_einsum_input(operands):
         for s in subscripts:
             if s in ".,->":
                 continue
-            if s not in np.core.einsumfunc.einsum_symbols:
+            if not s.isalpha():
                 raise ValueError(f"Character {s} is not a valid symbol.")
 
     else:
@@ -1206,7 +1214,7 @@ def _parse_einsum_input(operands):
                         s = index(s)
                     except TypeError as e:
                         raise TypeError("For this input type lists must contain either int or Ellipsis") from e
-                    subscripts += np.core.einsumfunc.einsum_symbols[s]
+                    subscripts += _EINSUM_SYMBOLS[s]
             if num != last:
                 subscripts += ","
 
@@ -1220,7 +1228,7 @@ def _parse_einsum_input(operands):
                         s = index(s)
                     except TypeError as e:
                         raise TypeError("For this input type lists must contain either int or Ellipsis") from e
-                    subscripts += np.core.einsumfunc.einsum_symbols[s]
+                    subscripts += _EINSUM_SYMBOLS[s]
     # Check for proper "->"
     if ("-" in subscripts) or (">" in subscripts):
         invalid = (subscripts.count("-") > 1) or (subscripts.count(">") > 1)
@@ -1230,7 +1238,7 @@ def _parse_einsum_input(operands):
     # Parse ellipses
     if "." in subscripts:
         used = subscripts.replace(".", "").replace(",", "").replace("->", "")
-        unused = list(np.core.einsumfunc.einsum_symbols_set - set(used))
+        unused = list(_EINSUM_SYMBOLS_SET - set(used))
         ellipse_inds = "".join(unused)
         longest = 0
 
@@ -1275,7 +1283,7 @@ def _parse_einsum_input(operands):
             output_subscript = ""
             tmp_subscripts = subscripts.replace(",", "")
             for s in sorted(set(tmp_subscripts)):
-                if s not in (np.core.einsumfunc.einsum_symbols):
+                if not s.isalpha():
                     raise ValueError(f"Character {s} is not a valid symbol.")
                 if tmp_subscripts.count(s) == 1:
                     output_subscript += s
@@ -1292,7 +1300,7 @@ def _parse_einsum_input(operands):
         tmp_subscripts = subscripts.replace(",", "")
         output_subscript = ""
         for s in sorted(set(tmp_subscripts)):
-            if s not in np.core.einsumfunc.einsum_symbols:
+            if not s.isalpha():
                 raise ValueError(f"Character {s} is not a valid symbol.")
             if tmp_subscripts.count(s) == 1:
                 output_subscript += s
@@ -1340,7 +1348,7 @@ def _einsum_single(lhs, rhs, operand):
 
     # else require COO for operations, but check if should convert back
     to_output_format = getattr(operand, "from_coo", lambda x: x)
-    operand = asCOO(operand)
+    operand = as_coo(operand)
 
     # check if repeated / 'trace' indices mean we are only taking a subset
     where = {}

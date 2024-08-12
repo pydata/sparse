@@ -7,7 +7,7 @@ import numpy as np
 
 @pytest.fixture(scope="session")
 def backend():
-    yield sparse.BACKEND
+    yield sparse._BACKEND
 
 
 @pytest.fixture(scope="module")

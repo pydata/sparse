@@ -207,40 +207,6 @@ def test_transpose_error(axis):
         x.transpose(axis)
 
 
-@pytest.mark.parametrize(
-    "a,b",
-    [
-        [(3, 4), (5, 5)],
-        [(12,), (3, 4)],
-        [(12,), (3, 6)],
-        [(5, 5, 5), (6, 6, 6)],
-        [(3, 4), (9, 4)],
-        [(5,), (4,)],
-        [(2, 3, 4, 5), (2, 3, 4, 5, 6)],
-        [(100,), (5, 5)],
-        [(2, 3, 4, 5), (20, 6)],
-        [(), ()],
-    ],
-)
-def test_resize(a, b):
-    s = sparse.random(a, density=0.5)
-    orig_size = s.size
-    x = s.todense()
-
-    x = np.resize(x, b)
-    s.resize(b)
-    temp = x.reshape(x.size)
-    temp[orig_size:] = s.fill_value
-    assert isinstance(s, sparse.SparseArray)
-    assert_eq(x, s)
-
-
-def test_resize_upcast():
-    s = sparse.random((10, 10, 10), density=0.5, format="coo", idx_dtype=np.uint8)
-    s.resize(600)
-    assert s.coords.dtype == np.uint16
-
-
 @pytest.mark.parametrize("axis1", [-3, -2, -1, 0, 1, 2])
 @pytest.mark.parametrize("axis2", [-3, -2, -1, 0, 1, 2])
 def test_swapaxes(axis1, axis2):
@@ -292,33 +258,6 @@ def test_moveaxis_error(source, destination):
 @pytest.mark.parametrize(
     "a,b",
     [
-        [(3, 4), (5, 5)],
-        [(12,), (3, 4)],
-        [(12,), (3, 6)],
-        [(5, 5, 5), (6, 6, 6)],
-        [(3, 4), (9, 4)],
-        [(5,), (4,)],
-        [(2, 3, 4, 5), (2, 3, 4, 5, 6)],
-        [(100,), (5, 5)],
-        [(2, 3, 4, 5), (20, 6)],
-        [(), ()],
-    ],
-)
-def test_resize_2(a, b):
-    s = sparse.random(a, density=0.5)
-    orig_size = s.size
-    x = s.todense()
-    x = np.resize(x, b)
-    s.resize(b)
-    temp = x.reshape(x.size)
-    temp[orig_size:] = s.fill_value
-    assert isinstance(s, sparse.SparseArray)
-    assert_eq(x, s)
-
-
-@pytest.mark.parametrize(
-    "a,b",
-    [
         [(3, 4), (3, 4)],
         [(12,), (3, 4)],
         [(12,), (3, -1)],
@@ -342,12 +281,11 @@ def test_reshape(a, b, format):
 def test_large_reshape():
     n = 100
     m = 10
-    row = np.arange(n, dtype=np.uint16)  # np.random.randint(0, n, size=n, dtype=np.uint16)
-    col = row % m  # np.random.randint(0, m, size=n, dtype=np.uint16)
+    row = np.arange(n, dtype=np.uint16)
+    col = row % m
     data = np.ones(n, dtype=np.uint8)
 
-    x = COO((data, (row, col)), sorted=True, has_duplicates=False)
-
+    x = COO((data, (row, col)), shape=(100, 10), sorted=True, has_duplicates=False)
     assert_eq(x, x.reshape(x.shape))
 
 
@@ -682,7 +620,7 @@ def test_scalar_exponentiation():
 def test_create_with_lists_of_tuples():
     L = [((0, 0, 0), 1), ((1, 2, 1), 1), ((1, 1, 1), 2), ((1, 3, 2), 3)]
 
-    s = COO(L)
+    s = COO(L, shape=(2, 4, 3))
 
     x = np.zeros((2, 4, 3), dtype=np.asarray([1, 2, 3]).dtype)
     for ind, value in L:
@@ -708,8 +646,8 @@ def test_scipy_sparse_interface(rng):
 
     inp = (data, (row, col))
 
-    x = scipy.sparse.coo_matrix(inp)
-    xx = sparse.COO(inp)
+    x = scipy.sparse.coo_matrix(inp, shape=(n, m))
+    xx = sparse.COO(inp, shape=(n, m))
 
     assert_eq(x, xx, check_nnz=False)
     assert_eq(x.T, xx.T, check_nnz=False)
@@ -789,15 +727,8 @@ def test_cache_csr():
     assert s.tocsc() is s.tocsc()
 
 
-def test_empty_shape():
-    x = COO(np.empty((0, 1), dtype=np.int8), [1.0])
-    assert x.shape == ()
-    assert_eq(2 * x, np.float64(2.0))
-
-
 def test_single_dimension():
-    x = COO([1, 3], [1.0, 3.0])
-    assert x.shape == (4,)
+    x = COO([1, 3], [1.0, 3.0], shape=(4,))
     assert_eq(x, np.array([0, 1.0, 0, 3.0]))
 
 
@@ -809,27 +740,26 @@ def test_large_sum(rng):
 
     data = rng.random(n)
 
-    a = COO((x, y, z), data)
-    assert a.shape == (10000, 1000, 3)
+    a = COO((x, y, z), data, shape=(10000, 1000, 3))
 
     b = a.sum(axis=2)
     assert b.nnz > 100000
 
 
 def test_add_many_sparse_arrays():
-    x = COO({(1, 1): 1})
+    x = COO({(1, 1): 1}, shape=(2, 2))
     y = sum([x] * 100)
     assert y.nnz < np.prod(y.shape)
 
 
 def test_caching():
-    x = COO({(9, 9, 9): 1})
+    x = COO({(9, 9, 9): 1}, shape=(10, 10, 10))
     assert x[:].reshape((100, 10)).transpose().tocsr() is not x[:].reshape((100, 10)).transpose().tocsr()
 
-    x = COO({(9, 9, 9): 1}, cache=True)
+    x = COO({(9, 9, 9): 1}, shape=(10, 10, 10), cache=True)
     assert x[:].reshape((100, 10)).transpose().tocsr() is x[:].reshape((100, 10)).transpose().tocsr()
 
-    x = COO({(1, 1, 1, 1, 1, 1, 1, 2): 1}, cache=True)
+    x = COO({(1, 1, 1, 1, 1, 1, 1, 2): 1}, shape=(2, 2, 2, 2, 2, 2, 2, 3), cache=True)
 
     for _ in range(x.ndim):
         x.reshape(x.size)
@@ -1090,9 +1020,6 @@ def test_invalid_attrs_error():
 
     with pytest.raises(ValueError):
         sparse.as_coo(s, fill_value=0.0)
-
-    with pytest.raises(ValueError):
-        COO(s, fill_value=0.0)
 
 
 def test_invalid_iterable_error():
@@ -1414,8 +1341,8 @@ def test_warn_on_too_dense():
 def test_prune_coo():
     coords = np.array([[0, 1, 2, 3]])
     data = np.array([1, 0, 1, 2])
-    s1 = COO(coords, data)
-    s2 = COO(coords, data, prune=True)
+    s1 = COO(coords, data, shape=(4,))
+    s2 = COO(coords, data, shape=(4,), prune=True)
     assert s2.nnz == 3
 
     # Densify s1 because it isn't canonical
