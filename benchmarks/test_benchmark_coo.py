@@ -80,12 +80,12 @@ def test_elemwise_broadcast(benchmark, f, elemwise_broadcast_args):
 @pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3]), ids=id_of_test)
 def indexing_args(request, seed, max_size):
     side, rank = request.param
-    if side**3 >= max_size:
+    if side**rank >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
     shape = (side,) * rank
-    x = sparse.random(shape, density=DENSITY, random_state=rng)
-    return x
+
+    return sparse.random(shape, density=DENSITY, random_state=rng)
 
 
 def test_index_scalar(benchmark, indexing_args):
