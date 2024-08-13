@@ -115,9 +115,8 @@ def test_index_slice(benchmark, indexing_args):
 def test_index_fancy(benchmark, indexing_args, seed):
     x = indexing_args
     side = x.shape[0]
-    rank = x.ndim
     rng = np.random.default_rng(seed=seed)
-    index = rng.integers(0, side, size=(side // 2,) * rank)
+    index = rng.integers(0, side, size=(side // 2,))
 
     x[index]  # Numba compilation
 
