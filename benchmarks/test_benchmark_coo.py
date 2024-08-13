@@ -29,12 +29,12 @@ def test_matmul(benchmark, side, seed, max_size):
         x @ y
 
 
-def id_of_test(param):
+def get_test_id(param):
     side, rank = param
     return f"{side=}-{rank=}"
 
 
-@pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3, 4]), ids=id_of_test)
+@pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3, 4]), ids=get_test_id)
 def elemwise_args(request, seed, max_size):
     side, rank = request.param
     if side**rank >= max_size:
@@ -77,7 +77,7 @@ def test_elemwise_broadcast(benchmark, f, elemwise_broadcast_args):
         f(x, y)
 
 
-@pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3]), ids=id_of_test)
+@pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3]), ids=get_test_id)
 def indexing_args(request, seed, max_size):
     side, rank = request.param
     if side**rank >= max_size:
@@ -117,7 +117,7 @@ def test_index_fancy(benchmark, indexing_args, seed):
     side = x.shape[0]
     rank = x.ndim
     rng = np.random.default_rng(seed=seed)
-    index = rng.integers((side // 2,) * rank)
+    index = rng.integers(0, side, size=(side // 2,) * rank)
 
     x[index]  # Numba compilation
 
