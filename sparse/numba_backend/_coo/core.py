@@ -207,16 +207,17 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         fill_value=None,
         idx_dtype=None,
     ):
+        if isinstance(coords, COO):
+            self._make_shallow_copy_of(coords)
+            if data is not None or shape is not None:
+                raise ValueError("If `coords` is `COO`, then no other arguments should be provided.")
+            if fill_value is not None:
+                self.fill_value = self.data.dtype.type(fill_value)
+            return
+
         self._cache = None
         if cache:
             self.enable_caching()
-
-        if not isinstance(coords, np.ndarray):
-            warnings.warn(
-                "coords should be an ndarray. This will raise a ValueError in the future.",
-                DeprecationWarning,
-                stacklevel=1,
-            )
 
         if data is None:
             arr = as_coo(coords, shape=shape, fill_value=fill_value, idx_dtype=idx_dtype)
@@ -238,15 +239,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             self.data = np.broadcast_to(self.data, self.coords.shape[1])
 
         if self.data.ndim != 1:
-            raise ValueError("data must be a scalar or 1-dimensional.")
+            raise ValueError("`data` must be a scalar or 1-dimensional.")
 
         if shape is None:
-            warnings.warn(
-                "shape should be provided. This will raise a ValueError in the future.",
-                DeprecationWarning,
-                stacklevel=1,
-            )
-            shape = tuple(self.coords.max(axis=1) + 1) if self.coords.nbytes else ()
+            raise ValueError("`shape` was not provided.")
 
         if not isinstance(shape, Iterable):
             shape = (shape,)
@@ -256,7 +252,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         if shape and not self.coords.size:
             self.coords = np.zeros((len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp)
-
         super().__init__(shape, fill_value=fill_value)
         if idx_dtype:
             if not can_store(idx_dtype, max(shape)):
@@ -417,11 +412,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         coords = tuple([self.coords[i, :] for i in range(self.ndim)])
         data = self.data
 
-        if coords != ():
+        if len(coords) != 0:
             x[coords] = data
         else:
             if len(data) != 0:
-                x[coords] = data
+                assert data.shape == (1,)
+                x[...] = data[0]
 
         return x
 
@@ -1156,52 +1152,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             cache=self._cache is not None,
             fill_value=self.fill_value,
         )
-
-    def resize(self, *args, refcheck=True, coords_dtype=np.intp):
-        """
-        This method changes the shape and size of an array in-place.
-        Parameters
-        ----------
-        args : tuple, or series of integers
-            The desired shape of the output array.
-
-        See Also
-        --------
-        [`numpy.ndarray.resize`][] : The equivalent Numpy function.
-
-        """
-        warnings.warn("resize is deprecated on all SpraseArray objects.", DeprecationWarning, stacklevel=1)
-        if len(args) == 1 and isinstance(args[0], tuple):
-            shape = args[0]
-        elif all(isinstance(arg, int) for arg in args):
-            shape = tuple(args)
-        else:
-            raise ValueError("Invalid input")
-
-        if any(d < 0 for d in shape):
-            raise ValueError("negative dimensions not allowed")
-
-        new_size = reduce(operator.mul, shape, 1)
-
-        # TODO: this self.size enforces a 2**64 limit to array size
-        linear_loc = self.linear_loc()
-        end_idx = np.searchsorted(linear_loc, new_size, side="left")
-        linear_loc = linear_loc[:end_idx]
-
-        idx_dtype = self.coords.dtype
-        if shape != () and not can_store(idx_dtype, max(shape)):
-            idx_dtype = np.min_scalar_type(max(shape))
-        coords = np.empty((len(shape), len(linear_loc)), dtype=idx_dtype)
-        strides = 1
-        for i, d in enumerate(shape[::-1]):
-            coords[-(i + 1), :] = (linear_loc // strides) % d
-            strides *= d
-
-        self.shape = shape
-        self.coords = coords
-
-        if len(self.data) != len(linear_loc):
-            self.data = self.data[:end_idx].copy()
 
     def to_scipy_sparse(self, /, *, accept_fv=None):
         """
