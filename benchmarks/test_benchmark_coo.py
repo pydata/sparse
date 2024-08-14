@@ -41,7 +41,7 @@ def get_test_id(param):
 
 @pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3, 4], ["coo", "gcxs"]), ids=get_test_id)
 def elemwise_args(request, seed, max_size):
-    side, rank, format= request.param
+    side, rank, format = request.param
     if side**rank >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
@@ -60,7 +60,7 @@ def test_elemwise(benchmark, f, elemwise_args):
     def bench():
         f(x, y)
 
-#@pytest.mark.parametrize("format", ["coo", "gcxs"])
+
 @pytest.fixture(params=[100, 500, 1000], ids=side_ids)
 def elemwise_broadcast_args(request, seed, max_size):
     side = request.param
@@ -128,3 +128,22 @@ def test_index_fancy(benchmark, indexing_args, seed):
     @benchmark
     def bench():
         x[index]
+
+
+def get_densemul_id(param):
+    side, rank, format, compressed_axis, n_vectors = param
+    return f"{side=}-{rank=}-{format=}-{compressed_axis=}-{n_vectors}"
+
+@pytest.fixture(params=itertools.product([100, 500, 1000],
+                                         [1, 2, 3], 
+                                         ["coo", "gcxs"],
+                                         [0, 1],
+                                         [1, 20, 100],
+                                         ), ids=get_densemul_id)
+def test_densemul(request, seed, max_size):
+    side, rank, format, compressed_axis, n_vectors = request.param
+    if side**rank >= max_size:
+        pytest.skip()
+    n = 10000
+    x = sparse.random()
+    
