@@ -194,7 +194,7 @@ def tensordot(a, b, axes=2, *, return_type=None):
     if builtins.any(dim == 0 for dim in chain(newshape_a, newshape_b)):
         from sparse import COO
 
-        dt = (np.empty((), dtype=a.dtype) + np.empty((), dtype=b.dtype)).dtype
+        dt = np.result_type(a.dtype, b.dtype)
         res = COO(
             np.empty((len(olda) + len(oldb), 0), dtype=np.uintp), data=np.empty(0, dtype=dt), shape=tuple(olda + oldb)
         )
