@@ -13,14 +13,19 @@ DENSITY = 0.01
 def side_ids(side):
     return f"{side=}"
 
+def get_matmul_ids(params):
+    side, format = params
+    return f"{side=}-{format=}"
 
-@pytest.mark.parametrize("side", [100, 500, 1000], ids=side_ids)
-def test_matmul(benchmark, side, seed, max_size):
+
+@pytest.fixture(params=itertools.product([100, 500, 1000], ["coo", "gcxs"]), ids=get_matmul_ids)
+def test_matmul(benchmark, side, format, seed, max_size):
+    
     if side**2 >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
-    x = sparse.random((side, side), density=DENSITY, random_state=rng)
-    y = sparse.random((side, side), density=DENSITY, random_state=rng)
+    x = sparse.random((side, side), density=DENSITY, format=format, random_state=rng)
+    y = sparse.random((side, side), density=DENSITY, format=format, random_state=rng)
 
     x @ y  # Numba compilation
 
@@ -30,19 +35,19 @@ def test_matmul(benchmark, side, seed, max_size):
 
 
 def get_test_id(param):
-    side, rank = param
-    return f"{side=}-{rank=}"
+    side, rank, format = param
+    return f"{side=}-{rank=}-{format=}"
 
 
-@pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3, 4]), ids=get_test_id)
+@pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3, 4], ["coo", "gcxs"]), ids=get_test_id)
 def elemwise_args(request, seed, max_size):
-    side, rank = request.param
+    side, rank, format= request.param
     if side**rank >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
     shape = (side,) * rank
-    x = sparse.random(shape, density=DENSITY, random_state=rng)
-    y = sparse.random(shape, density=DENSITY, random_state=rng)
+    x = sparse.random(shape, density=DENSITY, format=format, random_state=rng)
+    y = sparse.random(shape, density=DENSITY, format=format, random_state=rng)
     return x, y
 
 
@@ -55,7 +60,7 @@ def test_elemwise(benchmark, f, elemwise_args):
     def bench():
         f(x, y)
 
-
+#@pytest.mark.parametrize("format", ["coo", "gcxs"])
 @pytest.fixture(params=[100, 500, 1000], ids=side_ids)
 def elemwise_broadcast_args(request, seed, max_size):
     side = request.param
@@ -77,15 +82,15 @@ def test_elemwise_broadcast(benchmark, f, elemwise_broadcast_args):
         f(x, y)
 
 
-@pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3]), ids=get_test_id)
+@pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3], ["coo", "gcxs"]), ids=get_test_id)
 def indexing_args(request, seed, max_size):
-    side, rank = request.param
+    side, rank, format = request.param
     if side**rank >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
     shape = (side,) * rank
 
-    return sparse.random(shape, density=DENSITY, random_state=rng)
+    return sparse.random(shape, density=DENSITY, format= format, random_state=rng)
 
 
 def test_index_scalar(benchmark, indexing_args):
