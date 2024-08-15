@@ -36,7 +36,7 @@ def test_matmul(benchmark, side, format, seed, max_size):
 
 def get_test_id(param):
     side, rank, format = param
-    return f"{side=}-{rank=}"  # -{format=}"
+    return f"{side=}-{rank=}-{format=}"
 
 
 @pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3, 4], ["coo", "gcxs"]), ids=get_test_id)
