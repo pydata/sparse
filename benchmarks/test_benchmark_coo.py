@@ -61,14 +61,14 @@ def test_elemwise(benchmark, f, elemwise_args):
         f(x, y)
 
 
-@pytest.fixture(params=[100, 500, 1000], ids=side_ids)
+@pytest.fixture(params=itertools.product([100, 500, 1000], ["coo", "gcxs"]), ids=get_matmul_ids)
 def elemwise_broadcast_args(request, seed, max_size):
-    side = request.param
+    side, format = request.param
     if side**2 >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
-    x = sparse.random((side, 1, side), density=DENSITY, random_state=rng)
-    y = sparse.random((side, side), density=DENSITY, random_state=rng)
+    x = sparse.random((side, 1, side), density=DENSITY, format=format, random_state=rng)
+    y = sparse.random((side, side), density=DENSITY, format=format, random_state=rng)
     return x, y
 
 
