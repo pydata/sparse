@@ -13,6 +13,7 @@ DENSITY = 0.01
 def side_ids(side):
     return f"{side=}"
 
+
 def get_matmul_ids(params):
     side, format = params
     return f"{side=}-{format=}"
@@ -20,7 +21,6 @@ def get_matmul_ids(params):
 
 @pytest.fixture(params=itertools.product([100, 500, 1000], ["coo", "gcxs"]), ids=get_matmul_ids)
 def test_matmul(benchmark, side, format, seed, max_size):
-    
     if side**2 >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
@@ -36,7 +36,7 @@ def test_matmul(benchmark, side, format, seed, max_size):
 
 def get_test_id(param):
     side, rank, format = param
-    return f"{side=}-{rank=}-{format=}"
+    return f"{side=}-{rank=}"  # -{format=}"
 
 
 @pytest.fixture(params=itertools.product([100, 500, 1000], [1, 2, 3, 4], ["coo", "gcxs"]), ids=get_test_id)
@@ -90,7 +90,7 @@ def indexing_args(request, seed, max_size):
     rng = np.random.default_rng(seed=seed)
     shape = (side,) * rank
 
-    return sparse.random(shape, density=DENSITY, format= format, random_state=rng)
+    return sparse.random(shape, density=DENSITY, format=format, random_state=rng)
 
 
 def test_index_scalar(benchmark, indexing_args):
@@ -134,21 +134,23 @@ def get_densemul_id(param):
     compressed_axis, n_vectors = param
     return f"{compressed_axis=}-{n_vectors}"
 
-@pytest.fixture(params=itertools.product([0, 1],[1, 20, 100]), ids=get_densemul_id)
-def densemul_args(request, seed, max_size):
+
+@pytest.fixture(params=itertools.product([0, 1], [1, 20, 100]), ids=get_densemul_id)
+def densemul_args(request, seed):
     compressed_axis, n_vectors = request.param
 
     rng = np.random.default_rng(seed=seed)
     n = 10000
-    x = sparse.random((n, n), density=DENSITY/10, format="gcxs", random_state=rng
-                      ).change_compressed_axes((compressed_axis,))
-        
-    return x, n, n_vectors, rng
+    x = sparse.random((n, n), density=DENSITY / 10, format="gcxs", random_state=rng).change_compressed_axes(
+        (compressed_axis,)
+    )
+    t = rng.random((n, n_vectors))
+
+    return x, t
 
 
 def test_gcxs_dot_ndarray(benchmark, densemul_args):
-    x, n, n_vectors, rng = densemul_args
-    t = rng.random((n, n_vectors))
+    x, t = densemul_args
 
     # Numba compilation
     x @ t
@@ -159,13 +161,13 @@ def test_gcxs_dot_ndarray(benchmark, densemul_args):
 
 
 def test_ndarray_dot_gcxs(benchmark, densemul_args):
-    x, n, n_vectors, rng = densemul_args
-    u = rng.random((n_vectors, n))
-  
+    x, t = densemul_args
+
+    u = t.T
+
     # Numba compilation
     u @ x
 
     @benchmark
-    def bench(): 
+    def bench():
         u @ x
-    
