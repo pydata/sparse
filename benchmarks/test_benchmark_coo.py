@@ -131,19 +131,41 @@ def test_index_fancy(benchmark, indexing_args, seed):
 
 
 def get_densemul_id(param):
-    side, rank, format, compressed_axis, n_vectors = param
-    return f"{side=}-{rank=}-{format=}-{compressed_axis=}-{n_vectors}"
+    compressed_axis, n_vectors = param
+    return f"{compressed_axis=}-{n_vectors}"
 
-@pytest.fixture(params=itertools.product([100, 500, 1000],
-                                         [1, 2, 3], 
-                                         ["coo", "gcxs"],
-                                         [0, 1],
-                                         [1, 20, 100],
-                                         ), ids=get_densemul_id)
-def test_densemul(request, seed, max_size):
-    side, rank, format, compressed_axis, n_vectors = request.param
-    if side**rank >= max_size:
-        pytest.skip()
+@pytest.fixture(params=itertools.product([0, 1],[1, 20, 100]), ids=get_densemul_id)
+def densemul_args(request, seed, max_size):
+    compressed_axis, n_vectors = request.param
+
+    rng = np.random.default_rng(seed=seed)
     n = 10000
-    x = sparse.random()
+    x = sparse.random((n, n), density=DENSITY/10, format="gcxs", random_state=rng
+                      ).change_compressed_axes((compressed_axis,))
+        
+    return x, n, n_vectors, rng
+
+
+def test_gcxs_dot_ndarray(benchmark, densemul_args):
+    x, n, n_vectors, rng = densemul_args
+    t = rng.random((n, n_vectors))
+
+    # Numba compilation
+    x @ t
+
+    @benchmark
+    def bench():
+        x @ t
+
+
+def test_ndarray_dot_gcxs(benchmark, densemul_args):
+    x, n, n_vectors, rng = densemul_args
+    u = rng.random((n_vectors, n))
+  
+    # Numba compilation
+    u @ x
+
+    @benchmark
+    def bench(): 
+        u @ x
     
