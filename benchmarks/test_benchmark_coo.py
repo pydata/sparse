@@ -19,8 +19,9 @@ def get_matmul_ids(params):
     return f"{side=}-{format=}"
 
 
-@pytest.fixture(params=itertools.product([100, 500, 1000], ["coo", "gcxs"]), ids=get_matmul_ids)
-def test_matmul(benchmark, side, format, seed, max_size):
+@pytest.mark.parametrize("params", itertools.product([100, 500, 1000], ["coo", "gcxs"]), ids=get_matmul_ids)
+def test_matmul(benchmark, params, seed, max_size):
+    side, format = params
     if side**2 >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
@@ -34,8 +35,8 @@ def test_matmul(benchmark, side, format, seed, max_size):
         x @ y
 
 
-def get_test_id(param):
-    side, rank, format = param
+def get_test_id(params):
+    side, rank, format = params
     return f"{side=}-{rank=}-{format=}"
 
 
