@@ -14,14 +14,9 @@ def side_ids(side):
     return f"{side=}"
 
 
-def get_matmul_ids(params):
-    side, format = params
-    return f"{side=}-{format=}"
-
-
-@pytest.mark.parametrize("params", itertools.product([100, 500, 1000], ["coo", "gcxs"]), ids=get_matmul_ids)
-def test_matmul(benchmark, params, seed, max_size):
-    side, format = params
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@pytest.mark.parametrize("side", [100, 500, 1000], ids=side_ids)
+def test_matmul(benchmark, format, side, seed, max_size):
     if side**2 >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
@@ -62,7 +57,12 @@ def test_elemwise(benchmark, f, elemwise_args):
         f(x, y)
 
 
-@pytest.fixture(params=itertools.product([100, 500, 1000], ["coo", "gcxs"]), ids=get_matmul_ids)
+def get_elemwise_ids(params):
+    side, format = params
+    return f"{side=}-{format=}"
+
+
+@pytest.fixture(params=itertools.product([100, 500, 1000], ["coo", "gcxs"]), ids=get_elemwise_ids)
 def elemwise_broadcast_args(request, seed, max_size):
     side, format = request.param
     if side**2 >= max_size:
