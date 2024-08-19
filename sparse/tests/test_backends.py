@@ -1,3 +1,5 @@
+import warnings
+
 import sparse
 
 import pytest
@@ -15,7 +17,7 @@ def test_backends(backend):
     x = sparse.random((100, 10, 100), density=0.01, random_state=rng)
     y = sparse.random((100, 10, 100), density=0.01, random_state=rng)
 
-    if backend == sparse.BackendType.Finch:
+    if backend == sparse._BackendType.Finch:
         import finch
 
         def storage():
@@ -33,7 +35,7 @@ def test_backends(backend):
 
 
 def test_finch_lazy_backend(backend):
-    if backend != sparse.BackendType.Finch:
+    if backend != sparse._BackendType.Finch:
         pytest.skip("Tested only for Finch backend")
 
     import finch
@@ -88,7 +90,9 @@ def test_scipy_inv(backend, format, order):
     x = np.eye(10, order=order) * 2
     x_pydata = sparse.asarray(x, format=format)
 
-    actual = splin.inv(x_pydata)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=sps.SparseEfficiencyWarning)
+        actual = splin.inv(x_pydata)
     expected = np.linalg.inv(x)
     assert_almost_equal(actual.todense(), expected)
 

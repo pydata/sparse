@@ -64,4 +64,4 @@ y = s.todense() + 5
 ```
 
 For more operations see the [operations][operators]
-or the [API reference page](../../api/backend).
+or the [API reference page](../../api/).

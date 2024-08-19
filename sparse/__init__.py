@@ -7,32 +7,37 @@ from ._version import __version__, __version_tuple__  # noqa: F401
 __array_api_version__ = "2022.12"
 
 
-class BackendType(Enum):
+class _BackendType(Enum):
     Numba = "Numba"
     Finch = "Finch"
 
 
 _ENV_VAR_NAME = "SPARSE_BACKEND"
 
+
+class SparseFutureWarning(FutureWarning):
+    pass
+
+
 if os.environ.get(_ENV_VAR_NAME, "") != "":
     warnings.warn(
         "Changing back-ends is a development feature, please do not rely on it in production.",
-        FutureWarning,
+        SparseFutureWarning,
         stacklevel=1,
     )
     _backend_name = os.environ[_ENV_VAR_NAME]
 else:
-    _backend_name = BackendType.Numba.value
+    _backend_name = _BackendType.Numba.value
 
-if _backend_name not in {BackendType.Numba.value, BackendType.Finch.value}:
+if _backend_name not in {v.value for v in _BackendType}:
     warnings.warn(f"Invalid backend identifier: {_backend_name}. Selecting Numba backend.", UserWarning, stacklevel=1)
-    BACKEND = BackendType.Numba
+    _BACKEND = _BackendType.Numba
 else:
-    BACKEND = BackendType[_backend_name]
+    _BACKEND = _BackendType[_backend_name]
 
 del _backend_name
 
-if BackendType.Finch == BACKEND:
+if _BackendType.Finch == _BACKEND:
     from sparse.finch_backend import *  # noqa: F403
     from sparse.finch_backend import __all__
 else:

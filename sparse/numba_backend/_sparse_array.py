@@ -170,7 +170,9 @@ class SparseArray:
         >>> s.density
         0.125
         """
-        return self.nnz / self.size
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            return float(np.float64(self.nnz) / np.float64(self.size))
 
     def _repr_html_(self):
         """

@@ -92,6 +92,7 @@ nav:
     - construct.md
     - operations.md
   - API:
+    - api.md
     - api/*
   - Contributing:
     - contributing.md

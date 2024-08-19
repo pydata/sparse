@@ -1,8 +1,6 @@
 import functools
-import operator
 import warnings
 from collections.abc import Iterable
-from functools import reduce
 from numbers import Integral
 
 import numba
@@ -476,14 +474,12 @@ def html_table(arr):
     table = ["<table><tbody>"]
     headings = ["Format", "Data Type", "Shape", "nnz", "Density", "Read-only"]
 
-    density = np.float64(arr.nnz) / np.float64(arr.size)
-
     info = [
         type(arr).__name__.lower(),
         str(arr.dtype),
         str(arr.shape),
         str(arr.nnz),
-        str(density),
+        str(arr.density),
     ]
 
     # read-only
@@ -493,9 +489,10 @@ def html_table(arr):
         headings.append("Size")
         info.append(human_readable_size(arr.nbytes))
         headings.append("Storage ratio")
-        info.append(
-            f"{np.float64(arr.nbytes) / np.float64(reduce(operator.mul, arr.shape, 1) * arr.dtype.itemsize):.2f}"
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            ratio = float(np.float64(arr.nbytes) / np.float64(arr.size * arr.dtype.itemsize))
+        info.append(f"{ratio:.2f}")
 
     # compressed_axes
     if type(arr).__name__ == "GCXS":
