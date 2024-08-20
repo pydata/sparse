@@ -1,4 +1,4 @@
-import xml.etree.ElementTree as et
+import xml.etree.ElementTree as ET
 
 import numpy as np
 
@@ -34,7 +34,7 @@ kwargs = {"x": "0", "y": "0", "width": f"{s}", "height": f"{s}", "stroke": "whit
 bg_kwargs = {**kwargs, "width": f"{5*s}", "height": f"{5*s}", "style": "fill:white;"}
 
 
-root = et.Element(
+root = ET.Element(
     "svg",
     **{
         "width": f"{s * 10 + 2 * offset_x}",
@@ -52,14 +52,14 @@ root = et.Element(
 
 
 # face 1 (left, orange)
-et.SubElement(
+ET.SubElement(
     root,
     "rect",
     transform=transform(1, b, 0, 1, 5 * s + offset_x, offset_y),
     **bg_kwargs,
 )
 for i, j in np.ndindex(5, 5):
-    et.SubElement(
+    ET.SubElement(
         root,
         "rect",
         style=f"{colors['orange']};{fill(rs)};",
@@ -68,14 +68,14 @@ for i, j in np.ndindex(5, 5):
     )
 
 # face 2 (top, orange)
-et.SubElement(
+ET.SubElement(
     root,
     "rect",
     transform=transform(1, b, -1, b, 5 * s + offset_x, 5 * s + offset_y),
     **bg_kwargs,
 )
 for i, j in np.ndindex(5, 5):
-    et.SubElement(
+    ET.SubElement(
         root,
         "rect",
         style=f"{colors['orange']};{fill(rs)};",
@@ -92,14 +92,14 @@ for i, j in np.ndindex(5, 5):
 
 # face 3 (left, blue)
 for y2 in (5 + b * 5, 10 + b * 5):
-    et.SubElement(
+    ET.SubElement(
         root,
         "rect",
         transform=transform(1, b, 0, 1, offset_x, y2 * s + offset_y),
         **bg_kwargs,
     )
     for i, j in np.ndindex(5, 5):
-        et.SubElement(
+        ET.SubElement(
             root,
             "rect",
             style=f"{colors['blue']};{fill(rs)};",
@@ -108,14 +108,14 @@ for y2 in (5 + b * 5, 10 + b * 5):
         )
 
 # face 4 (right, grey)
-et.SubElement(
+ET.SubElement(
     root,
     "rect",
     transform=transform(1, -b, 0, 1, 5 * s + offset_x, (10 * b + 5) * s + offset_y),
     **bg_kwargs,
 )
 for i, j in np.ndindex(5, 5):
-    et.SubElement(
+    ET.SubElement(
         root,
         "rect",
         style=f"{colors['grey']};{fill(rs)};",
@@ -123,4 +123,4 @@ for i, j in np.ndindex(5, 5):
         **kwargs,
     )
 
-et.ElementTree(root).write("logo.svg", encoding="UTF-8")
+ET.ElementTree(root).write("logo.svg", encoding="UTF-8")
