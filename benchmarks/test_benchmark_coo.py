@@ -10,12 +10,12 @@ import numpy as np
 DENSITY = 0.01
 
 
-def side_ids(side):
-    return f"{side=}"
+def format_id(format):
+    return f"{format=}"
 
 
 @pytest.mark.parametrize("format", ["coo", "gcxs"])
-def test_matmul(benchmark, sides, format, seed, max_size, ids=side_ids):
+def test_matmul(benchmark, sides, format, seed, max_size, ids=format_id):
     m, n, p = sides
 
     if m * n >= max_size or n * p >= max_size:
@@ -134,8 +134,8 @@ def test_index_fancy(benchmark, indexing_args, seed):
 
 
 def get_densemul_id(param):
-    compressed_axis, n_vectors = param
-    return f"{compressed_axis=}-{n_vectors}"
+    compressed_axis, format = param
+    return f"{compressed_axis=}-{format}"
 
 
 @pytest.fixture(params=itertools.product([200, 500, 1000], [200, 500, 1000], [200, 500, 1000]))
