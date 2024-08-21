@@ -156,7 +156,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     >>> rows = [0, 1, 2, 3, 4]
     >>> cols = [0, 0, 0, 1, 1]
     >>> data = [10, 20, 30, 40, 50]
-    >>> z = COO((data, (rows, cols)))
+    >>> z = COO((data, (rows, cols)), shape=(5, 2))
     >>> z.todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[10,  0],
            [20,  0],
@@ -168,10 +168,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     indices imply summation:
 
     >>> d = {(0, 0, 0): 1, (1, 2, 3): 2, (1, 1, 0): 3}
-    >>> COO(d)
+    >>> COO(d, shape=(2, 3, 4))
     <COO: shape=(2, 3, 4), dtype=int64, nnz=3, fill_value=0>
     >>> L = [((0, 0), 1), ((1, 1), 2), ((0, 0), 3)]
-    >>> COO(L).todense()  # doctest: +NORMALIZE_WHITESPACE
+    >>> COO(L, shape=(2, 2)).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([[4, 0],
            [0, 2]])
 
@@ -460,7 +460,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         )
 
     @classmethod
-    def from_iter(cls, x, shape=None, fill_value=None, dtype=None):
+    def from_iter(cls, x, shape, fill_value=None, dtype=None):
         """
         Converts an iterable in certain formats to a [`sparse.COO`][] array. See examples
         for details.
@@ -469,7 +469,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         ----------
         x : Iterable or Iterator
             The iterable to convert to [`sparse.COO`][].
-        shape : tuple[int], optional
+        shape : tuple[int]
             The shape of the array.
         fill_value : scalar
             The fill value for this array.
@@ -487,7 +487,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         Here, the first part represents the coordinate and the second part represents the value.
 
         >>> x = [((0, 0), 1), ((1, 1), 1)]
-        >>> s = COO.from_iter(x)
+        >>> s = COO.from_iter(x, shape=(2, 2))
         >>> s.todense()
         array([[1, 0],
                [0, 1]])
@@ -495,7 +495,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         You can also have a similar format with a dictionary.
 
         >>> x = {(0, 0): 1, (1, 1): 1}
-        >>> s = COO.from_iter(x)
+        >>> s = COO.from_iter(x, shape=(2, 2))
         >>> s.todense()
         array([[1, 0],
                [0, 1]])
@@ -503,7 +503,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         The third supported format is ``(data, (..., row, col))``.
 
         >>> x = ([1, 1], ([0, 1], [0, 1]))
-        >>> s = COO.from_iter(x)
+        >>> s = COO.from_iter(x, shape=(2, 2))
         >>> s.todense()
         array([[1, 0],
                [0, 1]])
@@ -511,7 +511,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         You can also pass in a [`collections.abc.Iterator`][] object.
 
         >>> x = [((0, 0), 1), ((1, 1), 1)].__iter__()
-        >>> s = COO.from_iter(x)
+        >>> s = COO.from_iter(x, shape=(2, 2))
         >>> s.todense()
         array([[1, 0],
                [0, 1]])
@@ -1294,7 +1294,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         --------
         >>> coords = np.array([[1, 2, 0]], dtype=np.uint8)
         >>> data = np.array([4, 1, 3], dtype=np.uint8)
-        >>> s = COO(coords, data)
+        >>> s = COO(coords, data, shape=(3,))
         >>> s._sort_indices()
         >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
         array([[0, 1, 2]], dtype=uint8)
@@ -1322,7 +1322,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         --------
         >>> coords = np.array([[0, 1, 1, 2]], dtype=np.uint8)
         >>> data = np.array([6, 5, 2, 2], dtype=np.uint8)
-        >>> s = COO(coords, data)
+        >>> s = COO(coords, data, shape=(3,))
         >>> s._sum_duplicates()
         >>> s.coords  # doctest: +NORMALIZE_WHITESPACE
         array([[0, 1, 2]], dtype=uint8)
@@ -1355,7 +1355,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         --------
         >>> coords = np.array([[0, 1, 2, 3]])
         >>> data = np.array([1, 0, 1, 2])
-        >>> s = COO(coords, data)
+        >>> s = COO(coords, data, shape=(4,))
         >>> s._prune()
         >>> s.nnz
         3

@@ -1025,11 +1025,14 @@ def test_invalid_attrs_error():
 def test_invalid_iterable_error():
     with pytest.raises(ValueError):
         x = [(3, 4, 5)]
-        COO.from_iter(x)
+        COO.from_iter(x, shape=(6,))
 
     with pytest.raises(ValueError):
         x = [((2.3, 4.5), 3.2)]
-        COO.from_iter(x)
+        COO.from_iter(x, shape=(5,))
+
+    with pytest.raises(TypeError):
+        COO.from_iter({(1, 1): 1})
 
 
 def test_prod_along_axis():
