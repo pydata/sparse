@@ -6,6 +6,7 @@ omit=
     sparse/_version.py
     sparse/tests/*
     sparse/numba_backend/tests/*
+    sparse/finch_backend
 
 [report]
 exclude_lines =
