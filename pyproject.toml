@@ -46,7 +46,7 @@ tests = [
     "pre-commit",
     "scipy",
     "sparse[finch]",
-    "pytest-codspeed"
+    "pytest-codspeed",
 ]
 tox = ["sparse[tests]", "tox"]
 notebooks = ["sparse[tests]", "nbmake", "matplotlib"]
