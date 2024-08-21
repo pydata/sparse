@@ -138,13 +138,18 @@ def get_densemul_id(param):
     return f"{compressed_axis=}-{format}"
 
 
-@pytest.fixture(params=itertools.product([200, 500, 1000], [200, 500, 1000], [200, 500, 1000]))
+def get_sides_ids(param):
+    m, n, p = param
+    return f"{m=}-{n=}-{p=}"
+
+
+@pytest.fixture(params=itertools.product([200, 500, 1000], [200, 500, 1000], [200, 500, 1000]), ids=get_sides_ids)
 def sides(request):
     m, n, p = request.param
     return m, n, p
 
 
-@pytest.fixture(params=itertools.product([0, 1], ["coo", "gcxs"]), ids=get_densemul_id)
+@pytest.fixture(params=([(0, "coo"), (0, "gcxs"), (1, "gcxs")]), ids=get_densemul_id)
 def densemul_args(request, sides, seed, max_size):
     compressed_axis, format = request.param
     m, n, p = sides
