@@ -7,7 +7,7 @@ def add_doctest_modules(doctest_namespace):
 
     import numpy as np
 
-    if sparse.BackendType.Numba != sparse.BACKEND:
+    if sparse._BackendType.Numba != sparse._BACKEND:
         pytest.skip()
 
     doctest_namespace["np"] = np
