@@ -133,11 +133,6 @@ def test_index_fancy(benchmark, indexing_args, seed):
         x[index]
 
 
-def get_densemul_id(param):
-    compressed_axis, format = param
-    return f"{compressed_axis=}-{format}"
-
-
 def get_sides_ids(param):
     m, n, p = param
     return f"{m=}-{n=}-{p=}"
@@ -149,7 +144,7 @@ def sides(request):
     return m, n, p
 
 
-@pytest.fixture(params=([(0, "coo"), (0, "gcxs"), (1, "gcxs")]), ids=get_densemul_id)
+@pytest.fixture(params=([(0, "coo"), (0, "gcxs"), (1, "gcxs")]), ids=["coo", "gcxs-0-axis", "gcxs-1-axis"])
 def densemul_args(request, sides, seed, max_size):
     compressed_axis, format = request.param
     m, n, p = sides
