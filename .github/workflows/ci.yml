@@ -48,7 +48,7 @@ jobs:
       - name: Run tests
         run: |
           SPARSE_BACKEND=Numba pytest --cov-report=xml:coverage_Numba.xml -n auto -vvv
-          SPARSE_BACKEND=Finch pytest -o pytest_Finch.ini --cov-report=xml:coverage_Finch.xml -n auto -vvv
+          SPARSE_BACKEND=Finch pytest -c pytest_Finch.ini --cov-report=xml:coverage_Finch.xml -n auto -vvv
       - uses: codecov/codecov-action@v4
         if: always()
         with:
