@@ -149,6 +149,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
         Examples
         --------
+        >>> import scipy.sparse
         >>> x = scipy.sparse.rand(6, 3, density=0.2)
         >>> s = DOK.from_scipy_sparse(x)
         >>> np.array_equal(x.todense(), s.todense())

@@ -1170,13 +1170,13 @@ def _parse_einsum_input(operands):
     Examples
     --------
     The operand list is simplified to reduce printing:
-    >>> np.random.seed(123)
-    >>> a = np.random.rand(4, 4)
-    >>> b = np.random.rand(4, 4, 4)
-    >>> _parse_einsum_input(("...a,...a->...", a, b))
-    ('za,xza', 'xz', [a, b]) # may vary
-    >>> _parse_einsum_input((a, [Ellipsis, 0], b, [Ellipsis, 0]))
-    ('za,xza', 'xz', [a, b]) # may vary
+    >>> rng = np.random.default_rng(42)
+    >>> a = rng.random((4, 4))
+    >>> b = rng.random((4, 4, 4))
+    >>> _parse_einsum_input(("...a,...a->...", a, b))  # doctest: +SKIP
+    ('za,xza', 'xz', [a, b])
+    >>> _parse_einsum_input((a, [Ellipsis, 0], b, [Ellipsis, 0]))  # doctest: +SKIP
+    ('za,xza', 'xz', [a, b])
     """
 
     if len(operands) == 0:
@@ -2058,7 +2058,7 @@ def asarray(obj, /, *, dtype=None, format="coo", copy=False, device=None):
     >>> sparse.asarray(x, format="COO")
     <COO: shape=(8, 8), dtype=int64, nnz=8, fill_value=0>
     """
-
+    format = format.lower()
     if format not in {"coo", "dok", "gcxs", "csc", "csr"}:
         raise ValueError(f"{format} format not supported.")
 
