@@ -1,4 +1,5 @@
 import importlib
+import itertools
 import operator
 import os
 
@@ -29,14 +30,21 @@ def elemwise_args(request, seed, max_size):
     return s1_sps, s2_sps
 
 
-@pytest.mark.parametrize("f", [operator.add, operator.mul, operator.ge])
-@pytest.mark.parametrize("backend", ["SciPy", "Numba", "Finch"])
-def test_elemwise(benchmark, f, backend, elemwise_args):
-    if backend in ["Numba", "Finch"]:
-        os.environ[sparse._ENV_VAR_NAME] = backend
-        importlib.reload(sparse)
+@pytest.fixture(
+    params=itertools.product([operator.add, operator.mul, operator.gt], ["SciPy", "Numba", "Finch"]), scope="function"
+)
+def backend(request):
+    f, backend = request.param
+    os.environ[sparse._ENV_VAR_NAME] = backend
+    importlib.reload(sparse)
+    yield f, sparse, backend
+    del os.environ[sparse._ENV_VAR_NAME]
+    importlib.reload(sparse)
 
+
+def test_elemwise(benchmark, backend, elemwise_args):
     s1_sps, s2_sps = elemwise_args
+    f, sparse, backend = backend
 
     if backend == "SciPy":
         s1 = s1_sps
