@@ -30,8 +30,15 @@ def elemwise_args(request, seed, max_size):
     return s1_sps, s2_sps
 
 
+def get_elemwise_id(param):
+    f, backend = param
+    return f"{f=}-{backend=}"
+
+
 @pytest.fixture(
-    params=itertools.product([operator.add, operator.mul, operator.gt], ["SciPy", "Numba", "Finch"]), scope="function"
+    params=itertools.product([operator.add, operator.mul, operator.gt], ["SciPy", "Numba", "Finch"]),
+    scope="function",
+    ids=get_elemwise_id,
 )
 def backend(request):
     f, backend = request.param
