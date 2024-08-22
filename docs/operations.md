@@ -267,7 +267,7 @@ memory than an equivalent desne array, set the environment variable
 [`sparse.COO`][] and [`sparse.GCXS`][] arrays support a number of other common operations. Among them are
 [`sparse.dot`][], [`sparse.tensordot`][] [`sparse.einsum`][], [`sparse.concatenate`][]
 and [`sparse.stack`][], [`sparse.COO.transpose`][] and [`sparse.COO.reshape`][].
-You can view the full list on the [API reference page](../../api/BACKEND/).
+You can view the full list on the [API reference page](../../api/).
 
 !!! note
 
