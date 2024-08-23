@@ -10,6 +10,7 @@ __array_api_version__ = "2022.12"
 class _BackendType(Enum):
     Numba = "Numba"
     Finch = "Finch"
+    MLIR = "MLIR"
 
 
 _ENV_VAR_NAME = "SPARSE_BACKEND"
@@ -40,6 +41,9 @@ del _backend_name
 if _BackendType.Finch == _BACKEND:
     from sparse.finch_backend import *  # noqa: F403
     from sparse.finch_backend import __all__
+elif _BackendType.MLIR == _BACKEND:
+    from sparse.mlir_backend import *  # noqa: F403
+    from sparse.mlir_backend import __all__
 else:
     from sparse.numba_backend import *  # noqa: F403
     from sparse.numba_backend import (  # noqa: F401

@@ -8,7 +8,7 @@ def add_doctest_modules(doctest_namespace):
     import numpy as np
 
     if sparse._BackendType.Numba != sparse._BACKEND:
-        pytest.skip()
+        pass  # TODO: pytest.skip() skips Finch and MLIR tests
 
     doctest_namespace["np"] = np
     doctest_namespace["sparse"] = sparse

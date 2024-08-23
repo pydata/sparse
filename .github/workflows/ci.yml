@@ -54,6 +54,31 @@ jobs:
         with:
           files: ./**/coverage*.xml
 
+  test_mlir:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v4
+    - name: Setup Conda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        python-version: '3.10'
+        channels: conda-forge
+        activate-environment: sparse-dev
+        miniforge-variant: Mambaforge
+        miniforge-version: latest
+        use-mamba: true
+    - name: Update Conda Environment
+      run: |
+        mamba env update -n sparse-dev -f ci/environment.yml
+        mamba run pip install '.[tests]'
+        mamba install conda-forge::mlir-python-bindings
+    - name: Build and run tests
+      shell: bash -l {0}
+      run: |
+        conda activate sparse-dev
+        SPARSE_BACKEND=MLIR pytest sparse/mlir_backend -v
+
   examples:
     runs-on: ubuntu-latest
     steps:
@@ -71,6 +96,7 @@ jobs:
     - name: Run examples
       run: |
         source ci/test_examples.sh
+
   notebooks:
     runs-on: ubuntu-latest
     steps:
@@ -87,6 +113,7 @@ jobs:
     - name: Run notebooks
       run: |
         source ci/test_notebooks.sh
+
   array_api_tests:
     strategy:
       matrix:
@@ -121,6 +148,7 @@ jobs:
       run: |
         cd ${GITHUB_WORKSPACE}/array-api-tests
         pytest array_api_tests -v -c pytest.ini -n 4 --max-examples=2 --derandomize --disable-deadline -o xfail_strict=True --xfails-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-xfails.txt --skips-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-skips.txt
+
 on:
   # Trigger the workflow on push or pull request,
   # but only for the main branch
