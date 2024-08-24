@@ -1,5 +1,7 @@
 import ctypes
 import ctypes.util
+import functools
+import weakref
 
 import mlir.execution_engine
 import mlir.passmanager
@@ -14,6 +16,22 @@ from ._dtypes import DType, Float64, Index
 from ._memref import make_memref_ctype, ranked_memref_from_np
 
 
+def _hold_self_ref_in_ret(fn):
+    @functools.wraps(fn)
+    def wrapped(self, *a, **kw):
+        ptr = ctypes.py_object(self)
+        ctypes.pythonapi.Py_IncRef(ptr)
+        ret = fn(self, *a, **kw)
+
+        def finalize():
+            ctypes.pythonapi.Py_DecRef(ptr)
+
+        weakref.finalize(ret, finalize)
+        return ret
+
+    return wrapped
+
+
 class Tensor:
     def __init__(self, obj, module, tensor_type, disassemble_fn, values_dtype, index_dtype):
         self.obj = obj
@@ -26,6 +44,7 @@ class Tensor:
     def __del__(self):
         self.module.invoke("free_tensor", ctypes.pointer(self.obj))
 
+    @_hold_self_ref_in_ret
     def to_scipy_sparse(self):
         """
         Returns scipy.sparse or ndarray
@@ -111,7 +130,7 @@ class DenseFormat:
 
             def to_np(self) -> np.ndarray:
                 data = self.data.to_numpy()[: self.data_len]
-                return data.copy().reshape((self.shape_x, self.shape_y))
+                return data.reshape((self.shape_x, self.shape_y))
 
         arr = Dense()
         module.invoke(
@@ -215,7 +234,7 @@ class CSRFormat:
                 pos = self.pos.to_numpy()[: self.pos_len]
                 crd = self.crd.to_numpy()[: self.crd_len]
                 data = self.data.to_numpy()[: self.data_len]
-                return sps.csr_array((data.copy(), crd.copy(), pos.copy()), shape=(self.shape_x, self.shape_y))
+                return sps.csr_array((data, crd, pos), shape=(self.shape_x, self.shape_y))
 
         arr = Csr()
         module.invoke(
