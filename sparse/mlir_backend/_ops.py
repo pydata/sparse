@@ -7,12 +7,13 @@ from mlir.dialects import arith, func, linalg, sparse_tensor, tensor
 
 from ._constructors import Tensor
 from ._core import DEBUG, MLIR_C_RUNNER_UTILS, SCRIPT_PATH, ctx
+from ._dtypes import DType
 
 
-def get_add_module(a_tensor_type, b_tensor_type, out_tensor_type, dtype):
+def get_add_module(a_tensor_type, b_tensor_type, out_tensor_type, dtype: type[DType]):
     with ir.Location.unknown(ctx):
         module = ir.Module.create()
-        dtype = dtype.get()
+        dtype = dtype.get_mlir_type()
         ordering = ir.AffineMap.get_permutation([0, 1])
 
         with ir.InsertionPoint(module.body):

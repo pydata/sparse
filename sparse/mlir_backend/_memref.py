@@ -1,9 +1,18 @@
 import ctypes
+import functools
 
 import numpy as np
 
+from ._dtypes import DType, asdtype
 
-def make_memref_ctype(dtype: np.dtype, rank: int) -> type[ctypes.Structure]:
+
+def make_memref_ctype(dtype: type[DType], rank: int) -> type[ctypes.Structure]:
+    dtype = np.dtype(asdtype(dtype).np_dtype)
+    return _make_memref_ctype(dtype, rank)
+
+
+@functools.lru_cache(maxsize=None)  # noqa: UP033
+def _make_memref_ctype(dtype: np.dtype, rank: int) -> type[ctypes.Structure]:
     ctype = np.ctypeslib.as_ctypes_type(dtype)
     ptr_t = ctypes.POINTER(ctype)
 
@@ -50,10 +59,6 @@ def make_memref_ctype(dtype: np.dtype, rank: int) -> type[ctypes.Structure]:
     return MemrefType
 
 
-MemrefF64_1D = make_memref_ctype(np.float64, 1)
-MemrefF32_1D = make_memref_ctype(np.float32, 1)
-MemrefInt64_1D = make_memref_ctype(np.int64, 1)
-MemrefInt32_1D = make_memref_ctype(np.int32, 1)
-MemrefUInt64_1D = make_memref_ctype(np.uint64, 1)
-MemrefUInt32_1D = make_memref_ctype(np.uint32, 1)
-MemrefIdx_1D = make_memref_ctype(np.intp, 1)
+def ranked_memref_from_np(arr: np.ndarray) -> ctypes.Structure:
+    memref_type = _make_memref_ctype(arr.dtype, arr.ndim)
+    return memref_type.from_numpy(arr)

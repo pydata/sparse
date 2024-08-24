@@ -11,7 +11,7 @@ import scipy.sparse as sps
 
 from ._core import DEBUG, MLIR_C_RUNNER_UTILS, SCRIPT_PATH, ctx
 from ._dtypes import DType, Float64, Index
-from ._memref import MemrefF64_1D, MemrefIdx_1D
+from ._memref import make_memref_ctype, ranked_memref_from_np
 
 
 class Tensor:
@@ -30,7 +30,7 @@ class Tensor:
         """
         Returns scipy.sparse or ndarray
         """
-        return self.disassemble_fn(self.module, self.obj)
+        return self.disassemble_fn(self.module, self.obj, self.values_dtype)
 
 
 class DenseFormat:
@@ -39,8 +39,8 @@ class DenseFormat:
     def get_module(shape: tuple[int], values_dtype: DType, index_dtype: DType):
         with ir.Location.unknown(ctx):
             module = ir.Module.create()
-            values_dtype = values_dtype.get()
-            index_dtype = index_dtype.get()
+            values_dtype = values_dtype.get_mlir_type()
+            index_dtype = index_dtype.get_mlir_type()
             index_width = getattr(index_dtype, "width", 0)
             levels = (sparse_tensor.LevelType.dense, sparse_tensor.LevelType.dense)
             ordering = ir.AffineMap.get_permutation([0, 1])
@@ -89,7 +89,8 @@ class DenseFormat:
 
     @classmethod
     def assemble(cls, module, arr: np.ndarray) -> ctypes.c_void_p:
-        data = MemrefF64_1D.from_numpy(arr.flatten())
+        assert arr.ndim == 2
+        data = ranked_memref_from_np(arr.flatten())
         out = ctypes.c_void_p()
         module.invoke(
             "assemble",
@@ -99,10 +100,10 @@ class DenseFormat:
         return out
 
     @classmethod
-    def disassemble(cls, module: ir.Module, ptr: ctypes.c_void_p) -> np.ndarray:
+    def disassemble(cls, module: ir.Module, ptr: ctypes.c_void_p, dtype: type[DType]) -> np.ndarray:
         class Dense(ctypes.Structure):
             _fields_ = [
-                ("data", MemrefF64_1D),
+                ("data", make_memref_ctype(dtype, 1)),
                 ("data_len", np.ctypeslib.c_intp),
                 ("shape_x", np.ctypeslib.c_intp),
                 ("shape_y", np.ctypeslib.c_intp),
@@ -129,11 +130,11 @@ class COOFormat:
 class CSRFormat:
     modules = {}
 
-    def get_module(shape: tuple[int], values_dtype: DType, index_dtype: DType):
+    def get_module(shape: tuple[int], values_dtype: type[DType], index_dtype: type[DType]):
         with ir.Location.unknown(ctx):
             module = ir.Module.create()
-            values_dtype = values_dtype.get()
-            index_dtype = index_dtype.get()
+            values_dtype = values_dtype.get_mlir_type()
+            index_dtype = index_dtype.get_mlir_type()
             index_width = getattr(index_dtype, "width", 0)
             levels = (sparse_tensor.LevelType.dense, sparse_tensor.LevelType.compressed)
             ordering = ir.AffineMap.get_permutation([0, 1])
@@ -175,7 +176,7 @@ class CSRFormat:
             disassemble.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
             free_tensor.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
             if DEBUG:
-                (SCRIPT_PATH / "scr_module.mlir").write_text(str(module))
+                (SCRIPT_PATH / "csr_module.mlir").write_text(str(module))
             pm = mlir.passmanager.PassManager.parse("builtin.module(sparsifier{create-sparse-deallocs=1})")
             pm.run(module.operation)
             if DEBUG:
@@ -189,20 +190,20 @@ class CSRFormat:
         out = ctypes.c_void_p()
         module.invoke(
             "assemble",
-            ctypes.pointer(ctypes.pointer(MemrefIdx_1D.from_numpy(arr.indptr))),
-            ctypes.pointer(ctypes.pointer(MemrefIdx_1D.from_numpy(arr.indices))),
-            ctypes.pointer(ctypes.pointer(MemrefF64_1D.from_numpy(arr.data))),
+            ctypes.pointer(ctypes.pointer(ranked_memref_from_np(arr.indptr))),
+            ctypes.pointer(ctypes.pointer(ranked_memref_from_np(arr.indices))),
+            ctypes.pointer(ctypes.pointer(ranked_memref_from_np(arr.data))),
             ctypes.pointer(out),
         )
         return out
 
     @classmethod
-    def disassemble(cls, module: ir.Module, ptr: ctypes.c_void_p) -> sps.csr_array:
+    def disassemble(cls, module: ir.Module, ptr: ctypes.c_void_p, dtype: type[DType]) -> sps.csr_array:
         class Csr(ctypes.Structure):
             _fields_ = [
-                ("data", MemrefF64_1D),
-                ("pos", MemrefIdx_1D),
-                ("crd", MemrefIdx_1D),
+                ("data", make_memref_ctype(dtype, 1)),
+                ("pos", make_memref_ctype(Index, 1)),
+                ("crd", make_memref_ctype(Index, 1)),
                 ("data_len", np.ctypeslib.c_intp),
                 ("pos_len", np.ctypeslib.c_intp),
                 ("crd_len", np.ctypeslib.c_intp),
