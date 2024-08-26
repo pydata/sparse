@@ -23,10 +23,10 @@ def _hold_self_ref_in_ret(fn):
         ctypes.pythonapi.Py_IncRef(ptr)
         ret = fn(self, *a, **kw)
 
-        def finalizer():
+        def finalizer(ptr):
             ctypes.pythonapi.Py_DecRef(ptr)
 
-        weakref.finalize(ret, finalizer)
+        weakref.finalize(ret, finalizer, ptr)
         return ret
 
     return wrapped
