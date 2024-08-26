@@ -4,8 +4,7 @@ source=
 
 omit=
     sparse/_version.py
-    sparse/tests/*
-    sparse/numba_backend/tests/*
+    **/tests/*
 
 [report]
 exclude_lines =
