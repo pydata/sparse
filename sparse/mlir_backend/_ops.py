@@ -7,12 +7,14 @@ from mlir.dialects import arith, func, linalg, sparse_tensor, tensor
 
 from ._constructors import Tensor
 from ._core import DEBUG, MLIR_C_RUNNER_UTILS, SCRIPT_PATH, ctx
-from ._dtypes import DType
+from ._dtypes import DType, FloatingDType
 
 
 def get_add_module(a_tensor_type, b_tensor_type, out_tensor_type, dtype: type[DType]):
     with ir.Location.unknown(ctx):
         module = ir.Module.create()
+        # TODO: add support for complex dialect/dtypes
+        arith_op = arith.AddFOp if issubclass(dtype, FloatingDType) else arith.AddIOp
         dtype = dtype.get_mlir_type()
         ordering = ir.AffineMap.get_permutation([0, 1])
 
@@ -35,7 +37,7 @@ def get_add_module(a_tensor_type, b_tensor_type, out_tensor_type, dtype: type[DT
                     overlap = res.regions[0].blocks.append(dtype, dtype)
                     with ir.InsertionPoint(overlap):
                         arg0, arg1 = overlap.arguments
-                        overlap_res = arith.AddFOp(arg0, arg1)
+                        overlap_res = arith_op(arg0, arg1)
                         sparse_tensor.YieldOp(result=overlap_res)
                     left_region = res.regions[1].blocks.append(dtype)
                     with ir.InsertionPoint(left_region):

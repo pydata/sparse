@@ -13,8 +13,8 @@ if sparse._BACKEND != sparse._BackendType.MLIR:
 parametrize_dtypes = pytest.mark.parametrize(
     "dtype",
     [
-        np.int8,
-        np.uint16,
+        np.int64,
+        np.uint64,
         np.float32,
         np.float64,
     ],
@@ -48,14 +48,14 @@ def generate_sampler(dtype: np.dtype, rng: np.random.Generator) -> typing.Callab
 
         return sampler_signed
 
-    if np.isdtype(dtype, kind="unsigned integer"):  #
+    if np.isdtype(dtype, kind="unsigned integer"):
 
         def sampler_unsigned(size: tuple[int, ...]):
             return rng.integers(0, 10, dtype=dtype, endpoint=True, size=size)
 
         return sampler_unsigned
 
-    if np.isdtype(dtype, kind="real floating"):  #
+    if np.isdtype(dtype, kind="real floating"):
 
         def sampler_real_floating(size: tuple[int, ...]):
             return -10 + 20 * rng.random(dtype=dtype, size=size)
@@ -70,8 +70,8 @@ def test_constructors(rng, dtype):
     SHAPE = (10, 5)
     DENSITY = 0.5
     sampler = generate_sampler(dtype, rng)
-    a = sps.random_array(SHAPE, density=DENSITY, format="csr", dtype=np.float64, random_state=rng, data_sampler=sampler)
-    c = np.arange(50, dtype=np.float64).reshape((10, 5))
+    a = sps.random_array(SHAPE, density=DENSITY, format="csr", dtype=dtype, random_state=rng, data_sampler=sampler)
+    c = np.arange(50, dtype=dtype).reshape((10, 5))
 
     a_tensor = sparse.asarray(a)
     c_tensor = sparse.asarray(c)
@@ -89,9 +89,9 @@ def test_add(rng, dtype):
     DENSITY = 0.5
     sampler = generate_sampler(dtype, rng)
 
-    a = sps.random_array(SHAPE, density=DENSITY, format="csr", dtype=np.float64, random_state=rng, data_sampler=sampler)
-    b = sps.random_array(SHAPE, density=DENSITY, format="csr", dtype=np.float64, random_state=rng, data_sampler=sampler)
-    c = np.arange(50, dtype=np.float64).reshape((10, 5))
+    a = sps.random_array(SHAPE, density=DENSITY, format="csr", dtype=dtype, random_state=rng, data_sampler=sampler)
+    b = sps.random_array(SHAPE, density=DENSITY, format="csr", dtype=dtype, random_state=rng, data_sampler=sampler)
+    c = np.arange(50, dtype=dtype).reshape((10, 5))
 
     a_tensor = sparse.asarray(a)
     b_tensor = sparse.asarray(b)

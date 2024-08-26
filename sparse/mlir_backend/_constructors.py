@@ -267,11 +267,11 @@ def asarray(obj) -> Tensor:
         raise Exception(f"{type(obj)} not supported.")
 
     # TODO: support proper caching
-    if hash(obj.shape) in format_class.modules:
-        module, tensor_type = format_class.modules[hash(obj.shape)]
+    if hash((obj.shape, obj.dtype)) in format_class.modules:
+        module, tensor_type = format_class.modules[hash((obj.shape, obj.dtype))]
     else:
         module, tensor_type = format_class.get_module(obj.shape, values_dtype, index_dtype)
-        format_class.modules[hash(obj.shape)] = module, tensor_type
+        format_class.modules[hash((obj.shape, obj.dtype))] = module, tensor_type
 
     assembled_obj = format_class.assemble(module, obj)
     return Tensor(assembled_obj, module, tensor_type, format_class.disassemble, values_dtype, index_dtype)
