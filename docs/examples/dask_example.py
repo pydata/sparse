@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# # Using with SciPy
+# # Using with Dask
 # ## Import
 
 # +

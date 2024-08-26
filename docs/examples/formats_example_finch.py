@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# # Multiple Formats
+# # Multiple Formats with Finch
 # ## Import
 # Let's set the backend and import `sparse`.
 
