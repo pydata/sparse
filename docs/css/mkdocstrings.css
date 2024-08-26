@@ -1,15 +1,15 @@
-  :root {
-    --md-primary-fg-color:        #c96c08;
-    --md-primary-fg-color--light: #94f2f7;
-    --md-primary-fg-color--dark:  #335365;
-  }
+:root {
+  --md-primary-fg-color: #c96c08;
+  --md-primary-fg-color--light: #94f2f7;
+  --md-primary-fg-color--dark: #335365;
+}
 
-  .md-tabs__item {
-    font-weight: bolder;
-  }
+.md-tabs__item {
+  font-weight: bolder;
+}
 
-  .grid {
-    font-weight: bolder;
-    font-size: 160%;
-    font-family: Georgia, serif;
-  }
+.grid {
+  font-weight: bolder;
+  font-size: 160%;
+  font-family: Georgia, serif;
+}
