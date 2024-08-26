@@ -93,3 +93,7 @@ section-order = [
     "numpy",
     "local-folder",
 ]
+
+[tool.jupytext.formats]
+"docs/examples_ipynb/" = "ipynb"
+"docs/examples/" = "py:light"
