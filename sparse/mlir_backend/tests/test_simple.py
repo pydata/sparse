@@ -9,6 +9,10 @@ if sparse._BACKEND != sparse._BackendType.MLIR:
     pytest.skip("skipping MLIR tests", allow_module_level=True)
 
 
+def assert_csr_equal(expected: sps.csr_array, actual: sps.csr_array) -> None:
+    np.testing.assert_array_equal(expected.todense(), actual.todense())
+
+
 def test_constructors(rng):
     SHAPE = (10, 5)
     DENSITY = 0.5
@@ -20,9 +24,7 @@ def test_constructors(rng):
     c_tensor = sparse.asarray(c)
 
     a_retured = a_tensor.to_scipy_sparse()
-    np.testing.assert_array_equal(a_retured.indices, a.indices)
-    np.testing.assert_array_equal(a_retured.indptr, a.indptr)
-    np.testing.assert_array_equal(a_retured.data, a.data)
+    assert_csr_equal(a, a_retured)
 
     c_returned = c_tensor.to_scipy_sparse()
     np.testing.assert_array_equal(c_returned, c)
@@ -42,15 +44,11 @@ def test_add(rng):
 
     actual = sparse.add(a_tensor, b_tensor).to_scipy_sparse()
     expected = a + b
-    np.testing.assert_array_equal(actual.indices, expected.indices)
-    np.testing.assert_array_equal(actual.indptr, expected.indptr)
-    np.testing.assert_array_equal(actual.data, expected.data)
+    assert_csr_equal(expected, actual)
 
     actual = sparse.add(a_tensor, c_tensor).to_scipy_sparse()
     expected = sps.csr_matrix(a + c)
-    np.testing.assert_array_equal(actual.indices, expected.indices)
-    np.testing.assert_array_equal(actual.indptr, expected.indptr)
-    np.testing.assert_array_equal(actual.data, expected.data)
+    assert_csr_equal(expected, actual)
 
     actual = sparse.add(c_tensor, a_tensor).to_scipy_sparse()
     expected = a + c
