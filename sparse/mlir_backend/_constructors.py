@@ -53,8 +53,7 @@ class Tensor:
 
 
 class DenseFormat:
-    modules = {}
-
+    @functools.lru_cache(maxsize=None)  # noqa: B019, UP033
     def get_module(shape: tuple[int], values_dtype: DType, index_dtype: DType):
         with ir.Location.unknown(ctx):
             module = ir.Module.create()
@@ -142,13 +141,12 @@ class DenseFormat:
 
 
 class COOFormat:
-    modules = {}
     # TODO: implement
+    ...
 
 
 class CSRFormat:
-    modules = {}
-
+    @functools.lru_cache(maxsize=None)  # noqa: B019, UP033
     def get_module(shape: tuple[int], values_dtype: type[DType], index_dtype: type[DType]):
         with ir.Location.unknown(ctx):
             module = ir.Module.create()
@@ -256,22 +254,20 @@ def _is_numpy_obj(x) -> bool:
 def asarray(obj) -> Tensor:
     # TODO: discover obj's dtype
     values_dtype = asdtype(obj.dtype)
-    index_dtype = Index
 
     # TODO: support other scipy formats
     if _is_scipy_sparse_obj(obj):
         format_class = CSRFormat
+        # This can be int32 or int64
+        index_dtype = asdtype(obj.indptr.dtype)
     elif _is_numpy_obj(obj):
         format_class = DenseFormat
+        index_dtype = Index
     else:
         raise Exception(f"{type(obj)} not supported.")
 
     # TODO: support proper caching
-    if hash((obj.shape, obj.dtype)) in format_class.modules:
-        module, tensor_type = format_class.modules[hash((obj.shape, obj.dtype))]
-    else:
-        module, tensor_type = format_class.get_module(obj.shape, values_dtype, index_dtype)
-        format_class.modules[hash((obj.shape, obj.dtype))] = module, tensor_type
+    module, tensor_type = format_class.get_module(obj.shape, values_dtype, index_dtype)
 
     assembled_obj = format_class.assemble(module, obj)
     return Tensor(assembled_obj, module, tensor_type, format_class.disassemble, values_dtype, index_dtype)

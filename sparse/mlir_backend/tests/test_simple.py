@@ -13,6 +13,12 @@ if sparse._BACKEND != sparse._BackendType.MLIR:
 parametrize_dtypes = pytest.mark.parametrize(
     "dtype",
     [
+        np.int8,
+        np.uint8,
+        np.int16,
+        np.uint16,
+        np.int32,
+        np.uint32,
         np.int64,
         np.uint64,
         np.float32,
