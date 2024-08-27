@@ -35,17 +35,20 @@ docs = [
         "mkdocs-literate-nav",
         "mkdocs-section-index",
         "mkdocs-jupyter",
-        "scipy",
-        "sparse[finch]",
+        "sparse[extras]",
+]
+extras = [
+    "dask[array]",
+    "sparse[finch]",
+    "scipy",
+    "scikit-learn",
 ]
 tests = [
-    "dask[array]",
+    "sparse[extras]",
     "pytest>=3.5",
     "pytest-cov",
     "pytest-xdist",
     "pre-commit",
-    "scipy",
-    "sparse[finch]",
     "pytest-codspeed",
 ]
 tox = ["sparse[tests]", "tox"]
@@ -93,3 +96,7 @@ section-order = [
     "numpy",
     "local-folder",
 ]
+
+[tool.jupytext.formats]
+"docs/examples_ipynb/" = "ipynb"
+"docs/examples/" = "py:light"

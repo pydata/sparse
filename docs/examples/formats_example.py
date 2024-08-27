@@ -5,26 +5,24 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.16.3
+#       jupytext_version: 1.16.4
 #   kernelspec:
 #     display_name: sparse
 #     language: python
 #     name: python3
 # ---
 
+# # Multiple Formats
 # ## Import
 # Let's set the backend and import `sparse`.
 
 # +
-import os
-
-os.environ["SPARSE_BACKEND"] = "Finch"
-
 import sparse
 
 import numpy as np
 
 # -
+
 
 # ## Perform Operations
 # Let's create two arrays.
@@ -39,4 +37,12 @@ c = a @ b
 
 # And view the result as a (dense) NumPy array.
 
-c.todense()
+c_dense = c.todense()
+
+# Now let's do the same for other formats, and compare the results.
+
+for format in ["coo", "csr", "csc"]:
+    af = sparse.asarray(a, format=format)
+    bf = sparse.asarray(b, format=format)
+    cf = af @ bf
+    np.testing.assert_array_equal(c_dense, cf.todense())

@@ -82,3 +82,6 @@ sparse/_version.py
 
 # Benchmark Results
 results/
+
+# Notebooks converted to scripts.
+docs/examples_ipynb/
