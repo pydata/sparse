@@ -12,7 +12,7 @@ import numpy as np
 import scipy.sparse as sps
 
 from ._core import DEBUG, MLIR_C_RUNNER_UTILS, SCRIPT_PATH, ctx
-from ._dtypes import DType, Float64, Index
+from ._dtypes import DType, Index, asdtype
 from ._memref import make_memref_ctype, ranked_memref_from_np
 
 
@@ -23,10 +23,10 @@ def _hold_self_ref_in_ret(fn):
         ctypes.pythonapi.Py_IncRef(ptr)
         ret = fn(self, *a, **kw)
 
-        def finalize():
+        def finalizer():
             ctypes.pythonapi.Py_DecRef(ptr)
 
-        weakref.finalize(ret, finalize)
+        weakref.finalize(ret, finalizer)
         return ret
 
     return wrapped
@@ -255,7 +255,7 @@ def _is_numpy_obj(x) -> bool:
 
 def asarray(obj) -> Tensor:
     # TODO: discover obj's dtype
-    values_dtype = Float64
+    values_dtype = asdtype(obj.dtype)
     index_dtype = Index
 
     # TODO: support other scipy formats
