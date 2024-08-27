@@ -6,13 +6,16 @@ from mlir import ir
 from mlir.dialects import arith, func, linalg, sparse_tensor, tensor
 
 from ._constructors import Tensor
-from ._core import DEBUG, MLIR_C_RUNNER_UTILS, SCRIPT_PATH, ctx
+from ._core import CWD, DEBUG, MLIR_C_RUNNER_UTILS, ctx
+from ._dtypes import DType, FloatingDType
 
 
-def get_add_module(a_tensor_type, b_tensor_type, out_tensor_type, dtype):
+def get_add_module(a_tensor_type, b_tensor_type, out_tensor_type, dtype: type[DType]):
     with ir.Location.unknown(ctx):
         module = ir.Module.create()
-        dtype = dtype.get()
+        # TODO: add support for complex dialect/dtypes
+        arith_op = arith.AddFOp if issubclass(dtype, FloatingDType) else arith.AddIOp
+        dtype = dtype.get_mlir_type()
         ordering = ir.AffineMap.get_permutation([0, 1])
 
         with ir.InsertionPoint(module.body):
@@ -34,7 +37,7 @@ def get_add_module(a_tensor_type, b_tensor_type, out_tensor_type, dtype):
                     overlap = res.regions[0].blocks.append(dtype, dtype)
                     with ir.InsertionPoint(overlap):
                         arg0, arg1 = overlap.arguments
-                        overlap_res = arith.AddFOp(arg0, arg1)
+                        overlap_res = arith_op(arg0, arg1)
                         sparse_tensor.YieldOp(result=overlap_res)
                     left_region = res.regions[1].blocks.append(dtype)
                     with ir.InsertionPoint(left_region):
@@ -49,12 +52,12 @@ def get_add_module(a_tensor_type, b_tensor_type, out_tensor_type, dtype):
 
         add.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
         if DEBUG:
-            (SCRIPT_PATH / "add_module.mlir").write_text(str(module))
+            (CWD / "add_module.mlir").write_text(str(module))
         pm = mlir.passmanager.PassManager.parse("builtin.module(sparsifier{create-sparse-deallocs=1})")
         pm.run(module.operation)
 
         if DEBUG:
-            (SCRIPT_PATH / "add_module_opt.mlir").write_text(str(module))
+            (CWD / "add_module_opt.mlir").write_text(str(module))
 
     return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
 

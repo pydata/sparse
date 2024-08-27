@@ -1,5 +1,7 @@
 import ctypes
 import ctypes.util
+import functools
+import weakref
 
 import mlir.execution_engine
 import mlir.passmanager
@@ -9,9 +11,26 @@ from mlir.dialects import arith, bufferization, func, sparse_tensor, tensor
 import numpy as np
 import scipy.sparse as sps
 
-from ._core import DEBUG, MLIR_C_RUNNER_UTILS, SCRIPT_PATH, ctx
-from ._dtypes import DType, Float64, Index
-from ._memref import MemrefF64_1D, MemrefIdx_1D
+from ._common import fn_cache
+from ._core import CWD, DEBUG, MLIR_C_RUNNER_UTILS, ctx
+from ._dtypes import DType, Index, asdtype
+from ._memref import make_memref_ctype, ranked_memref_from_np
+
+
+def _hold_self_ref_in_ret(fn):
+    @functools.wraps(fn)
+    def wrapped(self, *a, **kw):
+        ptr = ctypes.py_object(self)
+        ctypes.pythonapi.Py_IncRef(ptr)
+        ret = fn(self, *a, **kw)
+
+        def finalizer(ptr):
+            ctypes.pythonapi.Py_DecRef(ptr)
+
+        weakref.finalize(ret, finalizer, ptr)
+        return ret
+
+    return wrapped
 
 
 class Tensor:
@@ -26,21 +45,21 @@ class Tensor:
     def __del__(self):
         self.module.invoke("free_tensor", ctypes.pointer(self.obj))
 
+    @_hold_self_ref_in_ret
     def to_scipy_sparse(self):
         """
         Returns scipy.sparse or ndarray
         """
-        return self.disassemble_fn(self.module, self.obj)
+        return self.disassemble_fn(self.module, self.obj, self.values_dtype)
 
 
 class DenseFormat:
-    modules = {}
-
+    @fn_cache
     def get_module(shape: tuple[int], values_dtype: DType, index_dtype: DType):
         with ir.Location.unknown(ctx):
             module = ir.Module.create()
-            values_dtype = values_dtype.get()
-            index_dtype = index_dtype.get()
+            values_dtype = values_dtype.get_mlir_type()
+            index_dtype = index_dtype.get_mlir_type()
             index_width = getattr(index_dtype, "width", 0)
             levels = (sparse_tensor.LevelType.dense, sparse_tensor.LevelType.dense)
             ordering = ir.AffineMap.get_permutation([0, 1])
@@ -78,18 +97,19 @@ class DenseFormat:
             disassemble.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
             free_tensor.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
             if DEBUG:
-                (SCRIPT_PATH / "dense_module.mlir").write_text(str(module))
+                (CWD / "dense_module.mlir").write_text(str(module))
             pm = mlir.passmanager.PassManager.parse("builtin.module(sparsifier{create-sparse-deallocs=1})")
             pm.run(module.operation)
             if DEBUG:
-                (SCRIPT_PATH / "dense_module_opt.mlir").write_text(str(module))
+                (CWD / "dense_module_opt.mlir").write_text(str(module))
 
         module = mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
         return (module, dense_shaped)
 
     @classmethod
     def assemble(cls, module, arr: np.ndarray) -> ctypes.c_void_p:
-        data = MemrefF64_1D.from_numpy(arr.flatten())
+        assert arr.ndim == 2
+        data = ranked_memref_from_np(arr.flatten())
         out = ctypes.c_void_p()
         module.invoke(
             "assemble",
@@ -99,10 +119,10 @@ class DenseFormat:
         return out
 
     @classmethod
-    def disassemble(cls, module: ir.Module, ptr: ctypes.c_void_p) -> np.ndarray:
+    def disassemble(cls, module: ir.Module, ptr: ctypes.c_void_p, dtype: type[DType]) -> np.ndarray:
         class Dense(ctypes.Structure):
             _fields_ = [
-                ("data", MemrefF64_1D),
+                ("data", make_memref_ctype(dtype, 1)),
                 ("data_len", np.ctypeslib.c_intp),
                 ("shape_x", np.ctypeslib.c_intp),
                 ("shape_y", np.ctypeslib.c_intp),
@@ -110,7 +130,7 @@ class DenseFormat:
 
             def to_np(self) -> np.ndarray:
                 data = self.data.to_numpy()[: self.data_len]
-                return data.copy().reshape((self.shape_x, self.shape_y))
+                return data.reshape((self.shape_x, self.shape_y))
 
         arr = Dense()
         module.invoke(
@@ -122,18 +142,17 @@ class DenseFormat:
 
 
 class COOFormat:
-    modules = {}
     # TODO: implement
+    ...
 
 
 class CSRFormat:
-    modules = {}
-
-    def get_module(shape: tuple[int], values_dtype: DType, index_dtype: DType):
+    @fn_cache
+    def get_module(shape: tuple[int], values_dtype: type[DType], index_dtype: type[DType]):
         with ir.Location.unknown(ctx):
             module = ir.Module.create()
-            values_dtype = values_dtype.get()
-            index_dtype = index_dtype.get()
+            values_dtype = values_dtype.get_mlir_type()
+            index_dtype = index_dtype.get_mlir_type()
             index_width = getattr(index_dtype, "width", 0)
             levels = (sparse_tensor.LevelType.dense, sparse_tensor.LevelType.compressed)
             ordering = ir.AffineMap.get_permutation([0, 1])
@@ -175,11 +194,11 @@ class CSRFormat:
             disassemble.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
             free_tensor.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
             if DEBUG:
-                (SCRIPT_PATH / "scr_module.mlir").write_text(str(module))
+                (CWD / "csr_module.mlir").write_text(str(module))
             pm = mlir.passmanager.PassManager.parse("builtin.module(sparsifier{create-sparse-deallocs=1})")
             pm.run(module.operation)
             if DEBUG:
-                (SCRIPT_PATH / "csr_module_opt.mlir").write_text(str(module))
+                (CWD / "csr_module_opt.mlir").write_text(str(module))
 
         module = mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
         return (module, csr_shaped)
@@ -189,20 +208,20 @@ class CSRFormat:
         out = ctypes.c_void_p()
         module.invoke(
             "assemble",
-            ctypes.pointer(ctypes.pointer(MemrefIdx_1D.from_numpy(arr.indptr))),
-            ctypes.pointer(ctypes.pointer(MemrefIdx_1D.from_numpy(arr.indices))),
-            ctypes.pointer(ctypes.pointer(MemrefF64_1D.from_numpy(arr.data))),
+            ctypes.pointer(ctypes.pointer(ranked_memref_from_np(arr.indptr))),
+            ctypes.pointer(ctypes.pointer(ranked_memref_from_np(arr.indices))),
+            ctypes.pointer(ctypes.pointer(ranked_memref_from_np(arr.data))),
             ctypes.pointer(out),
         )
         return out
 
     @classmethod
-    def disassemble(cls, module: ir.Module, ptr: ctypes.c_void_p) -> sps.csr_array:
+    def disassemble(cls, module: ir.Module, ptr: ctypes.c_void_p, dtype: type[DType]) -> sps.csr_array:
         class Csr(ctypes.Structure):
             _fields_ = [
-                ("data", MemrefF64_1D),
-                ("pos", MemrefIdx_1D),
-                ("crd", MemrefIdx_1D),
+                ("data", make_memref_ctype(dtype, 1)),
+                ("pos", make_memref_ctype(Index, 1)),
+                ("crd", make_memref_ctype(Index, 1)),
                 ("data_len", np.ctypeslib.c_intp),
                 ("pos_len", np.ctypeslib.c_intp),
                 ("crd_len", np.ctypeslib.c_intp),
@@ -214,7 +233,7 @@ class CSRFormat:
                 pos = self.pos.to_numpy()[: self.pos_len]
                 crd = self.crd.to_numpy()[: self.crd_len]
                 data = self.data.to_numpy()[: self.data_len]
-                return sps.csr_array((data.copy(), crd.copy(), pos.copy()), shape=(self.shape_x, self.shape_y))
+                return sps.csr_array((data, crd, pos), shape=(self.shape_x, self.shape_y))
 
         arr = Csr()
         module.invoke(
@@ -235,23 +254,21 @@ def _is_numpy_obj(x) -> bool:
 
 def asarray(obj) -> Tensor:
     # TODO: discover obj's dtype
-    values_dtype = Float64
-    index_dtype = Index
+    values_dtype = asdtype(obj.dtype)
 
     # TODO: support other scipy formats
     if _is_scipy_sparse_obj(obj):
         format_class = CSRFormat
+        # This can be int32 or int64
+        index_dtype = asdtype(obj.indptr.dtype)
     elif _is_numpy_obj(obj):
         format_class = DenseFormat
+        index_dtype = Index
     else:
         raise Exception(f"{type(obj)} not supported.")
 
     # TODO: support proper caching
-    if hash(obj.shape) in format_class.modules:
-        module, tensor_type = format_class.modules[hash(obj.shape)]
-    else:
-        module, tensor_type = format_class.get_module(obj.shape, values_dtype, index_dtype)
-        format_class.modules[hash(obj.shape)] = module, tensor_type
+    module, tensor_type = format_class.get_module(obj.shape, values_dtype, index_dtype)
 
     assembled_obj = format_class.assemble(module, obj)
     return Tensor(assembled_obj, module, tensor_type, format_class.disassemble, values_dtype, index_dtype)
