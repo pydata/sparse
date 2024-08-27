@@ -47,21 +47,21 @@ def assert_csr_equal(expected: sps.csr_array, actual: sps.csr_array) -> None:
 
 def generate_sampler(dtype: np.dtype, rng: np.random.Generator) -> typing.Callable[[tuple[int, ...]], np.ndarray]:
     dtype = np.dtype(dtype)
-    if np.isdtype(dtype, kind="signed integer"):
+    if np.issubdtype(dtype, np.signedinteger):
 
         def sampler_signed(size: tuple[int, ...]):
             return rng.integers(-10, 10, dtype=dtype, endpoint=True, size=size)
 
         return sampler_signed
 
-    if np.isdtype(dtype, kind="unsigned integer"):
+    if np.issubdtype(dtype, np.unsignedinteger):
 
         def sampler_unsigned(size: tuple[int, ...]):
             return rng.integers(0, 10, dtype=dtype, endpoint=True, size=size)
 
         return sampler_unsigned
 
-    if np.isdtype(dtype, kind="real floating"):
+    if np.issubdtype(dtype, np.floating):
 
         def sampler_real_floating(size: tuple[int, ...]):
             return -10 + 20 * rng.random(dtype=dtype, size=size)

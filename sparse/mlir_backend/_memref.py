@@ -1,8 +1,8 @@
 import ctypes
-import functools
 
 import numpy as np
 
+from ._common import fn_cache
 from ._dtypes import DType, asdtype
 
 
@@ -11,7 +11,7 @@ def make_memref_ctype(dtype: type[DType], rank: int) -> type[ctypes.Structure]:
     return _make_memref_ctype(dtype, rank)
 
 
-@functools.lru_cache(maxsize=None)  # noqa: UP033
+@fn_cache
 def _make_memref_ctype(dtype: np.dtype, rank: int) -> type[ctypes.Structure]:
     ctype = np.ctypeslib.as_ctypes_type(dtype)
     ptr_t = ctypes.POINTER(ctype)

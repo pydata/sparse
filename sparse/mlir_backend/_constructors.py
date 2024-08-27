@@ -11,7 +11,8 @@ from mlir.dialects import arith, bufferization, func, sparse_tensor, tensor
 import numpy as np
 import scipy.sparse as sps
 
-from ._core import DEBUG, MLIR_C_RUNNER_UTILS, SCRIPT_PATH, ctx
+from ._common import fn_cache
+from ._core import CWD, DEBUG, MLIR_C_RUNNER_UTILS, ctx
 from ._dtypes import DType, Index, asdtype
 from ._memref import make_memref_ctype, ranked_memref_from_np
 
@@ -53,7 +54,7 @@ class Tensor:
 
 
 class DenseFormat:
-    @functools.lru_cache(maxsize=None)  # noqa: B019, UP033
+    @fn_cache
     def get_module(shape: tuple[int], values_dtype: DType, index_dtype: DType):
         with ir.Location.unknown(ctx):
             module = ir.Module.create()
@@ -96,11 +97,11 @@ class DenseFormat:
             disassemble.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
             free_tensor.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
             if DEBUG:
-                (SCRIPT_PATH / "dense_module.mlir").write_text(str(module))
+                (CWD / "dense_module.mlir").write_text(str(module))
             pm = mlir.passmanager.PassManager.parse("builtin.module(sparsifier{create-sparse-deallocs=1})")
             pm.run(module.operation)
             if DEBUG:
-                (SCRIPT_PATH / "dense_module_opt.mlir").write_text(str(module))
+                (CWD / "dense_module_opt.mlir").write_text(str(module))
 
         module = mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
         return (module, dense_shaped)
@@ -146,7 +147,7 @@ class COOFormat:
 
 
 class CSRFormat:
-    @functools.lru_cache(maxsize=None)  # noqa: B019, UP033
+    @fn_cache
     def get_module(shape: tuple[int], values_dtype: type[DType], index_dtype: type[DType]):
         with ir.Location.unknown(ctx):
             module = ir.Module.create()
@@ -193,11 +194,11 @@ class CSRFormat:
             disassemble.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
             free_tensor.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
             if DEBUG:
-                (SCRIPT_PATH / "csr_module.mlir").write_text(str(module))
+                (CWD / "csr_module.mlir").write_text(str(module))
             pm = mlir.passmanager.PassManager.parse("builtin.module(sparsifier{create-sparse-deallocs=1})")
             pm.run(module.operation)
             if DEBUG:
-                (SCRIPT_PATH / "csr_module_opt.mlir").write_text(str(module))
+                (CWD / "csr_module_opt.mlir").write_text(str(module))
 
         module = mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
         return (module, csr_shaped)
