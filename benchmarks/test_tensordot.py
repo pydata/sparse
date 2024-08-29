@@ -34,8 +34,6 @@ def tensordot_args(request, sides, seed, max_size):
     if m * n >= max_size or n * p >= max_size:
         pytest.skip()
     left_index, right_index, left_format, right_format = request.param
-    if m * n >= max_size or n * p >= max_size:
-        pytest.skip()
     rng = np.random.default_rng(seed=seed)
 
     t = rng.random((m, n))
