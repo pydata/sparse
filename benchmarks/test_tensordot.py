@@ -44,8 +44,11 @@ def get_tensor_ids(param):
 
 @pytest.fixture(params=([(1, 2, "dense", "coo"), (1, 2, "coo", "coo"), (1, 1, "coo", "dense")]), ids=get_tensor_ids)
 def tensordot_args(request, sides, seed, max_size):
-    left_index, right_index, left_format, right_format = request.param
+    #We can set n = 1 and take it off for params above
     m, n, p, q = sides
+    if m * n >= max_size or n * p >= max_size:
+        pytest.skip()
+    left_index, right_index, left_format, right_format = request.param
     if m * n >= max_size or n * p >= max_size:
         pytest.skip()
     rng = np.random.default_rng(seed=seed)
@@ -55,9 +58,9 @@ def tensordot_args(request, sides, seed, max_size):
     if left_format == "dense":
         left_tensor = t
     if left_format == "coo":
-        left_tensor = sparse.random((m, n, p, q), density=DENSITY, format=left_format, random_state=rng)
+        left_tensor = sparse.random((m, p, n, q), density=DENSITY, format=left_format, random_state=rng)
     if right_format == "coo":
-        right_tensor = sparse.random((m, n, p, q), density=DENSITY, format=right_format, random_state=rng)
+        right_tensor = sparse.random((m, p, n, q), density=DENSITY, format=right_format, random_state=rng)
     if right_format == "dense":
         right_tensor = t
 
