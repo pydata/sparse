@@ -27,7 +27,6 @@ def get_tensor_ids(param):
 
 @pytest.fixture(params=([(1, 2, "dense", "coo"), (1, 2, "coo", "coo"), (1, 1, "coo", "dense")]), ids=get_tensor_ids)
 def tensordot_args(request, sides, seed, max_size):
-    # We can set n = 1 and take it off for params above
     m, n, p, q = sides
     if m * n * p * q >= max_size:
         pytest.skip()
