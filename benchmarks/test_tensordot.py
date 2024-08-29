@@ -14,8 +14,11 @@ def get_sides_ids(param):
     return f"{m=}-{n=}-{p=}-{q=}"
 
 
+# @pytest.fixture(
+#    params=itertools.product([200, 500, 1000], [200, 500, 1000], [200, 500, 1000], [200, 500, 1000]), ids=get_sides_ids
+# )
 @pytest.fixture(
-    params=itertools.product([200, 500, 1000], [200, 500, 1000], [200, 500, 1000], [200, 500, 1000]), ids=get_sides_ids
+    params=itertools.product([10, 20, 50], [10, 20, 50], [10, 20, 50], [10, 20, 50]), ids=get_sides_ids
 )
 def sides(request):
     m, n, p, q = request.param
@@ -31,20 +34,23 @@ def get_tensor_ids(param):
 def tensordot_args(request, sides, seed, max_size):
     # We can set n = 1 and take it off for params above
     m, n, p, q = sides
-    if m * n >= max_size or n * p >= max_size:
+    if m * n * p * q >= max_size:
         pytest.skip()
     left_index, right_index, left_format, right_format = request.param
     rng = np.random.default_rng(seed=seed)
 
     t = rng.random((m, n))
 
-    if left_format == "dense":
+    if left_format == "dense" and right_format == "coo":
         left_tensor = t
-    if left_format == "coo":
-        left_tensor = sparse.random((m, p, n, q), density=DENSITY, format=left_format, random_state=rng)
-    if right_format == "coo":
         right_tensor = sparse.random((m, p, n, q), density=DENSITY, format=right_format, random_state=rng)
-    if right_format == "dense":
+    
+    if left_format == "coo" and right_format == "coo":
+        left_tensor = sparse.random((m, p, n, q), density=DENSITY, format=left_format, random_state=rng)
+        right_tensor = sparse.random((m, n, p, q), density=DENSITY, format=right_format, random_state=rng)
+
+    if left_format == "coo" and right_format == "dense":
+        left_tensor = sparse.random((m, n, p, q), density=DENSITY, format=left_format, random_state=rng)
         right_tensor = t
 
     return left_index, right_index, left_tensor, right_tensor
