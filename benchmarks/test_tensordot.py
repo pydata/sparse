@@ -17,9 +17,7 @@ def get_sides_ids(param):
 # @pytest.fixture(
 #    params=itertools.product([200, 500, 1000], [200, 500, 1000], [200, 500, 1000], [200, 500, 1000]), ids=get_sides_ids
 # )
-@pytest.fixture(
-    params=itertools.product([10, 20, 50], [10, 20, 50], [10, 20, 50], [10, 20, 50]), ids=get_sides_ids
-)
+@pytest.fixture(params=itertools.product([10, 20, 50], [10, 20, 50], [10, 20, 50], [10, 20, 50]), ids=get_sides_ids)
 def sides(request):
     m, n, p, q = request.param
     return m, n, p, q
@@ -44,9 +42,9 @@ def tensordot_args(request, sides, seed, max_size):
     if left_format == "dense" and right_format == "coo":
         left_tensor = t
         right_tensor = sparse.random((m, p, n, q), density=DENSITY, format=right_format, random_state=rng)
-    
+
     if left_format == "coo" and right_format == "coo":
-        left_tensor = sparse.random((m, p, n, q), density=DENSITY, format=left_format, random_state=rng)
+        left_tensor = sparse.random((m, p), density=DENSITY, format=left_format, random_state=rng)
         right_tensor = sparse.random((m, n, p, q), density=DENSITY, format=right_format, random_state=rng)
 
     if left_format == "coo" and right_format == "dense":
