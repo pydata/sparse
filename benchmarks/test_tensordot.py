@@ -14,9 +14,6 @@ def get_sides_ids(param):
     return f"{m=}-{n=}-{p=}-{q=}"
 
 
-# @pytest.fixture(
-#    params=itertools.product([200, 500, 1000], [200, 500, 1000], [200, 500, 1000], [200, 500, 1000]), ids=get_sides_ids
-# )
 @pytest.fixture(params=itertools.product([10, 20, 50], [10, 20, 50], [10, 20, 50], [10, 20, 50]), ids=get_sides_ids)
 def sides(request):
     m, n, p, q = request.param
