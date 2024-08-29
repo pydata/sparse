@@ -10,7 +10,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: ['ubuntu-latest']
         python: ['3.10', '3.11', '3.12']
         pip_opts: ['']
         numba_boundscheck: [0]
@@ -34,50 +34,29 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: mamba-org/setup-micromamba@v1
         with:
-          python-version: ${{ matrix.python }}
-          cache: 'pip'
+          environment-file: ci/environment.yml
+          init-shell: >-
+            bash
+          cache-environment: true
+          cache-downloads: true
+          post-cleanup: 'all'
+          create-args: >-
+            python=${{ matrix.python }}
+            ${{ matrix.pip_opts }}
       - name: Install package
         run: |
           pip install -e '.[tests]'
-          if [ "${{ matrix.pip_opts }}" != "" ]; then
-            pip install "${{ matrix.pip_opts }}" numba
-          fi
       - name: Run tests
         run: |
-          SPARSE_BACKEND=Numba pytest --pyargs sparse --cov-report=xml:coverage_Numba.xml -n 4 -vvv
-          SPARSE_BACKEND=Finch pytest --pyargs sparse/tests --cov-report=xml:coverage_Finch.xml -n 4 -vvv
+          SPARSE_BACKEND=Numba pytest --pyargs sparse --cov-report=xml:coverage_Numba.xml -n auto -vvv
+          SPARSE_BACKEND=Finch pytest --pyargs sparse/tests --cov-report=xml:coverage_Finch.xml -n auto -vvv
+          SPARSE_BACKEND=MLIR pytest --pyargs sparse/mlir_backend --cov-report=xml:coverage_MLIR.xml -n auto -vvv
       - uses: codecov/codecov-action@v4
         if: always()
         with:
           files: ./**/coverage*.xml
-
-  test_mlir:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout Repo
-      uses: actions/checkout@v4
-    - name: Setup Conda
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        python-version: '3.10'
-        channels: conda-forge
-        activate-environment: sparse-dev
-        miniforge-variant: Mambaforge
-        miniforge-version: latest
-        use-mamba: true
-    - name: Update Conda Environment
-      run: |
-        mamba env update -n sparse-dev -f ci/environment.yml
-        mamba run pip install '.[tests]'
-        mamba install conda-forge::mlir-python-bindings
-    - name: Build and run tests
-      shell: bash -l {0}
-      run: |
-        conda activate sparse-dev
-        SPARSE_BACKEND=MLIR pytest sparse/mlir_backend -v
 
   examples:
     runs-on: ubuntu-latest
@@ -147,7 +126,7 @@ jobs:
         SPARSE_BACKEND: ${{ matrix.backend }}
       run: |
         cd ${GITHUB_WORKSPACE}/array-api-tests
-        pytest array_api_tests -v -c pytest.ini -n 4 --max-examples=2 --derandomize --disable-deadline -o xfail_strict=True --xfails-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-xfails.txt --skips-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-skips.txt
+        pytest array_api_tests -v -c pytest.ini -n auto --max-examples=2 --derandomize --disable-deadline -o xfail_strict=True --xfails-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-xfails.txt --skips-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-skips.txt
 
 on:
   # Trigger the workflow on push or pull request,

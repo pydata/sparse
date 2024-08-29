@@ -1,6 +1,17 @@
 name: sparse-dev
 channels:
   - conda-forge
+  - nodefaults
 dependencies:
   - python
-  - pip
+  - numpy
+  - numba
+  - scipy
+  - dask
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - mlir-python-bindings
+  - pip:
+    - finch-tensor >=0.1.31
+    - pytest-codspeed
