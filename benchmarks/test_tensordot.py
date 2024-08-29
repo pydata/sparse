@@ -22,21 +22,6 @@ def sides(request):
     return m, n, p, q
 
 
-# def axis(request):
-#   ([0, 1], [0, 2]) (m n) (m p) numpy
-#   ([0, 1], [0, 2]) (m n) (m p) sparse
-#
-#   ([0, 1], [0, 2]) (m n) (m p) numpy
-#   ([0, 1], [0, 2]) (m n) (m p) sparse
-#
-#   ([0, 1], [0, 1]) (m n) (m n) numpy
-#   ([0, 1], [0, 1]) (m n) (m n) sparse
-
-
-# @pytest.fixture(params=([(0,1,0,2), (0,1,0,2), (0,1,0,1)]))
-#                         (m,n,m,p) (m,n,m,p) (m,n,m,n)
-
-
 def get_tensor_ids(param):
     left_index, right_index, left_format, right_format = param
     return f"{left_index=}-{right_index=}-{left_format=}-{right_format=}"
@@ -44,7 +29,7 @@ def get_tensor_ids(param):
 
 @pytest.fixture(params=([(1, 2, "dense", "coo"), (1, 2, "coo", "coo"), (1, 1, "coo", "dense")]), ids=get_tensor_ids)
 def tensordot_args(request, sides, seed, max_size):
-    #We can set n = 1 and take it off for params above
+    # We can set n = 1 and take it off for params above
     m, n, p, q = sides
     if m * n >= max_size or n * p >= max_size:
         pytest.skip()
