@@ -14,7 +14,11 @@ def get_sides_ids(param):
     return f"{m=}-{n=}-{p=}-{q=}"
 
 
-@pytest.fixture(params=itertools.product([10, 20, 50], [10, 20, 50], [10, 20, 50], [10, 20, 50]), ids=get_sides_ids)
+@pytest.fixture(
+    params=itertools.product([10, 20, 50], [10, 20, 50], [10, 20, 50], [10, 20, 50]),
+    ids=get_sides_ids,
+    scope="function",
+)
 def sides(request):
     m, n, p, q = request.param
     return m, n, p, q
@@ -25,7 +29,11 @@ def get_tensor_ids(param):
     return f"{left_index=}-{right_index=}-{left_format=}-{right_format=}"
 
 
-@pytest.fixture(params=([(1, 2, "dense", "coo"), (1, 2, "coo", "coo"), (1, 1, "coo", "dense")]), ids=get_tensor_ids)
+@pytest.fixture(
+    params=([(1, 2, "dense", "coo"), (1, 2, "coo", "coo"), (1, 1, "coo", "dense")]),
+    ids=get_tensor_ids,
+    scope="function",
+)
 def tensordot_args(request, sides, seed, max_size):
     m, n, p, q = sides
     if m * n * p * q >= max_size:
