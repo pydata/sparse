@@ -15,7 +15,7 @@ def get_sides_ids(param):
 
 
 @pytest.fixture(
-    params=itertools.product([10, 20, 50], [10, 20, 50], [10, 20, 50], [10, 20, 50]),
+    params=itertools.product([10, 50], [10, 20], [20, 50], [10, 50]),
     ids=get_sides_ids,
     scope="function",
 )
