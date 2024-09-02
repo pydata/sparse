@@ -1538,6 +1538,44 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             prune=True,
         )
 
+    def __binsparse_descriptor__(self) -> dict:
+        from sparse._version import __version__
+
+        data_dt = str(self.data.dtype)
+        if np.issubdtype(data_dt, np.complexfloating):
+            data_dt = f"complex[float{self.data.dtype.itemsize // 2}]"
+        return {
+            "binsparse": {
+                "version": "0.1",
+                "format": {
+                    "custom": {
+                        "level": {
+                            "level_desc": "sparse",
+                            "rank": self.ndim,
+                            "level": {
+                                "level_desc": "element",
+                            },
+                        }
+                    }
+                },
+                "shape": list(self.shape),
+                "number_of_stored_values": self.nnz,
+                "data_types": {
+                    "pointers_to_1": "uint8",
+                    "indices_1": str(self.coords.dtype),
+                    "values": data_dt,
+                },
+            },
+            "original_source": f"`sparse`, version {__version__}",
+        }
+
+    def __binsparse_dlpack__(self) -> dict[str, np.ndarray]:
+        return {
+            "pointers_to_1": np.array([0, self.nnz], dtype=np.uint8),
+            "indices_1": self.coords,
+            "values": self.data,
+        }
+
 
 def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
     """

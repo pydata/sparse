@@ -219,6 +219,31 @@ class SparseArray:
             return summary
 
     @abstractmethod
+    def __binsparse_descriptor__(self) -> dict:
+        """Return a `dict` equivalent to a parsed JSON [`binsparse` descriptor](https://graphblas.org/binsparse-specification/#descriptor)
+        of this array.
+
+        Returns
+        -------
+        dict
+            Parsed `binsparse` descriptor.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def __binsparse_dlpack__(self) -> dict[str, np.ndarray]:
+        """A `dict` containing the constituent arrays of this sparse array. The keys are compatible with the
+        [`binsparse`](https://graphblas.org/binsparse-specification/) scheme, and the values are [`__dlpack__`](https://data-apis.org/array-api/latest/API_specification/generated/array_api.array.__dlpack__.html)
+        compatible objects.
+
+        Returns
+        -------
+        dict[str, np.ndarray]
+            The constituent arrays.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def asformat(self, format):
         """
         Convert this sparse array to a given format.

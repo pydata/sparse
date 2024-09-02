@@ -549,6 +549,12 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
         return DOK.from_coo(self.to_coo().reshape(shape))
 
+    def __binsparse_descriptor__(self) -> dict:
+        raise RuntimeError("`DOK` doesn't support the `__binsparse_descriptor__` protocol.")
+
+    def __binsparse_dlpack__(self) -> dict[str, np.ndarray]:
+        raise RuntimeError("`DOK` doesn't support the `__binsparse_dlpack__` protocol.")
+
 
 def to_slice(k):
     """Convert integer indices to one-element slices for consistency"""
