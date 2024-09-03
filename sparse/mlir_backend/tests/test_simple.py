@@ -7,9 +7,6 @@ import pytest
 import numpy as np
 import scipy.sparse as sps
 
-if sparse._BACKEND != sparse._BackendType.MLIR:
-    pytest.skip("skipping MLIR tests", allow_module_level=True)
-
 parametrize_dtypes = pytest.mark.parametrize(
     "dtype",
     [
