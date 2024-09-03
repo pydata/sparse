@@ -38,15 +38,15 @@ def get_add_module(a_tensor_type, b_tensor_type, out_tensor_type, dtype: type[DT
                     with ir.InsertionPoint(overlap):
                         arg0, arg1 = overlap.arguments
                         overlap_res = arith_op(arg0, arg1)
-                        sparse_tensor.YieldOp(result=overlap_res)
+                        sparse_tensor.YieldOp([overlap_res])
                     left_region = res.regions[1].blocks.append(dtype)
                     with ir.InsertionPoint(left_region):
                         (arg0,) = left_region.arguments
-                        sparse_tensor.YieldOp(result=arg0)
+                        sparse_tensor.YieldOp([arg0])
                     right_region = res.regions[2].blocks.append(dtype)
                     with ir.InsertionPoint(right_region):
                         (arg0,) = right_region.arguments
-                        sparse_tensor.YieldOp(result=arg0)
+                        sparse_tensor.YieldOp([arg0])
                     linalg.YieldOp([res])
                 return generic_op.result
 

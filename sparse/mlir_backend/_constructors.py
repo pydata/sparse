@@ -1,5 +1,4 @@
 import ctypes
-import ctypes.util
 import functools
 import weakref
 
@@ -61,7 +60,7 @@ class DenseFormat:
             values_dtype = values_dtype.get_mlir_type()
             index_dtype = index_dtype.get_mlir_type()
             index_width = getattr(index_dtype, "width", 0)
-            levels = (sparse_tensor.LevelType.dense, sparse_tensor.LevelType.dense)
+            levels = (sparse_tensor.LevelFormat.dense, sparse_tensor.LevelFormat.dense)
             ordering = ir.AffineMap.get_permutation([0, 1])
             encoding = sparse_tensor.EncodingAttr.get(levels, ordering, ordering, index_width, index_width)
             dense_shaped = ir.RankedTensorType.get(list(shape), values_dtype, encoding)
@@ -71,19 +70,19 @@ class DenseFormat:
 
                 @func.FuncOp.from_py_func(tensor_1d)
                 def assemble(data):
-                    return sparse_tensor.assemble(dense_shaped, data, [])
+                    return sparse_tensor.assemble(dense_shaped, [], data)
 
                 @func.FuncOp.from_py_func(dense_shaped)
                 def disassemble(tensor_shaped):
                     data = tensor.EmptyOp([arith.constant(ir.IndexType.get(), 0)], values_dtype)
                     data, data_len = sparse_tensor.disassemble(
+                        [],
                         tensor_1d,
                         [],
                         index_dtype,
-                        [],
                         tensor_shaped,
-                        data,
                         [],
+                        data,
                     )
                     shape_x = arith.constant(index_dtype, shape[0])
                     shape_y = arith.constant(index_dtype, shape[1])
@@ -154,7 +153,7 @@ class CSRFormat:
             values_dtype = values_dtype.get_mlir_type()
             index_dtype = index_dtype.get_mlir_type()
             index_width = getattr(index_dtype, "width", 0)
-            levels = (sparse_tensor.LevelType.dense, sparse_tensor.LevelType.compressed)
+            levels = (sparse_tensor.LevelFormat.dense, sparse_tensor.LevelFormat.compressed)
             ordering = ir.AffineMap.get_permutation([0, 1])
             encoding = sparse_tensor.EncodingAttr.get(levels, ordering, ordering, index_width, index_width)
             csr_shaped = ir.RankedTensorType.get(list(shape), values_dtype, encoding)
@@ -166,25 +165,25 @@ class CSRFormat:
 
                 @func.FuncOp.from_py_func(tensor_1d_index, tensor_1d_index, tensor_1d_values)
                 def assemble(pos, crd, data):
-                    return sparse_tensor.assemble(csr_shaped, data, (pos, crd))
+                    return sparse_tensor.assemble(csr_shaped, (pos, crd), data)
 
                 @func.FuncOp.from_py_func(csr_shaped)
                 def disassemble(tensor_shaped):
                     pos = tensor.EmptyOp([arith.constant(ir.IndexType.get(), 0)], index_dtype)
                     crd = tensor.EmptyOp([arith.constant(ir.IndexType.get(), 0)], index_dtype)
                     data = tensor.EmptyOp([arith.constant(ir.IndexType.get(), 0)], values_dtype)
-                    data, pos, crd, data_len, pos_len, crd_len = sparse_tensor.disassemble(
-                        tensor_1d_values,
+                    pos, crd, data, pos_len, crd_len, data_len = sparse_tensor.disassemble(
                         (tensor_1d_index, tensor_1d_index),
-                        index_dtype,
+                        tensor_1d_values,
                         (index_dtype, index_dtype),
+                        index_dtype,
                         tensor_shaped,
-                        data,
                         (pos, crd),
+                        data,
                     )
                     shape_x = arith.constant(index_dtype, shape[0])
                     shape_y = arith.constant(index_dtype, shape[1])
-                    return data, pos, crd, data_len, pos_len, crd_len, shape_x, shape_y
+                    return pos, crd, data, pos_len, crd_len, data_len, shape_x, shape_y
 
                 @func.FuncOp.from_py_func(csr_shaped)
                 def free_tensor(tensor_shaped):
@@ -219,12 +218,12 @@ class CSRFormat:
     def disassemble(cls, module: ir.Module, ptr: ctypes.c_void_p, dtype: type[DType]) -> sps.csr_array:
         class Csr(ctypes.Structure):
             _fields_ = [
-                ("data", make_memref_ctype(dtype, 1)),
                 ("pos", make_memref_ctype(Index, 1)),
                 ("crd", make_memref_ctype(Index, 1)),
-                ("data_len", np.ctypeslib.c_intp),
+                ("data", make_memref_ctype(dtype, 1)),
                 ("pos_len", np.ctypeslib.c_intp),
                 ("crd_len", np.ctypeslib.c_intp),
+                ("data_len", np.ctypeslib.c_intp),
                 ("shape_x", np.ctypeslib.c_intp),
                 ("shape_y", np.ctypeslib.c_intp),
             ]
