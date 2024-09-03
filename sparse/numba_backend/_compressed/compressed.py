@@ -952,6 +952,7 @@ class CSR(_Compressed2d):
             return self
         return CSC((self.data, self.indices, self.indptr), self.shape[::-1])
 
+
 class CSC(_Compressed2d):
     """
     The CSC or CCS scheme stores a n-dimensional array using n+1 one-dimensional arrays.
