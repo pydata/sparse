@@ -78,15 +78,20 @@ def test_constructors(rng, dtype):
     sampler = generate_sampler(dtype, rng)
     a = sps.random_array(SHAPE, density=DENSITY, format="csr", dtype=dtype, random_state=rng, data_sampler=sampler)
     c = np.arange(50, dtype=dtype).reshape((10, 5))
+    d = sps.random_array(SHAPE, density=DENSITY, format="coo", dtype=dtype, random_state=rng, data_sampler=sampler)
 
     a_tensor = sparse.asarray(a)
     c_tensor = sparse.asarray(c)
+    d_tensor = sparse.asarray(d)
 
     a_retured = a_tensor.to_scipy_sparse()
     assert_csr_equal(a, a_retured)
 
     c_returned = c_tensor.to_scipy_sparse()
     np.testing.assert_equal(c, c_returned)
+
+    d_returned = d_tensor.to_scipy_sparse()
+    np.testing.assert_equal(d.todense(), d_returned.todense())
 
 
 @parametrize_dtypes
@@ -115,3 +120,10 @@ def test_add(rng, dtype):
     expected = a + c
     assert isinstance(actual, np.ndarray)
     np.testing.assert_array_equal(actual, expected)
+
+    # TODO: Blocked by https://github.com/llvm/llvm-project/issues/107477
+    # d = sps.random_array(SHAPE, density=DENSITY, format="coo", dtype=dtype, random_state=rng)
+    # d_tensor = sparse.asarray(d)
+    # actual = sparse.add(b_tensor, d_tensor).to_scipy_sparse()
+    # expected = b + d
+    # np.testing.assert_array_equal(actual.todense(), expected.todense())
