@@ -110,10 +110,16 @@ mkdocs serve
 
 After this, you can see a version of the documentation on your local server.
 
-Documentation for pull requests is automatically built on CircleCI and can be found in the build
-artifacts.
+Documentation for each pull requests is automatically built on `Read the Docs`.
+It is rebuilt with every new commit to your PR. There will be a link to preview it
+from your PR checks area on `GitHub` when ready.
+
 
 ## Adding and Running Benchmarks
 
-We use [Airspeed Velocity](https://asv.readthedocs.io/en/latest) to run benchmarks. We have it set
-up to use `conda`, but you can edit the configuration locally if you so wish.
+We use [`CodSpeed`](https://docs.codspeed.io/) to run benchmarks. They are run in the CI environment
+when a pull request is opened. Then the results of the run are sent to `CodSpeed` servers to be analyzed.
+When the analysis is done, a report is generated and posted automatically as a comment to the PR.
+The report includes a link to `CodSpeed`cloud where you can see the all the results.
+
+If you add benchmarks, they should be written as regular tests to be used with pytest, and use the fixture `benchmark`. Please see the `CodSpeed`documentation for more details.

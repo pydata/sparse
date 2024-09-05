@@ -50,9 +50,6 @@ test_results/
 junit/
 .hypothesis/
 
-# Airspeed velocity
-.asv/
-
 # Translations
 *.mo
 *.pot
