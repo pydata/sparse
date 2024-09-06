@@ -50,6 +50,10 @@ class DType(MlirType):
     np_dtype: np.dtype
     bit_width: int
 
+    @classmethod
+    def to_ctype(cls):
+        return np.ctypeslib.as_ctypes_type(cls.np_dtype)
+
 
 class FloatingDType(DType): ...
 
