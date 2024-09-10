@@ -4,6 +4,7 @@ import os
 import pathlib
 
 from mlir.ir import Context
+from mlir.passmanager import PassManager
 
 DEBUG = bool(int(os.environ.get("DEBUG", "0")))
 CWD = pathlib.Path(".")
@@ -15,3 +16,5 @@ libc.free.restype = None
 
 # TODO: remove global state
 ctx = Context()
+
+pm = PassManager.parse("builtin.module(sparsifier{create-sparse-deallocs=1})", context=ctx)
