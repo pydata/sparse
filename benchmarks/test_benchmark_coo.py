@@ -13,21 +13,23 @@ DENSITY = 0.01
 def format_id(format):
     return f"{format=}"
 
+
 @pytest.mark.parametrize("format", ["coo", "gcxs"])
 def test_matmul(benchmark, sides, seed, format, backend, min_size, max_size, ids=format_id):
-    #if backend == sparse._BackendType.Finch:
+    # if backend == sparse._BackendType.Finch:
     #    pytest.skip()
-    
+
     m, n, p = sides
-  
+
     if m * n >= max_size or n * p >= max_size or m * n <= min_size or n * p <= min_size:
         pytest.skip()
-    
+
     rng = np.random.default_rng(seed=seed)
     x = sparse.random((m, n), density=DENSITY, format=format, random_state=rng)
     y = sparse.random((n, p), density=DENSITY, format=format, random_state=rng)
-    
-    if hasattr(sparse, "compiled"): operator.matmul = sparse.compiled(operator.matmul)
+
+    if hasattr(sparse, "compiled"):
+        operator.matmul = sparse.compiled(operator.matmul)
 
     x @ y  # Numba compilation
 
@@ -57,8 +59,9 @@ def elemwise_args(request, seed, max_size):
 def test_elemwise(benchmark, f, elemwise_args):
     x, y = elemwise_args
 
-    if hasattr(sparse, "compiled"): f = sparse.compiled(f)
-    
+    if hasattr(sparse, "compiled"):
+        f = sparse.compiled(f)
+
     f(x, y)
 
     @benchmark
