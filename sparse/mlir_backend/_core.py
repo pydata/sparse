@@ -17,4 +17,7 @@ libc.free.restype = None
 # TODO: remove global state
 ctx = Context()
 
-pm = PassManager.parse("builtin.module(sparsifier{create-sparse-deallocs=1})", context=ctx)
+pm = PassManager.parse(
+    "builtin.module(sparse-assembler{direct-out=true}, sparsifier{create-sparse-deallocs=1})",
+    context=ctx,
+)

@@ -5,11 +5,13 @@ import mlir.passmanager
 from mlir import ir
 from mlir.dialects import arith, func, linalg, sparse_tensor, tensor
 
+from ._common import fn_cache
 from ._constructors import Tensor
 from ._core import CWD, DEBUG, MLIR_C_RUNNER_UTILS, ctx, pm
 from ._dtypes import DType, FloatingDType
 
 
+@fn_cache
 def get_add_module(
     a_tensor_type: ir.RankedTensorType,
     b_tensor_type: ir.RankedTensorType,
@@ -66,20 +68,21 @@ def get_add_module(
 
 
 def add(x1: Tensor, x2: Tensor) -> Tensor:
-    ret_ptr = ctypes.c_void_p()
+    ret_obj = x1.format_class()
+    out_tensor_type = x1.obj.get_tensor_definition(x1.shape)
 
     # TODO: Add proper caching
     # TODO: Decide what will be the output tensor_type
     add_module = get_add_module(
-        x1.tensor_type,
-        x2.tensor_type,
-        out_tensor_type=x1.tensor_type,
+        x1.obj.get_tensor_definition(x1.shape),
+        x2.obj.get_tensor_definition(x2.shape),
+        out_tensor_type=out_tensor_type,
         dtype=x1.values_dtype,
     )
     add_module.invoke(
         "add",
-        ctypes.pointer(x1.obj),
-        ctypes.pointer(x2.obj),
-        ctypes.pointer(ret_ptr),
+        ctypes.pointer(ctypes.pointer(ret_obj)),
+        *x1.obj.to_module_arg(),
+        *x2.obj.to_module_arg(),
     )
-    return Tensor(ret_ptr, x1.module, x1.tensor_type, x1.disassemble_fn, x1.values_dtype, x1.index_dtype)
+    return Tensor(ret_obj, shape=out_tensor_type.shape)

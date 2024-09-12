@@ -73,7 +73,7 @@ def generate_sampler(dtype: np.dtype, rng: np.random.Generator) -> typing.Callab
 
 
 @parametrize_dtypes
-@pytest.mark.parametrize("shape", [(100,), (10, 20), (5, 10, 20)])
+@pytest.mark.parametrize("shape", [(100,), (10, 200), (5, 10, 20)])
 def test_dense_format(dtype, shape):
     data = np.arange(math.prod(shape), dtype=dtype)
     tensor = sparse.asarray(data)
@@ -83,8 +83,8 @@ def test_dense_format(dtype, shape):
 
 @parametrize_dtypes
 def test_constructors(rng, dtype):
-    SHAPE = (10, 5)
-    DENSITY = 0.5
+    SHAPE = (80, 100)
+    DENSITY = 0.6
     sampler = generate_sampler(dtype, rng)
     a = sps.random_array(SHAPE, density=DENSITY, format="csr", dtype=dtype, random_state=rng, data_sampler=sampler)
     c = np.arange(math.prod(SHAPE), dtype=dtype).reshape(SHAPE)
@@ -106,13 +106,13 @@ def test_constructors(rng, dtype):
 
 @parametrize_dtypes
 def test_add(rng, dtype):
-    SHAPE = (10, 5)
+    SHAPE = (100, 50)
     DENSITY = 0.5
     sampler = generate_sampler(dtype, rng)
 
     a = sps.random_array(SHAPE, density=DENSITY, format="csr", dtype=dtype, random_state=rng, data_sampler=sampler)
     b = sps.random_array(SHAPE, density=DENSITY, format="csr", dtype=dtype, random_state=rng, data_sampler=sampler)
-    c = np.arange(50, dtype=dtype).reshape((10, 5))
+    c = np.arange(math.prod(SHAPE), dtype=dtype).reshape(SHAPE)
 
     a_tensor = sparse.asarray(a)
     b_tensor = sparse.asarray(b)
