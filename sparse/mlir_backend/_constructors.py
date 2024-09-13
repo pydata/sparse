@@ -118,7 +118,8 @@ def get_coo_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
         _index_dtype = index_dtype
 
         @classmethod
-        def from_sps(cls, arr: sps.csr_array) -> "Coo":
+        def from_sps(cls, arr: sps.coo_array) -> "Coo":
+            assert arr.has_canonical_format, "COO must have canonical format"
             np_pos = np.array([0, arr.size], dtype=index_dtype.np_dtype)
             np_coords = np.stack(arr.coords, axis=1, dtype=index_dtype.np_dtype)
             pos = numpy_to_ranked_memref(np_pos)
@@ -131,7 +132,7 @@ def get_coo_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
 
             return coo_instance
 
-        def to_sps(self, shape: tuple[int, ...]) -> sps.csr_array:
+        def to_sps(self, shape: tuple[int, ...]) -> sps.coo_array:
             pos = ranked_memref_to_numpy(self.pos)
             coords = ranked_memref_to_numpy(self.coords)[pos[0] : pos[1]]
             data = ranked_memref_to_numpy(self.data)
@@ -168,20 +169,22 @@ def get_csf_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
 
 
 @fn_cache
-def get_dense_class(values_dtype: type[DType], rank: int) -> type:
+def get_dense_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
     class Dense(ctypes.Structure):
         _fields_ = [
-            ("data", get_nd_memref_descr(rank, values_dtype)),
+            ("data", get_nd_memref_descr(1, values_dtype)),
         ]
         dtype = values_dtype
+        _index_dtype = index_dtype
 
         @classmethod
         def from_sps(cls, arr: np.ndarray) -> "Dense":
-            data = numpy_to_ranked_memref(arr)
+            data = numpy_to_ranked_memref(arr.ravel())
             return cls(data=data)
 
         def to_sps(self, shape: tuple[int, ...]) -> sps.csr_array:
-            return ranked_memref_to_numpy(self.data)
+            data = ranked_memref_to_numpy(self.data)
+            return data.reshape(shape)
 
         def to_module_arg(self) -> list:
             return [ctypes.pointer(ctypes.pointer(self.data))]
@@ -191,7 +194,12 @@ def get_dense_class(values_dtype: type[DType], rank: int) -> type:
         def get_tensor_definition(cls, shape: tuple[int, ...]) -> ir.RankedTensorType:
             with ir.Location.unknown(ctx):
                 values_dtype = cls.dtype.get_mlir_type()
-                return ir.RankedTensorType.get(list(shape), values_dtype)
+                index_dtype = cls._index_dtype.get_mlir_type()
+                index_width = getattr(index_dtype, "width", 0)
+                levels = (sparse_tensor.LevelFormat.dense,) * len(shape)
+                ordering = ir.AffineMap.get_permutation([*range(len(shape))])
+                encoding = sparse_tensor.EncodingAttr.get(levels, ordering, ordering, index_width, index_width)
+                return ir.RankedTensorType.get(list(shape), values_dtype, encoding)
 
     return Dense
 
@@ -234,7 +242,8 @@ class Tensor:
 
         elif _is_numpy_obj(obj):
             self.owns_memory = True
-            self.format_class = get_dense_class(self.values_dtype, obj.ndim)
+            index_dtype = asdtype(np.intp)
+            self.format_class = get_dense_class(self.values_dtype, index_dtype)
             self.obj = self.format_class.from_sps(obj)
 
         elif _is_mlir_obj(obj):

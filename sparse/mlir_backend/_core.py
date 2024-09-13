@@ -18,6 +18,11 @@ libc.free.restype = None
 ctx = Context()
 
 pm = PassManager.parse(
-    "builtin.module(sparse-assembler{direct-out=true}, sparsifier{create-sparse-deallocs=1})",
+    """
+    builtin.module(
+        sparse-assembler{direct-out=true},
+        sparsifier{create-sparse-deallocs=1 enable-runtime-library=false}
+    )
+    """,
     context=ctx,
 )

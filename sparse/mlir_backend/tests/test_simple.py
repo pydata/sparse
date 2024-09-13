@@ -89,6 +89,7 @@ def test_constructors(rng, dtype):
     a = sps.random_array(SHAPE, density=DENSITY, format="csr", dtype=dtype, random_state=rng, data_sampler=sampler)
     c = np.arange(math.prod(SHAPE), dtype=dtype).reshape(SHAPE)
     d = sps.random_array(SHAPE, density=DENSITY, format="coo", dtype=dtype, random_state=rng, data_sampler=sampler)
+    d.sum_duplicates()
 
     a_tensor = sparse.asarray(a)
     c_tensor = sparse.asarray(c)
@@ -131,9 +132,15 @@ def test_add(rng, dtype):
     assert isinstance(actual, np.ndarray)
     np.testing.assert_array_equal(actual, expected)
 
-    # TODO: Blocked by https://github.com/llvm/llvm-project/issues/107477
-    # d = sps.random_array(SHAPE, density=DENSITY, format="coo", dtype=dtype, random_state=rng)
-    # d_tensor = sparse.asarray(d)
-    # actual = sparse.add(b_tensor, d_tensor).to_scipy_sparse()
-    # expected = b + d
-    # np.testing.assert_array_equal(actual.todense(), expected.todense())
+    # TODO: Blocked by https://discourse.llvm.org/t/how-to-call-mlir-sparse-module-with-only-dense-inputs-with-python-bindings
+    # actual = sparse.add(c_tensor, c_tensor).to_scipy_sparse()
+    # expected = c + c
+    # assert isinstance(actual, np.ndarray)
+    # np.testing.assert_array_equal(actual, expected)
+
+    d = sps.random_array(SHAPE, density=DENSITY, format="coo", dtype=dtype, random_state=rng)
+    d.sum_duplicates()
+    d_tensor = sparse.asarray(d)
+    actual = sparse.add(b_tensor, d_tensor).to_scipy_sparse()
+    expected = b + d
+    np.testing.assert_array_equal(actual.todense(), expected.todense())
