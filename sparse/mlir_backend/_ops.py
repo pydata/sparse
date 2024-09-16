@@ -17,13 +17,14 @@ def get_add_module(
     b_tensor_type: ir.RankedTensorType,
     out_tensor_type: ir.RankedTensorType,
     dtype: type[DType],
+    rank: int,
 ) -> ir.Module:
     with ir.Location.unknown(ctx):
         module = ir.Module.create()
         # TODO: add support for complex dialect/dtypes
         arith_op = arith.AddFOp if issubclass(dtype, FloatingDType) else arith.AddIOp
         dtype = dtype.get_mlir_type()
-        ordering = ir.AffineMap.get_permutation([0, 1])
+        ordering = ir.AffineMap.get_permutation(range(rank))
 
         with ir.InsertionPoint(module.body):
 
@@ -35,7 +36,7 @@ def get_add_module(
                     [a, b],
                     [out],
                     ir.ArrayAttr.get([ir.AffineMapAttr.get(p) for p in (ordering,) * 3]),
-                    ir.ArrayAttr.get([ir.Attribute.parse("#linalg.iterator_type<parallel>")] * 2),
+                    ir.ArrayAttr.get([ir.Attribute.parse("#linalg.iterator_type<parallel>")] * rank),
                 )
                 block = generic_op.regions[0].blocks.append(dtype, dtype, dtype)
                 with ir.InsertionPoint(block):
@@ -78,6 +79,7 @@ def add(x1: Tensor, x2: Tensor) -> Tensor:
         x2._obj.get_tensor_definition(x2.shape),
         out_tensor_type=out_tensor_type,
         dtype=x1._values_dtype,
+        rank=x1.ndim,
     )
     add_module.invoke(
         "add",
