@@ -13,19 +13,20 @@ DENSITY = 0.01
 def format_id(format):
     return f"{format=}"
 
+
 @pytest.mark.parametrize("format", ["coo", "gcxs"])
 def test_matmul(benchmark, sides, seed, format, backend, min_size, max_size, ids=format_id):
-    
     m, n, p = sides
-  
+
     if m * n >= max_size or n * p >= max_size or m * n <= min_size or n * p <= min_size:
         pytest.skip()
-    
+
     rng = np.random.default_rng(seed=seed)
     x = sparse.random((m, n), density=DENSITY, format=format, random_state=rng)
     y = sparse.random((n, p), density=DENSITY, format=format, random_state=rng)
-    
-    if hasattr(sparse, "compiled"): operator.matmul = sparse.compiled(operator.matmul)
+
+    if hasattr(sparse, "compiled"):
+        operator.matmul = sparse.compiled(operator.matmul)
 
     x @ y  # Numba compilation
 
@@ -55,8 +56,9 @@ def elemwise_args(request, seed, max_size):
 def test_elemwise(benchmark, f, elemwise_args, backend):
     x, y = elemwise_args
 
-    if hasattr(sparse, "compiled"): f = sparse.compiled(f)
-    
+    if hasattr(sparse, "compiled"):
+        f = sparse.compiled(f)
+
     f(x, y)
 
     @benchmark
@@ -84,7 +86,8 @@ def elemwise_broadcast_args(request, seed, max_size):
 def test_elemwise_broadcast(benchmark, f, elemwise_broadcast_args):
     x, y = elemwise_broadcast_args
 
-    if hasattr(sparse, "compiled"): f = sparse.compiled(f)
+    if hasattr(sparse, "compiled"):
+        f = sparse.compiled(f)
 
     f(x, y)
 
@@ -109,7 +112,8 @@ def test_index_scalar(benchmark, indexing_args):
     side = x.shape[0]
     rank = x.ndim
 
-    if hasattr(sparse, "compiled"): operator.getitem = sparse.compiled(operator.getitem)
+    if hasattr(sparse, "compiled"):
+        operator.getitem = sparse.compiled(operator.getitem)
 
     x[(side // 2,) * rank]  # Numba compilation
 
@@ -123,7 +127,8 @@ def test_index_slice(benchmark, indexing_args):
     side = x.shape[0]
     rank = x.ndim
 
-    if hasattr(sparse, "compiled"): operator.getitem = sparse.compiled(operator.getitem)
+    if hasattr(sparse, "compiled"):
+        operator.getitem = sparse.compiled(operator.getitem)
 
     x[(slice(side // 2),) * rank]  # Numba compilation
 
@@ -138,7 +143,8 @@ def test_index_fancy(benchmark, indexing_args, seed):
     rng = np.random.default_rng(seed=seed)
     index = rng.integers(0, side, size=(side // 2,))
 
-    if hasattr(sparse, "compiled"): operator.getitem = sparse.compiled(operator.getitem)
+    if hasattr(sparse, "compiled"):
+        operator.getitem = sparse.compiled(operator.getitem)
 
     x[index]  # Numba compilation
 
@@ -179,7 +185,8 @@ def densemul_args(request, sides, seed, max_size):
 def test_gcxs_dot_ndarray(benchmark, densemul_args):
     x, t = densemul_args
 
-    if hasattr(sparse, "compiled"): operator.matmul = sparse.compiled(operator.matmul)
+    if hasattr(sparse, "compiled"):
+        operator.matmul = sparse.compiled(operator.matmul)
 
     # Numba compilation
     x @ t
