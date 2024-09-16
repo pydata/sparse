@@ -1,5 +1,4 @@
 import ctypes
-import weakref
 
 import mlir.runtime as rt
 from mlir import ir
@@ -39,7 +38,7 @@ def ranked_memref_to_numpy(ref: ctypes.Structure) -> np.ndarray:
     return rt.ranked_memref_to_numpy([ref])
 
 
-def freeme(obj: ctypes.Structure) -> None:
+def free_memref(obj: ctypes.Structure) -> None:
     libc.free(ctypes.cast(obj.allocated, ctypes.c_void_p))
 
 
@@ -257,14 +256,13 @@ class Tensor:
             self._format_class = type(obj)
             self._obj = obj
 
-            def finalizer(ptrs):
-                for ptr in ptrs:
-                    freeme(ptr)
-
-            weakref.finalize(self, finalizer, obj.get__fields_())
-
         else:
             raise Exception(f"{type(obj)} not supported.")
+
+    def __del__(self):
+        if self._owns_memory:
+            for field in self._obj.get__fields_():
+                free_memref(field)
 
     @_hold_self_ref_in_ret
     def to_scipy_sparse(self) -> sps.sparray | np.ndarray:
