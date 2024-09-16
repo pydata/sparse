@@ -8,20 +8,9 @@ from mlir.dialects import sparse_tensor
 import numpy as np
 import scipy.sparse as sps
 
-from ._common import fn_cache
+from ._common import _hold_self_ref_in_ret, _take_owneship, fn_cache
 from ._core import ctx, libc
 from ._dtypes import DType, asdtype
-
-
-def _take_owneship(owner, obj):
-    ptr = ctypes.py_object(obj)
-    ctypes.pythonapi.Py_IncRef(ptr)
-
-    def finalizer(ptr):
-        ctypes.pythonapi.Py_DecRef(ptr)
-
-    weakref.finalize(owner, finalizer, ptr)
-
 
 ###########
 # Memrefs #
@@ -51,7 +40,6 @@ def ranked_memref_to_numpy(ref: ctypes.Structure) -> np.ndarray:
 
 
 def freeme(obj: ctypes.Structure) -> None:
-    # TODO: I think there's still a memory leak
     libc.free(ctypes.cast(obj.allocated, ctypes.c_void_p))
 
 
@@ -76,7 +64,11 @@ def get_csr_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
             indptr = numpy_to_ranked_memref(arr.indptr)
             indices = numpy_to_ranked_memref(arr.indices)
             data = numpy_to_ranked_memref(arr.data)
-            return cls(indptr=indptr, indices=indices, data=data)
+
+            csr_instance = cls(indptr=indptr, indices=indices, data=data)
+            _take_owneship(csr_instance, arr)
+
+            return csr_instance
 
         def to_sps(self, shape: tuple[int, ...]) -> sps.csr_array:
             pos = ranked_memref_to_numpy(self.indptr)
@@ -90,6 +82,9 @@ def get_csr_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
                 ctypes.pointer(ctypes.pointer(self.indices)),
                 ctypes.pointer(ctypes.pointer(self.data)),
             ]
+
+        def get__fields_(self) -> list:
+            return [self.indptr, self.indices, self.data]
 
         @classmethod
         @fn_cache
@@ -129,6 +124,7 @@ def get_coo_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
             coo_instance = cls(pos=pos, coords=coords, data=data)
             _take_owneship(coo_instance, np_pos)
             _take_owneship(coo_instance, np_coords)
+            _take_owneship(coo_instance, arr)
 
             return coo_instance
 
@@ -144,6 +140,9 @@ def get_coo_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
                 ctypes.pointer(ctypes.pointer(self.coords)),
                 ctypes.pointer(ctypes.pointer(self.data)),
             ]
+
+        def get__fields_(self) -> list:
+            return [self.pos, self.coords, self.data]
 
         @classmethod
         @fn_cache
@@ -180,7 +179,11 @@ def get_dense_class(values_dtype: type[DType], index_dtype: type[DType]) -> type
         @classmethod
         def from_sps(cls, arr: np.ndarray) -> "Dense":
             data = numpy_to_ranked_memref(arr.ravel())
-            return cls(data=data)
+
+            dense_instance = cls(data=data)
+            _take_owneship(dense_instance, arr)
+
+            return dense_instance
 
         def to_sps(self, shape: tuple[int, ...]) -> sps.csr_array:
             data = ranked_memref_to_numpy(self.data)
@@ -188,6 +191,9 @@ def get_dense_class(values_dtype: type[DType], index_dtype: type[DType]) -> type
 
         def to_module_arg(self) -> list:
             return [ctypes.pointer(ctypes.pointer(self.data))]
+
+        def get__fields_(self) -> list:
+            return [self.data]
 
         @classmethod
         @fn_cache
@@ -224,38 +230,45 @@ def _is_mlir_obj(x) -> bool:
 class Tensor:
     def __init__(self, obj, shape=None) -> None:
         self.shape = shape if shape is not None else obj.shape
-        self.values_dtype = asdtype(obj.dtype)
+        self._values_dtype = asdtype(obj.dtype)
 
         if _is_scipy_sparse_obj(obj):
-            self.owns_memory = True
+            self._owns_memory = False
 
             if obj.format == "csr":
                 index_dtype = asdtype(obj.indptr.dtype)
-                self.format_class = get_csr_class(self.values_dtype, index_dtype)
-                self.obj = self.format_class.from_sps(obj)
+                self._format_class = get_csr_class(self._values_dtype, index_dtype)
+                self._obj = self._format_class.from_sps(obj)
             elif obj.format == "coo":
                 index_dtype = asdtype(obj.coords[0].dtype)
-                self.format_class = get_coo_class(self.values_dtype, index_dtype)
-                self.obj = self.format_class.from_sps(obj)
+                self._format_class = get_coo_class(self._values_dtype, index_dtype)
+                self._obj = self._format_class.from_sps(obj)
             else:
                 raise Exception(f"{obj.format} SciPy format not supported.")
 
         elif _is_numpy_obj(obj):
-            self.owns_memory = True
+            self._owns_memory = False
             index_dtype = asdtype(np.intp)
-            self.format_class = get_dense_class(self.values_dtype, index_dtype)
-            self.obj = self.format_class.from_sps(obj)
+            self._format_class = get_dense_class(self._values_dtype, index_dtype)
+            self._obj = self._format_class.from_sps(obj)
 
         elif _is_mlir_obj(obj):
-            self.owns_memory = False
-            self.format_class = type(obj)
-            self.obj = obj
+            self._owns_memory = True
+            self._format_class = type(obj)
+            self._obj = obj
+
+            def finalizer(ptrs):
+                for ptr in ptrs:
+                    freeme(ptr)
+
+            weakref.finalize(self, finalizer, obj.get__fields_())
 
         else:
             raise Exception(f"{type(obj)} not supported.")
 
+    @_hold_self_ref_in_ret
     def to_scipy_sparse(self) -> sps.sparray | np.ndarray:
-        return self.obj.to_sps(self.shape)
+        return self._obj.to_sps(self.shape)
 
 
 def asarray(obj) -> Tensor:

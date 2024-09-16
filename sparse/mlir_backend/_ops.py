@@ -68,21 +68,21 @@ def get_add_module(
 
 
 def add(x1: Tensor, x2: Tensor) -> Tensor:
-    ret_obj = x1.format_class()
-    out_tensor_type = x1.obj.get_tensor_definition(x1.shape)
+    ret_obj = x1._format_class()
+    out_tensor_type = x1._obj.get_tensor_definition(x1.shape)
 
     # TODO: Add proper caching
     # TODO: Decide what will be the output tensor_type
     add_module = get_add_module(
-        x1.obj.get_tensor_definition(x1.shape),
-        x2.obj.get_tensor_definition(x2.shape),
+        x1._obj.get_tensor_definition(x1.shape),
+        x2._obj.get_tensor_definition(x2.shape),
         out_tensor_type=out_tensor_type,
-        dtype=x1.values_dtype,
+        dtype=x1._values_dtype,
     )
     add_module.invoke(
         "add",
         ctypes.pointer(ctypes.pointer(ret_obj)),
-        *x1.obj.to_module_arg(),
-        *x2.obj.to_module_arg(),
+        *x1._obj.to_module_arg(),
+        *x2._obj.to_module_arg(),
     )
     return Tensor(ret_obj, shape=out_tensor_type.shape)
