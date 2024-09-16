@@ -6,11 +6,16 @@ from mlir import ir
 from mlir.dialects import arith, func, linalg, sparse_tensor, tensor
 
 from ._constructors import Tensor
-from ._core import CWD, DEBUG, MLIR_C_RUNNER_UTILS, ctx
+from ._core import CWD, DEBUG, MLIR_C_RUNNER_UTILS, ctx, pm
 from ._dtypes import DType, FloatingDType
 
 
-def get_add_module(a_tensor_type, b_tensor_type, out_tensor_type, dtype: type[DType]):
+def get_add_module(
+    a_tensor_type: ir.RankedTensorType,
+    b_tensor_type: ir.RankedTensorType,
+    out_tensor_type: ir.RankedTensorType,
+    dtype: type[DType],
+) -> ir.Module:
     with ir.Location.unknown(ctx):
         module = ir.Module.create()
         # TODO: add support for complex dialect/dtypes
@@ -53,9 +58,7 @@ def get_add_module(a_tensor_type, b_tensor_type, out_tensor_type, dtype: type[DT
         add.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
         if DEBUG:
             (CWD / "add_module.mlir").write_text(str(module))
-        pm = mlir.passmanager.PassManager.parse("builtin.module(sparsifier{create-sparse-deallocs=1})")
         pm.run(module.operation)
-
         if DEBUG:
             (CWD / "add_module_opt.mlir").write_text(str(module))
 

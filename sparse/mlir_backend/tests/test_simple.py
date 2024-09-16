@@ -1,3 +1,4 @@
+import math
 import typing
 
 import sparse
@@ -72,21 +73,35 @@ def generate_sampler(dtype: np.dtype, rng: np.random.Generator) -> typing.Callab
 
 
 @parametrize_dtypes
+@pytest.mark.parametrize("shape", [(100,), (10, 20), (5, 10, 20)])
+def test_dense_format(dtype, shape):
+    data = np.arange(math.prod(shape), dtype=dtype)
+    tensor = sparse.asarray(data)
+    actual = tensor.to_scipy_sparse()
+    np.testing.assert_equal(actual, data)
+
+
+@parametrize_dtypes
 def test_constructors(rng, dtype):
     SHAPE = (10, 5)
     DENSITY = 0.5
     sampler = generate_sampler(dtype, rng)
     a = sps.random_array(SHAPE, density=DENSITY, format="csr", dtype=dtype, random_state=rng, data_sampler=sampler)
-    c = np.arange(50, dtype=dtype).reshape((10, 5))
+    c = np.arange(math.prod(SHAPE), dtype=dtype).reshape(SHAPE)
+    d = sps.random_array(SHAPE, density=DENSITY, format="coo", dtype=dtype, random_state=rng, data_sampler=sampler)
 
     a_tensor = sparse.asarray(a)
     c_tensor = sparse.asarray(c)
+    d_tensor = sparse.asarray(d)
 
     a_retured = a_tensor.to_scipy_sparse()
     assert_csr_equal(a, a_retured)
 
     c_returned = c_tensor.to_scipy_sparse()
     np.testing.assert_equal(c, c_returned)
+
+    d_returned = d_tensor.to_scipy_sparse()
+    np.testing.assert_equal(d.todense(), d_returned.todense())
 
 
 @parametrize_dtypes
@@ -115,3 +130,10 @@ def test_add(rng, dtype):
     expected = a + c
     assert isinstance(actual, np.ndarray)
     np.testing.assert_array_equal(actual, expected)
+
+    # TODO: Blocked by https://github.com/llvm/llvm-project/issues/107477
+    # d = sps.random_array(SHAPE, density=DENSITY, format="coo", dtype=dtype, random_state=rng)
+    # d_tensor = sparse.asarray(d)
+    # actual = sparse.add(b_tensor, d_tensor).to_scipy_sparse()
+    # expected = b + d
+    # np.testing.assert_array_equal(actual.todense(), expected.todense())
