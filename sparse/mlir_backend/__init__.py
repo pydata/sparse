@@ -10,6 +10,9 @@ except ModuleNotFoundError as e:
 from ._constructors import (
     asarray,
 )
+from ._dtypes import (
+    asdtype,
+)
 from ._ops import (
     add,
 )
@@ -17,4 +20,5 @@ from ._ops import (
 __all__ = [
     "add",
     "asarray",
+    "asdtype",
 ]

@@ -1,4 +1,5 @@
 import ctypes
+from typing import Any
 
 import mlir.runtime as rt
 from mlir import ir
@@ -48,8 +49,12 @@ def free_memref(obj: ctypes.Structure) -> None:
 
 
 @fn_cache
-def get_csr_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
-    class Csr(ctypes.Structure):
+def get_csx_class(
+    values_dtype: type[DType],
+    index_dtype: type[DType],
+    order: str,
+) -> type[ctypes.Structure]:
+    class Csx(ctypes.Structure):
         _fields_ = [
             ("indptr", get_nd_memref_descr(1, index_dtype)),
             ("indices", get_nd_memref_descr(1, index_dtype)),
@@ -57,9 +62,10 @@ def get_csr_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
         ]
         dtype = values_dtype
         _index_dtype = index_dtype
+        _order = order
 
         @classmethod
-        def from_sps(cls, arr: sps.csr_array) -> "Csr":
+        def from_sps(cls, arr: sps.csr_array | sps.csc_array) -> "Csx":
             indptr = numpy_to_ranked_memref(arr.indptr)
             indices = numpy_to_ranked_memref(arr.indices)
             data = numpy_to_ranked_memref(arr.data)
@@ -69,11 +75,11 @@ def get_csr_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
 
             return csr_instance
 
-        def to_sps(self, shape: tuple[int, ...]) -> sps.csr_array:
+        def to_sps(self, shape: tuple[int, ...]) -> sps.csr_array | sps.csc_array:
             pos = ranked_memref_to_numpy(self.indptr)
             crd = ranked_memref_to_numpy(self.indices)
             data = ranked_memref_to_numpy(self.data)
-            return sps.csr_array((data, crd, pos), shape=shape)
+            return get_csx_scipy_class(self._order)((data, crd, pos), shape=shape)
 
         def to_module_arg(self) -> list:
             return [
@@ -93,15 +99,15 @@ def get_csr_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
                 index_dtype = cls._index_dtype.get_mlir_type()
                 index_width = getattr(index_dtype, "width", 0)
                 levels = (sparse_tensor.LevelFormat.dense, sparse_tensor.LevelFormat.compressed)
-                ordering = ir.AffineMap.get_permutation([0, 1])
+                ordering = ir.AffineMap.get_permutation(get_order_tuple(cls._order))
                 encoding = sparse_tensor.EncodingAttr.get(levels, ordering, ordering, index_width, index_width)
                 return ir.RankedTensorType.get(list(shape), values_dtype, encoding)
 
-    return Csr
+    return Csx
 
 
 @fn_cache
-def get_coo_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
+def get_coo_class(values_dtype: type[DType], index_dtype: type[DType]) -> type[ctypes.Structure]:
     class Coo(ctypes.Structure):
         _fields_ = [
             ("pos", get_nd_memref_descr(1, index_dtype)),
@@ -162,12 +168,61 @@ def get_coo_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
 
 
 @fn_cache
-def get_csf_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
-    raise NotImplementedError
+def get_csf_class(
+    values_dtype: type[DType],
+    index_dtype: type[DType],
+) -> type[ctypes.Structure]:
+    class Csf(ctypes.Structure):
+        _fields_ = [
+            ("indptr_1", get_nd_memref_descr(1, index_dtype)),
+            ("indices_1", get_nd_memref_descr(1, index_dtype)),
+            ("indptr_2", get_nd_memref_descr(1, index_dtype)),
+            ("indices_2", get_nd_memref_descr(1, index_dtype)),
+            ("data", get_nd_memref_descr(1, values_dtype)),
+        ]
+        dtype = values_dtype
+        _index_dtype = index_dtype
+
+        @classmethod
+        def from_sps(cls, arrs: list[np.ndarray]) -> "Csf":
+            csf_instance = cls(*[numpy_to_ranked_memref(arr) for arr in arrs])
+            for arr in arrs:
+                _take_owneship(csf_instance, arr)
+            return csf_instance
+
+        def to_sps(self, shape: tuple[int, ...]) -> list[np.ndarray]:
+            class List(list):
+                pass
+
+            return List(ranked_memref_to_numpy(field) for field in self.get__fields_())
+
+        def to_module_arg(self) -> list:
+            return [ctypes.pointer(ctypes.pointer(field)) for field in self.get__fields_()]
+
+        def get__fields_(self) -> list:
+            return [self.indptr_1, self.indices_1, self.indptr_2, self.indices_2, self.data]
+
+        @classmethod
+        @fn_cache
+        def get_tensor_definition(cls, shape: tuple[int, ...]) -> ir.RankedTensorType:
+            with ir.Location.unknown(ctx):
+                values_dtype = cls.dtype.get_mlir_type()
+                index_dtype = cls._index_dtype.get_mlir_type()
+                index_width = getattr(index_dtype, "width", 0)
+                levels = (
+                    sparse_tensor.LevelFormat.dense,
+                    sparse_tensor.LevelFormat.compressed,
+                    sparse_tensor.LevelFormat.compressed,
+                )
+                ordering = ir.AffineMap.get_permutation([0, 1, 2])
+                encoding = sparse_tensor.EncodingAttr.get(levels, ordering, ordering, index_width, index_width)
+                return ir.RankedTensorType.get(list(shape), values_dtype, encoding)
+
+    return Csf
 
 
 @fn_cache
-def get_dense_class(values_dtype: type[DType], index_dtype: type[DType]) -> type:
+def get_dense_class(values_dtype: type[DType], index_dtype: type[DType]) -> type[ctypes.Structure]:
     class Dense(ctypes.Structure):
         _fields_ = [
             ("data", get_nd_memref_descr(1, values_dtype)),
@@ -221,22 +276,42 @@ def _is_mlir_obj(x) -> bool:
     return isinstance(x, ctypes.Structure)
 
 
+def get_order_tuple(order: str) -> tuple[int, int]:
+    if order in ("r", "c"):
+        return (0, 1) if order == "r" else (1, 0)
+    raise Exception(f"Invalid order: {order}")
+
+
+def get_csx_scipy_class(order: str) -> type[sps.sparray]:
+    if order in ("r", "c"):
+        return sps.csr_array if order == "r" else sps.csc_array
+    raise Exception(f"Invalid order: {order}")
+
+
 ################
 # Tensor class #
 ################
 
 
 class Tensor:
-    def __init__(self, obj, shape=None) -> None:
+    def __init__(
+        self,
+        obj: Any,
+        shape: tuple[int, ...] | None = None,
+        dtype: type[DType] | None = None,
+        format: str | None = None,
+    ) -> None:
         self.shape = shape if shape is not None else obj.shape
-        self._values_dtype = asdtype(obj.dtype)
+        self.ndim = len(self.shape)
+        self._values_dtype = dtype if dtype is not None else asdtype(obj.dtype)
 
         if _is_scipy_sparse_obj(obj):
             self._owns_memory = False
 
-            if obj.format == "csr":
+            if obj.format in ("csr", "csc"):
+                order = "r" if obj.format == "csr" else "c"
                 index_dtype = asdtype(obj.indptr.dtype)
-                self._format_class = get_csr_class(self._values_dtype, index_dtype)
+                self._format_class = get_csx_class(self._values_dtype, index_dtype, order)
                 self._obj = self._format_class.from_sps(obj)
             elif obj.format == "coo":
                 index_dtype = asdtype(obj.coords[0].dtype)
@@ -256,6 +331,15 @@ class Tensor:
             self._format_class = type(obj)
             self._obj = obj
 
+        elif format is not None:
+            if format == "csf":
+                self._owns_memory = False
+                index_dtype = asdtype(np.intp)
+                self._format_class = get_csf_class(self._values_dtype, index_dtype)
+                self._obj = self._format_class.from_sps(obj)
+            else:
+                raise Exception(f"Format {format} not supported.")
+
         else:
             raise Exception(f"{type(obj)} not supported.")
 
@@ -269,5 +353,5 @@ class Tensor:
         return self._obj.to_sps(self.shape)
 
 
-def asarray(obj) -> Tensor:
-    return Tensor(obj)
+def asarray(obj, shape=None, dtype=None, format=None) -> Tensor:
+    return Tensor(obj, shape, dtype, format)
