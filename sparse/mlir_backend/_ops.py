@@ -70,7 +70,7 @@ def get_add_module(
     return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
 
 
-# @fn_cache
+@fn_cache
 def get_reshape_module(
     a_tensor_type: ir.RankedTensorType,
     shape_tensor_type: ir.RankedTensorType,
@@ -99,7 +99,6 @@ def add(x1: Tensor, x2: Tensor) -> Tensor:
     ret_obj = x1._format_class()
     out_tensor_type = x1._obj.get_tensor_definition(x1.shape)
 
-    # TODO: Add proper caching
     # TODO: Decide what will be the output tensor_type
     add_module = get_add_module(
         x1._obj.get_tensor_definition(x1.shape),
@@ -125,7 +124,6 @@ def reshape(x: Tensor, /, shape: tuple[int, ...]) -> Tensor:
     with ir.Location.unknown(ctx):
         shape_tensor_type = ir.RankedTensorType.get([len(shape)], Index.get_mlir_type())
 
-    # TODO: Add proper caching
     reshape_module = get_reshape_module(x_tensor_type, shape_tensor_type, out_tensor_type)
 
     shape = np.array(shape)
