@@ -5,10 +5,12 @@ import mlir.passmanager
 from mlir import ir
 from mlir.dialects import arith, func, linalg, sparse_tensor, tensor
 
+import numpy as np
+
 from ._common import fn_cache
-from ._constructors import Tensor
+from ._constructors import Tensor, numpy_to_ranked_memref
 from ._core import CWD, DEBUG, MLIR_C_RUNNER_UTILS, ctx, pm
-from ._dtypes import DType, FloatingDType
+from ._dtypes import DType, FloatingDType, Index
 
 
 @fn_cache
@@ -68,11 +70,35 @@ def get_add_module(
     return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
 
 
+@fn_cache
+def get_reshape_module(
+    a_tensor_type: ir.RankedTensorType,
+    shape_tensor_type: ir.RankedTensorType,
+    out_tensor_type: ir.RankedTensorType,
+) -> ir.Module:
+    with ir.Location.unknown(ctx):
+        module = ir.Module.create()
+
+        with ir.InsertionPoint(module.body):
+
+            @func.FuncOp.from_py_func(a_tensor_type, shape_tensor_type)
+            def reshape(a, shape):
+                return tensor.reshape(out_tensor_type, a, shape)
+
+            reshape.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
+            if DEBUG:
+                (CWD / "reshape_module.mlir").write_text(str(module))
+            pm.run(module.operation)
+            if DEBUG:
+                (CWD / "reshape_module_opt.mlir").write_text(str(module))
+
+    return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
+
+
 def add(x1: Tensor, x2: Tensor) -> Tensor:
     ret_obj = x1._format_class()
     out_tensor_type = x1._obj.get_tensor_definition(x1.shape)
 
-    # TODO: Add proper caching
     # TODO: Decide what will be the output tensor_type
     add_module = get_add_module(
         x1._obj.get_tensor_definition(x1.shape),
@@ -87,4 +113,25 @@ def add(x1: Tensor, x2: Tensor) -> Tensor:
         *x1._obj.to_module_arg(),
         *x2._obj.to_module_arg(),
     )
+    return Tensor(ret_obj, shape=out_tensor_type.shape)
+
+
+def reshape(x: Tensor, /, shape: tuple[int, ...]) -> Tensor:
+    ret_obj = x._format_class()
+    x_tensor_type = x._obj.get_tensor_definition(x.shape)
+    out_tensor_type = x._obj.get_tensor_definition(shape)
+
+    with ir.Location.unknown(ctx):
+        shape_tensor_type = ir.RankedTensorType.get([len(shape)], Index.get_mlir_type())
+
+    reshape_module = get_reshape_module(x_tensor_type, shape_tensor_type, out_tensor_type)
+
+    shape = np.array(shape)
+    reshape_module.invoke(
+        "reshape",
+        ctypes.pointer(ctypes.pointer(ret_obj)),
+        *x._obj.to_module_arg(),
+        ctypes.pointer(ctypes.pointer(numpy_to_ranked_memref(shape))),
+    )
+
     return Tensor(ret_obj, shape=out_tensor_type.shape)
