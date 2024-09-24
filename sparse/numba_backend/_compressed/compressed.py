@@ -847,11 +847,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     # `GCXS` is a reshaped/transposed `CSR`, but it can't (usually)
     # be expressed in the `binsparse` 0.1 language.
     # We are missing index maps.
-    def __binsparse_descriptor__(self) -> dict:
-        return super().__binsparse_descriptor__()
-
-    def __binsparse_dlpack__(self) -> dict[str, np.ndarray]:
-        return super().__binsparse_dlpack__()
+    def __binsparse__(self) -> tuple[dict, list[np.ndarray]]:
+        return super().__binsparse__()
 
 
 class _Compressed2d(GCXS):
@@ -892,13 +889,13 @@ class _Compressed2d(GCXS):
         coo = COO.from_numpy(x, fill_value=fill_value, idx_dtype=idx_dtype)
         return cls.from_coo(coo, cls.class_compressed_axes, idx_dtype)
 
-    def __binsparse_descriptor__(self) -> dict:
+    def __binsparse__(self) -> tuple[dict, list[np.ndarray]]:
         from sparse._version import __version__
 
         data_dt = str(self.data.dtype)
         if np.issubdtype(data_dt, np.complexfloating):
             data_dt = f"complex[float{self.data.dtype.itemsize // 2}]"
-        return {
+        descriptor = {
             "binsparse": {
                 "version": "0.1",
                 "format": self.format.upper(),
@@ -913,12 +910,7 @@ class _Compressed2d(GCXS):
             "original_source": f"`sparse`, version {__version__}",
         }
 
-    def __binsparse_dlpack__(self) -> dict[str, np.ndarray]:
-        return {
-            "pointers_to_1": self.indices,
-            "indices_1": self.indptr,
-            "values": self.data,
-        }
+        return descriptor, [self.indices, self.indptr, self.data]
 
 
 class CSR(_Compressed2d):
