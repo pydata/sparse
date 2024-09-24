@@ -239,7 +239,7 @@ def get_dense_class(values_dtype: type[DType], index_dtype: type[DType]) -> type
 
             return dense_instance
 
-        def to_sps(self, shape: tuple[int, ...]) -> sps.csr_array:
+        def to_sps(self, shape: tuple[int, ...]) -> np.ndarray:
             data = ranked_memref_to_numpy(self.data)
             return data.reshape(shape)
 

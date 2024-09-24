@@ -15,10 +15,12 @@ from ._dtypes import (
 )
 from ._ops import (
     add,
+    reshape,
 )
 
 __all__ = [
     "add",
     "asarray",
     "asdtype",
+    "reshape",
 ]
