@@ -4,6 +4,7 @@ channels:
   - nodefaults
 dependencies:
   - python
+  - pip
   - numpy
   - numba
   - scipy
