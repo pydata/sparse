@@ -82,3 +82,7 @@ results/
 
 # Notebooks converted to scripts.
 docs/examples_ipynb/
+
+# Pixi envs
+.pixi/
+pixi.lock
