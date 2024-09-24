@@ -1,4 +1,5 @@
 import ctypes
+from types import EllipsisType
 
 import mlir.execution_engine
 import mlir.passmanager
@@ -85,12 +86,39 @@ def get_reshape_module(
             def reshape(a, shape):
                 return tensor.reshape(out_tensor_type, a, shape)
 
-            reshape.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
-            if DEBUG:
-                (CWD / "reshape_module.mlir").write_text(str(module))
-            pm.run(module.operation)
-            if DEBUG:
-                (CWD / "reshape_module_opt.mlir").write_text(str(module))
+        reshape.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
+        if DEBUG:
+            (CWD / "reshape_module.mlir").write_text(str(module))
+        pm.run(module.operation)
+        if DEBUG:
+            (CWD / "reshape_module_opt.mlir").write_text(str(module))
+
+    return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
+
+
+@fn_cache
+def get_slice_module(
+    in_tensor_type: ir.RankedTensorType,
+    out_tensor_type: ir.RankedTensorType,
+    offsets: tuple[int, ...],
+    sizes: tuple[int, ...],
+    strides: tuple[int, ...],
+) -> ir.Module:
+    with ir.Location.unknown(ctx):
+        module = ir.Module.create()
+
+        with ir.InsertionPoint(module.body):
+
+            @func.FuncOp.from_py_func(in_tensor_type)
+            def getitem(a):
+                return tensor.extract_slice(out_tensor_type, a, [], [], [], offsets, sizes, strides)
+
+        getitem.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
+        if DEBUG:
+            (CWD / "getitem_module.mlir").write_text(str(module))
+        pm.run(module.operation)
+        if DEBUG:
+            (CWD / "getitem_module_opt.mlir").write_text(str(module))
 
     return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
 
@@ -195,3 +223,80 @@ def broadcast_to(x: Tensor, /, shape: tuple[int, ...], dimensions: list[int]) ->
     )
 
     return Tensor(ret_obj, shape=shape)
+
+
+def _add_missing_dims(key: tuple, ndim: int) -> tuple:
+    if len(key) < ndim and Ellipsis not in key:
+        return key + (...,)
+    return key
+
+
+def _expand_ellipsis(key: tuple, ndim: int) -> tuple:
+    if Ellipsis in key:
+        if len([e for e in key if e is Ellipsis]) > 1:
+            raise Exception(f"Ellipsis should be used once: {key}")
+        to_expand = ndim - len(key) + 1
+        if to_expand <= 0:
+            raise Exception(f"Invalid use of Ellipsis in {key}")
+        idx = key.index(Ellipsis)
+        return key[:idx] + tuple(slice(None) for _ in range(to_expand)) + key[idx + 1 :]
+    return key
+
+
+def _decompose_slices(
+    key: tuple,
+    shape: tuple[int, ...],
+) -> tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
+    offsets = []
+    sizes = []
+    strides = []
+
+    for key_elem, size in zip(key, shape, strict=False):
+        if isinstance(key_elem, slice):
+            offset = key_elem.start if key_elem.start is not None else 0
+            size = key_elem.stop - offset if key_elem.stop is not None else size - offset
+            stride = key_elem.step if key_elem.step is not None else 1
+        elif isinstance(key_elem, int):
+            offset = key_elem
+            size = key_elem + 1
+            stride = 1
+        offsets.append(offset)
+        sizes.append(size)
+        strides.append(stride)
+
+    return tuple(offsets), tuple(sizes), tuple(strides)
+
+
+def _get_new_shape(sizes, strides) -> tuple[int, ...]:
+    return tuple(size // stride for size, stride in zip(sizes, strides, strict=False))
+
+
+def getitem(
+    x: Tensor,
+    key: int | slice | EllipsisType | tuple[int | slice | EllipsisType, ...],
+) -> Tensor:
+    if not isinstance(key, tuple):
+        key = (key,)
+    if None in key:
+        raise Exception(f"Lazy indexing isn't supported: {key}")
+
+    ret_obj = x._format_class()
+
+    key = _add_missing_dims(key, x.ndim)
+    key = _expand_ellipsis(key, x.ndim)
+    offsets, sizes, strides = _decompose_slices(key, x.shape)
+
+    new_shape = _get_new_shape(sizes, strides)
+    out_tensor_type = x._obj.get_tensor_definition(new_shape)
+
+    slice_module = get_slice_module(
+        x._obj.get_tensor_definition(x.shape),
+        out_tensor_type,
+        offsets,
+        sizes,
+        strides,
+    )
+
+    slice_module.invoke("getitem", ctypes.pointer(ctypes.pointer(ret_obj)), *x._obj.to_module_arg())
+
+    return Tensor(ret_obj, shape=out_tensor_type.shape)

@@ -341,3 +341,39 @@ def test_broadcast_to(dtype):
 
     assert result.format == "csr"
     np.testing.assert_allclose(result.todense(), np.repeat(np_arr[np.newaxis], 3, axis=0))
+
+
+@pytest.mark.skip(reason="https://discourse.llvm.org/t/illegal-operation-when-slicing-csr-csc-coo-tensor/81404")
+@parametrize_dtypes
+@pytest.mark.parametrize(
+    "index",
+    [
+        0,
+        (2,),
+        (2, 3),
+        (..., slice(0, 4, 2)),
+        (1, slice(1, None, 1)),
+        # TODO: For below cases we need an update to ownership mechanism.
+        #       `tensor[:, :]` returns the same memref that was passed.
+        #       The mechanism sees the result as MLIR-allocated and frees
+        #       it, while it still can be owned by SciPy/NumPy causing a
+        #       segfault when it frees SciPy/NumPy managed memory.
+        # ...,
+        # slice(None),
+        # (slice(None), slice(None)),
+    ],
+)
+def test_indexing_2d(rng, dtype, index):
+    SHAPE = (20, 30)
+    DENSITY = 0.5
+
+    for format in ["csr", "csc", "coo"]:
+        arr = sps.random_array(SHAPE, density=DENSITY, format=format, dtype=dtype, random_state=rng)
+        arr.sum_duplicates()
+
+        tensor = sparse.asarray(arr)
+
+        actual = tensor[index].to_scipy_sparse()
+        expected = arr.todense()[index]
+
+        np.testing.assert_array_equal(actual.todense(), expected)
