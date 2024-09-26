@@ -1557,7 +1557,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                             },
                         }
                     }
-                },
+                }
+                if self.ndim != 2
+                else "COOR",
                 "shape": list(self.shape),
                 "number_of_stored_values": self.nnz,
                 "data_types": {
