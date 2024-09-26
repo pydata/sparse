@@ -273,29 +273,6 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         return len(self.data)
 
     @property
-    def format(self):
-        """
-        The storage format of this array.
-        Returns
-        -------
-        str
-            The storage format of this array.
-        See Also
-        -------
-        [`scipy.sparse.dok_matrix.format`][] : The Scipy equivalent property.
-        Examples
-        -------
-        >>> import sparse
-        >>> s = sparse.random((5, 5), density=0.2, format="dok")
-        >>> s.format
-        'dok'
-        >>> t = sparse.random((5, 5), density=0.2, format="coo")
-        >>> t.format
-        'coo'
-        """
-        return "dok"
-
-    @property
     def nbytes(self):
         """
         The number of bytes taken up by this object. Note that for small arrays,
