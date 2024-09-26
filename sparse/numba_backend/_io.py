@@ -1,7 +1,7 @@
 import numpy as np
 
 from ._common import _check_device
-from ._compressed import GCXS
+from ._compressed import CSC, CSR, GCXS
 from ._coo.core import COO
 from ._sparse_array import SparseArray
 
@@ -145,7 +145,6 @@ def from_binsparse(arr, /, *, device=None, copy: bool | None = None) -> SparseAr
 
     format = desc["format"]
     format_err_str = f"Unsupported format: `{format!r}`."
-    invalid_dtype_str = "Invalid dtype: `{dtype!s}`, expected `{expected!s}`."
 
     if isinstance(format, str):
         match format:
@@ -180,15 +179,15 @@ def from_binsparse(arr, /, *, device=None, copy: bool | None = None) -> SparseAr
             case _:
                 raise RuntimeError(format_err_str)
 
-    format = desc["format"]
+    format = desc["format"]["custom"]
+    rank = 0
+    level = format
+    while "level" in level:
+        if "rank" not in level:
+            level["rank"] = 1
+        rank += level["rank"]
+        level = level["level"]
     if "transpose" not in format:
-        rank = 0
-        level = format
-        while "level" in level:
-            if "rank" not in level:
-                level["rank"] = 1
-            rank += level["rank"]
-
         format["transpose"] = list(range(rank))
 
     match desc:
@@ -225,25 +224,8 @@ def from_binsparse(arr, /, *, device=None, copy: bool | None = None) -> SparseAr
             coord_arr: np.ndarray = np.from_dlpack(arrs[1])
             value_arr: np.ndarray = np.from_dlpack(arrs[2])
 
-            if str(coord_arr.dtype) != coords_dtype:
-                raise BufferError(
-                    invalid_dtype_str.format(
-                        dtype=str(coord_arr.dtype),
-                        expected=coords_dtype,
-                    )
-                )
-
-            if value_dtype.startswith("complex[float") and value_dtype.endswith("]"):
-                complex_bits = 2 * int(value_arr[len("complex[float") : -len("]")])
-                value_dtype: str = f"complex{complex_bits}"
-
-            if str(value_arr.dtype) != value_dtype:
-                raise BufferError(
-                    invalid_dtype_str.format(
-                        dtype=str(coord_arr.dtype),
-                        expected=coords_dtype,
-                    )
-                )
+            _check_binsparse_dt(coord_arr, coords_dtype)
+            _check_binsparse_dt(value_arr, value_dtype)
 
             return COO(
                 coord_arr[:, start:end],
@@ -254,5 +236,68 @@ def from_binsparse(arr, /, *, device=None, copy: bool | None = None) -> SparseAr
                 prune=False,
                 idx_dtype=coord_arr.dtype,
             )
+        case {
+            "format": {
+                "custom": {
+                    "transpose": transpose,
+                    "level": {
+                        "level_desc": "dense",
+                        "rank": 1,
+                        "level": {
+                            "level_desc": "sparse",
+                            "rank": 1,
+                            "level": {
+                                "level_desc": "element",
+                            },
+                        },
+                    },
+                },
+            },
+            "shape": shape,
+            "number_of_stored_values": nnz,
+            "data_types": {
+                "pointers_to_1": ptr_dtype,
+                "indices_1": crd_dtype,
+                "values": val_dtype,
+            },
+            **_kwargs,
+        }:
+            crd_arr = np.from_dlpack(arrs[0])
+            _check_binsparse_dt(crd_arr, crd_dtype)
+            ptr_arr = np.from_dlpack(arrs[1])
+            _check_binsparse_dt(ptr_arr, ptr_dtype)
+            val_arr = np.from_dlpack(arrs[2])
+            _check_binsparse_dt(val_arr, val_dtype)
+
+            match transpose:
+                case [0, 1]:
+                    sparse_type = CSR
+                case [1, 0]:
+                    sparse_type = CSC
+                case _:
+                    raise RuntimeError(format_err_str)
+
+            return sparse_type((val_arr, ptr_arr, crd_arr), shape=shape)
         case _:
+            print(desc)
             raise RuntimeError(format_err_str)
+
+
+def _convert_binsparse_dtype(dt: str) -> np.dtype:
+    if dt.startswith("complex[float") and dt.endswith("]"):
+        complex_bits = 2 * int(dt[len("complex[float") : -len("]")])
+        dt: str = f"complex{complex_bits}"
+
+    return np.dtype(dt)
+
+
+def _check_binsparse_dt(arr: np.ndarray, dt: str) -> None:
+    invalid_dtype_str = "Invalid dtype: `{dtype!s}`, expected `{expected!s}`."
+    dt = _convert_binsparse_dtype(dt)
+    if dt != arr.dtype:
+        raise BufferError(
+            invalid_dtype_str.format(
+                dtype=arr.dtype,
+                expected=dt,
+            )
+        )

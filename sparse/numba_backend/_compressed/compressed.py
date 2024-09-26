@@ -11,7 +11,6 @@ from .._coo.common import linear_loc
 from .._coo.core import COO
 from .._sparse_array import SparseArray
 from .._utils import (
-    _zero_of_dtype,
     can_store,
     check_compressed_axes,
     check_fill_value,
@@ -175,13 +174,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         if self.data.ndim != 1:
             raise ValueError("data must be a scalar or 1-dimensional.")
 
-        self.shape = shape
-
-        if fill_value is None:
-            fill_value = _zero_of_dtype(self.data.dtype)
+        SparseArray.__init__(self, shape=shape, fill_value=fill_value)
 
         self._compressed_axes = tuple(compressed_axes) if isinstance(compressed_axes, Iterable) else None
-        self.fill_value = self.data.dtype.type(fill_value)
 
         if prune:
             self._prune()
@@ -417,7 +412,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
                 fill_value=self.fill_value,
             )
         uncompressed = uncompress_dimension(self.indptr)
-        coords = np.vstack((uncompressed, self.indices))
+        coords = np.stack((uncompressed, self.indices))
         order = np.argsort(self._axis_order)
         return (
             COO(
@@ -884,7 +879,7 @@ class _Compressed2d(GCXS):
             "original_source": f"`sparse`, version {__version__}",
         }
 
-        return descriptor, [self.indices, self.indptr, self.data]
+        return descriptor, [self.indptr, self.indices, self.data]
 
 
 class CSR(_Compressed2d):
