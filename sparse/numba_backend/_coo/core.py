@@ -1543,7 +1543,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         data_dt = str(self.data.dtype)
         if np.issubdtype(data_dt, np.complexfloating):
-            data_dt = f"complex[float{self.data.dtype.itemsize // 2}]"
+            data_dt = f"complex[float{self.data.dtype.itemsize * 4}]"
         descriptor = {
             "binsparse": {
                 "version": "0.1",
