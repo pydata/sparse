@@ -1540,7 +1540,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 "shape": list(self.shape),
                 "number_of_stored_values": self.nnz,
                 "data_types": {
-                    "pointers_to_1": "uint8",
+                    "pointers_to_1": "uint64",
                     "indices_1": str(self.coords.dtype),
                     "values": data_dt,
                 },
@@ -1548,7 +1548,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             "original_source": f"`sparse`, version {__version__}",
         }
 
-        return descriptor, [np.array([0, self.nnz], dtype=np.uint8), self.coords, self.data]
+        return descriptor, [np.array([0, self.nnz], dtype=np.uint64), self.coords, self.data]
 
 
 def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
