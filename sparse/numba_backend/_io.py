@@ -279,7 +279,6 @@ def from_binsparse(arr, /, *, device=None, copy: bool | None = None) -> SparseAr
 
             return sparse_type((val_arr, ptr_arr, crd_arr), shape=shape)
         case _:
-            print(desc)
             raise RuntimeError(format_err_str)
 
 
