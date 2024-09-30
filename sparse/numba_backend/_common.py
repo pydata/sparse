@@ -33,7 +33,7 @@ def _is_scipy_sparse_obj(x):
 def _check_device(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        device = kwargs.get("device", None)
+        device = kwargs.get("device")
         if device not in {"cpu", None}:
             raise ValueError("Device must be `'cpu'` or `None`.")
         return func(*args, **kwargs)
