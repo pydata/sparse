@@ -41,6 +41,7 @@ extras = [
     "sparse[finch]",
     "scipy",
     "scikit-learn",
+    "networkx",
 ]
 tests = [
     "sparse[extras]",
