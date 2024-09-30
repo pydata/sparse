@@ -16,11 +16,13 @@ from ._dtypes import (
 )
 from ._ops import (
     add,
+    broadcast_to,
     reshape,
 )
 
 __all__ = [
     "add",
+    "broadcast_to",
     "asarray",
     "asdtype",
     "reshape",

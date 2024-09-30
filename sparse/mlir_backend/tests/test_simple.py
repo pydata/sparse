@@ -289,5 +289,55 @@ def test_reshape(rng, dtype):
             np.testing.assert_array_equal(actual, expected)
 
     # DENSE
-    # NOTE: dense reshape is probably broken in MLIR
+    # NOTE: dense reshape is probably broken in MLIR in 19.x branch
     # dense = np.arange(math.prod(SHAPE), dtype=dtype).reshape(SHAPE)
+
+
+@parametrize_dtypes
+def test_broadcast_to(dtype):
+    # CSR, CSC, COO
+    for shape, new_shape, dimensions, input_arr, expected_arrs in [
+        (
+            (3, 4),
+            (2, 3, 4),
+            [0],
+            np.array([[0, 1, 0, 3], [0, 0, 4, 5], [6, 7, 0, 0]]),
+            [
+                np.array([0, 3, 6]),
+                np.array([0, 1, 2, 0, 1, 2]),
+                np.array([0, 2, 4, 6, 8, 10, 12]),
+                np.array([1, 3, 2, 3, 0, 1, 1, 3, 2, 3, 0, 1]),
+                np.array([1.0, 3.0, 4.0, 5.0, 6.0, 7.0, 1.0, 3.0, 4.0, 5.0, 6.0, 7.0]),
+            ],
+        ),
+        (
+            (4, 2),
+            (4, 2, 2),
+            [1],
+            np.array([[0, 1], [0, 0], [2, 3], [4, 0]]),
+            [
+                np.array([0, 2, 2, 4, 6]),
+                np.array([0, 1, 0, 1, 0, 1]),
+                np.array([0, 1, 2, 4, 6, 7, 8]),
+                np.array([1, 1, 0, 1, 0, 1, 0, 0]),
+                np.array([1.0, 1.0, 2.0, 3.0, 2.0, 3.0, 4.0, 4.0]),
+            ],
+        ),
+    ]:
+        for fn_format in [sps.csr_array, sps.csc_array, sps.coo_array]:
+            arr = fn_format(input_arr, shape=shape, dtype=dtype)
+            arr.sum_duplicates()
+            tensor = sparse.asarray(arr)
+            result = sparse.broadcast_to(tensor, new_shape, dimensions=dimensions).to_scipy_sparse()
+
+            for actual, expected in zip(result, expected_arrs, strict=False):
+                np.testing.assert_allclose(actual, expected)
+
+    # DENSE
+    np_arr = np.array([0, 0, 2, 3, 0, 1])
+    arr = np.asarray(np_arr, dtype=dtype)
+    tensor = sparse.asarray(arr)
+    result = sparse.broadcast_to(tensor, (3, 6), dimensions=[0]).to_scipy_sparse()
+
+    assert result.format == "csr"
+    np.testing.assert_allclose(result.todense(), np.repeat(np_arr[np.newaxis], 3, axis=0))
