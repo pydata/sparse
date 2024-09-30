@@ -901,7 +901,7 @@ def diagonalize(a, axis=0):
     >>> a = sparse.random((3, 3, 3, 3, 3), density=0.3)
     >>> a_diag = sparse.diagonalize(a, axis=2)
     >>> (sparse.diagonal(a_diag, axis1=2, axis2=5) == a.transpose([0, 1, 3, 4, 2])).all()
-    True
+    np.True_
 
     Returns
     -------
@@ -944,7 +944,7 @@ def isposinf(x, out=None):
     --------
     [`numpy.isposinf`][] : The NumPy equivalent
     """
-    from .core import elemwise
+    from sparse import elemwise
 
     return elemwise(lambda x, out=None, dtype=None: np.isposinf(x, out=out), x, out=out)
 
@@ -971,7 +971,7 @@ def isneginf(x, out=None):
     --------
     [`numpy.isneginf`][] : The NumPy equivalent
     """
-    from .core import elemwise
+    from sparse import elemwise
 
     return elemwise(lambda x, out=None, dtype=None: np.isneginf(x, out=out), x, out=out)
 
@@ -1234,7 +1234,7 @@ def unique_values(x, /):
     >>> import sparse
     >>> x = sparse.COO.from_numpy([1, 0, 2, 1, 2, -3])
     >>> sparse.unique_values(x)
-    array([-3, 0, 1, 2])
+    array([-3,  0,  1,  2])
     """
 
     x = _validate_coo_input(x)
@@ -1279,9 +1279,9 @@ def sort(x, /, *, axis=-1, descending=False, stable=False):
     >>> import sparse
     >>> x = sparse.COO.from_numpy([1, 0, 2, 0, 2, -3])
     >>> sparse.sort(x).todense()
-    array([-3, 0, 0, 1, 2, 2])
+    array([-3,  0,  0,  1,  2,  2])
     >>> sparse.sort(x, descending=True).todense()
-    array([ 2, 2, 1, 0, 0, -3])
+    array([ 2,  2,  1,  0,  0, -3])
 
     """
     from .._common import moveaxis

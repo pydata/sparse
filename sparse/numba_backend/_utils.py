@@ -267,19 +267,18 @@ def random(
 
     Examples
     --------
-    >>> from sparse import random
     >>> from scipy import stats
-    >>> rvs = lambda x: stats.poisson(25, loc=10).rvs(x, random_state=np.random.RandomState(1))
-    >>> s = random((2, 3, 4), density=0.25, random_state=np.random.RandomState(1), data_rvs=rvs)
-    >>> s.todense()  # doctest: +NORMALIZE_WHITESPACE
-    array([[[ 0,  0,  0,   0],
-            [34,  0, 29,  30],
+    >>> rng = np.random.default_rng(42)
+    >>> rvs = lambda x: stats.poisson(25, loc=10).rvs(x, random_state=rng)
+    >>> s = sparse.random((2, 3, 4), density=0.25, random_state=rng, data_rvs=rvs)
+    >>> s.todense()
+    array([[[39,  0,  0,  0],
+            [28, 33,  0, 37],
             [ 0,  0,  0,  0]],
     <BLANKLINE>
-           [[33,  0,  0, 34],
-            [34,  0,  0,  0],
-            [ 0,  0,  0,  0]]])
-
+           [[ 0,  0,  0,  0],
+            [ 0,  0, 34,  0],
+            [ 0,  0,  0, 36]]])
     """
     # Copied, in large part, from scipy.sparse.random
     # See https://github.com/scipy/scipy/blob/main/LICENSE.txt
@@ -422,15 +421,15 @@ def equivalent(x, y, /, loose=False):
     Examples
     --------
     >>> equivalent(1, 1)
-    True
+    np.True_
     >>> equivalent(np.nan, np.nan + 1)
-    True
+    np.True_
     >>> equivalent(1, 2)
-    False
+    np.False_
     >>> equivalent(np.inf, np.inf)
-    True
-    >>> equivalent(np.PZERO, np.NZERO)
-    False
+    np.True_
+    >>> equivalent(np.float64(0.0), np.float64(-0.0))
+    np.False_
     """
     x = np.asarray(x)
     y = np.asarray(y)
