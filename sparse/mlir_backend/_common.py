@@ -12,6 +12,10 @@ class MlirType(abc.ABC):
     def get_mlir_type(cls) -> ir.Type: ...
 
 
+class RefableList(list):
+    pass
+
+
 def fn_cache(f, maxsize: int | None = None):
     return functools.wraps(f)(functools.lru_cache(maxsize=maxsize)(f))
 
