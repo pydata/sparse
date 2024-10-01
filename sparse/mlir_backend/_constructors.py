@@ -1,4 +1,5 @@
 import ctypes
+from collections.abc import Iterable
 from typing import Any
 
 import mlir.runtime as rt
@@ -8,7 +9,7 @@ from mlir.dialects import sparse_tensor
 import numpy as np
 import scipy.sparse as sps
 
-from ._common import RefableList, _hold_self_ref_in_ret, _take_owneship, fn_cache
+from ._common import PackedArgumentTuple, _hold_self_ref_in_ret, _take_owneship, fn_cache
 from ._core import ctx, libc
 from ._dtypes import DType, asdtype
 
@@ -118,14 +119,16 @@ def get_coo_class(values_dtype: type[DType], index_dtype: type[DType]) -> type[c
         _index_dtype = index_dtype
 
         @classmethod
-        def from_sps(cls, arr: sps.coo_array | np.ndarray) -> "Coo":
+        def from_sps(cls, arr: sps.coo_array | Iterable[np.ndarray]) -> "Coo":
             if isinstance(arr, sps.coo_array):
-                assert arr.has_canonical_format, "COO must have canonical format"
+                if not arr.has_canonical_format:
+                    raise Exception("COO must have canonical format")
                 np_pos = np.array([0, arr.size], dtype=index_dtype.np_dtype)
                 np_coords = np.stack(arr.coords, axis=1, dtype=index_dtype.np_dtype)
                 np_data = arr.data
             else:
-                assert len(arr) == 3, "COO must be comprised of three arrays"
+                if len(arr) != 3:
+                    raise Exception("COO must be comprised of three arrays")
                 np_pos, np_coords, np_data = arr
 
             pos = numpy_to_ranked_memref(np_pos)
@@ -142,7 +145,11 @@ def get_coo_class(values_dtype: type[DType], index_dtype: type[DType]) -> type[c
             pos = ranked_memref_to_numpy(self.pos)
             coords = ranked_memref_to_numpy(self.coords)[pos[0] : pos[1]]
             data = ranked_memref_to_numpy(self.data)
-            return sps.coo_array((data, coords.T), shape=shape) if len(shape) == 2 else RefableList([pos, coords, data])
+            return (
+                sps.coo_array((data, coords.T), shape=shape)
+                if len(shape) == 2
+                else PackedArgumentTuple((pos, coords, data))
+            )
 
         def to_module_arg(self) -> list:
             return [
@@ -201,7 +208,7 @@ def get_csf_class(
             return csf_instance
 
         def to_sps(self, shape: tuple[int, ...]) -> list[np.ndarray]:
-            return RefableList(ranked_memref_to_numpy(field) for field in self.get__fields_())
+            return PackedArgumentTuple(tuple(ranked_memref_to_numpy(field) for field in self.get__fields_()))
 
         def to_module_arg(self) -> list:
             return [ctypes.pointer(ctypes.pointer(field)) for field in self.get__fields_()]

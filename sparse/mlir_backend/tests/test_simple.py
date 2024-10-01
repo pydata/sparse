@@ -246,7 +246,7 @@ def test_reshape(rng, dtype):
             tensor = sparse.asarray(arr)
 
             actual = sparse.reshape(tensor, shape=new_shape).to_scipy_sparse()
-            if isinstance(actual, list):
+            if isinstance(actual, sparse.PackedArgumentTuple):
                 continue  # skip checking CSF output
             if not isinstance(actual, np.ndarray):
                 actual = actual.todense()

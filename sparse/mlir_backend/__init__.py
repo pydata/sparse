@@ -8,6 +8,7 @@ except ModuleNotFoundError as e:
     ) from e
 
 from ._constructors import (
+    PackedArgumentTuple,
     asarray,
 )
 from ._dtypes import (
@@ -23,4 +24,5 @@ __all__ = [
     "asarray",
     "asdtype",
     "reshape",
+    "PackedArgumentTuple",
 ]
