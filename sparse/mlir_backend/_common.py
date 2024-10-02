@@ -2,6 +2,7 @@ import abc
 import ctypes
 import functools
 import weakref
+from dataclasses import dataclass
 
 from mlir import ir
 
@@ -10,6 +11,20 @@ class MlirType(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def get_mlir_type(cls) -> ir.Type: ...
+
+
+@dataclass
+class PackedArgumentTuple:
+    contents: tuple
+
+    def __getitem__(self, index):
+        return self.contents[index]
+
+    def __iter__(self):
+        yield from self.contents
+
+    def __len__(self):
+        return len(self.contents)
 
 
 def fn_cache(f, maxsize: int | None = None):

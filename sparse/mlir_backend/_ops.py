@@ -116,10 +116,27 @@ def add(x1: Tensor, x2: Tensor) -> Tensor:
     return Tensor(ret_obj, shape=out_tensor_type.shape)
 
 
+def _infer_format_class(rank: int, values_dtype: type[DType], index_dtype: type[DType]) -> type[ctypes.Structure]:
+    from ._constructors import get_csf_class, get_csx_class, get_dense_class
+
+    if rank == 1:
+        return get_dense_class(values_dtype, index_dtype)
+    if rank == 2:
+        return get_csx_class(values_dtype, index_dtype, order="r")
+    if rank == 3:
+        return get_csf_class(values_dtype, index_dtype)
+    raise Exception(f"Rank not supported to infer format: {rank}")
+
+
 def reshape(x: Tensor, /, shape: tuple[int, ...]) -> Tensor:
-    ret_obj = x._format_class()
     x_tensor_type = x._obj.get_tensor_definition(x.shape)
-    out_tensor_type = x._obj.get_tensor_definition(shape)
+    if len(x.shape) == len(shape):
+        out_tensor_type = x._obj.get_tensor_definition(shape)
+        ret_obj = x._format_class()
+    else:
+        format_class = _infer_format_class(len(shape), x._values_dtype, x._index_dtype)
+        out_tensor_type = format_class.get_tensor_definition(shape)
+        ret_obj = format_class()
 
     with ir.Location.unknown(ctx):
         shape_tensor_type = ir.RankedTensorType.get([len(shape)], Index.get_mlir_type())

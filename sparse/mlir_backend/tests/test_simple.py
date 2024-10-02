@@ -200,12 +200,37 @@ def test_csf_format(dtype):
 
 
 @parametrize_dtypes
+def test_coo_3d_format(dtype):
+    SHAPE = (2, 2, 4)
+    pos = np.array([0, 7])
+    crd = np.array([[0, 1, 0, 0, 1, 1, 0], [1, 3, 1, 0, 0, 1, 0], [3, 1, 1, 0, 1, 1, 1]])
+    data = np.array([1, 2, 3, 4, 5, 6, 7], dtype=dtype)
+    coo = [pos, crd, data]
+
+    coo_tensor = sparse.asarray(coo, shape=SHAPE, dtype=sparse.asdtype(dtype), format="coo")
+    result = coo_tensor.to_scipy_sparse()
+    for actual, expected in zip(result, coo, strict=False):
+        np.testing.assert_array_equal(actual, expected)
+
+    # NOTE: Blocked by https://github.com/llvm/llvm-project/pull/109135
+    # res_tensor = sparse.add(coo_tensor, coo_tensor).to_scipy_sparse()
+    # coo_2 = [pos, crd, data * 2]
+    # for actual, expected in zip(res_tensor, coo_2, strict=False):
+    #     np.testing.assert_array_equal(actual, expected)
+
+
+@parametrize_dtypes
 def test_reshape(rng, dtype):
     DENSITY = 0.5
     sampler = generate_sampler(dtype, rng)
 
     # CSR, CSC, COO
-    for shape, new_shape in [((100, 50), (25, 200)), ((80, 1), (8, 10))]:
+    for shape, new_shape in [
+        ((100, 50), (25, 200)),
+        ((100, 50), (10, 500, 1)),
+        ((80, 1), (8, 10)),
+        ((80, 1), (80,)),
+    ]:
         for format in ["csr", "csc", "coo"]:
             if format == "coo":
                 # NOTE: Blocked by https://github.com/llvm/llvm-project/pull/109135
@@ -217,15 +242,17 @@ def test_reshape(rng, dtype):
             arr = sps.random_array(
                 shape, density=DENSITY, format=format, dtype=dtype, random_state=rng, data_sampler=sampler
             )
-            if format == "coo":
-                arr.sum_duplicates()
-
+            arr.sum_duplicates()
             tensor = sparse.asarray(arr)
 
             actual = sparse.reshape(tensor, shape=new_shape).to_scipy_sparse()
+            if isinstance(actual, sparse.PackedArgumentTuple):
+                continue  # skip checking CSF output
+            if not isinstance(actual, np.ndarray):
+                actual = actual.todense()
             expected = arr.todense().reshape(new_shape)
 
-            np.testing.assert_array_equal(actual.todense(), expected)
+            np.testing.assert_array_equal(actual, expected)
 
     # CSF
     csf_shape = (2, 2, 4)
