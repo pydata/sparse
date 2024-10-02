@@ -95,6 +95,32 @@ def get_reshape_module(
     return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
 
 
+@fn_cache
+def get_broadcast_to_module(
+    in_tensor_type: ir.RankedTensorType,
+    out_tensor_type: ir.RankedTensorType,
+    dimensions: tuple[int, ...],
+) -> ir.Module:
+    with ir.Location.unknown(ctx):
+        module = ir.Module.create()
+
+        with ir.InsertionPoint(module.body):
+
+            @func.FuncOp.from_py_func(in_tensor_type)
+            def broadcast_to(in_tensor):
+                out = tensor.empty(out_tensor_type, [])
+                return linalg.broadcast(in_tensor, outs=[out], dimensions=dimensions)
+
+            broadcast_to.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
+            if DEBUG:
+                (CWD / "broadcast_to_module.mlir").write_text(str(module))
+            pm.run(module.operation)
+            if DEBUG:
+                (CWD / "broadcast_to_module_opt.mlir").write_text(str(module))
+
+    return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
+
+
 def add(x1: Tensor, x2: Tensor) -> Tensor:
     ret_obj = x1._format_class()
     out_tensor_type = x1._obj.get_tensor_definition(x1.shape)
@@ -152,3 +178,20 @@ def reshape(x: Tensor, /, shape: tuple[int, ...]) -> Tensor:
     )
 
     return Tensor(ret_obj, shape=out_tensor_type.shape)
+
+
+def broadcast_to(x: Tensor, /, shape: tuple[int, ...], dimensions: list[int]) -> Tensor:
+    x_tensor_type = x._obj.get_tensor_definition(x.shape)
+    format_class = _infer_format_class(len(shape), x._values_dtype, x._index_dtype)
+    out_tensor_type = format_class.get_tensor_definition(shape)
+    ret_obj = format_class()
+
+    broadcast_to_module = get_broadcast_to_module(x_tensor_type, out_tensor_type, tuple(dimensions))
+
+    broadcast_to_module.invoke(
+        "broadcast_to",
+        ctypes.pointer(ctypes.pointer(ret_obj)),
+        *x._obj.to_module_arg(),
+    )
+
+    return Tensor(ret_obj, shape=shape)
