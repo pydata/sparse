@@ -3,7 +3,7 @@ try:
 except ModuleNotFoundError as e:
     raise ImportError(
         "MLIR Python bindings not installed. Run "
-        "`conda install conda-forge/label/llvm_rc::mlir-python-bindings` "
+        "`conda install conda-forge::mlir-python-bindings` "
         "to enable MLIR backend."
     ) from e
 

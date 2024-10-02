@@ -12,7 +12,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
-  - conda-forge/label/llvm_rc::mlir-python-bindings==19.1.0.rc3
+  - mlir-python-bindings==19.*
   - pip:
     - finch-tensor >=0.1.31
     - pytest-codspeed
