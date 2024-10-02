@@ -51,10 +51,6 @@ precompile = "python -c 'import finch'"
 scipy = ">=0.19"
 finch-tensor = ">=0.1.31"
 
-[feature.mlir]
-channel-priority = "disabled"
-channels = ["conda-forge", "conda-forge/label/llvm_rc"]
-
 [feature.mlir.dependencies]
 scipy = ">=0.19"
 mlir-python-bindings = "19.*"
