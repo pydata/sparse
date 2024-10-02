@@ -364,6 +364,12 @@ class Tensor:
             for field in self._obj.get__fields_():
                 free_memref(field)
 
+    def __getitem__(self, key) -> "Tensor":
+        # imported lazily to avoid cyclic dependency
+        from ._ops import getitem
+
+        return getitem(self, key)
+
     @_hold_self_ref_in_ret
     def to_scipy_sparse(self) -> sps.sparray | np.ndarray:
         return self._obj.to_sps(self.shape)
