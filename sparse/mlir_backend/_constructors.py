@@ -108,11 +108,11 @@ def get_csx_class(
 
 
 @fn_cache
-def get_coo_class(values_dtype: type[DType], index_dtype: type[DType]) -> type[ctypes.Structure]:
+def get_coo_class(values_dtype: type[DType], index_dtype: type[DType], *, rank: int = 2) -> type[ctypes.Structure]:
     class Coo(ctypes.Structure):
         _fields_ = [
             ("pos", get_nd_memref_descr(1, index_dtype)),
-            ("coords", get_nd_memref_descr(2, index_dtype)),
+            *[(f"coords_{i}", get_nd_memref_descr(1, index_dtype)) for i in range(rank)],
             ("data", get_nd_memref_descr(1, values_dtype)),
         ]
         dtype = values_dtype
@@ -124,7 +124,7 @@ def get_coo_class(values_dtype: type[DType], index_dtype: type[DType]) -> type[c
                 if not arr.has_canonical_format:
                     raise Exception("COO must have canonical format")
                 np_pos = np.array([0, arr.size], dtype=index_dtype.np_dtype)
-                np_coords = np.stack(arr.coords, axis=1, dtype=index_dtype.np_dtype)
+                np_coords = [np.array(coord, dtype=index_dtype.np_dtype) for coord in arr.coords]
                 np_data = arr.data
             else:
                 if len(arr) != 3:
@@ -132,21 +132,22 @@ def get_coo_class(values_dtype: type[DType], index_dtype: type[DType]) -> type[c
                 np_pos, np_coords, np_data = arr
 
             pos = numpy_to_ranked_memref(np_pos)
-            coords = numpy_to_ranked_memref(np_coords)
+            coords = [numpy_to_ranked_memref(coord) for coord in np_coords]
             data = numpy_to_ranked_memref(np_data)
-            coo_instance = cls(pos=pos, coords=coords, data=data)
+            coo_instance = cls(pos, *(coords + [data]))
             _take_owneship(coo_instance, np_pos)
-            _take_owneship(coo_instance, np_coords)
+            for coord in np_coords:
+                _take_owneship(coo_instance, coord)
             _take_owneship(coo_instance, np_data)
 
             return coo_instance
 
         def to_sps(self, shape: tuple[int, ...]) -> sps.coo_array | list[np.ndarray]:
             pos = ranked_memref_to_numpy(self.pos)
-            coords = ranked_memref_to_numpy(self.coords)[pos[0] : pos[1]]
+            coords = [ranked_memref_to_numpy(coord) for coord in self.get_coord_list()]
             data = ranked_memref_to_numpy(self.data)
             return (
-                sps.coo_array((data, coords.T), shape=shape)
+                sps.coo_array((data, np.stack(coords, axis=0, dtype=index_dtype.np_dtype)), shape=shape)
                 if len(shape) == 2
                 else PackedArgumentTuple((pos, coords, data))
             )
@@ -154,12 +155,15 @@ def get_coo_class(values_dtype: type[DType], index_dtype: type[DType]) -> type[c
         def to_module_arg(self) -> list:
             return [
                 ctypes.pointer(ctypes.pointer(self.pos)),
-                ctypes.pointer(ctypes.pointer(self.coords)),
+                *[ctypes.pointer(ctypes.pointer(coord)) for coord in self.get_coord_list()],
                 ctypes.pointer(ctypes.pointer(self.data)),
             ]
 
         def get__fields_(self) -> list:
-            return [self.pos, self.coords, self.data]
+            return [self.pos, *self.get_coord_list(), self.data]
+
+        def get_coord_list(self) -> list:
+            return [getattr(self, f"coords_{i}") for i in range(rank)]
 
         @classmethod
         @fn_cache
@@ -173,10 +177,14 @@ def get_coo_class(values_dtype: type[DType], index_dtype: type[DType]) -> type[c
                 )
                 mid_singleton_lvls = [
                     sparse_tensor.EncodingAttr.build_level_type(
-                        sparse_tensor.LevelFormat.singleton, [sparse_tensor.LevelProperty.non_unique]
+                        sparse_tensor.LevelFormat.singleton,
+                        [sparse_tensor.LevelProperty.non_unique, sparse_tensor.LevelProperty.soa],
                     )
                 ] * (len(shape) - 2)
-                levels = (compressed_lvl, *mid_singleton_lvls, sparse_tensor.LevelFormat.singleton)
+                last_singleton_lvl = sparse_tensor.EncodingAttr.build_level_type(
+                    sparse_tensor.LevelFormat.singleton, [sparse_tensor.LevelProperty.soa]
+                )
+                levels = (compressed_lvl, *mid_singleton_lvls, last_singleton_lvl)
                 ordering = ir.AffineMap.get_permutation([*range(len(shape))])
                 encoding = sparse_tensor.EncodingAttr.get(levels, ordering, ordering, index_width, index_width)
                 return ir.RankedTensorType.get(list(shape), values_dtype, encoding)
@@ -320,6 +328,7 @@ class Tensor:
         self._values_dtype = dtype if dtype is not None else asdtype(obj.dtype)
 
         if _is_scipy_sparse_obj(obj):
+            self.format = obj.format
             self._owns_memory = False
 
             if obj.format in ("csr", "csc"):
@@ -335,22 +344,26 @@ class Tensor:
                 raise Exception(f"{obj.format} SciPy format not supported.")
 
         elif _is_numpy_obj(obj):
+            self.format = "dense"
             self._owns_memory = False
             self._index_dtype = asdtype(np.intp)
             self._format_class = get_dense_class(self._values_dtype, self._index_dtype)
             self._obj = self._format_class.from_sps(obj)
 
         elif _is_mlir_obj(obj):
+            self.format = "custom"
             self._owns_memory = True
             self._format_class = type(obj)
             self._obj = obj
 
         elif format is not None:
+            self.format = format
             if format in ["csf", "coo"]:
                 fn_format_class = get_csf_class if format == "csf" else get_coo_class
+                kwargs = {} if format == "csf" else {"rank": len(self.shape)}
                 self._owns_memory = False
                 self._index_dtype = asdtype(np.intp)
-                self._format_class = fn_format_class(self._values_dtype, self._index_dtype)
+                self._format_class = fn_format_class(self._values_dtype, self._index_dtype, **kwargs)
                 self._obj = self._format_class.from_sps(obj)
 
             else:

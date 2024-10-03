@@ -32,7 +32,7 @@ def get_add_module(
 
             @func.FuncOp.from_py_func(a_tensor_type, b_tensor_type)
             def add(a, b):
-                out = tensor.empty(out_tensor_type, [])
+                out = tensor.empty(out_tensor_type.shape, dtype, encoding=out_tensor_type.encoding)
                 generic_op = linalg.GenericOp(
                     [out_tensor_type],
                     [a, b],
@@ -108,7 +108,9 @@ def get_broadcast_to_module(
 
             @func.FuncOp.from_py_func(in_tensor_type)
             def broadcast_to(in_tensor):
-                out = tensor.empty(out_tensor_type, [])
+                out = tensor.empty(
+                    out_tensor_type.shape, out_tensor_type.element_type, encoding=out_tensor_type.encoding
+                )
                 return linalg.broadcast(in_tensor, outs=[out], dimensions=dimensions)
 
             broadcast_to.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
@@ -156,7 +158,7 @@ def _infer_format_class(rank: int, values_dtype: type[DType], index_dtype: type[
 
 def reshape(x: Tensor, /, shape: tuple[int, ...]) -> Tensor:
     x_tensor_type = x._obj.get_tensor_definition(x.shape)
-    if len(x.shape) == len(shape):
+    if len(x.shape) == len(shape) or x.format == "dense":
         out_tensor_type = x._obj.get_tensor_definition(shape)
         ret_obj = x._format_class()
     else:
