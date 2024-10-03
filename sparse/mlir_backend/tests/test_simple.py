@@ -166,20 +166,18 @@ def test_add(rng, dtype):
     assert isinstance(actual, np.ndarray)
     np.testing.assert_array_equal(actual, expected)
 
-    # NOTE: Fixed in https://github.com/llvm/llvm-project/pull/108615
-    # actual = sparse.add(c_tensor, c_tensor).to_scipy_sparse()
-    # expected = c + c
-    # assert isinstance(actual, np.ndarray)
-    # np.testing.assert_array_equal(actual, expected)
+    actual = sparse.add(dense_tensor, dense_tensor).to_scipy_sparse()
+    expected = dense + dense
+    assert isinstance(actual, np.ndarray)
+    np.testing.assert_array_equal(actual, expected)
 
     actual = sparse.add(csr_2_tensor, coo_tensor).to_scipy_sparse()
     expected = csr_2 + coo
     np.testing.assert_array_equal(actual.todense(), expected.todense())
 
-    # NOTE: https://discourse.llvm.org/t/passmanager-fails-on-simple-coo-addition-example/81247
-    # actual = sparse.add(d_tensor, d_tensor).to_scipy_sparse()
-    # expected = d + d
-    # np.testing.assert_array_equal(actual.todense(), expected.todense())
+    actual = sparse.add(coo_tensor, coo_tensor).to_scipy_sparse()
+    expected = coo + coo
+    np.testing.assert_array_equal(actual.todense(), expected.todense())
 
 
 @parametrize_dtypes
@@ -203,7 +201,7 @@ def test_csf_format(dtype):
 def test_coo_3d_format(dtype):
     SHAPE = (2, 2, 4)
     pos = np.array([0, 7])
-    crd = np.array([[0, 1, 0, 0, 1, 1, 0], [1, 3, 1, 0, 0, 1, 0], [3, 1, 1, 0, 1, 1, 1]])
+    crd = [np.array([0, 1, 0, 0, 1, 1, 0]), np.array([1, 3, 1, 0, 0, 1, 0]), np.array([3, 1, 1, 0, 1, 1, 1])]
     data = np.array([1, 2, 3, 4, 5, 6, 7], dtype=dtype)
     coo = [pos, crd, data]
 
@@ -212,11 +210,10 @@ def test_coo_3d_format(dtype):
     for actual, expected in zip(result, coo, strict=False):
         np.testing.assert_array_equal(actual, expected)
 
-    # NOTE: Blocked by https://github.com/llvm/llvm-project/pull/109135
-    # res_tensor = sparse.add(coo_tensor, coo_tensor).to_scipy_sparse()
-    # coo_2 = [pos, crd, data * 2]
-    # for actual, expected in zip(res_tensor, coo_2, strict=False):
-    #     np.testing.assert_array_equal(actual, expected)
+    res_tensor = sparse.add(coo_tensor, coo_tensor).to_scipy_sparse()
+    coo_2 = [pos, crd, data * 2]
+    for actual, expected in zip(res_tensor, coo_2, strict=False):
+        np.testing.assert_array_equal(actual, expected)
 
 
 @parametrize_dtypes
@@ -232,9 +229,6 @@ def test_reshape(rng, dtype):
         ((80, 1), (80,)),
     ]:
         for format in ["csr", "csc", "coo"]:
-            if format == "coo":
-                # NOTE: Blocked by https://github.com/llvm/llvm-project/pull/109135
-                continue
             if format == "csc":
                 # NOTE: Blocked by https://github.com/llvm/llvm-project/issues/109641
                 continue
@@ -289,8 +283,18 @@ def test_reshape(rng, dtype):
             np.testing.assert_array_equal(actual, expected)
 
     # DENSE
-    # NOTE: dense reshape is probably broken in MLIR in 19.x branch
-    # dense = np.arange(math.prod(SHAPE), dtype=dtype).reshape(SHAPE)
+    for shape, new_shape in [
+        ((100, 50), (25, 200)),
+        ((100, 50), (10, 500, 1)),
+        ((80, 1), (8, 10)),
+        ((80, 1), (80,)),
+    ]:
+        dense = np.arange(math.prod(shape), dtype=dtype).reshape(shape)
+        dense_tensor = sparse.asarray(dense)
+        actual = sparse.reshape(dense_tensor, shape=new_shape).to_scipy_sparse()
+        expected = dense.reshape(new_shape)
+
+        np.testing.assert_array_equal(actual, expected)
 
 
 @parametrize_dtypes
