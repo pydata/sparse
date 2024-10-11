@@ -146,6 +146,34 @@ class SparseArray:
         return reduce(operator.mul, self.shape, 1)
 
     @property
+    def format(self):
+        """
+        The storage format of this array.
+
+        Returns
+        -------
+        str
+            The storage format of this array.
+
+        See Also
+        -------
+        [`scipy.sparse.coo_matrix.format`][] : The Scipy equivalent property.
+        [`scipy.sparse.csr_matrix.format`][] : The Scipy equivalent property.
+        [`scipy.sparse.dok_matrix.format`][] : The Scipy equivalent property.
+
+        Examples
+        -------
+        >>> import sparse
+        >>> s = sparse.random((5, 5), density=0.2, format="dok")
+        >>> s.format
+        'dok'
+        >>> t = sparse.random((5, 5), density=0.2, format="coo")
+        >>> t.format
+        'coo'
+        """
+        return type(self).__name__.lower()
+
+    @property
     def density(self):
         """
         The ratio of nonzero to all elements in this array.
@@ -217,6 +245,22 @@ class SparseArray:
             return f"{summary}\n{values}"
         except (ImportError, ValueError):
             return summary
+
+    @abstractmethod
+    def __binsparse__(self) -> tuple[dict, list[np.ndarray]]:
+        """Return a 2-tuple:
+        * First element is a `dict` equivalent to a parsed JSON [`binsparse` descriptor](https://graphblas.org/binsparse-specification/#descriptor)
+        of this array.
+        * Second element is a `list[np.ndarray]` of the constituent arrays.
+
+        Returns
+        -------
+        dict
+            Parsed `binsparse` descriptor.
+        list[np.ndarray]
+            The constituent arrays
+        """
+        raise NotImplementedError
 
     @abstractmethod
     def asformat(self, format):
