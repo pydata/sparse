@@ -28,7 +28,7 @@ mkdocs-jupyter = "*"
 [feature.tests.tasks]
 test = "pytest --pyargs sparse -n auto"
 test-mlir = { cmd = "pytest --pyargs sparse/mlir_backend -vvv", env = { SPARSE_BACKEND = "MLIR" } }
-test-finch = { cmd = "pytest --pyargs sparse/tests  -n auto", env = { SPARSE_BACKEND = "Finch" }, depends-on = ["precompile"] }
+test-finch = { cmd = "pytest --pyargs sparse/tests -n auto -vvv", env = { SPARSE_BACKEND = "Finch", PYTHONFAULTHANDLER = "${HOME}/faulthandler.log" }, depends-on = ["precompile"] }
 
 [feature.tests.dependencies]
 pytest = ">=3.5"

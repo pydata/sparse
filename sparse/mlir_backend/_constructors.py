@@ -2,46 +2,28 @@ import ctypes
 from collections.abc import Iterable
 from typing import Any
 
-import mlir.runtime as rt
 from mlir import ir
 from mlir.dialects import sparse_tensor
 
 import numpy as np
 import scipy.sparse as sps
 
-from ._common import PackedArgumentTuple, _hold_self_ref_in_ret, _take_owneship, fn_cache
-from ._core import ctx, libc
+from ._common import (
+    PackedArgumentTuple,
+    _hold_self_ref_in_ret,
+    _take_owneship,
+    fn_cache,
+    free_memref,
+    get_nd_memref_descr,
+    numpy_to_ranked_memref,
+    ranked_memref_to_numpy,
+)
+from ._core import ctx
 from ._dtypes import DType, asdtype
 
 ###########
 # Memrefs #
 ###########
-
-
-@fn_cache
-def get_nd_memref_descr(rank: int, dtype: type[DType]) -> type:
-    return rt.make_nd_memref_descriptor(rank, dtype.to_ctype())
-
-
-def numpy_to_ranked_memref(arr: np.ndarray) -> ctypes.Structure:
-    memref = rt.get_ranked_memref_descriptor(arr)
-    memref_descr = get_nd_memref_descr(arr.ndim, asdtype(arr.dtype))
-    # Required due to ctypes type checks
-    return memref_descr(
-        allocated=memref.allocated,
-        aligned=memref.aligned,
-        offset=memref.offset,
-        shape=memref.shape,
-        strides=memref.strides,
-    )
-
-
-def ranked_memref_to_numpy(ref: ctypes.Structure) -> np.ndarray:
-    return rt.ranked_memref_to_numpy([ref])
-
-
-def free_memref(obj: ctypes.Structure) -> None:
-    libc.free(ctypes.cast(obj.allocated, ctypes.c_void_p))
 
 
 ###########
