@@ -94,7 +94,7 @@ def test_dense_format(dtype, shape):
 
 
 @parametrize_dtypes
-def test_constructors(rng, dtype):
+def test_2d_constructors(rng, dtype):
     SHAPE = (80, 100)
     DENSITY = 0.6
     sampler = generate_sampler(dtype, rng)
@@ -217,6 +217,35 @@ def test_coo_3d_format(dtype):
     # coo_2 = [pos, crd, data * 2]
     # for actual, expected in zip(res_tensor, coo_2, strict=False):
     #     np.testing.assert_array_equal(actual, expected)
+
+
+@parametrize_dtypes
+def test_sparse_vector_format(dtype):
+    SHAPE = (10,)
+    pos = np.array([0, 6])
+    crd = np.array([0, 1, 2, 6, 8, 9])
+    data = np.array([1, 2, 3, 4, 5, 6], dtype=dtype)
+    sparse_vector = [pos, crd, data]
+
+    sv_tensor = sparse.asarray(
+        sparse_vector,
+        shape=SHAPE,
+        dtype=sparse.asdtype(dtype),
+        format="sparse_vector",
+    )
+    result = sv_tensor.to_scipy_sparse()
+    for actual, expected in zip(result, sparse_vector, strict=False):
+        np.testing.assert_array_equal(actual, expected)
+
+    res_tensor = sparse.add(sv_tensor, sv_tensor).to_scipy_sparse()
+    sparse_vector_2 = [pos, crd, data * 2]
+    for actual, expected in zip(res_tensor, sparse_vector_2, strict=False):
+        np.testing.assert_array_equal(actual, expected)
+
+    dense = np.array([1, 2, 3, 0, 0, 0, 4, 0, 5, 6], dtype=dtype)
+    dense_tensor = sparse.asarray(dense)
+    res_tensor = sparse.add(dense_tensor, sv_tensor).to_scipy_sparse()
+    np.testing.assert_array_equal(res_tensor, dense * 2)
 
 
 @parametrize_dtypes
