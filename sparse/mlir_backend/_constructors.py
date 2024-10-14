@@ -50,6 +50,55 @@ def free_memref(obj: ctypes.Structure) -> None:
 
 
 @fn_cache
+def get_sparse_vector_class(
+    values_dtype: type[DType],
+    index_dtype: type[DType],
+) -> type[ctypes.Structure]:
+    class SparseVector(ctypes.Structure):
+        _fields_ = [
+            ("indptr", get_nd_memref_descr(1, index_dtype)),
+            ("indices", get_nd_memref_descr(1, index_dtype)),
+            ("data", get_nd_memref_descr(1, values_dtype)),
+        ]
+        dtype = values_dtype
+        _index_dtype = index_dtype
+
+        @classmethod
+        def from_sps(cls, arrs: list[np.ndarray]) -> "SparseVector":
+            sv_instance = cls(*[numpy_to_ranked_memref(arr) for arr in arrs])
+            for arr in arrs:
+                _take_owneship(sv_instance, arr)
+            return sv_instance
+
+        def to_sps(self, shape: tuple[int, ...]) -> int:
+            return PackedArgumentTuple(tuple(ranked_memref_to_numpy(field) for field in self.get__fields_()))
+
+        def to_module_arg(self) -> list:
+            return [
+                ctypes.pointer(ctypes.pointer(self.indptr)),
+                ctypes.pointer(ctypes.pointer(self.indices)),
+                ctypes.pointer(ctypes.pointer(self.data)),
+            ]
+
+        def get__fields_(self) -> list:
+            return [self.indptr, self.indices, self.data]
+
+        @classmethod
+        @fn_cache
+        def get_tensor_definition(cls, shape: tuple[int, ...]) -> ir.RankedTensorType:
+            with ir.Location.unknown(ctx):
+                values_dtype = cls.dtype.get_mlir_type()
+                index_dtype = cls._index_dtype.get_mlir_type()
+                index_width = getattr(index_dtype, "width", 0)
+                levels = (sparse_tensor.LevelFormat.compressed,)
+                ordering = ir.AffineMap.get_permutation([0])
+                encoding = sparse_tensor.EncodingAttr.get(levels, ordering, ordering, index_width, index_width)
+                return ir.RankedTensorType.get(list(shape), values_dtype, encoding)
+
+    return SparseVector
+
+
+@fn_cache
 def get_csx_class(
     values_dtype: type[DType],
     index_dtype: type[DType],
@@ -302,6 +351,16 @@ def get_csx_scipy_class(order: str) -> type[sps.sparray]:
     raise Exception(f"Invalid order: {order}")
 
 
+_constructor_class_dict = {
+    "csr": get_csx_class,
+    "csc": get_csx_class,
+    "csf": get_csf_class,
+    "coo": get_coo_class,
+    "sparse_vector": get_sparse_vector_class,
+    "dense": get_dense_class,
+}
+
+
 ################
 # Tensor class #
 ################
@@ -346,8 +405,8 @@ class Tensor:
             self._obj = obj
 
         elif format is not None:
-            if format in ["csf", "coo"]:
-                fn_format_class = get_csf_class if format == "csf" else get_coo_class
+            if format in ["csf", "coo", "sparse_vector"]:
+                fn_format_class = _constructor_class_dict[format]
                 self._owns_memory = False
                 self._index_dtype = asdtype(np.intp)
                 self._format_class = fn_format_class(self._values_dtype, self._index_dtype)
