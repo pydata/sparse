@@ -1,11 +1,9 @@
-import abc
 import ctypes
 import functools
 import weakref
 from dataclasses import dataclass
 
 import mlir.runtime as rt
-from mlir import ir
 
 import numpy as np
 
@@ -17,8 +15,12 @@ def fn_cache(f, maxsize: int | None = None):
     return functools.wraps(f)(functools.lru_cache(maxsize=maxsize)(f))
 
 
-@fn_cache
 def get_nd_memref_descr(rank: int, dtype: type[DType]) -> ctypes.Structure:
+    return _get_nd_memref_descr(int(rank), asdtype(dtype))
+
+
+@fn_cache
+def _get_nd_memref_descr(rank: int, dtype: type[DType]) -> ctypes.Structure:
     return rt.make_nd_memref_descriptor(rank, dtype.to_ctype())
 
 
@@ -43,12 +45,6 @@ def free_memref(obj: ctypes.Structure) -> None:
     libc.free(ctypes.cast(obj.allocated, ctypes.c_void_p))
 
 
-class MlirType(abc.ABC):
-    @classmethod
-    @abc.abstractmethod
-    def get_mlir_type(cls) -> ir.Type: ...
-
-
 @dataclass
 class PackedArgumentTuple:
     contents: tuple
@@ -67,13 +63,13 @@ def _hold_self_ref_in_ret(fn):
     @functools.wraps(fn)
     def wrapped(self, *a, **kw):
         ret = fn(self, *a, **kw)
-        _take_owneship(ret, self)
+        _hold_ref(ret, self)
         return ret
 
     return wrapped
 
 
-def _take_owneship(owner, obj):
+def _hold_ref(owner, obj):
     ptr = ctypes.py_object(obj)
     ctypes.pythonapi.Py_IncRef(ptr)
 
