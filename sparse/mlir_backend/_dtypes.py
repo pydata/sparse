@@ -1,3 +1,4 @@
+import abc
 import inspect
 import math
 import sys
@@ -7,7 +8,11 @@ from mlir import ir
 
 import numpy as np
 
-from ._common import MlirType
+
+class MlirType(abc.ABC):
+    @classmethod
+    @abc.abstractmethod
+    def get_mlir_type(cls) -> ir.Type: ...
 
 
 def _get_pointer_width() -> int:

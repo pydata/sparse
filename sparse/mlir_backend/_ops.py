@@ -1,16 +1,15 @@
 import ctypes
+import dataclasses
 
 import mlir.execution_engine
 import mlir.passmanager
 from mlir import ir
 from mlir.dialects import arith, func, linalg, sparse_tensor, tensor
 
-import numpy as np
-
+from ._array import Array
 from ._common import fn_cache
-from ._constructors import Tensor, numpy_to_ranked_memref
 from ._core import CWD, DEBUG, MLIR_C_RUNNER_UTILS, ctx, pm
-from ._dtypes import DType, FloatingDType, Index
+from ._dtypes import DType, FloatingDType
 
 
 @fn_cache
@@ -121,77 +120,23 @@ def get_broadcast_to_module(
     return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
 
 
-def add(x1: Tensor, x2: Tensor) -> Tensor:
-    ret_obj = x1._format_class()
-    out_tensor_type = x1._obj.get_tensor_definition(x1.shape)
+def add(x1: Array, x2: Array) -> Array:
+    ret_storage_format = dataclasses.replace(x1._get_storage_format(), owns_memory=True)
+    ret_storage = ret_storage_format.get_ctypes_type()()
+    out_tensor_type = ret_storage_format.get_mlir_type(shape=x1.shape)
 
     # TODO: Decide what will be the output tensor_type
     add_module = get_add_module(
-        x1._obj.get_tensor_definition(x1.shape),
-        x2._obj.get_tensor_definition(x2.shape),
+        x1._get_mlir_type(),
+        x2._get_mlir_type(),
         out_tensor_type=out_tensor_type,
-        dtype=x1._values_dtype,
+        dtype=x1.dtype,
         rank=x1.ndim,
     )
     add_module.invoke(
         "add",
-        ctypes.pointer(ctypes.pointer(ret_obj)),
-        *x1._obj.to_module_arg(),
-        *x2._obj.to_module_arg(),
+        ctypes.pointer(ctypes.pointer(ret_storage)),
+        *x1._to_module_arg(),
+        *x2._to_module_arg(),
     )
-    return Tensor(ret_obj, shape=out_tensor_type.shape)
-
-
-def _infer_format_class(rank: int, values_dtype: type[DType], index_dtype: type[DType]) -> type[ctypes.Structure]:
-    from ._constructors import get_csf_class, get_csx_class, get_dense_class
-
-    if rank == 1:
-        return get_dense_class(values_dtype, index_dtype)
-    if rank == 2:
-        return get_csx_class(values_dtype, index_dtype, order="r")
-    if rank == 3:
-        return get_csf_class(values_dtype, index_dtype)
-    raise Exception(f"Rank not supported to infer format: {rank}")
-
-
-def reshape(x: Tensor, /, shape: tuple[int, ...]) -> Tensor:
-    x_tensor_type = x._obj.get_tensor_definition(x.shape)
-    if len(x.shape) == len(shape):
-        out_tensor_type = x._obj.get_tensor_definition(shape)
-        ret_obj = x._format_class()
-    else:
-        format_class = _infer_format_class(len(shape), x._values_dtype, x._index_dtype)
-        out_tensor_type = format_class.get_tensor_definition(shape)
-        ret_obj = format_class()
-
-    with ir.Location.unknown(ctx):
-        shape_tensor_type = ir.RankedTensorType.get([len(shape)], Index.get_mlir_type())
-
-    reshape_module = get_reshape_module(x_tensor_type, shape_tensor_type, out_tensor_type)
-
-    shape = np.array(shape)
-    reshape_module.invoke(
-        "reshape",
-        ctypes.pointer(ctypes.pointer(ret_obj)),
-        *x._obj.to_module_arg(),
-        ctypes.pointer(ctypes.pointer(numpy_to_ranked_memref(shape))),
-    )
-
-    return Tensor(ret_obj, shape=out_tensor_type.shape)
-
-
-def broadcast_to(x: Tensor, /, shape: tuple[int, ...], dimensions: list[int]) -> Tensor:
-    x_tensor_type = x._obj.get_tensor_definition(x.shape)
-    format_class = _infer_format_class(len(shape), x._values_dtype, x._index_dtype)
-    out_tensor_type = format_class.get_tensor_definition(shape)
-    ret_obj = format_class()
-
-    broadcast_to_module = get_broadcast_to_module(x_tensor_type, out_tensor_type, tuple(dimensions))
-
-    broadcast_to_module.invoke(
-        "broadcast_to",
-        ctypes.pointer(ctypes.pointer(ret_obj)),
-        *x._obj.to_module_arg(),
-    )
-
-    return Tensor(ret_obj, shape=shape)
+    return Array(storage=ret_storage, shape=out_tensor_type.shape)
