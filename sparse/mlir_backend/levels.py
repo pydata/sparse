@@ -66,7 +66,6 @@ class StorageFormat:
     pos_width: int
     crd_width: int
     dtype: type[DType]
-    owns_memory: bool
 
     @property
     def storage_rank(self) -> int:
@@ -102,7 +101,7 @@ class StorageFormat:
             return ir.RankedTensorType.get(list(shape), dtype, encoding)
 
     @fn_cache
-    def _get_ctypes_type(self):
+    def _get_ctypes_type(self, *, owns_memory=False):
         ptr_dtype = asdtype(getattr(np, f"int{self.pos_width}"))
         idx_dtype = asdtype(getattr(np, f"int{self.crd_width}"))
 
@@ -148,7 +147,7 @@ class StorageFormat:
                     _hold_ref(storage, arr)
                 return storage
 
-            if storage_format.owns_memory:
+            if owns_memory:
 
                 def __del__(self) -> None:
                     for field in self.get__fields_():
@@ -164,7 +163,6 @@ def get_storage_format(
     pos_width: int,
     crd_width: int,
     dtype: type[DType],
-    owns_memory: bool,
 ) -> StorageFormat:
     levels = tuple(levels)
     if isinstance(order, str):
@@ -178,7 +176,6 @@ def get_storage_format(
         pos_width=int(pos_width),
         crd_width=int(crd_width),
         dtype=asdtype(dtype),
-        owns_memory=bool(owns_memory),
     )
 
 
@@ -190,7 +187,6 @@ def _get_storage_format(
     pos_width: int,
     crd_width: int,
     dtype: type[DType],
-    owns_memory: bool,
 ) -> StorageFormat:
     return StorageFormat(
         levels=levels,
@@ -198,5 +194,4 @@ def _get_storage_format(
         pos_width=pos_width,
         crd_width=crd_width,
         dtype=dtype,
-        owns_memory=owns_memory,
     )

@@ -1,4 +1,3 @@
-import dataclasses
 import functools
 
 import numpy as np
@@ -40,7 +39,6 @@ def _from_numpy(arr: np.ndarray, copy: bool | None = None) -> Array:
         pos_width=64,
         crd_width=64,
         dtype=arr.dtype,
-        owns_memory=False,
     )
     return from_constituent_arrays(format=dense_format, arrays=(arr_flat,), shape=arr.shape)
 
@@ -84,7 +82,6 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
                 pos_width=pos_width,
                 crd_width=crd_width,
                 dtype=arr.dtype,
-                owns_memory=False,
             )
 
             indptr = arr.indptr
@@ -121,7 +118,6 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
                 pos_width=pos_width,
                 crd_width=crd_width,
                 dtype=arr.dtype,
-                owns_memory=False,
             )
 
             return from_constituent_arrays(format=coo_format, arrays=(pos, coords, data), shape=arr.shape)
@@ -169,6 +165,5 @@ def asarray(arr, copy: bool | None = None) -> Array:
 
 
 def from_constituent_arrays(*, format: StorageFormat, arrays: tuple[np.ndarray, ...], shape: tuple[int, ...]) -> Array:
-    storage_format: StorageFormat = dataclasses.replace(format, owns_memory=False)
-    storage = storage_format._get_ctypes_type().from_constituent_arrays(arrays)
+    storage = format._get_ctypes_type().from_constituent_arrays(arrays)
     return Array(storage=storage, shape=shape)

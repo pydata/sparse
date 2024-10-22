@@ -1,5 +1,4 @@
 import ctypes
-import dataclasses
 
 import mlir.execution_engine
 import mlir.passmanager
@@ -121,8 +120,8 @@ def get_broadcast_to_module(
 
 
 def add(x1: Array, x2: Array) -> Array:
-    ret_storage_format = dataclasses.replace(x1._get_storage_format(), owns_memory=True)
-    ret_storage = ret_storage_format._get_ctypes_type()()
+    ret_storage_format = x1._get_storage_format()
+    ret_storage = ret_storage_format._get_ctypes_type(owns_memory=True)()
     out_tensor_type = ret_storage_format._get_mlir_type(shape=x1.shape)
 
     # TODO: Decide what will be the output tensor_type

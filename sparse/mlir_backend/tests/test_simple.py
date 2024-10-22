@@ -188,7 +188,6 @@ def test_csf_format(dtype):
         pos_width=64,
         crd_width=64,
         dtype=sparse.asdtype(dtype),
-        owns_memory=False,
     )
 
     SHAPE = (2, 2, 4)
@@ -218,7 +217,6 @@ def test_coo_3d_format(dtype):
         pos_width=64,
         crd_width=64,
         dtype=sparse.asdtype(dtype),
-        owns_memory=False,
     )
 
     SHAPE = (2, 2, 4)
@@ -247,7 +245,6 @@ def test_sparse_vector_format(dtype):
         pos_width=64,
         crd_width=64,
         dtype=sparse.asdtype(dtype),
-        owns_memory=False,
     )
 
     SHAPE = (10,)
