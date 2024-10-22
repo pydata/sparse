@@ -1,10 +1,11 @@
+import dataclasses
 import functools
 
 import numpy as np
 
 from ._array import Array
 from ._common import _hold_ref, numpy_to_ranked_memref, ranked_memref_to_numpy
-from ._levels import Level, LevelFormat, LevelProperties, StorageFormat, get_storage_format
+from .levels import Level, LevelFormat, LevelProperties, StorageFormat, get_storage_format
 
 try:
     import scipy.sparse as sps
@@ -178,3 +179,9 @@ def asarray(arr, copy: bool | None = None) -> Array:
         return arr
 
     return _from_numpy(np.asarray(arr, copy=copy), copy=None)
+
+
+def from_constituent_arrays(*, format: StorageFormat, arrays: tuple[np.ndarray, ...], shape: tuple[int, ...]) -> Array:
+    storage_format: StorageFormat = dataclasses.replace(format, owns_memory=False)
+    storage = storage_format._get_ctypes_type().from_constituent_arrays(arrays)
+    return Array(storage=storage, shape=shape)

@@ -178,65 +178,95 @@ def test_add(rng, dtype):
 
 @parametrize_dtypes
 def test_csf_format(dtype):
+    format = sparse.levels.get_storage_format(
+        levels=(
+            sparse.levels.Level(sparse.levels.LevelFormat.Dense),
+            sparse.levels.Level(sparse.levels.LevelFormat.Compressed),
+            sparse.levels.Level(sparse.levels.LevelFormat.Compressed),
+        ),
+        order="C",
+        pos_width=64,
+        crd_width=64,
+        dtype=sparse.asdtype(dtype),
+        owns_memory=False,
+    )
+
     SHAPE = (2, 2, 4)
     pos_1, crd_1, pos_2, crd_2, data = get_exampe_csf_arrays(dtype)
-    csf = [pos_1, crd_1, pos_2, crd_2, data]
+    constituent_arrays = (pos_1, crd_1, pos_2, crd_2, data)
 
-    csf_tensor = sparse.asarray(csf, shape=SHAPE, dtype=sparse.asdtype(dtype), format="csf")
-    result = csf_tensor.to_scipy_sparse()
-    for actual, expected in zip(result, csf, strict=False):
+    csf_array = sparse.from_constituent_arrays(format=format, arrays=constituent_arrays, shape=SHAPE)
+    result_arrays = csf_array.get_constituent_arrays()
+    for actual, expected in zip(result_arrays, constituent_arrays, strict=True):
         np.testing.assert_array_equal(actual, expected)
 
-    res_tensor = sparse.add(csf_tensor, csf_tensor).to_scipy_sparse()
-    csf_2 = [pos_1, crd_1, pos_2, crd_2, data * 2]
-    for actual, expected in zip(res_tensor, csf_2, strict=False):
+    res_arrays = sparse.add(csf_array, csf_array).get_constituent_arrays()
+    expected_arrays = (pos_1, crd_1, pos_2, crd_2, data * 2)
+    for actual, expected in zip(res_arrays, expected_arrays, strict=True):
         np.testing.assert_array_equal(actual, expected)
 
 
 @parametrize_dtypes
 def test_coo_3d_format(dtype):
+    format = sparse.levels.get_storage_format(
+        levels=(
+            sparse.levels.Level(sparse.levels.LevelFormat.Compressed, sparse.levels.LevelProperties.NonUnique),
+            sparse.levels.Level(sparse.levels.LevelFormat.Singleton, sparse.levels.LevelProperties.NonUnique),
+            sparse.levels.Level(sparse.levels.LevelFormat.Singleton, sparse.levels.LevelProperties.NonUnique),
+        ),
+        order="C",
+        pos_width=64,
+        crd_width=64,
+        dtype=sparse.asdtype(dtype),
+        owns_memory=False,
+    )
+
     SHAPE = (2, 2, 4)
     pos = np.array([0, 7])
     crd = np.array([[0, 1, 0, 0, 1, 1, 0], [1, 3, 1, 0, 0, 1, 0], [3, 1, 1, 0, 1, 1, 1]])
     data = np.array([1, 2, 3, 4, 5, 6, 7], dtype=dtype)
-    coo = [pos, crd, data]
+    carrs = (pos, crd, data)
 
-    coo_tensor = sparse.asarray(coo, shape=SHAPE, dtype=sparse.asdtype(dtype), format="coo")
-    result = coo_tensor.to_scipy_sparse()
-    for actual, expected in zip(result, coo, strict=False):
+    coo_array = sparse.from_constituent_arrays(format=format, arrays=carrs, shape=SHAPE)
+    result = coo_array.get_constituent_arrays()
+    for actual, expected in zip(result, carrs, strict=True):
         np.testing.assert_array_equal(actual, expected)
 
     # NOTE: Blocked by https://github.com/llvm/llvm-project/pull/109135
-    # res_tensor = sparse.add(coo_tensor, coo_tensor).to_scipy_sparse()
-    # coo_2 = [pos, crd, data * 2]
-    # for actual, expected in zip(res_tensor, coo_2, strict=False):
+    # res_arrays = sparse.add(coo_array, coo_array).get_constituent_arrays()
+    # res_expected = (pos, crd, data * 2)
+    # for actual, expected in zip(res_arrays, res_expected, strict=False):
     #     np.testing.assert_array_equal(actual, expected)
 
 
 @parametrize_dtypes
 def test_sparse_vector_format(dtype):
+    format = sparse.levels.get_storage_format(
+        levels=(sparse.levels.Level(sparse.levels.LevelFormat.Compressed),),
+        order="C",
+        pos_width=64,
+        crd_width=64,
+        dtype=sparse.asdtype(dtype),
+        owns_memory=False,
+    )
+
     SHAPE = (10,)
     pos = np.array([0, 6])
     crd = np.array([0, 1, 2, 6, 8, 9])
     data = np.array([1, 2, 3, 4, 5, 6], dtype=dtype)
-    sparse_vector = [pos, crd, data]
+    carrs = (pos, crd, data)
 
-    sv_tensor = sparse.asarray(
-        sparse_vector,
-        shape=SHAPE,
-        dtype=sparse.asdtype(dtype),
-        format="sparse_vector",
-    )
-    result = sv_tensor.to_scipy_sparse()
-    for actual, expected in zip(result, sparse_vector, strict=False):
+    sv_array = sparse.from_constituent_arrays(format=format, arrays=carrs, shape=SHAPE)
+    result = sv_array.get_constituent_arrays()
+    for actual, expected in zip(result, carrs, strict=True):
         np.testing.assert_array_equal(actual, expected)
 
-    res_tensor = sparse.add(sv_tensor, sv_tensor).to_scipy_sparse()
-    sparse_vector_2 = [pos, crd, data * 2]
-    for actual, expected in zip(res_tensor, sparse_vector_2, strict=False):
+    res_arrs = sparse.add(sv_array, sv_array).get_constituent_arrays()
+    sv2_expected = (pos, crd, data * 2)
+    for actual, expected in zip(res_arrs, sv2_expected, strict=True):
         np.testing.assert_array_equal(actual, expected)
 
     dense = np.array([1, 2, 3, 0, 0, 0, 4, 0, 5, 6], dtype=dtype)
-    dense_tensor = sparse.asarray(dense)
-    res_tensor = sparse.add(dense_tensor, sv_tensor).to_scipy_sparse()
-    np.testing.assert_array_equal(res_tensor, dense * 2)
+    dense_array = sparse.asarray(dense)
+    res = sparse.to_numpy(sparse.add(dense_array, sv_array))
+    np.testing.assert_array_equal(res, dense * 2)

@@ -1,7 +1,9 @@
 import dataclasses
 
+import numpy as np
+
 from ._common import _hold_ref, numpy_to_ranked_memref, ranked_memref_to_numpy
-from ._levels import StorageFormat
+from .levels import StorageFormat
 
 
 class Array:
@@ -43,3 +45,8 @@ class Array:
         arr = Array(storage=storage_format._get_ctypes_type()(*memrefs), shape=self.shape)
         for carr in arrs:
             _hold_ref(arr, carr)
+
+        return arr
+
+    def get_constituent_arrays(self) -> tuple[np.ndarray, ...]:
+        return self._storage.get_constituent_arrays()

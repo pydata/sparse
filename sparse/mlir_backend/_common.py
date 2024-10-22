@@ -1,7 +1,6 @@
 import ctypes
 import functools
 import weakref
-from dataclasses import dataclass
 
 import mlir.runtime as rt
 
@@ -43,20 +42,6 @@ def ranked_memref_to_numpy(ref: ctypes.Structure) -> np.ndarray:
 
 def free_memref(obj: ctypes.Structure) -> None:
     libc.free(ctypes.cast(obj.allocated, ctypes.c_void_p))
-
-
-@dataclass
-class PackedArgumentTuple:
-    contents: tuple
-
-    def __getitem__(self, index):
-        return self.contents[index]
-
-    def __iter__(self):
-        yield from self.contents
-
-    def __len__(self):
-        return len(self.contents)
 
 
 def _hold_self_ref_in_ret(fn):

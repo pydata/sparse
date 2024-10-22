@@ -11,7 +11,6 @@ from mlir.dialects import sparse_tensor
 import numpy as np
 
 from ._common import (
-    PackedArgumentTuple,
     _hold_ref,
     fn_cache,
     free_memref,
@@ -23,6 +22,8 @@ from ._core import ctx
 from ._dtypes import DType, asdtype
 
 _CAMEL_TO_SNAKE = [re.compile("(.)([A-Z][a-z]+)"), re.compile("([a-z0-9])([A-Z])")]
+
+__all__ = ["LevelProperties", "LevelFormat", "StorageFormat", "Level", "get_storage_format"]
 
 
 def _camel_to_snake(name: str) -> str:
@@ -134,8 +135,11 @@ class StorageFormat:
             def get__fields_(self) -> list:
                 return [getattr(self, field[0]) for field in self._fields_]
 
-            def to_constituent_arrays(self) -> PackedArgumentTuple:
-                return PackedArgumentTuple(tuple(ranked_memref_to_numpy(field) for field in self.get__fields_()))
+            def get_constituent_arrays(self) -> tuple[np.ndarray, ...]:
+                arrays = tuple(ranked_memref_to_numpy(field) for field in self.get__fields_())
+                for arr in arrays:
+                    _hold_ref(arr, self)
+                return arrays
 
             def get_storage_format(self) -> StorageFormat:
                 return storage_format
@@ -154,13 +158,6 @@ class StorageFormat:
                         free_memref(field)
 
         return Storage
-
-    def from_constituent_arrays(self, arrs: list[np.ndarray], shape: tuple[int, ...]):
-        from ._array import Array
-
-        storage = self._get_ctypes_type().from_constituent_arrays(arrs)
-
-        return Array(storage=storage, shape=shape)
 
 
 def get_storage_format(
