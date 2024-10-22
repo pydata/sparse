@@ -32,6 +32,7 @@ def assert_csx_equal(
     expected: sps.csr_array | sps.csc_array,
     actual: sps.csr_array | sps.csc_array,
 ) -> None:
+    assert expected.format == actual.format
     expected.eliminate_zeros()
     expected.sum_duplicates()
 

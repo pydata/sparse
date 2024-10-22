@@ -3,7 +3,6 @@ import functools
 import numpy as np
 
 from ._array import Array
-from ._common import _hold_ref, ranked_memref_to_numpy
 from .levels import Level, LevelFormat, LevelProperties, StorageFormat, get_storage_format
 
 try:
@@ -49,8 +48,7 @@ def to_numpy(arr: Array) -> np.ndarray:
     if not all(LevelFormat.Dense == level.format for level in storage_format.levels):
         raise TypeError(f"Cannot convert a non-dense array to NumPy. `{storage_format=}`")
 
-    data = ranked_memref_to_numpy(arr._storage.values)
-    _hold_ref(data, arr._storage)
+    (data,) = arr.get_constituent_arrays()
     arg_order = [0] * storage_format.storage_rank
     for i, o in enumerate(storage_format.order):
         arg_order[o] = i
@@ -141,7 +139,6 @@ def to_scipy(arr: Array) -> ScipySparseArray:
         case _:
             raise RuntimeError(f"No conversion implemented for `{storage_format=}`.")
 
-    _hold_ref(sps_arr, arr._storage)
     return sps_arr
 
 
