@@ -43,15 +43,14 @@ def _from_numpy(arr: np.ndarray, copy: bool | None = None) -> Array:
     return from_constituent_arrays(format=dense_format, arrays=(arr_flat,), shape=arr.shape)
 
 
-def to_numpy(arr):
-    storage = arr._storage
-    storage_format: StorageFormat = storage.get_storage_format()
+def to_numpy(arr: Array) -> np.ndarray:
+    storage_format: StorageFormat = arr.format
 
     if not all(LevelFormat.Dense == level.format for level in storage_format.levels):
         raise TypeError(f"Cannot convert a non-dense array to NumPy. `{storage_format=}`")
 
     data = ranked_memref_to_numpy(arr._storage.values)
-    _hold_ref(data, storage)
+    _hold_ref(data, arr._storage)
     arg_order = [0] * storage_format.storage_rank
     for i, o in enumerate(storage_format.order):
         arg_order[o] = i
@@ -126,27 +125,23 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
 
 
 @_guard_scipy
-def to_scipy(arr) -> ScipySparseArray:
-    storage = arr._storage
-    storage_format: StorageFormat = storage.get_storage_format()
+def to_scipy(arr: Array) -> ScipySparseArray:
+    storage_format = arr.format
 
     match storage_format.levels:
         case (Level(LevelFormat.Dense, _), Level(LevelFormat.Compressed, _)):
-            data = ranked_memref_to_numpy(storage.values)
-            indices = ranked_memref_to_numpy(storage.indices_1)
-            indptr = ranked_memref_to_numpy(storage.pointers_to_1)
+            indptr, indices, data = arr.get_constituent_arrays()
             if storage_format.order == (0, 1):
                 sps_arr = sps.csr_array((data, indices, indptr), shape=arr.shape)
             else:
                 sps_arr = sps.csc_array((data, indices, indptr), shape=arr.shape)
         case (Level(LevelFormat.Compressed, _), Level(LevelFormat.Singleton, _)):
-            data = ranked_memref_to_numpy(storage.values)
-            coords = ranked_memref_to_numpy(storage.indices_1)
+            _, coords, data = arr.get_constituent_arrays()
             sps_arr = sps.coo_array((data, (coords[:, 0], coords[:, 1])), shape=arr.shape)
         case _:
             raise RuntimeError(f"No conversion implemented for `{storage_format=}`.")
 
-    _hold_ref(sps_arr, storage)
+    _hold_ref(sps_arr, arr._storage)
     return sps_arr
 
 
