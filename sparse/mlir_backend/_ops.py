@@ -24,7 +24,7 @@ def get_add_module(
         module = ir.Module.create()
         # TODO: add support for complex dialect/dtypes
         arith_op = arith.AddFOp if issubclass(dtype, FloatingDType) else arith.AddIOp
-        dtype = dtype.get_mlir_type()
+        dtype = dtype._get_mlir_type()
         ordering = ir.AffineMap.get_permutation(range(rank))
 
         with ir.InsertionPoint(module.body):
@@ -122,8 +122,8 @@ def get_broadcast_to_module(
 
 def add(x1: Array, x2: Array) -> Array:
     ret_storage_format = dataclasses.replace(x1._get_storage_format(), owns_memory=True)
-    ret_storage = ret_storage_format.get_ctypes_type()()
-    out_tensor_type = ret_storage_format.get_mlir_type(shape=x1.shape)
+    ret_storage = ret_storage_format._get_ctypes_type()()
+    out_tensor_type = ret_storage_format._get_mlir_type(shape=x1.shape)
 
     # TODO: Decide what will be the output tensor_type
     add_module = get_add_module(

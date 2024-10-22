@@ -80,7 +80,7 @@ class StorageFormat:
             raise ValueError(f"`sorted(self.order) != list(range(self.rank))`, `{self.order=}`, `{self.rank=}`.")
 
     @fn_cache
-    def get_mlir_type(self, *, shape: tuple[int, ...]) -> ir.RankedTensorType:
+    def _get_mlir_type(self, *, shape: tuple[int, ...]) -> ir.RankedTensorType:
         if len(shape) != self.rank:
             raise ValueError(f"`len(shape) != self.rank`, {shape=}, {self.rank=}")
         with ir.Location.unknown(ctx):
@@ -90,7 +90,7 @@ class StorageFormat:
             for i, r in enumerate(mlir_order):
                 mlir_reverse_order[r] = i
 
-            dtype = self.dtype.get_mlir_type()
+            dtype = self.dtype._get_mlir_type()
             encoding = sparse_tensor.EncodingAttr.get(
                 mlir_levels,
                 ir.AffineMap.get_permutation(mlir_order),
@@ -101,7 +101,7 @@ class StorageFormat:
             return ir.RankedTensorType.get(list(shape), dtype, encoding)
 
     @fn_cache
-    def get_ctypes_type(self):
+    def _get_ctypes_type(self):
         ptr_dtype = asdtype(getattr(np, f"int{self.pos_width}"))
         idx_dtype = asdtype(getattr(np, f"int{self.crd_width}"))
 
@@ -125,8 +125,8 @@ class StorageFormat:
         class Storage(ctypes.Structure):
             _fields_ = get_fields()
 
-            def get_mlir_type(self, *, shape: tuple[int, ...]):
-                return self.get_storage_format().get_mlir_type(shape=shape)
+            def _get_mlir_type(self, *, shape: tuple[int, ...]):
+                return self.get_storage_format()._get_mlir_type(shape=shape)
 
             def to_module_arg(self) -> list:
                 return [ctypes.pointer(ctypes.pointer(f)) for f in self.get__fields_()]
@@ -154,6 +154,13 @@ class StorageFormat:
                         free_memref(field)
 
         return Storage
+
+    def from_constituent_arrays(self, arrs: list[np.ndarray], shape: tuple[int, ...]):
+        from ._array import Array
+
+        storage = self._get_ctypes_type().from_constituent_arrays(arrs)
+
+        return Array(storage=storage, shape=shape)
 
 
 def get_storage_format(

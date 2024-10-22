@@ -38,7 +38,7 @@ def _from_numpy(arr: np.ndarray, copy: bool | None = None) -> Array:
         dtype=arr.dtype,
         owns_memory=False,
     )
-    storage = dense_format.get_ctypes_type()(numpy_to_ranked_memref(arr))
+    storage = dense_format._get_ctypes_type()(numpy_to_ranked_memref(arr))
     _hold_ref(storage, arr)
     return Array(storage=storage, shape=shape)
 
@@ -98,7 +98,7 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
             indices = numpy_to_ranked_memref(indices_np)
             data = numpy_to_ranked_memref(data_np)
 
-            storage = csr_format.get_ctypes_type()(indptr, indices, data)
+            storage = csr_format._get_ctypes_type()(indptr, indices, data)
             _hold_ref(storage, indptr_np)
             _hold_ref(storage, indices_np)
             _hold_ref(storage, data_np)
@@ -112,13 +112,13 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
             crd_width = coords_np.dtype.itemsize * 8
             data_np = arr.data.copy()
 
-            level_props = LevelProperties.NonUnique
+            level_props = LevelProperties(0)
             if not arr.has_canonical_format:
-                level_props |= LevelProperties.NonOrdered
+                level_props |= LevelProperties.NonOrdered | LevelProperties.NonUnique
 
             coo_format = get_storage_format(
                 levels=(
-                    Level(LevelFormat.Compressed, level_props),
+                    Level(LevelFormat.Compressed, level_props | LevelProperties.NonUnique),
                     Level(LevelFormat.Singleton, level_props),
                 ),
                 order=(0, 1),
@@ -132,7 +132,7 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
             crd = numpy_to_ranked_memref(coords_np)
             data = numpy_to_ranked_memref(data_np)
 
-            storage = coo_format.get_ctypes_type()(pos, crd, data)
+            storage = coo_format._get_ctypes_type()(pos, crd, data)
             _hold_ref(storage, pos_np)
             _hold_ref(storage, coords_np)
             _hold_ref(storage, data_np)

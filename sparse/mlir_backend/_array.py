@@ -29,7 +29,7 @@ class Array:
         return self._storage.get_storage_format()
 
     def _get_mlir_type(self):
-        return self._get_storage_format().get_mlir_type(shape=self.shape)
+        return self._get_storage_format()._get_mlir_type(shape=self.shape)
 
     def _to_module_arg(self):
         return self._storage.to_module_arg()
@@ -40,6 +40,6 @@ class Array:
         fields = self._storage.get__fields_()
         arrs = [ranked_memref_to_numpy(f).copy() for f in fields]
         memrefs = [numpy_to_ranked_memref(arr) for arr in arrs]
-        arr = Array(storage=storage_format.get_ctypes_type()(*memrefs), shape=self.shape)
+        arr = Array(storage=storage_format._get_ctypes_type()(*memrefs), shape=self.shape)
         for carr in arrs:
             _hold_ref(arr, carr)
