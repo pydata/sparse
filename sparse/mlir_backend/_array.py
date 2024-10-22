@@ -24,11 +24,12 @@ class Array:
     def dtype(self):
         return self._storage.get_storage_format().dtype
 
-    def _get_storage_format(self) -> StorageFormat:
+    @property
+    def format(self) -> StorageFormat:
         return self._storage.get_storage_format()
 
     def _get_mlir_type(self):
-        return self._get_storage_format()._get_mlir_type(shape=self.shape)
+        return self.format._get_mlir_type(shape=self.shape)
 
     def _to_module_arg(self):
         return self._storage.to_module_arg()
@@ -37,7 +38,7 @@ class Array:
         from ._conversions import from_constituent_arrays
 
         arrs = tuple(arr.copy() for arr in self.get_constituent_arrays())
-        return from_constituent_arrays(format=self._get_storage_format(), arrays=arrs, shape=self.shape)
+        return from_constituent_arrays(format=self.format, arrays=arrs, shape=self.shape)
 
     def get_constituent_arrays(self) -> tuple[np.ndarray, ...]:
         return self._storage.get_constituent_arrays()
