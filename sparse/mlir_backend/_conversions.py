@@ -71,7 +71,7 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
         case "csr" | "csc":
             pos_width = arr.indptr.dtype.itemsize * 8
             crd_width = arr.indices.dtype.itemsize * 8
-            csr_format = get_storage_format(
+            csx_format = get_storage_format(
                 levels=(
                     Level(LevelFormat.Dense),
                     Level(
@@ -81,39 +81,33 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
                         else LevelProperties.NonUnique | LevelProperties.NonOrdered,
                     ),
                 ),
-                order=(0, 1) if "csr" in type(arr).__name__ else (1, 0),
+                order=(0, 1) if arr.format == "csr" else (1, 0),
                 pos_width=pos_width,
                 crd_width=crd_width,
                 dtype=arr.dtype,
                 owns_memory=False,
             )
 
-            indptr_np = arr.indptr
-            indices_np = arr.indices
-            data_np = arr.data
+            indptr = arr.indptr
+            indices = arr.indices
+            data = arr.data
 
             if copy:
-                indptr_np = indptr_np.copy()
-                indices_np = indices_np.copy()
-                data_np = data_np.copy()
+                indptr = indptr.copy()
+                indices = indices.copy()
+                data = data.copy()
 
-            indptr = numpy_to_ranked_memref(indptr_np)
-            indices = numpy_to_ranked_memref(indices_np)
-            data = numpy_to_ranked_memref(data_np)
-
-            storage = csr_format._get_ctypes_type()(indptr, indices, data)
-            _hold_ref(storage, indptr_np)
-            _hold_ref(storage, indices_np)
-            _hold_ref(storage, data_np)
-            return Array(storage=storage, shape=arr.shape)
+            return from_constituent_arrays(format=csx_format, arrays=(indptr, indices, data), shape=arr.shape)
         case "coo":
             if copy is not None and not copy:
                 raise RuntimeError(f"`scipy.sparse.{type(arr.__name__)}` cannot be zero-copy converted.")
-            coords_np = np.stack([arr.row, arr.col], axis=1)
-            pos_np = np.array([0, arr.nnz], dtype=np.int64)
-            pos_width = pos_np.dtype.itemsize * 8
-            crd_width = coords_np.dtype.itemsize * 8
-            data_np = arr.data.copy()
+            coords = np.stack([arr.row, arr.col], axis=1)
+            pos = np.array([0, arr.nnz], dtype=np.int64)
+            pos_width = pos.dtype.itemsize * 8
+            crd_width = coords.dtype.itemsize * 8
+            data = arr.data
+            if copy:
+                data = arr.data.copy()
 
             level_props = LevelProperties(0)
             if not arr.has_canonical_format:
@@ -131,15 +125,7 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
                 owns_memory=False,
             )
 
-            pos = numpy_to_ranked_memref(pos_np)
-            crd = numpy_to_ranked_memref(coords_np)
-            data = numpy_to_ranked_memref(data_np)
-
-            storage = coo_format._get_ctypes_type()(pos, crd, data)
-            _hold_ref(storage, pos_np)
-            _hold_ref(storage, coords_np)
-            _hold_ref(storage, data_np)
-            return Array(storage=storage, shape=arr.shape)
+            return from_constituent_arrays(format=coo_format, arrays=(pos, coords, data), shape=arr.shape)
         case _:
             raise NotImplementedError(f"No conversion implemented for `scipy.sparse.{type(arr.__name__)}`.")
 
