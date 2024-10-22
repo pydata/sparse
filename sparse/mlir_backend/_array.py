@@ -1,8 +1,5 @@
-import dataclasses
-
 import numpy as np
 
-from ._common import _hold_ref, numpy_to_ranked_memref, ranked_memref_to_numpy
 from .levels import StorageFormat
 
 
@@ -37,16 +34,10 @@ class Array:
         return self._storage.to_module_arg()
 
     def copy(self):
-        storage_format: StorageFormat = dataclasses.replace(self._get_storage_format(), owns_memory=False)
+        from ._conversions import from_constituent_arrays
 
-        fields = self._storage.get__fields_()
-        arrs = [ranked_memref_to_numpy(f).copy() for f in fields]
-        memrefs = [numpy_to_ranked_memref(arr) for arr in arrs]
-        arr = Array(storage=storage_format._get_ctypes_type()(*memrefs), shape=self.shape)
-        for carr in arrs:
-            _hold_ref(arr, carr)
-
-        return arr
+        arrs = tuple(arr.copy() for arr in self.get_constituent_arrays())
+        return from_constituent_arrays(format=self._get_storage_format(), arrays=arrs, shape=self.shape)
 
     def get_constituent_arrays(self) -> tuple[np.ndarray, ...]:
         return self._storage.get_constituent_arrays()
