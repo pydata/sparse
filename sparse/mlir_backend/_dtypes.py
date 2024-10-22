@@ -1,3 +1,4 @@
+import abc
 import inspect
 import math
 import sys
@@ -7,7 +8,11 @@ from mlir import ir
 
 import numpy as np
 
-from ._common import MlirType
+
+class MlirType(abc.ABC):
+    @classmethod
+    @abc.abstractmethod
+    def _get_mlir_type(cls) -> ir.Type: ...
 
 
 def _get_pointer_width() -> int:
@@ -25,7 +30,7 @@ def _make_int_classes(namespace: dict[str, object], bit_widths: typing.Iterable[
             bit_width = bw
 
             @classmethod
-            def get_mlir_type(cls):
+            def _get_mlir_type(cls):
                 return ir.IntegerType.get_signless(cls.bit_width)
 
         SignedBW.__name__ = f"Int{bw}"
@@ -36,7 +41,7 @@ def _make_int_classes(namespace: dict[str, object], bit_widths: typing.Iterable[
             bit_width = bw
 
             @classmethod
-            def get_mlir_type(cls):
+            def _get_mlir_type(cls):
                 return ir.IntegerType.get_signless(cls.bit_width)
 
         UnsignedBW.__name__ = f"UInt{bw}"
@@ -63,7 +68,7 @@ class Float64(FloatingDType):
     bit_width = 64
 
     @classmethod
-    def get_mlir_type(cls):
+    def _get_mlir_type(cls):
         return ir.F64Type.get()
 
 
@@ -72,7 +77,7 @@ class Float32(FloatingDType):
     bit_width = 32
 
     @classmethod
-    def get_mlir_type(cls):
+    def _get_mlir_type(cls):
         return ir.F32Type.get()
 
 
@@ -81,7 +86,7 @@ class Float16(FloatingDType):
     bit_width = 16
 
     @classmethod
-    def get_mlir_type(cls):
+    def _get_mlir_type(cls):
         return ir.F16Type.get()
 
 
@@ -101,7 +106,7 @@ class Index(DType):
     np_dtype = np.intp
 
     @classmethod
-    def get_mlir_type(cls):
+    def _get_mlir_type(cls):
         return ir.IndexType.get()
 
 
