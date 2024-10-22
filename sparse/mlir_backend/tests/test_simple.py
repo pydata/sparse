@@ -270,3 +270,15 @@ def test_sparse_vector_format(dtype):
     dense_array = sparse.asarray(dense)
     res = sparse.to_numpy(sparse.add(dense_array, sv_array))
     np.testing.assert_array_equal(res, dense * 2)
+
+
+def test_copy():
+    arr_np_orig = np.arange(25).reshape((5, 5))
+    arr_np_copy = arr_np_orig.copy()
+
+    arr_sp1 = sparse.asarray(arr_np_copy, copy=True)
+    arr_sp2 = sparse.asarray(arr_np_copy, copy=False).copy()
+    arr_np_copy[2, 2] = 42
+
+    np.testing.assert_array_equal(sparse.to_numpy(arr_sp1), arr_np_orig)
+    np.testing.assert_array_equal(sparse.to_numpy(arr_sp2), arr_np_orig)

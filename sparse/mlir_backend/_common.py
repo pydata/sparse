@@ -44,16 +44,6 @@ def free_memref(obj: ctypes.Structure) -> None:
     libc.free(ctypes.cast(obj.allocated, ctypes.c_void_p))
 
 
-def _hold_self_ref_in_ret(fn):
-    @functools.wraps(fn)
-    def wrapped(self, *a, **kw):
-        ret = fn(self, *a, **kw)
-        _hold_ref(ret, self)
-        return ret
-
-    return wrapped
-
-
 def _hold_ref(owner, obj):
     ptr = ctypes.py_object(obj)
     ctypes.pythonapi.Py_IncRef(ptr)
