@@ -2,30 +2,30 @@ defaults:
   run:
     shell: bash -leo pipefail {0}
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+#   cancel-in-progress: true
 
 jobs:
   test:
     strategy:
       matrix:
         os: ['ubuntu-latest']
-        python: ['3.10', '3.11', '3.12']
+        python: ['3.10'] # , '3.11', '3.12'
         pip_opts: ['']
         numba_boundscheck: [0]
-        include:
-          - os: macos-latest
-            python: '3.10'
-          - os: windows-latest
-            python: '3.10'
-          - os: ubuntu-latest
-            python: '3.10'
-            numba_boundscheck: 1
-          - os: ubuntu-latest
-            python: '3.10'
-            pip_opts: 'numpy<2'
-      fail-fast: false
+        # include:
+        #   - os: macos-latest
+        #     python: '3.10'
+        #   - os: windows-latest
+        #     python: '3.10'
+        #   - os: ubuntu-latest
+        #     python: '3.10'
+        #     numba_boundscheck: 1
+        #   - os: ubuntu-latest
+        #     python: '3.10'
+        #     pip_opts: 'numpy<2'
+      #fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
       PYTHON_VERSION: ${{ matrix.python }}

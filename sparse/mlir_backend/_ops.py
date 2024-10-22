@@ -1,9 +1,9 @@
 import ctypes
 
-import mlir.execution_engine
-import mlir.passmanager
-from mlir import ir
-from mlir.dialects import arith, func, linalg, sparse_tensor, tensor
+import mlir_finch.execution_engine
+import mlir_finch.passmanager
+from mlir_finch import ir
+from mlir_finch.dialects import arith, func, linalg, sparse_tensor, tensor
 
 import numpy as np
 
@@ -67,7 +67,7 @@ def get_add_module(
         if DEBUG:
             (CWD / "add_module_opt.mlir").write_text(str(module))
 
-    return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
+    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
 
 
 @fn_cache
@@ -92,7 +92,7 @@ def get_reshape_module(
             if DEBUG:
                 (CWD / "reshape_module_opt.mlir").write_text(str(module))
 
-    return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
+    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
 
 
 @fn_cache
@@ -120,7 +120,7 @@ def get_broadcast_to_module(
             if DEBUG:
                 (CWD / "broadcast_to_module_opt.mlir").write_text(str(module))
 
-    return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
+    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
 
 
 def add(x1: Tensor, x2: Tensor) -> Tensor:

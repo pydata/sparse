@@ -2,9 +2,9 @@ import ctypes
 from collections.abc import Iterable
 from typing import Any
 
-import mlir.runtime as rt
-from mlir import ir
-from mlir.dialects import sparse_tensor
+import mlir_finch.runtime as rt
+from mlir_finch import ir
+from mlir_finch.dialects import sparse_tensor
 
 import numpy as np
 import scipy.sparse as sps

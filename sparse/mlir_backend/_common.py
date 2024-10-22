@@ -4,7 +4,7 @@ import functools
 import weakref
 from dataclasses import dataclass
 
-from mlir import ir
+from mlir_finch import ir
 
 
 class MlirType(abc.ABC):

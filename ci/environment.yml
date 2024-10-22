@@ -12,7 +12,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
-  - mlir-python-bindings==19.*
   - pip:
     - finch-tensor >=0.1.31
     - pytest-codspeed
+    - https://github.com/nullplay/Finch-mlir/releases/download/latest/mlir_finch-0.0.1-cp310-cp310-linux_x86_64.whl

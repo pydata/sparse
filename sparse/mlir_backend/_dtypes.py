@@ -3,7 +3,7 @@ import math
 import sys
 import typing
 
-from mlir import ir
+from mlir_finch import ir
 
 import numpy as np
 
