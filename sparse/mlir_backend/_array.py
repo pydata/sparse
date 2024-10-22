@@ -1,5 +1,6 @@
 import numpy as np
 
+from ._dtypes import DType
 from .levels import StorageFormat
 
 
@@ -21,7 +22,7 @@ class Array:
         return len(self.shape)
 
     @property
-    def dtype(self):
+    def dtype(self) -> type[DType]:
         return self._storage.get_storage_format().dtype
 
     @property
@@ -34,7 +35,7 @@ class Array:
     def _to_module_arg(self):
         return self._storage.to_module_arg()
 
-    def copy(self):
+    def copy(self) -> "Array":
         from ._conversions import from_constituent_arrays
 
         arrs = tuple(arr.copy() for arr in self.get_constituent_arrays())
