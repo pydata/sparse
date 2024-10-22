@@ -278,7 +278,9 @@ def test_copy():
 
     arr_sp1 = sparse.asarray(arr_np_copy, copy=True)
     arr_sp2 = sparse.asarray(arr_np_copy, copy=False).copy()
+    arr_sp3 = sparse.asarray(arr_np_copy, copy=False)
     arr_np_copy[2, 2] = 42
 
     np.testing.assert_array_equal(sparse.to_numpy(arr_sp1), arr_np_orig)
     np.testing.assert_array_equal(sparse.to_numpy(arr_sp2), arr_np_orig)
+    np.testing.assert_array_equal(sparse.to_numpy(arr_sp3), arr_np_copy)

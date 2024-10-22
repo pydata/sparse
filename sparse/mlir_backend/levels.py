@@ -126,9 +126,6 @@ class StorageFormat:
         class Storage(ctypes.Structure):
             _fields_ = get_fields()
 
-            def _get_mlir_type(self, *, shape: tuple[int, ...]):
-                return self.get_storage_format()._get_mlir_type(shape=shape)
-
             def to_module_arg(self) -> list:
                 return [ctypes.pointer(ctypes.pointer(f)) for f in self.get__fields_()]
 
