@@ -4,7 +4,7 @@ import functools
 import numpy as np
 
 from ._array import Array
-from ._common import _hold_ref, numpy_to_ranked_memref, ranked_memref_to_numpy
+from ._common import _hold_ref, ranked_memref_to_numpy
 from .levels import Level, LevelFormat, LevelProperties, StorageFormat, get_storage_format
 
 try:
@@ -28,11 +28,12 @@ def _guard_scipy(f):
 
 
 def _from_numpy(arr: np.ndarray, copy: bool | None = None) -> Array:
-    shape = arr.shape
-    arr_flat = np.asarray(arr, order="C").flatten()
-    if copy and arr_flat.base is arr:
-        arr_flat = arr_flat.copy()
-    levels = (Level(LevelFormat.Dense),) * len(shape)
+    if copy is not None and not copy and not arr.flags["C_CONTIGUOUS"]:
+        raise NotImplementedError("Cannot only convert C-contiguous arrays at the moment.")
+    if copy:
+        arr = arr.copy(order="C")
+    arr_flat = np.ascontiguousarray(arr).reshape(-1)
+    levels = (Level(LevelFormat.Dense),) * arr.ndim
     dense_format = get_storage_format(
         levels=levels,
         order="C",
@@ -41,9 +42,7 @@ def _from_numpy(arr: np.ndarray, copy: bool | None = None) -> Array:
         dtype=arr.dtype,
         owns_memory=False,
     )
-    storage = dense_format._get_ctypes_type()(numpy_to_ranked_memref(arr_flat))
-    _hold_ref(storage, arr_flat)
-    return Array(storage=storage, shape=shape)
+    return from_constituent_arrays(format=dense_format, arrays=(arr_flat,), shape=arr.shape)
 
 
 def to_numpy(arr):
