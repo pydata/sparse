@@ -29,7 +29,9 @@ def _guard_scipy(f):
 
 def _from_numpy(arr: np.ndarray, copy: bool | None = None) -> Array:
     shape = arr.shape
-    arr = np.asarray(arr, order="C", copy=copy).flatten()
+    arr_flat = np.asarray(arr, order="C").flatten()
+    if copy and arr_flat.base is arr:
+        arr_flat = arr_flat.copy()
     levels = (Level(LevelFormat.Dense),) * len(shape)
     dense_format = get_storage_format(
         levels=levels,
@@ -39,8 +41,8 @@ def _from_numpy(arr: np.ndarray, copy: bool | None = None) -> Array:
         dtype=arr.dtype,
         owns_memory=False,
     )
-    storage = dense_format._get_ctypes_type()(numpy_to_ranked_memref(arr))
-    _hold_ref(storage, arr)
+    storage = dense_format._get_ctypes_type()(numpy_to_ranked_memref(arr_flat))
+    _hold_ref(storage, arr_flat)
     return Array(storage=storage, shape=shape)
 
 
