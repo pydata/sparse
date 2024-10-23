@@ -2,7 +2,6 @@ import abc
 import dataclasses
 import math
 import sys
-import typing
 
 import mlir.runtime as rt
 from mlir import ir
@@ -20,35 +19,6 @@ def _get_pointer_width() -> int:
 
 
 _PTR_WIDTH = _get_pointer_width()
-
-
-def _make_int_classes(namespace: dict[str, object], bit_widths: typing.Iterable[int]) -> None:
-    for bw in bit_widths:
-
-        class SignedBW(SignedIntegerDType):
-            np_dtype = getattr(np, f"int{bw}")
-            bit_width = bw
-
-            @classmethod
-            def _get_mlir_type(cls):
-                return ir.IntegerType.get_signless(cls.bit_width)
-
-        SignedBW.__name__ = f"Int{bw}"
-        SignedBW.__module__ = __name__
-
-        class UnsignedBW(UnsignedIntegerDType):
-            np_dtype = getattr(np, f"uint{bw}")
-            bit_width = bw
-
-            @classmethod
-            def _get_mlir_type(cls):
-                return ir.IntegerType.get_signless(cls.bit_width)
-
-        UnsignedBW.__name__ = f"UInt{bw}"
-        UnsignedBW.__module__ = __name__
-
-        namespace[SignedBW.__name__] = SignedBW
-        namespace[UnsignedBW.__name__] = UnsignedBW
 
 
 @dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
