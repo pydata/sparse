@@ -104,7 +104,7 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
 
             level_props = LevelProperties(0)
             if not arr.has_canonical_format:
-                level_props |= LevelProperties.NonOrdered | LevelProperties.NonUnique
+                level_props |= LevelProperties.NonOrdered
 
             coo_format = get_storage_format(
                 levels=(
@@ -130,16 +130,13 @@ def to_scipy(arr: Array) -> ScipySparseArray:
         case (Level(LevelFormat.Dense, _), Level(LevelFormat.Compressed, _)):
             indptr, indices, data = arr.get_constituent_arrays()
             if storage_format.order == (0, 1):
-                sps_arr = sps.csr_array((data, indices, indptr), shape=arr.shape)
-            else:
-                sps_arr = sps.csc_array((data, indices, indptr), shape=arr.shape)
+                return sps.csr_array((data, indices, indptr), shape=arr.shape)
+            return sps.csc_array((data, indices, indptr), shape=arr.shape)
         case (Level(LevelFormat.Compressed, _), Level(LevelFormat.Singleton, _)):
             _, coords, data = arr.get_constituent_arrays()
-            sps_arr = sps.coo_array((data, (coords[:, 0], coords[:, 1])), shape=arr.shape)
+            return sps.coo_array((data, (coords[:, 0], coords[:, 1])), shape=arr.shape)
         case _:
             raise RuntimeError(f"No conversion implemented for `{storage_format=}`.")
-
-    return sps_arr
 
 
 def asarray(arr, copy: bool | None = None) -> Array:

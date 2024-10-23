@@ -212,7 +212,7 @@ def test_coo_3d_format(dtype):
         levels=(
             sparse.levels.Level(sparse.levels.LevelFormat.Compressed, sparse.levels.LevelProperties.NonUnique),
             sparse.levels.Level(sparse.levels.LevelFormat.Singleton, sparse.levels.LevelProperties.NonUnique),
-            sparse.levels.Level(sparse.levels.LevelFormat.Singleton, sparse.levels.LevelProperties.NonUnique),
+            sparse.levels.Level(sparse.levels.LevelFormat.Singleton, sparse.levels.LevelProperties(0)),
         ),
         order="C",
         pos_width=64,
