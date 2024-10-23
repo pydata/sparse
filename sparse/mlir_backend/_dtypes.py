@@ -3,8 +3,8 @@ import dataclasses
 import math
 import sys
 
-import mlir.runtime as rt
-from mlir import ir
+import mlir_finch.runtime as rt
+from mlir_finch import ir
 
 import numpy as np
 

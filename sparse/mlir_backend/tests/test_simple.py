@@ -176,20 +176,18 @@ def test_add(rng, dtype):
     assert isinstance(actual, np.ndarray)
     np.testing.assert_array_equal(actual, expected)
 
-    # NOTE: Fixed in https://github.com/llvm/llvm-project/pull/108615
-    # actual = sparse.add(c_tensor, c_tensor).to_scipy_sparse()
-    # expected = c + c
-    # assert isinstance(actual, np.ndarray)
-    # np.testing.assert_array_equal(actual, expected)
+    actual = sparse.to_numpy(sparse.add(dense_tensor, dense_tensor))
+    expected = dense + dense
+    assert isinstance(actual, np.ndarray)
+    np.testing.assert_array_equal(actual, expected)
 
     actual = sparse.to_scipy(sparse.add(csr_2_tensor, coo_tensor))
     expected = csr_2 + coo
     assert_csx_equal(expected, actual)
 
-    # NOTE: https://discourse.llvm.org/t/passmanager-fails-on-simple-coo-addition-example/81247
-    # actual = sparse.add(d_tensor, d_tensor).to_scipy_sparse()
-    # expected = d + d
-    # np.testing.assert_array_equal(actual.todense(), expected.todense())
+    actual = sparse.to_scipy(sparse.add(coo_tensor, coo_tensor))
+    expected = coo + coo
+    np.testing.assert_array_equal(actual.todense(), expected.todense())
 
 
 @parametrize_dtypes
@@ -226,8 +224,11 @@ def test_coo_3d_format(dtype):
     format = sparse.levels.get_storage_format(
         levels=(
             sparse.levels.Level(sparse.levels.LevelFormat.Compressed, sparse.levels.LevelProperties.NonUnique),
-            sparse.levels.Level(sparse.levels.LevelFormat.Singleton, sparse.levels.LevelProperties.NonUnique),
-            sparse.levels.Level(sparse.levels.LevelFormat.Singleton, sparse.levels.LevelProperties(0)),
+            sparse.levels.Level(
+                sparse.levels.LevelFormat.Singleton,
+                sparse.levels.LevelProperties.NonUnique | sparse.levels.LevelProperties.SOA,
+            ),
+            sparse.levels.Level(sparse.levels.LevelFormat.Singleton, sparse.levels.LevelProperties.SOA),
         ),
         order="C",
         pos_width=64,
@@ -237,20 +238,19 @@ def test_coo_3d_format(dtype):
 
     SHAPE = (2, 2, 4)
     pos = np.array([0, 7])
-    crd = np.array([[0, 1, 0, 0, 1, 1, 0], [1, 3, 1, 0, 0, 1, 0], [3, 1, 1, 0, 1, 1, 1]])
+    crd = [np.array([0, 1, 0, 0, 1, 1, 0]), np.array([1, 3, 1, 0, 0, 1, 0]), np.array([3, 1, 1, 0, 1, 1, 1])]
     data = np.array([1, 2, 3, 4, 5, 6, 7], dtype=dtype)
-    carrs = (pos, crd, data)
+    carrs = (pos, *crd, data)
 
     coo_array = sparse.from_constituent_arrays(format=format, arrays=carrs, shape=SHAPE)
     result = coo_array.get_constituent_arrays()
     for actual, expected in zip(result, carrs, strict=True):
         np.testing.assert_array_equal(actual, expected)
 
-    # NOTE: Blocked by https://github.com/llvm/llvm-project/pull/109135
-    # res_arrays = sparse.add(coo_array, coo_array).get_constituent_arrays()
-    # res_expected = (pos, crd, data * 2)
-    # for actual, expected in zip(res_arrays, res_expected, strict=False):
-    #     np.testing.assert_array_equal(actual, expected)
+    result_arrays = sparse.add(coo_array, coo_array).get_constituent_arrays()
+    constituent_arrays = (pos, *crd, data * 2)
+    for actual, expected in zip(result_arrays, constituent_arrays, strict=False):
+        np.testing.assert_array_equal(actual, expected)
 
 
 @parametrize_dtypes

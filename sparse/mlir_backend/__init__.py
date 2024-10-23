@@ -1,7 +1,7 @@
 try:
-    import mlir  # noqa: F401
+    import mlir_finch  # noqa: F401
 
-    del mlir
+    del mlir_finch
 except ModuleNotFoundError as e:
     raise ImportError(
         "MLIR Python bindings not installed. Run "
