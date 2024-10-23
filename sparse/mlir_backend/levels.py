@@ -65,7 +65,7 @@ class StorageFormat:
     order: tuple[int, ...]
     pos_width: int
     crd_width: int
-    dtype: type[DType]
+    dtype: DType
 
     @property
     def storage_rank(self) -> int:
@@ -162,7 +162,7 @@ def get_storage_format(
     order: typing.Literal["C", "F"] | tuple[int, ...],
     pos_width: int,
     crd_width: int,
-    dtype: type[DType],
+    dtype: DType,
 ) -> StorageFormat:
     levels = tuple(levels)
     if isinstance(order, str):
@@ -186,7 +186,7 @@ def _get_storage_format(
     order: tuple[int, ...],
     pos_width: int,
     crd_width: int,
-    dtype: type[DType],
+    dtype: DType,
 ) -> StorageFormat:
     return StorageFormat(
         levels=levels,

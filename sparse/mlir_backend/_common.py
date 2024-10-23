@@ -14,12 +14,12 @@ def fn_cache(f, maxsize: int | None = None):
     return functools.wraps(f)(functools.lru_cache(maxsize=maxsize)(f))
 
 
-def get_nd_memref_descr(rank: int, dtype: type[DType]) -> ctypes.Structure:
+def get_nd_memref_descr(rank: int, dtype: DType) -> ctypes.Structure:
     return _get_nd_memref_descr(int(rank), asdtype(dtype))
 
 
 @fn_cache
-def _get_nd_memref_descr(rank: int, dtype: type[DType]) -> ctypes.Structure:
+def _get_nd_memref_descr(rank: int, dtype: DType) -> ctypes.Structure:
     return rt.make_nd_memref_descriptor(rank, dtype.to_ctype())
 
 

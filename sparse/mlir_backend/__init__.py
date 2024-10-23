@@ -11,7 +11,43 @@ except ModuleNotFoundError as e:
 
 from . import levels
 from ._conversions import asarray, from_constituent_arrays, to_numpy, to_scipy
-from ._dtypes import asdtype
+from ._dtypes import (
+    asdtype,
+    complex64,
+    complex128,
+    float16,
+    float32,
+    float64,
+    int8,
+    int16,
+    int32,
+    int64,
+    uint8,
+    uint16,
+    uint32,
+    uint64,
+)
 from ._ops import add
 
-__all__ = ["add", "asarray", "asdtype", "to_numpy", "to_scipy", "levels", "from_constituent_arrays"]
+__all__ = [
+    "add",
+    "asarray",
+    "asdtype",
+    "to_numpy",
+    "to_scipy",
+    "levels",
+    "from_constituent_arrays",
+    "int8",
+    "int16",
+    "int32",
+    "int64",
+    "uint8",
+    "uint16",
+    "uint32",
+    "uint64",
+    "float16",
+    "float32",
+    "float64",
+    "complex64",
+    "complex128",
+]

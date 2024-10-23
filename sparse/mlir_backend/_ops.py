@@ -3,12 +3,12 @@ import ctypes
 import mlir.execution_engine
 import mlir.passmanager
 from mlir import ir
-from mlir.dialects import arith, func, linalg, sparse_tensor, tensor
+from mlir.dialects import arith, complex, func, linalg, sparse_tensor, tensor
 
 from ._array import Array
 from ._common import fn_cache
 from ._core import CWD, DEBUG, MLIR_C_RUNNER_UTILS, ctx, pm
-from ._dtypes import DType, FloatingDType
+from ._dtypes import DType, IeeeComplexFloatingDType, IeeeRealFloatingDType, IntegerDType
 
 
 @fn_cache
@@ -16,13 +16,20 @@ def get_add_module(
     a_tensor_type: ir.RankedTensorType,
     b_tensor_type: ir.RankedTensorType,
     out_tensor_type: ir.RankedTensorType,
-    dtype: type[DType],
+    dtype: DType,
     rank: int,
 ) -> ir.Module:
     with ir.Location.unknown(ctx):
         module = ir.Module.create()
-        # TODO: add support for complex dialect/dtypes
-        arith_op = arith.AddFOp if issubclass(dtype, FloatingDType) else arith.AddIOp
+        if isinstance(dtype, IeeeRealFloatingDType):
+            arith_op = arith.AddFOp
+        elif isinstance(dtype, IeeeComplexFloatingDType):
+            arith_op = complex.AddOp
+        elif isinstance(dtype, IntegerDType):
+            arith_op = arith.AddIOp
+        else:
+            raise RuntimeError(f"Can not add {dtype=}.")
+
         dtype = dtype._get_mlir_type()
         ordering = ir.AffineMap.get_permutation(range(rank))
 
