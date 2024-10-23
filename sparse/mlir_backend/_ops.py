@@ -1,13 +1,13 @@
 import ctypes
 
-import mlir.execution_engine
-import mlir.passmanager
-from mlir import ir
-from mlir.dialects import arith, complex, func, linalg, sparse_tensor, tensor
+import mlir_finch.execution_engine
+import mlir_finch.passmanager
+from mlir_finch import ir
+from mlir_finch.dialects import arith, complex, func, linalg, sparse_tensor, tensor
 
 from ._array import Array
 from ._common import fn_cache
-from ._core import CWD, DEBUG, MLIR_C_RUNNER_UTILS, ctx, pm
+from ._core import CWD, DEBUG, SHARED_LIBS, ctx, pm
 from ._dtypes import DType, IeeeComplexFloatingDType, IeeeRealFloatingDType, IntegerDType
 
 
@@ -37,7 +37,7 @@ def get_add_module(
 
             @func.FuncOp.from_py_func(a_tensor_type, b_tensor_type)
             def add(a, b):
-                out = tensor.empty(out_tensor_type, [])
+                out = tensor.empty(out_tensor_type.shape, dtype, encoding=out_tensor_type.encoding)
                 generic_op = linalg.GenericOp(
                     [out_tensor_type],
                     [a, b],
@@ -72,7 +72,7 @@ def get_add_module(
         if DEBUG:
             (CWD / "add_module_opt.mlir").write_text(str(module))
 
-    return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
+    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=SHARED_LIBS)
 
 
 @fn_cache
@@ -97,7 +97,7 @@ def get_reshape_module(
             if DEBUG:
                 (CWD / "reshape_module_opt.mlir").write_text(str(module))
 
-    return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
+    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=SHARED_LIBS)
 
 
 @fn_cache
@@ -113,7 +113,9 @@ def get_broadcast_to_module(
 
             @func.FuncOp.from_py_func(in_tensor_type)
             def broadcast_to(in_tensor):
-                out = tensor.empty(out_tensor_type, [])
+                out = tensor.empty(
+                    out_tensor_type.shape, out_tensor_type.element_type, encoding=out_tensor_type.encoding
+                )
                 return linalg.broadcast(in_tensor, outs=[out], dimensions=dimensions)
 
             broadcast_to.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
@@ -123,7 +125,7 @@ def get_broadcast_to_module(
             if DEBUG:
                 (CWD / "broadcast_to_module_opt.mlir").write_text(str(module))
 
-    return mlir.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=[MLIR_C_RUNNER_UTILS])
+    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=SHARED_LIBS)
 
 
 def add(x1: Array, x2: Array) -> Array:
