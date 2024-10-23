@@ -1,18 +1,18 @@
 import abc
-import inspect
+import dataclasses
 import math
 import sys
 import typing
 
+import mlir.runtime as rt
 from mlir import ir
 
 import numpy as np
 
 
 class MlirType(abc.ABC):
-    @classmethod
     @abc.abstractmethod
-    def _get_mlir_type(cls) -> ir.Type: ...
+    def _get_mlir_type(self) -> ir.Type: ...
 
 
 def _get_pointer_width() -> int:
@@ -51,77 +51,92 @@ def _make_int_classes(namespace: dict[str, object], bit_widths: typing.Iterable[
         namespace[UnsignedBW.__name__] = UnsignedBW
 
 
+@dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
 class DType(MlirType):
-    np_dtype: np.dtype
     bit_width: int
 
-    @classmethod
-    def to_ctype(cls):
-        return np.ctypeslib.as_ctypes_type(cls.np_dtype)
+    @property
+    @abc.abstractmethod
+    def np_dtype(self) -> np.dtype:
+        raise NotImplementedError
+
+    def to_ctype(self):
+        return rt.as_ctype(self.np_dtype)
 
 
-class FloatingDType(DType): ...
+@dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
+class IeeeRealFloatingDType(DType):
+    @property
+    def np_dtype(self) -> np.dtype:
+        return np.dtype(getattr(np, f"float{self.bit_width}"))
+
+    def _get_mlir_type(self) -> ir.Type:
+        return getattr(ir, f"F{self.bit_width}Type").get()
 
 
-class Float64(FloatingDType):
-    np_dtype = np.float64
-    bit_width = 64
-
-    @classmethod
-    def _get_mlir_type(cls):
-        return ir.F64Type.get()
+float64 = IeeeRealFloatingDType(bit_width=64)
+float32 = IeeeRealFloatingDType(bit_width=32)
+float16 = IeeeRealFloatingDType(bit_width=16)
 
 
-class Float32(FloatingDType):
-    np_dtype = np.float32
-    bit_width = 32
+@dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
+class IeeeComplexFloatingDType(DType):
+    @property
+    def np_dtype(self) -> np.dtype:
+        return np.dtype(getattr(np, f"complex{self.bit_width}"))
 
-    @classmethod
-    def _get_mlir_type(cls):
-        return ir.F32Type.get()
-
-
-class Float16(FloatingDType):
-    np_dtype = np.float16
-    bit_width = 16
-
-    @classmethod
-    def _get_mlir_type(cls):
-        return ir.F16Type.get()
+    def _get_mlir_type(self) -> ir.Type:
+        return ir.ComplexType.get(getattr(ir, f"F{self.bit_width // 2}Type").get())
 
 
-class IntegerDType(DType): ...
+complex64 = IeeeComplexFloatingDType(bit_width=64)
+complex128 = IeeeComplexFloatingDType(bit_width=128)
 
 
-class UnsignedIntegerDType(IntegerDType): ...
+@dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
+class IntegerDType(DType):
+    def _get_mlir_type(self) -> ir.Type:
+        return ir.IntegerType.get_signless(self.bit_width)
 
 
-class SignedIntegerDType(IntegerDType): ...
+@dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
+class UnsignedIntegerDType(IntegerDType):
+    @property
+    def np_dtype(self) -> np.dtype:
+        return np.dtype(getattr(np, f"uint{self.bit_width}"))
 
 
-_make_int_classes(locals(), [8, 16, 32, 64])
+int8 = UnsignedIntegerDType(bit_width=8)
+int16 = UnsignedIntegerDType(bit_width=16)
+int32 = UnsignedIntegerDType(bit_width=32)
+int64 = UnsignedIntegerDType(bit_width=64)
 
 
-class Index(DType):
-    np_dtype = np.intp
+@dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
+class SignedIntegerDType(IntegerDType):
+    @property
+    def np_dtype(self) -> np.dtype:
+        return np.dtype(getattr(np, f"int{self.bit_width}"))
 
-    @classmethod
-    def _get_mlir_type(cls):
-        return ir.IndexType.get()
+
+uint8 = SignedIntegerDType(bit_width=8)
+uint16 = SignedIntegerDType(bit_width=16)
+uint32 = SignedIntegerDType(bit_width=32)
+uint64 = SignedIntegerDType(bit_width=64)
 
 
-IntP: type[SignedIntegerDType] = locals()[f"Int{_PTR_WIDTH}"]
-UIntP: type[UnsignedIntegerDType] = locals()[f"UInt{_PTR_WIDTH}"]
+intp: SignedIntegerDType = locals()[f"int{_PTR_WIDTH}"]
+uintp: UnsignedIntegerDType = locals()[f"uint{_PTR_WIDTH}"]
 
 
 def isdtype(dt, /) -> bool:
-    return isinstance(dt, type) and issubclass(dt, DType) and not inspect.isabstract(dt)
+    return isinstance(dt, DType)
 
 
 NUMPY_DTYPE_MAP = {np.dtype(dt.np_dtype): dt for dt in locals().values() if isdtype(dt)}
 
 
-def asdtype(dt, /) -> type[DType]:
+def asdtype(dt, /) -> DType:
     if isdtype(dt):
         return dt
 

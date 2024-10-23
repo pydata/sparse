@@ -1,5 +1,6 @@
 import math
 import typing
+from collections.abc import Iterable
 
 import sparse
 
@@ -24,6 +25,8 @@ parametrize_dtypes = pytest.mark.parametrize(
         np.uint64,
         np.float32,
         np.float64,
+        np.complex64,
+        np.complex128,
     ],
 )
 
@@ -66,6 +69,18 @@ def generate_sampler(dtype: np.dtype, rng: np.random.Generator) -> typing.Callab
             return -10 + 20 * rng.random(dtype=dtype, size=size)
 
         return sampler_real_floating
+
+    if np.issubdtype(dtype, np.complexfloating):
+        float_dtype = np.array(0, dtype=dtype).real.dtype
+
+        def sampler_complex_floating(size: tuple[int, ...]):
+            real_sampler = generate_sampler(float_dtype, rng)
+            if not isinstance(size, Iterable):
+                size = (size,)
+            float_arr = real_sampler(tuple(size) + (2,))
+            return float_arr.view(dtype)[..., 0]
+
+        return sampler_complex_floating
 
     raise NotImplementedError(f"{dtype=} not yet supported.")
 

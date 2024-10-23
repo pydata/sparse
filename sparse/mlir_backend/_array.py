@@ -22,7 +22,7 @@ class Array:
         return len(self.shape)
 
     @property
-    def dtype(self) -> type[DType]:
+    def dtype(self) -> DType:
         return self._storage.get_storage_format().dtype
 
     @property
