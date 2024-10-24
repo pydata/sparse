@@ -76,10 +76,10 @@ class UnsignedIntegerDType(IntegerDType):
         return np.dtype(getattr(np, f"uint{self.bit_width}"))
 
 
-int8 = UnsignedIntegerDType(bit_width=8)
-int16 = UnsignedIntegerDType(bit_width=16)
-int32 = UnsignedIntegerDType(bit_width=32)
-int64 = UnsignedIntegerDType(bit_width=64)
+uint8 = UnsignedIntegerDType(bit_width=8)
+uint16 = UnsignedIntegerDType(bit_width=16)
+uint32 = UnsignedIntegerDType(bit_width=32)
+uint64 = UnsignedIntegerDType(bit_width=64)
 
 
 @dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
@@ -89,10 +89,10 @@ class SignedIntegerDType(IntegerDType):
         return np.dtype(getattr(np, f"int{self.bit_width}"))
 
 
-uint8 = SignedIntegerDType(bit_width=8)
-uint16 = SignedIntegerDType(bit_width=16)
-uint32 = SignedIntegerDType(bit_width=32)
-uint64 = SignedIntegerDType(bit_width=64)
+int8 = SignedIntegerDType(bit_width=8)
+int16 = SignedIntegerDType(bit_width=16)
+int32 = SignedIntegerDType(bit_width=32)
+int64 = SignedIntegerDType(bit_width=64)
 
 
 intp: SignedIntegerDType = locals()[f"int{_PTR_WIDTH}"]
