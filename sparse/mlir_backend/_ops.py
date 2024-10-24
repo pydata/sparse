@@ -5,10 +5,13 @@ import mlir_finch.passmanager
 from mlir_finch import ir
 from mlir_finch.dialects import arith, complex, func, linalg, sparse_tensor, tensor
 
+import numpy as np
+
 from ._array import Array
 from ._common import fn_cache
 from ._core import CWD, DEBUG, SHARED_LIBS, ctx, pm
 from ._dtypes import DType, IeeeComplexFloatingDType, IeeeRealFloatingDType, IntegerDType
+from .levels import _determine_format
 
 
 @fn_cache
@@ -17,7 +20,6 @@ def get_add_module(
     b_tensor_type: ir.RankedTensorType,
     out_tensor_type: ir.RankedTensorType,
     dtype: DType,
-    rank: int,
 ) -> ir.Module:
     with ir.Location.unknown(ctx):
         module = ir.Module.create()
@@ -31,7 +33,7 @@ def get_add_module(
             raise RuntimeError(f"Can not add {dtype=}.")
 
         dtype = dtype._get_mlir_type()
-        ordering = ir.AffineMap.get_permutation(range(rank))
+        max_rank = out_tensor_type.rank
 
         with ir.InsertionPoint(module.body):
 
@@ -42,8 +44,13 @@ def get_add_module(
                     [out_tensor_type],
                     [a, b],
                     [out],
-                    ir.ArrayAttr.get([ir.AffineMapAttr.get(p) for p in (ordering,) * 3]),
-                    ir.ArrayAttr.get([ir.Attribute.parse("#linalg.iterator_type<parallel>")] * rank),
+                    ir.ArrayAttr.get(
+                        [
+                            ir.AffineMapAttr.get(ir.AffineMap.get_minor_identity(max_rank, t.rank))
+                            for t in (a_tensor_type, b_tensor_type, out_tensor_type)
+                        ]
+                    ),
+                    ir.ArrayAttr.get([ir.Attribute.parse("#linalg.iterator_type<parallel>")] * out_tensor_type.rank),
                 )
                 block = generic_op.regions[0].blocks.append(dtype, dtype, dtype)
                 with ir.InsertionPoint(block):
@@ -129,9 +136,9 @@ def get_broadcast_to_module(
 
 
 def add(x1: Array, x2: Array) -> Array:
-    ret_storage_format = x1.format
+    ret_storage_format = _determine_format(x1.format, x2.format, dtype=x1.dtype, union=True)
     ret_storage = ret_storage_format._get_ctypes_type(owns_memory=True)()
-    out_tensor_type = ret_storage_format._get_mlir_type(shape=x1.shape)
+    out_tensor_type = ret_storage_format._get_mlir_type(shape=np.broadcast_shapes(x1.shape, x2.shape))
 
     # TODO: Decide what will be the output tensor_type
     add_module = get_add_module(
@@ -139,7 +146,6 @@ def add(x1: Array, x2: Array) -> Array:
         x2._get_mlir_type(),
         out_tensor_type=out_tensor_type,
         dtype=x1.dtype,
-        rank=x1.ndim,
     )
     add_module.invoke(
         "add",

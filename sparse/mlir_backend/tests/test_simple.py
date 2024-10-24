@@ -164,12 +164,12 @@ def test_add(rng, dtype):
     assert_csx_equal(expected, actual)
 
     actual = sparse.to_scipy(sparse.add(csc_tensor, csr_tensor))
-    expected = csc + csr
+    expected = (csc + csr).asformat("csr")
     assert_csx_equal(expected, actual)
 
-    actual = sparse.to_scipy(sparse.add(csr_tensor, dense_tensor))
-    expected = sps.csr_matrix(csr + dense)
-    assert_csx_equal(expected, actual)
+    actual = sparse.to_numpy(sparse.add(csr_tensor, dense_tensor))
+    expected = csr + dense
+    np.testing.assert_array_equal(actual, expected)
 
     actual = sparse.to_numpy(sparse.add(dense_tensor, csr_tensor))
     expected = csr + dense

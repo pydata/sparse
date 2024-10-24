@@ -221,7 +221,7 @@ def _count_sparse_levels(format: StorageFormat) -> int:
     return sum(_is_sparse_level(lvl) for lvl in format.levels)
 
 
-def _determine_levels(*formats: StorageFormat, dtype: DType, union: bool, out_ndim: int | None = None) -> StorageFormat:
+def _determine_format(*formats: StorageFormat, dtype: DType, union: bool, out_ndim: int | None = None) -> StorageFormat:
     if len(formats) == 0:
         if out_ndim is None:
             out_ndim = 0
@@ -236,13 +236,13 @@ def _determine_levels(*formats: StorageFormat, dtype: DType, union: bool, out_nd
     if out_ndim is None:
         out_ndim = max(fmt.rank for fmt in formats)
 
-    n_sparse = 0
     pos_width = 0
     crd_width = 0
-    op = max if union else min
+    op = min if union else max
+    n_sparse = None
     order = ()
     for fmt in formats:
-        n_sparse = op(n_sparse, _count_sparse_levels(fmt))
+        n_sparse = _count_sparse_levels(fmt) if n_sparse is None else op(n_sparse, _count_sparse_levels(fmt))
         pos_width = max(pos_width, fmt.pos_width)
         crd_width = max(crd_width, fmt.crd_width)
         if order != "C":
