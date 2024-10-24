@@ -5,8 +5,8 @@ import itertools
 import re
 import typing
 
-from mlir import ir
-from mlir.dialects import sparse_tensor
+from mlir_finch import ir
+from mlir_finch.dialects import sparse_tensor
 
 import numpy as np
 
@@ -36,6 +36,7 @@ def _camel_to_snake(name: str) -> str:
 class LevelProperties(enum.Flag):
     NonOrdered = enum.auto()
     NonUnique = enum.auto()
+    SOA = enum.auto()
 
     def build(self) -> list[sparse_tensor.LevelProperty]:
         return [getattr(sparse_tensor.LevelProperty, _camel_to_snake(p.name)) for p in type(self) if p in self]
@@ -108,14 +109,27 @@ class StorageFormat:
         def get_fields():
             fields = []
             compressed_counter = 0
+            singleton_counter = 0
             for level, next_level in itertools.zip_longest(self.levels, self.levels[1:]):
                 if LevelFormat.Compressed == level.format:
                     compressed_counter += 1
                     fields.append((f"pointers_to_{compressed_counter}", get_nd_memref_descr(1, ptr_dtype)))
                     if next_level is not None and LevelFormat.Singleton == next_level.format:
-                        fields.append((f"indices_{compressed_counter}", get_nd_memref_descr(2, idx_dtype)))
+                        singleton_counter += 1
+                        fields.append(
+                            (
+                                f"indices_{compressed_counter}_coords_{singleton_counter}",
+                                get_nd_memref_descr(1, idx_dtype),
+                            )
+                        )
                     else:
                         fields.append((f"indices_{compressed_counter}", get_nd_memref_descr(1, idx_dtype)))
+
+                if LevelFormat.Singleton == level.format:
+                    singleton_counter += 1
+                    fields.append(
+                        (f"indices_{compressed_counter}_coords_{singleton_counter}", get_nd_memref_descr(1, idx_dtype))
+                    )
 
             fields.append(("values", get_nd_memref_descr(1, self.dtype)))
             return fields

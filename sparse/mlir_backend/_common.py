@@ -2,7 +2,7 @@ import ctypes
 import functools
 import weakref
 
-import mlir.runtime as rt
+import mlir_finch.runtime as rt
 
 import numpy as np
 
