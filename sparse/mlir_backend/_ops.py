@@ -9,7 +9,7 @@ import numpy as np
 
 from ._array import Array
 from ._common import fn_cache
-from ._core import CWD, DEBUG, SHARED_LIBS, ctx, pm
+from ._core import CWD, DEBUG, OPT_LEVEL, SHARED_LIBS, ctx, pm
 from ._dtypes import DType, IeeeComplexFloatingDType, IeeeRealFloatingDType, IntegerDType
 from .levels import _determine_format
 
@@ -79,7 +79,7 @@ def get_add_module(
         if DEBUG:
             (CWD / "add_module_opt.mlir").write_text(str(module))
 
-    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=SHARED_LIBS)
+    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=OPT_LEVEL, shared_libs=SHARED_LIBS)
 
 
 @fn_cache
@@ -104,7 +104,7 @@ def get_reshape_module(
             if DEBUG:
                 (CWD / "reshape_module_opt.mlir").write_text(str(module))
 
-    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=SHARED_LIBS)
+    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=OPT_LEVEL, shared_libs=SHARED_LIBS)
 
 
 @fn_cache
@@ -132,7 +132,7 @@ def get_broadcast_to_module(
             if DEBUG:
                 (CWD / "broadcast_to_module_opt.mlir").write_text(str(module))
 
-    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=SHARED_LIBS)
+    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=OPT_LEVEL, shared_libs=SHARED_LIBS)
 
 
 def add(x1: Array, x2: Array) -> Array:
