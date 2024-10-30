@@ -27,7 +27,7 @@ mkdocs-jupyter = "*"
 
 [feature.tests.tasks]
 test = "pytest --pyargs sparse -n auto"
-test-mlir = { cmd = "pytest --pyargs sparse/mlir_backend -v" }
+test-mlir = { cmd = "pytest --pyargs sparse.mlir_backend -v" }
 test-finch = { cmd = "pytest --pyargs sparse/tests -n auto -v", depends-on = ["precompile"] }
 
 [feature.tests.dependencies]
@@ -55,6 +55,7 @@ finch-tensor = ">=0.1.31"
 SPARSE_BACKEND = "Finch"
 
 [feature.finch.target.osx-arm64.activation.env]
+SPARSE_BACKEND = "Finch"
 PYTHONFAULTHANDLER = "${HOME}/faulthandler.log"
 
 [feature.mlir.dependencies]
@@ -67,5 +68,5 @@ SPARSE_BACKEND = "MLIR"
 [environments]
 tests = ["tests", "extras"]
 docs = ["docs", "extras"]
-mlir-dev = ["tests", "mlir"]
-finch-dev = ["tests", "finch"]
+mlir-dev = {features = ["tests", "mlir"], no-default-feature = true}
+finch-dev = {features = ["tests", "finch"], no-default-feature = true}

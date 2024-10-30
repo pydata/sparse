@@ -153,4 +153,4 @@ def add(x1: Array, x2: Array) -> Array:
         *x1._to_module_arg(),
         *x2._to_module_arg(),
     )
-    return Array(storage=ret_storage, shape=out_tensor_type.shape)
+    return Array(storage=ret_storage, shape=tuple(out_tensor_type.shape))
