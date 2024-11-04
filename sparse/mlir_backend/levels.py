@@ -242,12 +242,11 @@ def _determine_format(*formats: StorageFormat, dtype: DType, union: bool, out_nd
 
     pos_width = 0
     crd_width = 0
-    op = min if union else max
     counter = _count_sparse_levels if not union else _count_dense_levels
     n_counted = None
     order = ()
     for fmt in formats:
-        n_counted = counter(fmt) if n_counted is None else op(n_counted, counter(fmt))
+        n_counted = counter(fmt) if n_counted is None else max(n_counted, counter(fmt))
         pos_width = max(pos_width, fmt.pos_width)
         crd_width = max(crd_width, fmt.crd_width)
         if order != "C":
@@ -256,12 +255,14 @@ def _determine_format(*formats: StorageFormat, dtype: DType, union: bool, out_nd
             elif order[: len(fmt.order)] != fmt.order:
                 order = "C"
 
-    order = order + tuple(range(len(order), out_ndim))
+    if not isinstance(order, str):
+        order = order + tuple(range(len(order), out_ndim))
+        order = order[:out_ndim]
 
     if out_ndim < n_counted:
         n_counted = out_ndim
 
-    n_sparse = n_counted if union else out_ndim - n_counted
+    n_sparse = n_counted if not union else out_ndim - n_counted
 
     levels = (Level(LevelFormat.Dense),) * (out_ndim - n_sparse) + (Level(LevelFormat.Compressed),) * n_sparse
     return get_storage_format(

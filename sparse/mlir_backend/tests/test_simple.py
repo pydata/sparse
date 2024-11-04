@@ -300,37 +300,50 @@ def test_copy():
 
 
 @parametrize_dtypes
-def test_reshape(rng, dtype):
+@pytest.mark.parametrize(
+    "format",
+    [
+        "csr",
+        pytest.param("csc", marks=pytest.mark.xfail(reason="https://github.com/llvm/llvm-project/pull/109135")),
+        pytest.param("coo", marks=pytest.mark.xfail(reason="https://github.com/llvm/llvm-project/pull/109641")),
+    ],
+)
+@pytest.mark.parametrize(
+    ("shape", "new_shape"),
+    [
+        ((100, 50), (25, 200)),
+        ((100, 50), (10, 500, 1)),
+        ((80, 1), (8, 10)),
+        ((80, 1), (80,)),
+    ],
+)
+def test_reshape(rng, dtype, format, shape, new_shape):
     DENSITY = 0.5
     sampler = generate_sampler(dtype, rng)
 
-    # CSR, CSC, COO
-    for shape, new_shape in [
-        ((100, 50), (25, 200)),
-        # ((100, 50), (10, 500, 1)),
-        ((80, 1), (8, 10)),
-        # ((80, 1), (80,)),
-    ]:
-        for format in ["csr", "csc", "coo"]:
-            if format == "coo":
-                # NOTE: Blocked by https://github.com/llvm/llvm-project/pull/109135
-                continue
-            if format == "csc":
-                # NOTE: Blocked by https://github.com/llvm/llvm-project/issues/109641
-                continue
+    arr_sps = sps.random_array(
+        shape, density=DENSITY, format=format, dtype=dtype, random_state=rng, data_sampler=sampler
+    )
+    arr_sps.eliminate_zeros()
+    arr_sps.sum_duplicates()
+    arr = sparse.asarray(arr_sps)
 
-            arr = sps.random_array(
-                shape, density=DENSITY, format=format, dtype=dtype, random_state=rng, data_sampler=sampler
-            )
-            arr.eliminate_zeros()
-            arr.sum_duplicates()
-            tensor = sparse.asarray(arr)
+    actual = sparse.reshape(arr, shape=new_shape)
+    assert actual.shape == new_shape
 
-            actual = sparse.to_scipy(sparse.reshape(tensor, shape=new_shape))
-            expected = arr.todense().reshape(new_shape)
+    try:
+        scipy_format = sparse.to_scipy(actual).format
+    except RuntimeError:
+        pytest.xfail("No library to compare to.")
 
-            np.testing.assert_array_equal(actual.todense(), expected)
+    expected = sparse.asarray(arr_sps.reshape(new_shape).asformat(scipy_format)) if scipy_format is not None else arr
 
+    for x, y in zip(expected.get_constituent_arrays(), actual.get_constituent_arrays(), strict=True):
+        np.testing.assert_array_equal(x, y)
+
+
+@parametrize_dtypes
+def test_reshape_csf(dtype):
     # CSF
     csf_shape = (2, 2, 4)
     csf_format = sparse.levels.get_storage_format(
@@ -372,7 +385,6 @@ def test_reshape(rng, dtype):
         csf_tensor = sparse.from_constituent_arrays(format=csf_format, arrays=arrs, shape=shape)
 
         result = sparse.reshape(csf_tensor, shape=new_shape)
-
         for actual, expected in zip(result.get_constituent_arrays(), expected_arrs, strict=True):
             np.testing.assert_array_equal(actual, expected)
 

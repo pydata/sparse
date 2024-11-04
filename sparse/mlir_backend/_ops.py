@@ -156,11 +156,11 @@ def add(x1: Array, x2: Array) -> Array:
     return Array(storage=ret_storage, shape=tuple(out_tensor_type.shape))
 
 
-def reshape(x: Array, /, shape: tuple[int, ...]):
+def reshape(x: Array, /, shape: tuple[int, ...]) -> Array:
     from ._conversions import _from_numpy
 
     shape = as_shape(shape)
-    ret_storage_format = _determine_format(x.format, dtype=x.dtype, union=len(shape) >= x.ndim, out_ndim=len(shape))
+    ret_storage_format = _determine_format(x.format, dtype=x.dtype, union=len(shape) > x.ndim, out_ndim=len(shape))
     shape_array = _from_numpy(np.asarray(shape, dtype=np.uint64))
     out_tensor_type = ret_storage_format._get_mlir_type(shape=shape)
     ret_storage = ret_storage_format._get_ctypes_type(owns_memory=True)()
