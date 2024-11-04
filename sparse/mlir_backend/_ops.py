@@ -8,7 +8,7 @@ from mlir_finch.dialects import arith, complex, func, linalg, sparse_tensor, ten
 import numpy as np
 
 from ._array import Array
-from ._common import fn_cache
+from ._common import as_shape, fn_cache
 from ._core import CWD, DEBUG, OPT_LEVEL, SHARED_LIBS, ctx, pm
 from ._dtypes import DType, IeeeComplexFloatingDType, IeeeRealFloatingDType, IntegerDType
 from .levels import _determine_format
@@ -140,7 +140,7 @@ def add(x1: Array, x2: Array) -> Array:
     ret_storage = ret_storage_format._get_ctypes_type(owns_memory=True)()
     out_tensor_type = ret_storage_format._get_mlir_type(shape=np.broadcast_shapes(x1.shape, x2.shape))
 
-    # TODO: Decide what will be the output tensor_type
+    # TODO: Determine output format via autoscheduler
     add_module = get_add_module(
         x1._get_mlir_type(),
         x2._get_mlir_type(),
@@ -154,3 +154,24 @@ def add(x1: Array, x2: Array) -> Array:
         *x2._to_module_arg(),
     )
     return Array(storage=ret_storage, shape=tuple(out_tensor_type.shape))
+
+
+def reshape(x: Array, /, shape: tuple[int, ...]):
+    from ._conversions import _from_numpy
+
+    shape = as_shape(shape)
+    ret_storage_format = _determine_format(x.format, dtype=x.dtype, union=len(shape) >= x.ndim, out_ndim=len(shape))
+    shape_array = _from_numpy(np.asarray(shape, dtype=np.uint64))
+    out_tensor_type = ret_storage_format._get_mlir_type(shape=shape)
+    ret_storage = ret_storage_format._get_ctypes_type(owns_memory=True)()
+
+    reshape_module = get_reshape_module(x._get_mlir_type(), shape_array._get_mlir_type(), out_tensor_type)
+
+    reshape_module.invoke(
+        "reshape",
+        ctypes.pointer(ctypes.pointer(ret_storage)),
+        *x._to_module_arg(),
+        *shape_array._to_module_arg(),
+    )
+
+    return Array(storage=ret_storage, shape=shape)

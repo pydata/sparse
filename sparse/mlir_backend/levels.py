@@ -221,6 +221,10 @@ def _count_sparse_levels(format: StorageFormat) -> int:
     return sum(_is_sparse_level(lvl) for lvl in format.levels)
 
 
+def _count_dense_levels(format: StorageFormat) -> int:
+    return sum(not _is_sparse_level(lvl) for lvl in format.levels)
+
+
 def _determine_format(*formats: StorageFormat, dtype: DType, union: bool, out_ndim: int | None = None) -> StorageFormat:
     if len(formats) == 0:
         if out_ndim is None:
@@ -239,10 +243,11 @@ def _determine_format(*formats: StorageFormat, dtype: DType, union: bool, out_nd
     pos_width = 0
     crd_width = 0
     op = min if union else max
-    n_sparse = None
+    counter = _count_sparse_levels if not union else _count_dense_levels
+    n_counted = None
     order = ()
     for fmt in formats:
-        n_sparse = _count_sparse_levels(fmt) if n_sparse is None else op(n_sparse, _count_sparse_levels(fmt))
+        n_counted = counter(fmt) if n_counted is None else op(n_counted, counter(fmt))
         pos_width = max(pos_width, fmt.pos_width)
         crd_width = max(crd_width, fmt.crd_width)
         if order != "C":
@@ -251,8 +256,12 @@ def _determine_format(*formats: StorageFormat, dtype: DType, union: bool, out_nd
             elif order[: len(fmt.order)] != fmt.order:
                 order = "C"
 
-    if out_ndim < n_sparse:
-        n_sparse = out_ndim
+    order = order + tuple(range(len(order), out_ndim))
+
+    if out_ndim < n_counted:
+        n_counted = out_ndim
+
+    n_sparse = n_counted if union else out_ndim - n_counted
 
     levels = (Level(LevelFormat.Dense),) * (out_ndim - n_sparse) + (Level(LevelFormat.Compressed),) * n_sparse
     return get_storage_format(

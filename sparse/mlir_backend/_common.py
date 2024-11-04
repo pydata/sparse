@@ -1,6 +1,7 @@
 import ctypes
 import functools
 import weakref
+from collections.abc import Iterable
 
 import mlir_finch.runtime as rt
 
@@ -52,3 +53,13 @@ def _hold_ref(owner, obj):
         ctypes.pythonapi.Py_DecRef(ptr)
 
     weakref.finalize(owner, finalizer, ptr)
+
+
+def as_shape(x) -> tuple[int]:
+    if not isinstance(x, Iterable):
+        x = (x,)
+
+    if not all(isinstance(xi, int) for xi in x):
+        raise TypeError("Shape must be an `int` or tuple of `int`s.")
+
+    return tuple(int(xi) for xi in x)
