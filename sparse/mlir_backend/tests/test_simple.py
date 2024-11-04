@@ -304,8 +304,8 @@ def test_copy():
     "format",
     [
         "csr",
-        pytest.param("csc", marks=pytest.mark.xfail(reason="https://github.com/llvm/llvm-project/pull/109135")),
-        pytest.param("coo", marks=pytest.mark.xfail(reason="https://github.com/llvm/llvm-project/pull/109641")),
+        pytest.param("csc", marks=pytest.mark.xfail(reason="https://github.com/llvm/llvm-project/pull/109641")),
+        pytest.param("coo", marks=pytest.mark.xfail(reason="https://github.com/llvm/llvm-project/pull/109135")),
     ],
 )
 @pytest.mark.parametrize(
@@ -336,7 +336,7 @@ def test_reshape(rng, dtype, format, shape, new_shape):
     except RuntimeError:
         pytest.xfail("No library to compare to.")
 
-    expected = sparse.asarray(arr_sps.reshape(new_shape).asformat(scipy_format)) if scipy_format is not None else arr
+    expected = sparse.asarray(arr_sps.reshape(new_shape).asformat(scipy_format))
 
     for x, y in zip(expected.get_constituent_arrays(), actual.get_constituent_arrays(), strict=True):
         np.testing.assert_array_equal(x, y)
