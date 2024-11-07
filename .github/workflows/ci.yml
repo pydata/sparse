@@ -34,10 +34,8 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-      - uses: mamba-org/setup-micromamba@v1.9.0
+      - uses: mamba-org/setup-micromamba@v2
         with:
-          # NOTE: https://github.com/mamba-org/setup-micromamba/issues/227
-          micromamba-version: '1.5.10-0'
           environment-file: ci/environment.yml
           init-shell: >-
             bash
