@@ -94,13 +94,17 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
         case "coo":
             if copy is not None and not copy:
                 raise RuntimeError(f"`scipy.sparse.{type(arr.__name__)}` cannot be zero-copy converted.")
-            coords = np.stack([arr.row, arr.col], axis=1)
+            row, col = arr.row, arr.col
+            if row.dtype != col.dtype:
+                raise RuntimeError(f"`row` and `col` dtypes must be the same: {row.dtype} != {col.dtype}.")
             pos = np.array([0, arr.nnz], dtype=np.int64)
             pos_width = pos.dtype.itemsize * 8
-            crd_width = coords.dtype.itemsize * 8
+            crd_width = row.dtype.itemsize * 8
             data = arr.data
             if copy:
-                data = arr.data.copy()
+                data = data.copy()
+                row = row.copy()
+                col = col.copy()
 
             level_props = LevelProperties(0)
             if not arr.has_canonical_format:
@@ -109,7 +113,7 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
             coo_format = get_storage_format(
                 levels=(
                     Level(LevelFormat.Compressed, level_props | LevelProperties.NonUnique),
-                    Level(LevelFormat.Singleton, level_props),
+                    Level(LevelFormat.Singleton, level_props | LevelProperties.SOA),
                 ),
                 order=(0, 1),
                 pos_width=pos_width,
@@ -117,7 +121,7 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
                 dtype=arr.dtype,
             )
 
-            return from_constituent_arrays(format=coo_format, arrays=(pos, coords, data), shape=arr.shape)
+            return from_constituent_arrays(format=coo_format, arrays=(pos, row, col, data), shape=arr.shape)
         case _:
             raise NotImplementedError(f"No conversion implemented for `scipy.sparse.{type(arr.__name__)}`.")
 
@@ -133,8 +137,8 @@ def to_scipy(arr: Array) -> ScipySparseArray:
                 return sps.csr_array((data, indices, indptr), shape=arr.shape)
             return sps.csc_array((data, indices, indptr), shape=arr.shape)
         case (Level(LevelFormat.Compressed, _), Level(LevelFormat.Singleton, _)):
-            _, coords, data = arr.get_constituent_arrays()
-            return sps.coo_array((data, (coords[:, 0], coords[:, 1])), shape=arr.shape)
+            _, row, col, data = arr.get_constituent_arrays()
+            return sps.coo_array((data, (row, col)), shape=arr.shape)
         case _:
             raise RuntimeError(f"No conversion implemented for `{storage_format=}`.")
 
