@@ -38,6 +38,7 @@ pre-commit = "*"
 pytest-codspeed = "*"
 
 [feature.notebooks.dependencies]
+ipython = "*"
 nbmake = "*"
 matplotlib = "*"
 
@@ -65,7 +66,8 @@ mlir-python-bindings = "19.*"
 SPARSE_BACKEND = "MLIR"
 
 [environments]
+dev = ["tests", "extras", "notebooks"]
 tests = ["tests", "extras"]
 docs = ["docs", "extras"]
-mlir-dev = ["tests", "mlir"]
-finch-dev = ["tests", "finch"]
+mlir-dev = ["mlir", "tests", "notebooks"]
+finch-dev = ["finch", "tests", "notebooks"]
