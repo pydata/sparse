@@ -60,7 +60,9 @@ PYTHONFAULTHANDLER = "${HOME}/faulthandler.log"
 
 [feature.mlir.dependencies]
 scipy = ">=0.19"
-mlir-python-bindings = "19.*"
+
+[feature.mlir.target.osx-arm64.pypi-dependencies]
+finch-mlir = ">=0.0.2"
 
 [feature.mlir.activation.env]
 SPARSE_BACKEND = "MLIR"

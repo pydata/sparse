@@ -185,7 +185,9 @@ def test_add(rng, dtype):
     expected = csr_2 + coo
     assert_csx_equal(expected, actual)
 
-    actual = sparse.to_scipy(sparse.add(coo_tensor, coo_tensor))
+    # This ends up being DCSR, not COO
+    actual_tensor = sparse.add(coo_tensor, coo_tensor)
+    actual = sparse.to_scipy(actual_tensor.asformat(coo_tensor.format))
     expected = coo + coo
     np.testing.assert_array_equal(actual.todense(), expected.todense())
 
@@ -247,7 +249,7 @@ def test_coo_3d_format(dtype):
     for actual, expected in zip(result, carrs, strict=True):
         np.testing.assert_array_equal(actual, expected)
 
-    result_arrays = sparse.add(coo_array, coo_array).get_constituent_arrays()
+    result_arrays = sparse.add(coo_array, coo_array).asformat(coo_array.format).get_constituent_arrays()
     constituent_arrays = (pos, *crd, data * 2)
     for actual, expected in zip(result_arrays, constituent_arrays, strict=False):
         np.testing.assert_array_equal(actual, expected)
