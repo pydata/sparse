@@ -212,6 +212,7 @@ def _get_storage_format(
 
 
 def _is_sparse_level(lvl: Level | LevelFormat, /) -> bool:
+    assert isinstance(lvl, Level | LevelFormat)
     if isinstance(lvl, Level):
         lvl = lvl.format
     return LevelFormat.Dense != lvl
@@ -226,6 +227,18 @@ def _count_dense_levels(format: StorageFormat) -> int:
 
 
 def _determine_format(*formats: StorageFormat, dtype: DType, union: bool, out_ndim: int | None = None) -> StorageFormat:
+    """Determines the output format from a group of input formats.
+
+    1. Counts the sparse levels for `union=True`, and dense ones for `union=False`.
+    2. Gets the max number of counted levels for each format.
+    3. Constructs a format with the same number of counted levels.
+       Sparse levels are replaced with `LevelFormat.Compressed`.
+
+    Returns
+    -------
+    StorageFormat
+        Output storage format.
+    """
     if len(formats) == 0:
         if out_ndim is None:
             out_ndim = 0

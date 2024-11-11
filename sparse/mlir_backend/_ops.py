@@ -50,7 +50,7 @@ def get_add_module(
                             for t in (a_tensor_type, b_tensor_type, out_tensor_type)
                         ]
                     ),
-                    ir.ArrayAttr.get([ir.Attribute.parse("#linalg.iterator_type<parallel>")] * out_tensor_type.rank),
+                    ir.ArrayAttr.get([ir.Attribute.parse("#linalg.iterator_type<parallel>")] * max_rank),
                 )
                 block = generic_op.regions[0].blocks.append(dtype, dtype, dtype)
                 with ir.InsertionPoint(block):
@@ -160,11 +160,11 @@ def get_convert_module(
 
 
 def add(x1: Array, x2: Array, /) -> Array:
+    # TODO: Determine output format via autoscheduler
     ret_storage_format = _determine_format(x1.format, x2.format, dtype=x1.dtype, union=True)
     ret_storage = ret_storage_format._get_ctypes_type(owns_memory=True)()
     out_tensor_type = ret_storage_format._get_mlir_type(shape=np.broadcast_shapes(x1.shape, x2.shape))
 
-    # TODO: Determine output format via autoscheduler
     add_module = get_add_module(
         x1._get_mlir_type(),
         x2._get_mlir_type(),
