@@ -151,10 +151,10 @@ def get_convert_module(
 
             convert.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
             if DEBUG:
-                (CWD / "broadcast_to_module.mlir").write_text(str(module))
+                (CWD / "convert_module.mlir").write_text(str(module))
             pm.run(module.operation)
             if DEBUG:
-                (CWD / "broadcast_to_module_opt.mlir").write_text(str(module))
+                (CWD / "convert_module.mlir").write_text(str(module))
 
     return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=OPT_LEVEL, shared_libs=SHARED_LIBS)
 

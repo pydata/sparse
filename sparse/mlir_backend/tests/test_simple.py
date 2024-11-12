@@ -31,9 +31,9 @@ parametrize_dtypes = pytest.mark.parametrize(
 )
 
 
-def assert_csx_equal(
-    expected: sps.csr_array | sps.csc_array,
-    actual: sps.csr_array | sps.csc_array,
+def assert_sps_equal(
+    expected: sps.csr_array | sps.csc_array | sps.coo_array,
+    actual: sps.csr_array | sps.csc_array | sps.coo_array,
 ) -> None:
     assert expected.format == actual.format
     expected.eliminate_zeros()
@@ -42,8 +42,13 @@ def assert_csx_equal(
     actual.eliminate_zeros()
     actual.sum_duplicates()
 
-    np.testing.assert_array_equal(expected.indptr, actual.indptr)
-    np.testing.assert_array_equal(expected.indices, actual.indices)
+    if expected.format != "coo":
+        np.testing.assert_array_equal(expected.indptr, actual.indptr)
+        np.testing.assert_array_equal(expected.indices, actual.indices)
+    else:
+        np.testing.assert_array_equal(expected.row, actual.col)
+        np.testing.assert_array_equal(expected.row, actual.col)
+
     np.testing.assert_array_equal(expected.data, actual.data)
 
 
@@ -121,10 +126,10 @@ def test_2d_constructors(rng, dtype):
     dense_2_tensor = sparse.asarray(np.arange(100, dtype=dtype).reshape((25, 4)) + 10)
 
     csr_retured = sparse.to_scipy(csr_tensor)
-    assert_csx_equal(csr_retured, csr)
+    assert_sps_equal(csr_retured, csr)
 
     csc_retured = sparse.to_scipy(csc_tensor)
-    assert_csx_equal(csc_retured, csc)
+    assert_sps_equal(csc_retured, csc)
 
     dense_returned = sparse.to_numpy(dense_tensor)
     np.testing.assert_equal(dense_returned, dense)
@@ -157,15 +162,15 @@ def test_add(rng, dtype):
 
     actual = sparse.to_scipy(sparse.add(csr_tensor, csr_2_tensor))
     expected = csr + csr_2
-    assert_csx_equal(expected, actual)
+    assert_sps_equal(expected, actual)
 
     actual = sparse.to_scipy(sparse.add(csc_tensor, csc_tensor))
     expected = csc + csc
-    assert_csx_equal(expected, actual)
+    assert_sps_equal(expected, actual)
 
     actual = sparse.to_scipy(sparse.add(csc_tensor, csr_tensor))
     expected = (csc + csr).asformat("csr")
-    assert_csx_equal(expected, actual)
+    assert_sps_equal(expected, actual)
 
     actual = sparse.to_numpy(sparse.add(csr_tensor, dense_tensor))
     expected = csr + dense
@@ -183,7 +188,7 @@ def test_add(rng, dtype):
 
     actual = sparse.to_scipy(sparse.add(csr_2_tensor, coo_tensor))
     expected = csr_2 + coo
-    assert_csx_equal(expected, actual)
+    assert_sps_equal(expected, actual)
 
     # This ends up being DCSR, not COO
     actual_tensor = sparse.add(coo_tensor, coo_tensor)
@@ -307,7 +312,7 @@ def test_copy():
     [
         "csr",
         pytest.param("csc", marks=pytest.mark.xfail(reason="https://github.com/llvm/llvm-project/pull/109641")),
-        pytest.param("coo", marks=pytest.mark.xfail(reason="https://github.com/llvm/llvm-project/pull/109135")),
+        "coo",
     ],
 )
 @pytest.mark.parametrize(
@@ -390,6 +395,45 @@ def test_reshape_csf(dtype):
         for actual, expected in zip(result.get_constituent_arrays(), expected_arrs, strict=True):
             np.testing.assert_array_equal(actual, expected)
 
-    # DENSE
-    # NOTE: dense reshape is probably broken in MLIR in 19.x branch
-    # dense = np.arange(math.prod(SHAPE), dtype=dtype).reshape(SHAPE)
+
+@parametrize_dtypes
+def test_reshape_dense(dtype):
+    SHAPE = (2, 2, 4)
+
+    np_arr = np.arange(math.prod(SHAPE), dtype=dtype).reshape(SHAPE)
+    sp_arr = sparse.asarray(np_arr)
+
+    for new_shape in [
+        (4, 4, 1),
+        (2, 1, 8),
+    ]:
+        expected = np_arr.reshape(new_shape)
+        actual = sparse.reshape(sp_arr, new_shape)
+
+        actual_np = sparse.to_numpy(actual)
+
+        assert actual_np.dtype == expected.dtype
+        np.testing.assert_equal(actual_np, expected)
+
+
+@pytest.mark.skip(reason="Segfault")
+@pytest.mark.parametrize("src_fmt", ["csr", "csc"])
+@pytest.mark.parametrize("dst_fmt", ["csr", "csc"])
+def test_asformat(rng, src_fmt, dst_fmt):
+    SHAPE = (100, 50)
+    DENSITY = 0.5
+    sampler = generate_sampler(np.float64, rng)
+
+    sps_arr = sps.random_array(
+        SHAPE, density=DENSITY, format=src_fmt, dtype=np.float64, random_state=rng, data_sampler=sampler
+    )
+    sp_arr = sparse.asarray(sps_arr)
+
+    expected = sps_arr.asformat(dst_fmt)
+
+    actual_fmt = sparse.asarray(expected, copy=False).format
+    actual = sp_arr.asformat(actual_fmt)
+    actual_sps = sparse.to_scipy(actual)
+
+    assert actual_sps.format == dst_fmt
+    assert_sps_equal(expected, actual_sps)
