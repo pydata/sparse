@@ -181,6 +181,9 @@ def add(x1: Array, x2: Array, /) -> Array:
 
 
 def asformat(x: Array, /, format: StorageFormat) -> Array:
+    if x.format == format:
+        return x
+
     out_tensor_type = format._get_mlir_type(shape=x.shape)
     ret_storage = format._get_ctypes_type(owns_memory=True)()
 

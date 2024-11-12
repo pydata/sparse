@@ -416,9 +416,12 @@ def test_reshape_dense(dtype):
         np.testing.assert_equal(actual_np, expected)
 
 
-@pytest.mark.skip(reason="Segfault")
-@pytest.mark.parametrize("src_fmt", ["csr", "csc"])
-@pytest.mark.parametrize("dst_fmt", ["csr", "csc"])
+@pytest.mark.parametrize(
+    "src_fmt", ["csr", "csc", pytest.param("coo", marks=pytest.mark.skip(reason="TODO: Report MLIR issue"))]
+)
+@pytest.mark.parametrize(
+    "dst_fmt", ["csr", "csc", pytest.param("coo", marks=pytest.mark.skip(reason="TODO: Report MLIR issue"))]
+)
 def test_asformat(rng, src_fmt, dst_fmt):
     SHAPE = (100, 50)
     DENSITY = 0.5

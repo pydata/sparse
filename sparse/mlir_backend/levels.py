@@ -231,7 +231,8 @@ def _determine_format(*formats: StorageFormat, dtype: DType, union: bool, out_nd
 
     1. Counts the sparse levels for `union=True`, and dense ones for `union=False`.
     2. Gets the max number of counted levels for each format.
-    3. Constructs a format with the same number of counted levels.
+    3. Constructs a format with rank of `out_ndim` (max rank of inputs is taken if it's `None`).
+       If `union=False` counted levels is the number of sparse levels, otherwise dense.
        Sparse levels are replaced with `LevelFormat.Compressed`.
 
     Returns
@@ -243,7 +244,7 @@ def _determine_format(*formats: StorageFormat, dtype: DType, union: bool, out_nd
         if out_ndim is None:
             out_ndim = 0
         return get_storage_format(
-            levels=(Level(LevelFormat.Dense),) * out_ndim,
+            levels=(Level(LevelFormat.Dense if union else LevelFormat.Compressed),) * out_ndim,
             order="C",
             pos_width=64,
             crd_width=64,
