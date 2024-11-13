@@ -46,8 +46,8 @@ def assert_sps_equal(
         np.testing.assert_array_equal(expected.indptr, actual.indptr)
         np.testing.assert_array_equal(expected.indices, actual.indices)
     else:
-        np.testing.assert_array_equal(expected.row, actual.col)
-        np.testing.assert_array_equal(expected.row, actual.col)
+        np.testing.assert_array_equal(expected.row, actual.row)
+        np.testing.assert_array_equal(expected.col, actual.col)
 
     np.testing.assert_array_equal(expected.data, actual.data)
 
@@ -441,10 +441,20 @@ def test_reshape_dense(dtype):
 
 
 @pytest.mark.parametrize(
-    "src_fmt", ["csr", "csc", pytest.param("coo", marks=pytest.mark.skip(reason="TODO: Report MLIR issue"))]
+    "src_fmt",
+    [
+        "csr",
+        "csc",
+        pytest.param("coo", marks=pytest.mark.skip(reason="https://github.com/llvm/llvm-project/issues/116012")),
+    ],
 )
 @pytest.mark.parametrize(
-    "dst_fmt", ["csr", "csc", pytest.param("coo", marks=pytest.mark.skip(reason="TODO: Report MLIR issue"))]
+    "dst_fmt",
+    [
+        "csr",
+        "csc",
+        pytest.param("coo", marks=pytest.mark.skip(reason="https://github.com/llvm/llvm-project/issues/116012")),
+    ],
 )
 def test_asformat(rng, src_fmt, dst_fmt):
     SHAPE = (100, 50)
