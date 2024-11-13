@@ -341,7 +341,31 @@ def test_reshape(rng, dtype, format, shape, new_shape):
     try:
         scipy_format = sparse.to_scipy(actual).format
     except RuntimeError:
-        pytest.xfail("No library to compare to.")
+        tmp_levels = (sparse.levels.Level(sparse.levels.LevelFormat.Dense),) * len(shape)
+        tmp_fmt = sparse.levels.get_storage_format(
+            levels=tmp_levels,
+            order="C",
+            pos_width=64,
+            crd_width=64,
+            dtype=dtype,
+        )
+        arr_dense = arr.asformat(tmp_fmt)
+        arr_np = sparse.to_numpy(arr_dense)
+        expected_np = arr_np.reshape(new_shape)
+
+        out_levels = (sparse.levels.Level(sparse.levels.LevelFormat.Dense),) * len(new_shape)
+        out_fmt = sparse.levels.get_storage_format(
+            levels=out_levels,
+            order="C",
+            pos_width=64,
+            crd_width=64,
+            dtype=dtype,
+        )
+        actual_dense = actual.asformat(out_fmt)
+        actual_np = sparse.to_numpy(actual_dense)
+
+        np.testing.assert_array_equal(expected_np, actual_np)
+        return
 
     expected = sparse.asarray(arr_sps.reshape(new_shape).asformat(scipy_format))
 

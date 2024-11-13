@@ -226,6 +226,26 @@ def _count_dense_levels(format: StorageFormat) -> int:
     return sum(not _is_sparse_level(lvl) for lvl in format.levels)
 
 
+def _get_sparse_dense_levels(
+    *, n_sparse: int | None = None, n_dense: int | None = None, ndim: int | None = None
+) -> tuple[Level, ...]:
+    if (n_sparse is not None) + (n_dense is not None) + (ndim is not None) != 2:
+        assert n_sparse is not None and n_dense is not None and ndim is not None  #
+        assert n_sparse + n_dense == ndim
+    if n_sparse is None:
+        n_sparse = ndim - n_dense
+    if n_dense is None:
+        n_dense = ndim - n_sparse
+    if ndim is None:
+        ndim = n_dense + n_sparse
+
+    assert ndim >= 0
+    assert n_dense >= 0
+    assert n_sparse >= 0
+
+    return (Level(LevelFormat.Dense),) * n_dense + (Level(LevelFormat.Compressed),) * n_sparse
+
+
 def _determine_format(*formats: StorageFormat, dtype: DType, union: bool, out_ndim: int | None = None) -> StorageFormat:
     """Determines the output format from a group of input formats.
 
@@ -278,7 +298,7 @@ def _determine_format(*formats: StorageFormat, dtype: DType, union: bool, out_nd
 
     n_sparse = n_counted if not union else out_ndim - n_counted
 
-    levels = (Level(LevelFormat.Dense),) * (out_ndim - n_sparse) + (Level(LevelFormat.Compressed),) * n_sparse
+    levels = _get_sparse_dense_levels(n_sparse=n_sparse, ndim=out_ndim)
     return get_storage_format(
         levels=levels,
         order=order,

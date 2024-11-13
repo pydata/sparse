@@ -1,4 +1,5 @@
 import ctypes
+import math
 
 import mlir_finch.execution_engine
 import mlir_finch.passmanager
@@ -205,6 +206,9 @@ def reshape(x: Array, /, shape: tuple[int, ...]) -> Array:
     from ._conversions import _from_numpy
 
     shape = as_shape(shape)
+    if math.prod(x.shape) != math.prod(shape):
+        raise ValueError(f"`math.prod(x.shape) != math.prod(shape)`, {x.shape=}, {shape=}")
+
     ret_storage_format = _determine_format(x.format, dtype=x.dtype, union=len(shape) > x.ndim, out_ndim=len(shape))
     shape_array = _from_numpy(np.asarray(shape, dtype=np.uint64))
     out_tensor_type = ret_storage_format._get_mlir_type(shape=shape)
