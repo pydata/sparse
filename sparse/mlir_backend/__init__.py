@@ -27,7 +27,7 @@ from ._dtypes import (
     uint32,
     uint64,
 )
-from ._ops import add
+from ._ops import add, reshape
 
 __all__ = [
     "add",
@@ -36,6 +36,7 @@ __all__ = [
     "to_numpy",
     "to_scipy",
     "levels",
+    "reshape",
     "from_constituent_arrays",
     "int8",
     "int16",

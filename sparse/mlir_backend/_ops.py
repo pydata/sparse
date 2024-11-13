@@ -1,14 +1,18 @@
 import ctypes
+import math
 
 import mlir_finch.execution_engine
 import mlir_finch.passmanager
 from mlir_finch import ir
 from mlir_finch.dialects import arith, complex, func, linalg, sparse_tensor, tensor
 
+import numpy as np
+
 from ._array import Array
-from ._common import fn_cache
-from ._core import CWD, DEBUG, SHARED_LIBS, ctx, pm
+from ._common import as_shape, fn_cache
+from ._core import CWD, DEBUG, OPT_LEVEL, SHARED_LIBS, ctx, pm
 from ._dtypes import DType, IeeeComplexFloatingDType, IeeeRealFloatingDType, IntegerDType
+from .levels import StorageFormat, _determine_format
 
 
 @fn_cache
@@ -17,7 +21,6 @@ def get_add_module(
     b_tensor_type: ir.RankedTensorType,
     out_tensor_type: ir.RankedTensorType,
     dtype: DType,
-    rank: int,
 ) -> ir.Module:
     with ir.Location.unknown(ctx):
         module = ir.Module.create()
@@ -31,7 +34,7 @@ def get_add_module(
             raise RuntimeError(f"Can not add {dtype=}.")
 
         dtype = dtype._get_mlir_type()
-        ordering = ir.AffineMap.get_permutation(range(rank))
+        max_rank = out_tensor_type.rank
 
         with ir.InsertionPoint(module.body):
 
@@ -42,8 +45,13 @@ def get_add_module(
                     [out_tensor_type],
                     [a, b],
                     [out],
-                    ir.ArrayAttr.get([ir.AffineMapAttr.get(p) for p in (ordering,) * 3]),
-                    ir.ArrayAttr.get([ir.Attribute.parse("#linalg.iterator_type<parallel>")] * rank),
+                    ir.ArrayAttr.get(
+                        [
+                            ir.AffineMapAttr.get(ir.AffineMap.get_minor_identity(max_rank, t.rank))
+                            for t in (a_tensor_type, b_tensor_type, out_tensor_type)
+                        ]
+                    ),
+                    ir.ArrayAttr.get([ir.Attribute.parse("#linalg.iterator_type<parallel>")] * max_rank),
                 )
                 block = generic_op.regions[0].blocks.append(dtype, dtype, dtype)
                 with ir.InsertionPoint(block):
@@ -72,7 +80,7 @@ def get_add_module(
         if DEBUG:
             (CWD / "add_module_opt.mlir").write_text(str(module))
 
-    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=SHARED_LIBS)
+    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=OPT_LEVEL, shared_libs=SHARED_LIBS)
 
 
 @fn_cache
@@ -97,7 +105,7 @@ def get_reshape_module(
             if DEBUG:
                 (CWD / "reshape_module_opt.mlir").write_text(str(module))
 
-    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=SHARED_LIBS)
+    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=OPT_LEVEL, shared_libs=SHARED_LIBS)
 
 
 @fn_cache
@@ -125,21 +133,44 @@ def get_broadcast_to_module(
             if DEBUG:
                 (CWD / "broadcast_to_module_opt.mlir").write_text(str(module))
 
-    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=2, shared_libs=SHARED_LIBS)
+    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=OPT_LEVEL, shared_libs=SHARED_LIBS)
 
 
-def add(x1: Array, x2: Array) -> Array:
-    ret_storage_format = x1.format
+@fn_cache
+def get_convert_module(
+    in_tensor_type: ir.RankedTensorType,
+    out_tensor_type: ir.RankedTensorType,
+):
+    with ir.Location.unknown(ctx):
+        module = ir.Module.create()
+
+        with ir.InsertionPoint(module.body):
+
+            @func.FuncOp.from_py_func(in_tensor_type)
+            def convert(in_tensor):
+                return sparse_tensor.convert(out_tensor_type, in_tensor)
+
+            convert.func_op.attributes["llvm.emit_c_interface"] = ir.UnitAttr.get()
+            if DEBUG:
+                (CWD / "convert_module.mlir").write_text(str(module))
+            pm.run(module.operation)
+            if DEBUG:
+                (CWD / "convert_module.mlir").write_text(str(module))
+
+    return mlir_finch.execution_engine.ExecutionEngine(module, opt_level=OPT_LEVEL, shared_libs=SHARED_LIBS)
+
+
+def add(x1: Array, x2: Array, /) -> Array:
+    # TODO: Determine output format via autoscheduler
+    ret_storage_format = _determine_format(x1.format, x2.format, dtype=x1.dtype, union=True)
     ret_storage = ret_storage_format._get_ctypes_type(owns_memory=True)()
-    out_tensor_type = ret_storage_format._get_mlir_type(shape=x1.shape)
+    out_tensor_type = ret_storage_format._get_mlir_type(shape=np.broadcast_shapes(x1.shape, x2.shape))
 
-    # TODO: Decide what will be the output tensor_type
     add_module = get_add_module(
         x1._get_mlir_type(),
         x2._get_mlir_type(),
         out_tensor_type=out_tensor_type,
         dtype=x1.dtype,
-        rank=x1.ndim,
     )
     add_module.invoke(
         "add",
@@ -147,4 +178,49 @@ def add(x1: Array, x2: Array) -> Array:
         *x1._to_module_arg(),
         *x2._to_module_arg(),
     )
-    return Array(storage=ret_storage, shape=out_tensor_type.shape)
+    return Array(storage=ret_storage, shape=tuple(out_tensor_type.shape))
+
+
+def asformat(x: Array, /, format: StorageFormat) -> Array:
+    if x.format == format:
+        return x
+
+    out_tensor_type = format._get_mlir_type(shape=x.shape)
+    ret_storage = format._get_ctypes_type(owns_memory=True)()
+
+    convert_module = get_convert_module(
+        x._get_mlir_type(),
+        out_tensor_type,
+    )
+
+    convert_module.invoke(
+        "convert",
+        ctypes.pointer(ctypes.pointer(ret_storage)),
+        *x._to_module_arg(),
+    )
+
+    return Array(storage=ret_storage, shape=x.shape)
+
+
+def reshape(x: Array, /, shape: tuple[int, ...]) -> Array:
+    from ._conversions import _from_numpy
+
+    shape = as_shape(shape)
+    if math.prod(x.shape) != math.prod(shape):
+        raise ValueError(f"`math.prod(x.shape) != math.prod(shape)`, {x.shape=}, {shape=}")
+
+    ret_storage_format = _determine_format(x.format, dtype=x.dtype, union=len(shape) > x.ndim, out_ndim=len(shape))
+    shape_array = _from_numpy(np.asarray(shape, dtype=np.uint64))
+    out_tensor_type = ret_storage_format._get_mlir_type(shape=shape)
+    ret_storage = ret_storage_format._get_ctypes_type(owns_memory=True)()
+
+    reshape_module = get_reshape_module(x._get_mlir_type(), shape_array._get_mlir_type(), out_tensor_type)
+
+    reshape_module.invoke(
+        "reshape",
+        ctypes.pointer(ctypes.pointer(ret_storage)),
+        *x._to_module_arg(),
+        *shape_array._to_module_arg(),
+    )
+
+    return Array(storage=ret_storage, shape=shape)

@@ -28,6 +28,12 @@ libc = ctypes.CDLL(ctypes.util.find_library("c")) if os.name != "nt" else ctypes
 libc.free.argtypes = [ctypes.c_void_p]
 libc.free.restype = None
 
+SHARED_LIBS = []
+if DEBUG:
+    SHARED_LIBS.append(MLIR_C_RUNNER_UTILS)
+
+OPT_LEVEL = 0 if DEBUG else 2
+
 # TODO: remove global state
 ctx = Context()
 

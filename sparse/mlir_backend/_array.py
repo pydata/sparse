@@ -41,5 +41,10 @@ class Array:
         arrs = tuple(arr.copy() for arr in self.get_constituent_arrays())
         return from_constituent_arrays(format=self.format, arrays=arrs, shape=self.shape)
 
+    def asformat(self, format: StorageFormat) -> "Array":
+        from ._ops import asformat
+
+        return asformat(self, format=format)
+
     def get_constituent_arrays(self) -> tuple[np.ndarray, ...]:
         return self._storage.get_constituent_arrays()
