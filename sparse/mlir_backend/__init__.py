@@ -10,6 +10,7 @@ except ModuleNotFoundError as e:
     ) from e
 
 from . import levels
+from ._array import Array
 from ._conversions import asarray, from_constituent_arrays, to_numpy, to_scipy
 from ._dtypes import (
     asdtype,
@@ -30,6 +31,7 @@ from ._dtypes import (
 from ._ops import add, reshape
 
 __all__ = [
+    "Array",
     "add",
     "asarray",
     "asdtype",
