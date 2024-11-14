@@ -285,10 +285,9 @@ def test_coo_3d_format(dtype):
     for actual, expected in zip(result, carrs, strict=True):
         np.testing.assert_array_equal(actual, expected)
 
-    result_arrays = sparse.add(coo_array, coo_array).asformat(coo_array.format).get_constituent_arrays()
-    constituent_arrays = (pos, *crd, data * 2)
-    for actual, expected in zip(result_arrays, constituent_arrays, strict=True):
-        np.testing.assert_array_equal(actual, expected)
+    actual = sparse.add(coo_array, coo_array).asformat(coo_array.format)
+    expected = sparse.from_constituent_arrays(format=actual.format, arrays=(pos, *crd, data * 2), shape=SHAPE)
+    assert_array_equal(expected, actual)
 
 
 @parametrize_dtypes
