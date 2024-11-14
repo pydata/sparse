@@ -171,10 +171,10 @@ def test_roundtrip(rng, dtype, format):
 
 
 @parametrize_dtypes
-def test_roundtrip_dense(rng, dtype):
-    SHAPE = (80, 100)
+@pytest.mark.parametrize("shape", [(80, 100), (200,), (10, 20, 30)])
+def test_roundtrip_dense(rng, dtype, shape):
     sampler = generate_sampler(dtype, rng)
-    np_arr = sampler(SHAPE)
+    np_arr = sampler(shape)
 
     sp_arr = sparse.asarray(np_arr)
     np_roundtripped = sparse.to_numpy(sp_arr)
@@ -209,6 +209,23 @@ def test_add(rng, dtype, format):
     actual_sps = sparse.to_scipy(actual.asformat(sp_arr1.format))
 
     assert_sps_equal(expected, actual_sps, check_canonical=True)
+
+
+@parametrize_dtypes
+@pytest.mark.parametrize("shape", [(80, 100), (200,), (10, 20, 30)])
+def test_add_dense(rng, dtype, shape):
+    sampler = generate_sampler(dtype, rng)
+    np_arr1 = sampler(shape)
+    np_arr2 = sampler(shape)
+
+    sp_arr1 = sparse.asarray(np_arr1)
+    sp_arr2 = sparse.asarray(np_arr2)
+
+    expected = np_arr1 + np_arr2
+    actual = sparse.add(sp_arr1, sp_arr2)
+    actual_np = sparse.to_numpy(actual)
+
+    np.testing.assert_array_equal(expected, actual_np)
 
 
 @parametrize_dtypes
