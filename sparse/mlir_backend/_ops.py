@@ -182,7 +182,10 @@ def add(x1: Array, x2: Array, /) -> Array:
 
 
 def asformat(x: Array, /, format: StorageFormat) -> Array:
-    if x.format == format:
+    if format.rank != x.ndim:
+        raise ValueError(f"`format.rank != `self.ndim`, {format.rank=}, {x.ndim=}")
+
+    if format == x.format:
         return x
 
     out_tensor_type = format._get_mlir_type(shape=x.shape)

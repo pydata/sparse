@@ -154,7 +154,10 @@ def asarray(arr, copy: bool | None = None) -> Array:
             arr = arr.copy()
         return arr
 
-    return _from_numpy(np.asarray(arr, copy=copy), copy=None)
+    if copy is not None and not copy and not isinstance(arr, np.ndarray):
+        raise ValueError("Cannot non-copy convert this object.")
+
+    return _from_numpy(np.asarray(arr), copy=copy)
 
 
 def from_constituent_arrays(*, format: StorageFormat, arrays: tuple[np.ndarray, ...], shape: tuple[int, ...]) -> Array:
