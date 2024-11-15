@@ -283,10 +283,9 @@ def test_csf_format(dtype):
     for actual, expected in zip(result_arrays, constituent_arrays, strict=True):
         np.testing.assert_array_equal(actual, expected)
 
-    res_arrays = sparse.add(csf_array, csf_array).get_constituent_arrays()
-    expected_arrays = (pos_1, crd_1, pos_2, crd_2, data * 2)
-    for actual, expected in zip(res_arrays, expected_arrays, strict=True):
-        np.testing.assert_array_equal(actual, expected)
+    actual = sparse.add(csf_array, csf_array)
+    expected = sparse.from_constituent_arrays(format=format, arrays=(pos_1, crd_1, pos_2, crd_2, data * 2), shape=SHAPE)
+    assert_array_equal(expected, actual)
 
 
 @parametrize_dtypes
