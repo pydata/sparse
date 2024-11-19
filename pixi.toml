@@ -55,13 +55,12 @@ finch-tensor = ">=0.1.31"
 SPARSE_BACKEND = "Finch"
 
 [feature.finch.target.osx-arm64.activation.env]
-SPARSE_BACKEND = "Finch"
 PYTHONFAULTHANDLER = "${HOME}/faulthandler.log"
 
 [feature.mlir.dependencies]
 scipy = ">=0.19"
 
-[feature.mlir.target.osx-arm64.pypi-dependencies]
+[feature.mlir.pypi-dependencies]
 finch-mlir = ">=0.0.2"
 
 [feature.mlir.activation.env]
