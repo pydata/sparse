@@ -289,6 +289,7 @@ def test_csf_format(dtype):
 
 
 @parametrize_dtypes
+@pytest.mark.skip(reason="https://github.com/llvm/llvm-project/issues/116012")
 def test_coo_3d_format(dtype):
     format = sparse.levels.get_storage_format(
         levels=(
