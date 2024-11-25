@@ -289,7 +289,6 @@ def test_csf_format(dtype):
 
 
 @parametrize_dtypes
-@pytest.mark.skip(reason="https://github.com/llvm/llvm-project/issues/116012")
 def test_coo_3d_format(dtype):
     format = sparse.levels.get_storage_format(
         levels=(
@@ -501,22 +500,8 @@ def test_reshape_dense(dtype):
         np.testing.assert_equal(actual_np, expected)
 
 
-@pytest.mark.parametrize(
-    "src_fmt",
-    [
-        "csr",
-        "csc",
-        pytest.param("coo", marks=pytest.mark.skip(reason="https://github.com/llvm/llvm-project/issues/116012")),
-    ],
-)
-@pytest.mark.parametrize(
-    "dst_fmt",
-    [
-        "csr",
-        "csc",
-        pytest.param("coo", marks=pytest.mark.skip(reason="https://github.com/llvm/llvm-project/issues/116012")),
-    ],
-)
+@pytest.mark.parametrize("src_fmt", ["csr", "csc", "coo"])
+@pytest.mark.parametrize("dst_fmt", ["csr", "csc", "coo"])
 def test_asformat(rng, src_fmt, dst_fmt):
     SHAPE = (100, 50)
     DENSITY = 0.5
@@ -529,7 +514,8 @@ def test_asformat(rng, src_fmt, dst_fmt):
 
     expected = sps_arr.asformat(dst_fmt)
 
-    actual_fmt = sparse.asarray(expected, copy=False).format
+    copy = None if dst_fmt == "coo" else False
+    actual_fmt = sparse.asarray(expected, copy=copy).format
     actual = sp_arr.asformat(actual_fmt)
     actual_sps = sparse.to_scipy(actual)
 

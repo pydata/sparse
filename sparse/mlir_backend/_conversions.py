@@ -103,8 +103,10 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
             data = arr.data
             if copy:
                 data = data.copy()
-                row = row.copy()
-                col = col.copy()
+
+            # TODO: Make them own the data until https://github.com/llvm/llvm-project/issues/116012 is fixed.
+            row = row.copy()
+            col = col.copy()
 
             level_props = LevelProperties(0)
             if not arr.has_canonical_format:
