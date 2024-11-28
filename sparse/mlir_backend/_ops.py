@@ -12,7 +12,7 @@ from ._array import Array
 from ._common import as_shape, fn_cache
 from ._core import CWD, DEBUG, OPT_LEVEL, SHARED_LIBS, ctx, pm
 from ._dtypes import DType, IeeeComplexFloatingDType, IeeeRealFloatingDType, IntegerDType
-from .levels import StorageFormat, _determine_format
+from .formats import ConcreteFormat, _determine_format
 
 
 @fn_cache
@@ -181,7 +181,7 @@ def add(x1: Array, x2: Array, /) -> Array:
     return Array(storage=ret_storage, shape=tuple(out_tensor_type.shape))
 
 
-def asformat(x: Array, /, format: StorageFormat) -> Array:
+def asformat(x: Array, /, format: ConcreteFormat) -> Array:
     if format.rank != x.ndim:
         raise ValueError(f"`format.rank != `self.ndim`, {format.rank=}, {x.ndim=}")
 

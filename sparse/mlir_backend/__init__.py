@@ -9,7 +9,7 @@ except ModuleNotFoundError as e:
         "to enable MLIR backend."
     ) from e
 
-from . import levels
+from . import formats
 from ._array import Array
 from ._conversions import asarray, from_constituent_arrays, to_numpy, to_scipy
 from ._dtypes import (
@@ -37,7 +37,7 @@ __all__ = [
     "asdtype",
     "to_numpy",
     "to_scipy",
-    "levels",
+    "formats",
     "reshape",
     "from_constituent_arrays",
     "int8",

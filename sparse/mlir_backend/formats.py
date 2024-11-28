@@ -23,7 +23,7 @@ from ._dtypes import DType, asdtype
 
 _CAMEL_TO_SNAKE = [re.compile("(.)([A-Z][a-z]+)"), re.compile("([a-z0-9])([A-Z])")]
 
-__all__ = ["LevelProperties", "LevelFormat", "StorageFormat", "Level", "get_storage_format"]
+__all__ = ["LevelProperties", "LevelFormat", "ConcreteFormat", "Level", "get_concrete_format"]
 
 
 def _camel_to_snake(name: str) -> str:
@@ -61,7 +61,7 @@ class Level:
 
 
 @dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
-class StorageFormat:
+class ConcreteFormat:
     levels: tuple[Level, ...]
     order: tuple[int, ...]
     pos_width: int
@@ -151,7 +151,7 @@ class StorageFormat:
                     _hold_ref(arr, self)
                 return arrays
 
-            def get_storage_format(self) -> StorageFormat:
+            def get_storage_format(self) -> ConcreteFormat:
                 return storage_format
 
             @classmethod
@@ -170,21 +170,159 @@ class StorageFormat:
         return Storage
 
 
-def get_storage_format(
+@dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
+class FormatFactory:
+    levels: tuple[Level, ...] | None = None
+    order: typing.Literal["C", "F"] | tuple[int, ...] = "C"
+    pos_width: int = 64
+    crd_width: int = 64
+    dtype: DType | None = None
+
+    def is_ready(self) -> bool:
+        fields = dataclasses.fields(self)
+        return all(getattr(self, f.name) is not None for f in fields)
+
+    def build(self) -> ConcreteFormat:
+        if not self.is_ready():
+            raise RuntimeError("This factory is not ready. All fields must be non-None.")
+
+        return get_concrete_format(
+            levels=self.levels,
+            order=self.order,
+            pos_width=self.pos_width,
+            crd_width=self.crd_width,
+            dtype=self.dtype,
+        )
+
+    @classmethod
+    def _get_levels_from_ndim(cls, ndim: int, /) -> tuple[Level, ...]:
+        raise TypeError(f"`{cls.__name__}` doesn't implement this method.")
+
+    def with_ndim(self, ndim: int, /, *, canonical: bool = True) -> "FormatFactory":
+        if ndim < 0:
+            raise ValueError(f"`ndim < 0`, `{ndim=}`.")
+
+        levels = self._get_levels_from_ndim(ndim)
+        if not canonical:
+            levels = tuple(
+                dataclasses.replace(
+                    level, properties=level.properties | LevelProperties.NonOrdered | LevelProperties.NonUnique
+                )
+                for level in levels
+            )
+
+        assert len(levels) == ndim
+        return self.with_levels(levels)
+
+    def with_levels(self, levels: tuple[Level, ...], /) -> "FormatFactory":
+        out = dataclasses.replace(self, levels=levels)
+        out._check_consistency()
+        return out
+
+    def _check_consistency(self) -> None:
+        order = self.order
+        if isinstance(order, str):
+            if order in {"C", "F"}:
+                return
+
+            raise ValueError(f"Invalid order, `{order=}`.")
+
+        if sorted(order) != list(range(len(order))):
+            raise ValueError(f"`sorted(order) != list(range(len(order)))`, `{order=}`.")
+
+        levels = self.levels
+        if levels is not None and len(levels) != len(order):
+            raise ValueError(f"`levels is not None and len(levels) != len(order)`, `{order=}`, `{levels=}`.")
+
+    def with_order(self, order: typing.Literal["C", "F"] | tuple[int, ...], /):
+        out = dataclasses.replace(self, order=order)
+        out._check_consistency()
+        return out
+
+    def with_ptr_width(self, width: int, /) -> "FormatFactory":
+        return dataclasses.replace(self, pos_width=width, crd_width=width)
+
+    def with_pos_width(self, width: int, /) -> "FormatFactory":
+        return dataclasses.replace(self, pos_width=width)
+
+    def with_crd_width(self, width: int, /) -> "FormatFactory":
+        return dataclasses.replace(self, crd_width=width)
+
+    def with_dtype(self, dtype: DType, /) -> "FormatFactory":
+        return dataclasses.replace(self, dtype=dtype)
+
+    @classmethod
+    def is_this_format(cls, format: ConcreteFormat) -> bool:
+        levels_self = cls._get_levels_from_ndim(format.storage_rank)
+        levels_other = format.levels
+
+        return all(
+            dataclasses.replace(l1, properties=l1.properties | LevelProperties.NonOrdered | LevelProperties.NonUnique)
+            == dataclasses.replace(
+                l2, properties=l2.properties | LevelProperties.NonOrdered | LevelProperties.NonUnique
+            )
+            for l1, l2 in zip(levels_self, levels_other, strict=True)
+        )
+
+
+class Coo(FormatFactory):
+    @classmethod
+    def _get_levels_from_ndim(cls, ndim: int, /) -> tuple[Level, ...]:
+        if ndim == 0:
+            return ()
+
+        level_base = Level(LevelFormat.Compressed)
+        level_middle = Level(LevelFormat.Singleton, LevelProperties.SOA)
+
+        levels = []
+
+        for i in range(ndim):
+            level = level_base if i == 0 else level_middle
+            if i != ndim - 1:
+                level = dataclasses.replace(level, properties=level.properties | LevelProperties.NonUnique)
+            levels.append(level)
+
+        return tuple(levels)
+
+
+class Csf(FormatFactory):
+    @classmethod
+    def _get_levels_from_ndim(self, ndim: int, /) -> tuple[Level, ...]:
+        if ndim == 0:
+            return ()
+
+        level_middle = Level(LevelFormat.Compressed)
+        level_base = Level(LevelFormat.Dense)
+        levels = []
+
+        for i in range(ndim):
+            level = level_base if i == 0 else level_middle
+            levels.append(level)
+
+        return tuple(levels)
+
+
+class Dense(FormatFactory):
+    @classmethod
+    def _get_levels_from_ndim(self, ndim: int, /) -> tuple[Level, ...]:
+        return (Level(LevelFormat.Dense),) * ndim
+
+
+def get_concrete_format(
     *,
     levels: tuple[Level, ...],
     order: typing.Literal["C", "F"] | tuple[int, ...],
     pos_width: int,
     crd_width: int,
     dtype: DType,
-) -> StorageFormat:
+) -> ConcreteFormat:
     levels = tuple(levels)
     if isinstance(order, str):
         if order == "C":
             order = tuple(range(len(levels)))
         if order == "F":
             order = tuple(reversed(range(len(levels))))
-    return _get_storage_format(
+    return _get_concrete_format(
         levels=levels,
         order=order,
         pos_width=int(pos_width),
@@ -194,15 +332,15 @@ def get_storage_format(
 
 
 @fn_cache
-def _get_storage_format(
+def _get_concrete_format(
     *,
     levels: tuple[Level, ...],
     order: tuple[int, ...],
     pos_width: int,
     crd_width: int,
     dtype: DType,
-) -> StorageFormat:
-    return StorageFormat(
+) -> ConcreteFormat:
+    return ConcreteFormat(
         levels=levels,
         order=order,
         pos_width=pos_width,
@@ -218,11 +356,11 @@ def _is_sparse_level(lvl: Level | LevelFormat, /) -> bool:
     return LevelFormat.Dense != lvl
 
 
-def _count_sparse_levels(format: StorageFormat) -> int:
+def _count_sparse_levels(format: ConcreteFormat) -> int:
     return sum(_is_sparse_level(lvl) for lvl in format.levels)
 
 
-def _count_dense_levels(format: StorageFormat) -> int:
+def _count_dense_levels(format: ConcreteFormat) -> int:
     return sum(not _is_sparse_level(lvl) for lvl in format.levels)
 
 
@@ -246,7 +384,9 @@ def _get_sparse_dense_levels(
     return (Level(LevelFormat.Dense),) * n_dense + (Level(LevelFormat.Compressed),) * n_sparse
 
 
-def _determine_format(*formats: StorageFormat, dtype: DType, union: bool, out_ndim: int | None = None) -> StorageFormat:
+def _determine_format(
+    *formats: ConcreteFormat, dtype: DType, union: bool, out_ndim: int | None = None
+) -> ConcreteFormat:
     """Determines the output format from a group of input formats.
 
     1. Counts the sparse levels for `union=True`, and dense ones for `union=False`.
@@ -263,7 +403,7 @@ def _determine_format(*formats: StorageFormat, dtype: DType, union: bool, out_nd
     if len(formats) == 0:
         if out_ndim is None:
             out_ndim = 0
-        return get_storage_format(
+        return get_concrete_format(
             levels=(Level(LevelFormat.Dense if union else LevelFormat.Compressed),) * out_ndim,
             order="C",
             pos_width=64,
@@ -299,7 +439,7 @@ def _determine_format(*formats: StorageFormat, dtype: DType, union: bool, out_nd
     n_sparse = n_counted if not union else out_ndim - n_counted
 
     levels = _get_sparse_dense_levels(n_sparse=n_sparse, ndim=out_ndim)
-    return get_storage_format(
+    return get_concrete_format(
         levels=levels,
         order=order,
         pos_width=pos_width,

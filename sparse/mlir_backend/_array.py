@@ -1,7 +1,7 @@
 import numpy as np
 
 from ._dtypes import DType
-from .levels import StorageFormat
+from .formats import ConcreteFormat
 
 
 class Array:
@@ -26,7 +26,7 @@ class Array:
         return self._storage.get_storage_format().dtype
 
     @property
-    def format(self) -> StorageFormat:
+    def format(self) -> ConcreteFormat:
         return self._storage.get_storage_format()
 
     def _get_mlir_type(self):
@@ -41,7 +41,7 @@ class Array:
         arrs = tuple(arr.copy() for arr in self.get_constituent_arrays())
         return from_constituent_arrays(format=self.format, arrays=arrs, shape=self.shape)
 
-    def asformat(self, format: StorageFormat) -> "Array":
+    def asformat(self, format: ConcreteFormat) -> "Array":
         from ._ops import asformat
 
         return asformat(self, format=format)

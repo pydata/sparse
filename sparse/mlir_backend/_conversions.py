@@ -3,7 +3,7 @@ import functools
 import numpy as np
 
 from ._array import Array
-from .levels import Level, LevelFormat, LevelProperties, StorageFormat, get_storage_format
+from .formats import ConcreteFormat, Coo, Csf, Dense, Level, LevelFormat
 
 try:
     import scipy.sparse as sps
@@ -31,26 +31,17 @@ def _from_numpy(arr: np.ndarray, copy: bool | None = None) -> Array:
     if copy:
         arr = arr.copy(order="C")
     arr_flat = np.ascontiguousarray(arr).reshape(-1)
-    levels = (Level(LevelFormat.Dense),) * arr.ndim
-    dense_format = get_storage_format(
-        levels=levels,
-        order="C",
-        pos_width=64,
-        crd_width=64,
-        dtype=arr.dtype,
-    )
+    dense_format = Dense().with_ndim(arr.ndim).with_dtype(arr.dtype).build()
     return from_constituent_arrays(format=dense_format, arrays=(arr_flat,), shape=arr.shape)
 
 
 def to_numpy(arr: Array) -> np.ndarray:
-    storage_format: StorageFormat = arr.format
-
-    if not all(LevelFormat.Dense == level.format for level in storage_format.levels):
-        raise TypeError(f"Cannot convert a non-dense array to NumPy. `{storage_format=}`")
+    if not Dense.is_this_format(arr.format):
+        raise TypeError(f"Cannot convert a non-dense array to NumPy. `{arr.format=}`")
 
     (data,) = arr.get_constituent_arrays()
-    arg_order = [0] * storage_format.storage_rank
-    for i, o in enumerate(storage_format.order):
+    arg_order = [0] * arr.format.storage_rank
+    for i, o in enumerate(arr.format.order):
         arg_order[o] = i
     arg_order = tuple(arg_order)
     storage_shape = tuple(int(arr.shape[o]) for o in arg_order)
@@ -63,22 +54,17 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
         raise TypeError(f"`arr` is not a `scipy.sparse` array, `{type(arr)=}`.")
     match arr.format:
         case "csr" | "csc":
+            order = (0, 1) if arr.format == "csr" else (1, 0)
             pos_width = arr.indptr.dtype.itemsize * 8
             crd_width = arr.indices.dtype.itemsize * 8
-            csx_format = get_storage_format(
-                levels=(
-                    Level(LevelFormat.Dense),
-                    Level(
-                        LevelFormat.Compressed,
-                        LevelProperties(0)
-                        if arr.has_canonical_format
-                        else LevelProperties.NonUnique | LevelProperties.NonOrdered,
-                    ),
-                ),
-                order=(0, 1) if arr.format == "csr" else (1, 0),
-                pos_width=pos_width,
-                crd_width=crd_width,
-                dtype=arr.dtype,
+            csx_format = (
+                Csf()
+                .with_ndim(2, canonical=arr.has_canonical_format)
+                .with_dtype(arr.dtype)
+                .with_crd_width(crd_width)
+                .with_pos_width(pos_width)
+                .with_order(order)
+                .build()
             )
 
             indptr = arr.indptr
@@ -108,19 +94,13 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
             row = row.copy()
             col = col.copy()
 
-            level_props = LevelProperties(0)
-            if not arr.has_canonical_format:
-                level_props |= LevelProperties.NonOrdered
-
-            coo_format = get_storage_format(
-                levels=(
-                    Level(LevelFormat.Compressed, level_props | LevelProperties.NonUnique),
-                    Level(LevelFormat.Singleton, level_props | LevelProperties.SOA),
-                ),
-                order=(0, 1),
-                pos_width=pos_width,
-                crd_width=crd_width,
-                dtype=arr.dtype,
+            coo_format = (
+                Coo()
+                .with_ndim(2, canonical=arr.has_canonical_format)
+                .with_dtype(arr.dtype)
+                .with_pos_width(pos_width)
+                .with_crd_width(crd_width)
+                .build()
             )
 
             return from_constituent_arrays(format=coo_format, arrays=(pos, row, col, data), shape=arr.shape)
@@ -162,6 +142,6 @@ def asarray(arr, copy: bool | None = None) -> Array:
     return _from_numpy(np.asarray(arr), copy=copy)
 
 
-def from_constituent_arrays(*, format: StorageFormat, arrays: tuple[np.ndarray, ...], shape: tuple[int, ...]) -> Array:
+def from_constituent_arrays(*, format: ConcreteFormat, arrays: tuple[np.ndarray, ...], shape: tuple[int, ...]) -> Array:
     storage = format._get_ctypes_type().from_constituent_arrays(arrays)
     return Array(storage=storage, shape=shape)
