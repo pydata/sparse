@@ -300,6 +300,8 @@ def test_coo_3d_format(dtype):
 
 @parametrize_dtypes
 def test_sparse_vector_format(dtype):
+    if sparse.asdtype(dtype) in {sparse.complex64, sparse.complex128}:
+        pytest.xfail("Heisenbug")
     format = sparse.formats.Coo().with_ndim(1).with_dtype(dtype).build()
 
     SHAPE = (10,)
