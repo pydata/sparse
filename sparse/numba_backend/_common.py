@@ -157,6 +157,12 @@ def tensordot(a, b, axes=2, *, return_type=None):
     ndb = b.ndim
     equal = True
     if nda == 0 or ndb == 0:
+        if axes_a == [] and axes_b == []:
+            if nda == 0 and isinstance(a, SparseArray):
+                a = a.todense()
+            if ndb == 0 and isinstance(b, SparseArray):
+                b = b.todense()
+            return a * b
         pos = int(nda != 0)
         raise ValueError(f"Input {pos} operand does not have enough dimensions")
     if na != nb:
