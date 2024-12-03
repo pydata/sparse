@@ -78,8 +78,8 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
 
             return from_constituent_arrays(format=csx_format, arrays=(indptr, indices, data), shape=arr.shape)
         case "coo":
-            if copy is not None and not copy:
-                raise RuntimeError(f"`scipy.sparse.{type(arr.__name__)}` cannot be zero-copy converted.")
+            from ._common import _hold_ref
+
             row, col = arr.row, arr.col
             if row.dtype != col.dtype:
                 raise RuntimeError(f"`row` and `col` dtypes must be the same: {row.dtype} != {col.dtype}.")
@@ -89,10 +89,8 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
             data = arr.data
             if copy:
                 data = data.copy()
-
-            # TODO: Make them own the data until https://github.com/llvm/llvm-project/issues/116012 is fixed.
-            row = row.copy()
-            col = col.copy()
+                row = row.copy()
+                col = col.copy()
 
             coo_format = (
                 Coo()
@@ -103,7 +101,10 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
                 .build()
             )
 
-            return from_constituent_arrays(format=coo_format, arrays=(pos, row, col, data), shape=arr.shape)
+            ret = from_constituent_arrays(format=coo_format, arrays=(pos, row, col, data), shape=arr.shape)
+            if copy is not None and not copy:
+                _hold_ref(ret, arr)
+            return ret
         case _:
             raise NotImplementedError(f"No conversion implemented for `scipy.sparse.{type(arr.__name__)}`.")
 

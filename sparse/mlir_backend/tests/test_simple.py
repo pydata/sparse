@@ -465,8 +465,7 @@ def test_asformat(rng, src_fmt, dst_fmt):
 
     expected = sps_arr.asformat(dst_fmt)
 
-    copy = None if dst_fmt == "coo" else False
-    actual_fmt = sparse.asarray(expected, copy=copy).format
+    actual_fmt = sparse.asarray(expected, copy=False).format
     actual = sp_arr.asformat(actual_fmt)
     actual_sps = sparse.to_scipy(actual)
 
