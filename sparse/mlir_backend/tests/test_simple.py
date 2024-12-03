@@ -301,7 +301,7 @@ def test_coo_3d_format(dtype):
 @parametrize_dtypes
 def test_sparse_vector_format(dtype):
     if sparse.asdtype(dtype) in {sparse.complex64, sparse.complex128}:
-        pytest.xfail("Heisenbug")
+        pytest.xfail("The sparse_vector format returns incorrect results for complex dtypes.")
     format = sparse.formats.Coo().with_ndim(1).with_dtype(dtype).build()
 
     SHAPE = (10,)
@@ -465,8 +465,7 @@ def test_asformat(rng, src_fmt, dst_fmt):
 
     expected = sps_arr.asformat(dst_fmt)
 
-    copy = None if dst_fmt == "coo" else False
-    actual_fmt = sparse.asarray(expected, copy=copy).format
+    actual_fmt = sparse.asarray(expected, copy=False).format
     actual = sp_arr.asformat(actual_fmt)
     actual_sps = sparse.to_scipy(actual)
 
