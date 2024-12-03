@@ -102,7 +102,7 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
             )
 
             ret = from_constituent_arrays(format=coo_format, arrays=(pos, row, col, data), shape=arr.shape)
-            if copy is not None and not copy:
+            if not copy:
                 _hold_ref(ret, arr)
             return ret
         case _:

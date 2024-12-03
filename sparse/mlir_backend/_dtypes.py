@@ -33,6 +33,11 @@ class DType(MlirType):
     def to_ctype(self):
         return rt.as_ctype(self.np_dtype)
 
+    def __eq__(self, value):
+        if np.isdtype(value) or isinstance(value, str):
+            value = asdtype(value)
+        return super().__eq__(value)
+
 
 @dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
 class IeeeRealFloatingDType(DType):
