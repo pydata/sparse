@@ -4,6 +4,8 @@ except ModuleNotFoundError as e:
     raise ImportError("Finch not installed. Run `pip install sparse[finch]` to enable Finch backend") from e
 
 from finch import (
+    DefaultScheduler,
+    GalleyScheduler,
     SparseArray,
     abs,
     acos,
@@ -97,6 +99,7 @@ from finch import (
     remainder,
     reshape,
     round,
+    set_optimizer,
     sign,
     sin,
     sinh,
@@ -119,6 +122,8 @@ from finch import (
 )
 
 __all__ = [
+    "DefaultScheduler",
+    "GalleyScheduler",
     "SparseArray",
     "abs",
     "acos",
@@ -231,4 +236,5 @@ __all__ = [
     "empty_like",
     "arange",
     "linspace",
+    "set_optimizer",
 ]
