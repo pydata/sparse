@@ -31,7 +31,7 @@ if __name__ == "__main__":
     D = sparse.asarray(np.array(D_sps, order="F"))
     C = sparse.asarray(np.array(C_sps, order="F"))
 
-    @sparse.compiled
+    @sparse.compiled()
     def mttkrp_finch(B, D, C):
         return sparse.sum(B[:, :, :, None] * D[None, None, :, :] * C[None, :, None, :], axis=(1, 2))
 
