@@ -29,7 +29,7 @@ if __name__ == "__main__":
     x = sparse.asarray(np.array(x_sps, order="C"))
     y = sparse.asarray(np.array(y_sps, order="C"))
 
-    @sparse.compiled
+    @sparse.compiled()
     def spmv_finch(A, x, y):
         return sparse.sum(A[:, None, :] * sparse.permute_dims(x, (1, 0))[None, :, :], axis=-1) + y
 

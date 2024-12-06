@@ -29,7 +29,7 @@ if __name__ == "__main__":
     a = sparse.asarray(a_sps)
     b = sparse.asarray(b_sps)
 
-    @sparse.compiled
+    @sparse.compiled()
     def sddmm_finch(a, b):
         return a @ b
 

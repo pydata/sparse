@@ -30,7 +30,7 @@ if __name__ == "__main__":
     a = sparse.asarray(np.array(a_sps, order="F"))
     b = sparse.asarray(np.array(b_sps, order="C"))
 
-    @sparse.compiled
+    @sparse.compiled()
     def sddmm_finch(s, a, b):
         return sparse.sum(
             s[:, :, None] * (a[:, None, :] * sparse.permute_dims(b, (1, 0))[None, :, :]),

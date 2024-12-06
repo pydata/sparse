@@ -54,7 +54,7 @@ def test_finch_lazy_backend(backend):
 
     assert_equal(transposed.todense(), np_eye.T)
 
-    @sparse.compiled
+    @sparse.compiled()
     def my_fun(tns1, tns2):
         tmp = sparse.add(tns1, tns2)
         return sparse.sum(tmp, axis=0)
