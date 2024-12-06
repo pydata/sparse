@@ -23,7 +23,7 @@ if __name__ == "__main__":
     a_sps = nx.to_scipy_sparse_array(G)
     a = sparse.asarray(a_sps)
 
-    # @sparse.compiled NOTE: blocked by https://github.com/willow-ahrens/Finch.jl/issues/615
+    @sparse.compiled()
     def count_triangles_finch(a):
         return sparse.sum(a @ a * a) / 6
 
