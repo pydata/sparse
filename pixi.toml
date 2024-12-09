@@ -48,7 +48,7 @@ matrepr = "*"
 precompile = "python -c 'import finch'"
 
 [feature.finch.pypi-dependencies]
-scipy = ">=0.19"
+scipy = ">=1.13"
 finch-tensor = ">=0.2.1"
 
 [feature.finch.activation.env]
