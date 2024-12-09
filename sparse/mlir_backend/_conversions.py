@@ -78,8 +78,6 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
 
             return from_constituent_arrays(format=csx_format, arrays=(indptr, indices, data), shape=arr.shape)
         case "coo":
-            from ._common import _hold_ref
-
             row, col = arr.row, arr.col
             if row.dtype != col.dtype:
                 raise RuntimeError(f"`row` and `col` dtypes must be the same: {row.dtype} != {col.dtype}.")
@@ -101,10 +99,7 @@ def _from_scipy(arr: ScipySparseArray, copy: bool | None = None) -> Array:
                 .build()
             )
 
-            ret = from_constituent_arrays(format=coo_format, arrays=(pos, row, col, data), shape=arr.shape)
-            if not copy:
-                _hold_ref(ret, arr)
-            return ret
+            return from_constituent_arrays(format=coo_format, arrays=(pos, row, col, data), shape=arr.shape)
         case _:
             raise NotImplementedError(f"No conversion implemented for `scipy.sparse.{type(arr.__name__)}`.")
 
