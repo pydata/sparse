@@ -524,9 +524,9 @@ def _get_mask_pairs(starts_old, stops_old, c, idx):  # pragma: no cover
     --------
     >>> c = np.array([1, 2, 1, 2, 1, 1, 2, 2])
     >>> starts_old = numba.typed.List()
-    ... starts_old.append(4)
+    >>> starts_old.append(4)
     >>> stops_old = numba.typed.List()
-    ... stops_old.append(8)
+    >>> stops_old.append(8)
     >>> idx = np.array([1, 2, 1])
     >>> _get_mask_pairs(starts_old, stops_old, c, idx)
     (ListType[int64]([4]), ListType[int64]([6]), 2)
@@ -575,9 +575,9 @@ def _filter_pairs(starts, stops, coords, indices):  # pragma: no cover
     --------
     >>> import numpy as np
     >>> starts = numba.typed.List()
-    ... starts.append(2)
+    >>> starts.append(2)
     >>> stops = numba.typed.List()
-    ... stops.append(7)
+    >>> stops.append(7)
     >>> coords = np.array([[0, 1, 2, 3, 4, 5, 6, 7]])
     >>> indices = np.array([[2, 8, 2]])  # Start, stop, step pairs
     >>> _filter_pairs(starts, stops, coords, indices)
@@ -627,11 +627,11 @@ def _join_adjacent_pairs(starts_old, stops_old):  # pragma: no cover
     Examples
     --------
     >>> starts = numba.typed.List()
-    ... starts.append(2)
-    ... starts.append(5)
+    >>> starts.append(2)
+    >>> starts.append(5)
     >>> stops = numba.typed.List()
-    ... stops.append(5)
-    ... stops.append(7)
+    >>> stops.append(5)
+    >>> stops.append(7)
     >>> _join_adjacent_pairs(starts, stops)
     (ListType[int64]([2]), ListType[int64]([7]))
     """
