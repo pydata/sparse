@@ -819,7 +819,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         --------
         >>> coords = np.array([[0, 1, 2, 3]])
         >>> data = np.array([1, 0, 1, 2])
-        >>> s = COO(coords, data).asformat("gcxs")
+        >>> s = COO(coords, data, shape=(4,)).asformat("gcxs")
         >>> s._prune()
         >>> s.nnz
         3

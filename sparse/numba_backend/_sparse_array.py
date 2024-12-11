@@ -691,7 +691,7 @@ class SparseArray:
         mean along all axes.
 
         >>> s.mean()
-        0.5
+        np.float64(0.5)
         """
 
         if axis is None:
@@ -771,7 +771,7 @@ class SparseArray:
         variance along all axes.
 
         >>> s.var()
-        0.5
+        np.float64(0.5)
         """
         axis = normalize_axis(axis, self.ndim)
 
