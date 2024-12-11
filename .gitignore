@@ -82,6 +82,7 @@ results/
 
 # Notebooks converted to scripts.
 docs/examples_ipynb/
+*/.ipynb_checkpoints/
 
 # Pixi envs
 .pixi/
