@@ -33,7 +33,7 @@ def _is_scipy_sparse_obj(x):
 def _check_device(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        device = kwargs.get("device", None)
+        device = kwargs.get("device")
         if device not in {"cpu", None}:
             raise ValueError("Device must be `'cpu'` or `None`.")
         return func(*args, **kwargs)
@@ -157,6 +157,12 @@ def tensordot(a, b, axes=2, *, return_type=None):
     ndb = b.ndim
     equal = True
     if nda == 0 or ndb == 0:
+        if axes_a == [] and axes_b == []:
+            if nda == 0 and isinstance(a, SparseArray):
+                a = a.todense()
+            if ndb == 0 and isinstance(b, SparseArray):
+                b = b.todense()
+            return a * b
         pos = int(nda != 0)
         raise ValueError(f"Input {pos} operand does not have enough dimensions")
     if na != nb:

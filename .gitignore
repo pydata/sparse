@@ -50,9 +50,6 @@ test_results/
 junit/
 .hypothesis/
 
-# Airspeed velocity
-.asv/
-
 # Translations
 *.mo
 *.pot
@@ -85,3 +82,7 @@ results/
 
 # Notebooks converted to scripts.
 docs/examples_ipynb/
+
+# Pixi envs
+.pixi/
+pixi.lock

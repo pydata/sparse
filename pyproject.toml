@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "sparse"
 dynamic = ["version"]
 description = "Sparse n-dimensional arrays for the PyData ecosystem"
-readme = "README.rst"
+readme = "README.md"
 dependencies = ["numpy>=1.17", "numba>=0.49"]
 maintainers = [{ name = "Hameer Abbasi", email = "hameerabbasi@yahoo.com" }]
 requires-python = ">=3.10"
@@ -29,7 +29,6 @@ classifiers = [
 [project.optional-dependencies]
 docs = [
         "mkdocs-material",
-        "mkdocstrings",
         "mkdocstrings[python]",
         "mkdocs-gen-files",
         "mkdocs-literate-nav",
@@ -42,6 +41,7 @@ extras = [
     "sparse[finch]",
     "scipy",
     "scikit-learn",
+    "networkx",
 ]
 tests = [
     "sparse[extras]",
@@ -54,7 +54,7 @@ tests = [
 tox = ["sparse[tests]", "tox"]
 notebooks = ["sparse[tests]", "nbmake", "matplotlib"]
 all = ["sparse[docs,tox,notebooks]", "matrepr"]
-finch = ["finch-tensor>=0.1.31"]
+finch = ["finch-tensor>=0.2.1"]
 
 [project.urls]
 Documentation = "https://sparse.pydata.org/"

@@ -1,13 +1,17 @@
-import inspect
+import abc
+import dataclasses
 import math
 import sys
-import typing
 
-from mlir import ir
+import mlir_finch.runtime as rt
+from mlir_finch import ir
 
 import numpy as np
 
-from ._common import MlirType
+
+class MlirType(abc.ABC):
+    @abc.abstractmethod
+    def _get_mlir_type(self) -> ir.Type: ...
 
 
 def _get_pointer_width() -> int:
@@ -17,102 +21,97 @@ def _get_pointer_width() -> int:
 _PTR_WIDTH = _get_pointer_width()
 
 
-def _make_int_classes(namespace: dict[str, object], bit_widths: typing.Iterable[int]) -> None:
-    for bw in bit_widths:
-
-        class SignedBW(SignedIntegerDType):
-            np_dtype = getattr(np, f"int{bw}")
-            bit_width = bw
-
-            @classmethod
-            def get_mlir_type(cls):
-                return ir.IntegerType.get_signless(cls.bit_width)
-
-        SignedBW.__name__ = f"Int{bw}"
-        SignedBW.__module__ = __name__
-
-        class UnsignedBW(UnsignedIntegerDType):
-            np_dtype = getattr(np, f"uint{bw}")
-            bit_width = bw
-
-            @classmethod
-            def get_mlir_type(cls):
-                return ir.IntegerType.get_signless(cls.bit_width)
-
-        UnsignedBW.__name__ = f"UInt{bw}"
-        UnsignedBW.__module__ = __name__
-
-        namespace[SignedBW.__name__] = SignedBW
-        namespace[UnsignedBW.__name__] = UnsignedBW
-
-
+@dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
 class DType(MlirType):
-    np_dtype: np.dtype
     bit_width: int
 
+    @property
+    @abc.abstractmethod
+    def np_dtype(self) -> np.dtype:
+        raise NotImplementedError
 
-class FloatingDType(DType): ...
+    def to_ctype(self):
+        return rt.as_ctype(self.np_dtype)
 
-
-class Float64(FloatingDType):
-    np_dtype = np.float64
-    bit_width = 64
-
-    @classmethod
-    def get_mlir_type(cls):
-        return ir.F64Type.get()
-
-
-class Float32(FloatingDType):
-    np_dtype = np.float32
-    bit_width = 32
-
-    @classmethod
-    def get_mlir_type(cls):
-        return ir.F32Type.get()
+    def __eq__(self, value):
+        if np.isdtype(value) or isinstance(value, str):
+            value = asdtype(value)
+        return super().__eq__(value)
 
 
-class Float16(FloatingDType):
-    np_dtype = np.float16
-    bit_width = 16
+@dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
+class IeeeRealFloatingDType(DType):
+    @property
+    def np_dtype(self) -> np.dtype:
+        return np.dtype(getattr(np, f"float{self.bit_width}"))
 
-    @classmethod
-    def get_mlir_type(cls):
-        return ir.F16Type.get()
-
-
-class IntegerDType(DType): ...
+    def _get_mlir_type(self) -> ir.Type:
+        return getattr(ir, f"F{self.bit_width}Type").get()
 
 
-class UnsignedIntegerDType(IntegerDType): ...
+float64 = IeeeRealFloatingDType(bit_width=64)
+float32 = IeeeRealFloatingDType(bit_width=32)
+float16 = IeeeRealFloatingDType(bit_width=16)
 
 
-class SignedIntegerDType(IntegerDType): ...
+@dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
+class IeeeComplexFloatingDType(DType):
+    @property
+    def np_dtype(self) -> np.dtype:
+        return np.dtype(getattr(np, f"complex{self.bit_width}"))
+
+    def _get_mlir_type(self) -> ir.Type:
+        return ir.ComplexType.get(getattr(ir, f"F{self.bit_width // 2}Type").get())
 
 
-_make_int_classes(locals(), [8, 16, 32, 64])
+complex64 = IeeeComplexFloatingDType(bit_width=64)
+complex128 = IeeeComplexFloatingDType(bit_width=128)
 
 
-class Index(DType):
-    np_dtype = np.intp
-
-    @classmethod
-    def get_mlir_type(cls):
-        return ir.IndexType.get()
+@dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
+class IntegerDType(DType):
+    def _get_mlir_type(self) -> ir.Type:
+        return ir.IntegerType.get_signless(self.bit_width)
 
 
-IntP: type[SignedIntegerDType] = locals()[f"Int{_PTR_WIDTH}"]
-UIntP: type[UnsignedIntegerDType] = locals()[f"UInt{_PTR_WIDTH}"]
+@dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
+class UnsignedIntegerDType(IntegerDType):
+    @property
+    def np_dtype(self) -> np.dtype:
+        return np.dtype(getattr(np, f"uint{self.bit_width}"))
+
+
+uint8 = UnsignedIntegerDType(bit_width=8)
+uint16 = UnsignedIntegerDType(bit_width=16)
+uint32 = UnsignedIntegerDType(bit_width=32)
+uint64 = UnsignedIntegerDType(bit_width=64)
+
+
+@dataclasses.dataclass(eq=True, frozen=True, kw_only=True)
+class SignedIntegerDType(IntegerDType):
+    @property
+    def np_dtype(self) -> np.dtype:
+        return np.dtype(getattr(np, f"int{self.bit_width}"))
+
+
+int8 = SignedIntegerDType(bit_width=8)
+int16 = SignedIntegerDType(bit_width=16)
+int32 = SignedIntegerDType(bit_width=32)
+int64 = SignedIntegerDType(bit_width=64)
+
+
+intp: SignedIntegerDType = locals()[f"int{_PTR_WIDTH}"]
+uintp: UnsignedIntegerDType = locals()[f"uint{_PTR_WIDTH}"]
 
 
 def isdtype(dt, /) -> bool:
-    return isinstance(dt, type) and issubclass(dt, DType) and not inspect.isabstract(dt)
+    return isinstance(dt, DType)
 
 
 NUMPY_DTYPE_MAP = {np.dtype(dt.np_dtype): dt for dt in locals().values() if isdtype(dt)}
 
 
-def asdtype(dt, /) -> type[DType]:
+def asdtype(dt, /) -> DType:
     if isdtype(dt):
         return dt
 

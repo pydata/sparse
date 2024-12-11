@@ -70,6 +70,9 @@ array_api_tests/test_signatures.py::test_array_method_signature[__setitem__]
 # not implemented
 array_api_tests/test_creation_functions.py::test_meshgrid
 
+# buggy
+array_api_tests/test_creation_functions.py::test_full_like
+
 # test_array_object
 
 array_api_tests/test_array_object.py::test_getitem
