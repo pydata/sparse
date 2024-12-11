@@ -50,9 +50,9 @@ jobs:
           pip install -e '.[tests]'
       - name: Run tests
         run: |
-          SPARSE_BACKEND=Numba pytest --pyargs sparse --doctest-modules --cov-report=xml:coverage_Numba.xml -n auto -vvv
-          SPARSE_BACKEND=Finch pytest --pyargs sparse/tests --cov-report=xml:coverage_Finch.xml -n auto -vvv
-          SPARSE_BACKEND=MLIR pytest --pyargs sparse/mlir_backend --cov-report=xml:coverage_MLIR.xml -n auto -vvv
+          SPARSE_BACKEND=Numba pytest --pyargs sparse --doctest-modules --cov-report=xml:coverage_Numba.xml -n0 -vvv
+          SPARSE_BACKEND=Finch pytest --pyargs sparse/tests --cov-report=xml:coverage_Finch.xml -n0 -vvv
+          SPARSE_BACKEND=MLIR pytest --pyargs sparse/mlir_backend --cov-report=xml:coverage_MLIR.xml -n0 -vvv
       - uses: codecov/codecov-action@v5
         if: always()
         with:
