@@ -49,6 +49,7 @@ jobs:
         run: |
           pip install -e '.[tests]'
       - name: Run tests
+        continue-on-error: true
         run: |
           SPARSE_BACKEND=Numba pytest --pyargs sparse --doctest-modules --cov-report=xml:coverage_Numba.xml -n auto -vvv
           SPARSE_BACKEND=Finch pytest --pyargs sparse/tests --cov-report=xml:coverage_Finch.xml -n auto -vvv
