@@ -48,6 +48,8 @@ jobs:
       - name: Install package
         run: |
           pip install -e '.[tests]'
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: Run tests
         run: |
           SPARSE_BACKEND=Numba pytest --pyargs sparse --doctest-modules --cov-report=xml:coverage_Numba.xml -n auto -vvv
