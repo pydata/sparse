@@ -4,9 +4,7 @@ try:
     del mlir_finch
 except ModuleNotFoundError as e:
     raise ImportError(
-        "MLIR Python bindings not installed. Run "
-        "`conda install conda-forge::mlir-python-bindings` "
-        "to enable MLIR backend."
+        "MLIR Python bindings not installed. Run `pip install finch-mlir` to enable the MLIR backend."
     ) from e
 
 from . import formats
