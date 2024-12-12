@@ -2,8 +2,6 @@ import os
 import warnings
 from enum import Enum
 
-import juliacall
-
 from ._version import __version__, __version_tuple__  # noqa: F401
 
 __array_api_version__ = "2022.12"
