@@ -1,5 +1,6 @@
 name: sparse-dev
 channels:
+  - numba
   - conda-forge
   - nodefaults
 dependencies:
