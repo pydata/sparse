@@ -5,10 +5,6 @@ channels:
 dependencies:
   - python
   - pip
-  - pip:
-    - finch-tensor>=0.2.2
-    - finch-mlir>=0.0.2
-    - pytest-codspeed
   - numpy
   - numba
   - scipy
@@ -16,3 +12,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
+  - pip:
+    - finch-tensor>=0.2.2
+    - finch-mlir>=0.0.2
+    - pytest-codspeed
