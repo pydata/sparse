@@ -16,4 +16,3 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
-
