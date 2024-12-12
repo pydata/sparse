@@ -1,4 +1,5 @@
 import os
+import juliacall
 import warnings
 from enum import Enum
 
