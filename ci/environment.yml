@@ -6,8 +6,7 @@ dependencies:
   - python
   - pip
   - numpy
-  - numba:llvmlite
-  - numba:numba
+  - numba
   - scipy
   - dask
   - pytest
