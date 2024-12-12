@@ -16,7 +16,7 @@ jobs:
         numba_boundscheck: [0]
         include:
           - os: macos-latest
-            python: '3.11'
+            python: '3.10'
           - os: windows-latest
             python: '3.10'
           - os: ubuntu-latest
@@ -48,8 +48,8 @@ jobs:
       - name: Install package
         run: |
           pip install -e '.[tests]'
-          micromamba remove numba
-          micromamba install -c numba numba
+#          micromamba remove numba
+#          micromamba install -c numba numba
       - name: Run tests
         continue-on-error: true
         run: |
