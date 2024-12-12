@@ -48,6 +48,8 @@ jobs:
       - name: Install package
         run: |
           pip install -e '.[tests]'
+          micromamba remove numba
+          micromamba install -c numba numba
       - name: Run tests
         continue-on-error: true
         run: |
