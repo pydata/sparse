@@ -2061,10 +2061,10 @@ def asarray(obj, /, *, dtype=None, format="coo", copy=False, device=None):
     Examples
     --------
     >>> x = np.eye(8, dtype="i8")
-    >>> sparse.asarray(x, format="COO")
+    >>> sparse.asarray(x, format="coo")
     <COO: shape=(8, 8), dtype=int64, nnz=8, fill_value=0>
     """
-    format = format.lower()
+
     if format not in {"coo", "dok", "gcxs", "csc", "csr"}:
         raise ValueError(f"{format} format not supported.")
 
@@ -2116,14 +2116,136 @@ def _support_numpy(func):
 
 
 def all(x, /, *, axis=None, keepdims=False):
+    """
+    Tests whether all input array elements evaluate to ``True`` along a specified axis.
+
+    Parameters
+    ----------
+    x: array
+        input array.
+    axis: Optional[Union[int, Tuple[int, ...]]]
+        axis or axes along which to perform a logical AND reduction. By default, a logical AND
+        reduction is performed over the entire array.
+        If a tuple of integers, logical AND reductions are performed over multiple axes.
+        A valid ``axis`` is an integer on the interval ``[-N, N)``, where ``N`` is the rank
+        (number of dimensions) of ``x``. If an ``axis`` is specified as a negative integer,
+        the function determines the axis along which to perform a reduction by counting backward
+        from the last dimension (where ``-1`` refers to the last dimension). If provided an invalid
+        ``axis``, the function raiseS an exception. Default: ``None``.
+    keepdims: bool
+        If ``True``, the reduced axes (dimensions) are included in the result as singleton dimensions,
+        and, accordingly, the result is compatible with the input array.
+        Otherwise, if ``False``, the reduced axes (dimensions) are not included in the result.
+        Default: ``False``.
+
+    Returns
+    -------
+    out: array
+        if a logical AND reduction was performed over the entire array, the returned array is a
+        zero-dimensional array containing the test result; otherwise, the returned array is a
+        non-zero-dimensional array containing the test results.
+        The returned array has a data type of ``bool``.
+
+    Special Cases
+    -------------
+
+       - Positive infinity, negative infinity, and NaN  evaluate to ``True``.
+
+       - If ``x`` has a complex floating-point data type, elements having a non-zero component
+        (real or imaginary) evaluate to ``True``.
+
+       - If ``x`` is an empty array or the size of the axis (dimension) along which to evaluate elements
+         is zero, the test result is ``True``.
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 1], [2, 0]]))
+    >>> o = sparse.all(a, axis=1)
+    >>> o.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([False, False])
+    """
     return x.all(axis=axis, keepdims=keepdims)
 
 
 def any(x, /, *, axis=None, keepdims=False):
+    """
+    Tests whether any input array element evaluates to ``True`` along a specified axis.
+
+    Parameters
+    ----------
+    x: array
+        input array.
+    axis: Optional[Union[int, Tuple[int, ...]]]
+        axis or axes along which to perform a logical OR reduction.
+        By default, a logical OR reduction is performed over the entire array.
+        If a tuple of integers, logical OR reductions are performed over multiple axes.
+        A valid ``axis`` must be an integer on the interval ``[-N, N)``, where ``N`` is the rank (number of
+        dimensions) of ``x``. If an ``axis`` is specified as a negative integer, the function determines
+        the axis along which to perform a reduction by counting backward from the last dimension (where
+        ``-1`` refers to the last dimension).
+        If provided an invalid ``axis``, the function raises an exception.
+        Default: ``None``.
+    keepdims: bool
+        If ``True``, the reduced axes (dimensions) are included in the result as singleton dimensions,
+        and, accordingly, the result must is compatible with the input array. Otherwise, if ``False``,
+        the reduced axes (dimensions) is not included in the result.
+        Default: ``False``.
+
+    Returns
+    -------
+    out: array
+        if a logical OR reduction was performed over the entire array, the returned array is a
+        zero-dimensional array containing the test result.
+        Otherwise, the returned array is a non-zero-dimensional array containing the test results.
+        The returned array is of type ``bool``.
+
+    Special Cases
+    -------------
+
+       - Positive infinity, negative infinity, and NaN  evaluate to ``True``.
+
+       - If ``x`` has a complex floating-point data type, elements having a non-zero component
+        (real or imaginary) evaluate to ``True``.
+
+       - If ``x`` is an empty array or the size of the axis (dimension) along which to evaluate elements
+         is zero, the test result is ``False``.
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 1], [2, 0]]))
+    >>> o = sparse.any(a, axis=1)
+    >>> o.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([ True, True])
+    """
     return x.any(axis=axis, keepdims=keepdims)
 
 
 def permute_dims(x, /, axes=None):
+    """
+    Permutes the axes (dimensions) of an array ``x``.
+
+    Parameters
+    ----------
+    x: array
+        input array.
+    axes: Tuple[int, ...]
+        tuple containing a permutation of ``(0, 1, ..., N-1)`` where ``N`` is the number of axes (dimensions)
+        of ``x``.
+
+    Returns
+    -------
+    out: array
+        an array containing the axes permutation. The returned array must have the same data type as ``x``.
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 1], [2, 0]]))
+    >>> o = sparse.permute_dims(a, axes=(1, 0))
+    >>> o.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[0, 2],
+           [1, 0]])
+    """
+
     return x.transpose(axes=axes)
 
 
@@ -2166,38 +2288,454 @@ def max(x, /, *, axis=None, keepdims=False):
 
 
 def mean(x, /, *, axis=None, keepdims=False, dtype=None):
+    """
+    Calculates the arithmetic mean of the input array ``x``.
+
+    Parameters
+    ----------
+    x: array
+        input array of  a real-valued floating-point data type.
+    axis: Optional[Union[int, Tuple[int, ...]]]
+        axis or axes along which arithmetic means must be computed.
+        By default, the mean is computed over the entire array.
+        If a tuple of integers, arithmetic means are computed over multiple axes. Default: ``None``.
+    keepdims: bool
+        if ``True``, the reduced axes (dimensions) are included in the result as singleton dimensions.
+        Accordingly, the result is compatible is the input array.
+        Otherwise, if ``False``, the reduced axes (dimensions) are not be included in the result. Default: ``False``.
+
+    Returns
+    -------
+    out: array
+        if the arithmetic mean was computed over the entire array, a zero-dimensional array with the arithmetic mean.
+        Otherwise, a non-zero-dimensional array containing the arithmetic means.
+        The returned array has the same data type as ``x``.
+
+    Special Cases
+    -------------
+    Let ``N`` equal the number of elements over which to compute the arithmetic mean.
+    If ``N`` is ``0``, the arithmetic mean is ``NaN``.
+    If ``x_i`` is ``NaN``, the arithmetic mean is ``NaN`` (i.e., ``NaN`` values propagate).
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 1], [2, 0]]))
+    >>> o = sparse.mean(a, axis=1)
+    >>> o.todense()
+    array([0.5, 1. ])
+    """
+
     return x.mean(axis=axis, keepdims=keepdims, dtype=dtype)
 
 
 def min(x, /, *, axis=None, keepdims=False):
+    """
+    Calculates the minimum value of the input array ``x``.
+
+    Parameters
+    ----------
+    x: array
+        input array. Should have a real-valued data type.
+    axis: Optional[Union[int, Tuple[int, ...]]]
+        axis or axes along which minimum values are computed.
+        By default, the minimum value must be computed over the entire array.
+        If a tuple of integers, minimum values must be computed over multiple axes. Default: ``None``.
+    keepdims: bool
+        If ``True``, the reduced axes (dimensions) are included in the result as singleton dimensions.
+        Accordingly, the result must be compatible with the input array.
+        Otherwise, if ``False``, the reduced axes (dimensions) are not be included in the result. Default: ``False``.
+
+    Returns
+    -------
+    out: array
+        if the minimum value was computed over the entire array, a zero-dimensional array containing the minimum value.
+        Otherwise, a non-zero-dimensional array containing the minimum values.
+        The returned array must have the same data type as ``x``.
+
+    Special Cases
+    -------------
+    For floating-point operands, if ``x_i`` is ``NaN``, the minimum value is ``NaN`` (i.e., ``NaN`` values propagate).
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, -1], [-2, 0]]))
+    >>> o = sparse.min(a, axis=1)
+    >>> o.todense()
+    array([-1, -2])
+    """
     return x.min(axis=axis, keepdims=keepdims)
 
 
 def prod(x, /, *, axis=None, dtype=None, keepdims=False):
+    """
+    Calculates the product of input array ``x`` elements.
+
+    Parameters
+    ----------
+    x: array
+        input array of a numeric data type.
+    axis: Optional[Union[int, Tuple[int, ...]]]
+        axis or axes along which products is computed.
+        By default, the product are computed over the entire array.
+        If a tuple of integers, products are computed over multiple axes. Default: ``None``.
+
+    dtype: Optional[dtype]
+        data type of the returned array.
+        If ``None``, the returned array has the same data type as ``x``, unless ``x`` has an integer
+        data type supporting a smaller range of values than the default integer data type
+        (e.g., ``x`` has an ``int16`` or ``uint32`` data type and the default integer data type is ``int64``).
+        In those latter cases:
+
+        -   if ``x`` has a signed integer data type (e.g., ``int16``), the returned array has the
+            default integer data type.
+        -   if ``x`` has an unsigned integer data type (e.g., ``uint16``), the returned array has an
+            unsigned integer data type having the same number of bits as the default integer data type
+            (e.g., if the default integer data type is ``int32``, the returned array must have a ``uint32`` data type).
+
+        If the data type (either specified or resolved) differs from the data type of ``x``, the input array is
+        cast to the specified data type before computing the sum (rationale: the ``dtype`` keyword argument is
+        intended to help prevent overflows). Default: ``None``.
+
+    keepdims: bool
+        if ``True``, the reduced axes (dimensions) are included in the result as singleton dimensions.
+        Accordingly, the result are compatible with the input array.
+        Otherwise, if ``False``, the reduced axes (dimensions)  are not included in the result.
+        Default: ``False``.
+
+    Returns
+    -------
+    out: array
+        if the product was computed over the entire array, a zero-dimensional array containing the product.
+        Otherwise, a non-zero-dimensional array containing the products.
+        The returned array has a data type as described by the ``dtype`` parameter above.
+
+    Notes
+    -----
+
+    Special Cases
+    -------------
+    Let ``N`` equal the number of elements over which to compute the product.
+
+    -   If ``N`` is ``0``, the product is `1` (i.e., the empty product).
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 2], [-1, 1]]))
+    >>> o = sparse.prod(a, axis=1)
+    >>> o.todense()
+    array([ 0, -1])
+    """
     return x.prod(axis=axis, keepdims=keepdims, dtype=dtype)
 
 
 def std(x, /, *, axis=None, correction=0.0, keepdims=False):
+    """
+    Calculates the standard deviation of the input array ``x``.
+
+    Parameters
+    ----------
+    x: array
+        input array of a real-valued floating-point data type.
+    axis: Optional[Union[int, Tuple[int, ...]]]
+        axis or axes along which standard deviations are computed.
+        By default, the standard deviation is computed over the entire array.
+        If a tuple of integers, standard deviations are computed over multiple axes.
+        Default: ``None``.
+    correction: Union[int, float]
+        degrees of freedom adjustment.
+        Setting this parameter to a value other than ``0`` has the effect of adjusting the divisor
+        during the calculation of the standard deviation according to ``N-c`` where ``N`` corresponds
+        to the total number of elements over which the standard deviation is computed
+        and ``c`` corresponds to the provided degrees of freedom adjustment. When computing the
+        standard deviation of a population, setting this parameter to ``0`` is the standard choice
+        (i.e., the provided array contains data constituting an entire population). When computing
+        the corrected sample standard deviation, setting this parameter to ``1`` is the standard
+        choice (i.e., the provided array contains data sampled from a larger population; this is
+        commonly referred to as Bessel's correction). Default: ``0``.
+    keepdims: bool
+        if ``True``, the reduced axes (dimensions) are included in the result as singleton
+        dimensions, and, accordingly, the result must be compatible with the input array.
+        Otherwise, if ``False``, the reduced axes (dimensions) must not
+        be included in the result. Default: ``False``.
+
+    Returns
+    -------
+    out: array
+        if the standard deviation was computed over the entire array, a zero-dimensional array containing
+        the standard deviation; otherwise, a non-zero-dimensional array containing the standard deviations.
+        The returned array has the same data type as ``x``.
+
+    Special Cases
+    -------------
+    Let ``N`` equal the number of elements over which to compute the standard deviation.
+
+    -   If ``N - correction`` is less than or equal to ``0``, the standard deviation is ``NaN``.
+    -   If ``x_i`` is ``NaN``, the standard deviation is ``NaN`` (i.e., ``NaN`` values propagate).
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 2], [-1, 1]]))
+    >>> o = sparse.std(a, axis=1)
+    >>> o.todense()
+    array([1., 1.])
+    """
     return x.std(axis=axis, ddof=correction, keepdims=keepdims)
 
 
 def sum(x, /, *, axis=None, dtype=None, keepdims=False):
+    """
+    Calculates the sum of the input array ``x``.
+
+    Parameters
+    ----------
+    x: array
+        input array of a numeric data type.
+    axis: Optional[Union[int, Tuple[int, ...]]]
+        axis or axes along which sums are computed.
+        By default, the sum is computed over the entire array.
+        If a tuple of integers, sums must are computed over multiple axes. Default: ``None``.
+
+    dtype: Optional[dtype]
+        data type of the returned array.
+        If ``None``, the returned array has the same data type as ``x``, unless ``x`` has an integer data type
+        supporting a smaller range of values than the default integer data type (e.g., ``x`` has an ``int16``
+        or ``uint32`` data type and the default integer data type is ``int64``). In those latter cases:
+
+        -   if ``x`` has a signed integer data type (e.g., ``int16``), the returned array has the default integer
+            data type.
+        -   if ``x`` has an unsigned integer data type (e.g., ``uint16``), the returned array has an unsigned integer
+            data type having the same number of bits as the default integer data type (e.g., if the default integer
+            data type is ``int32``, the returned array must have a ``uint32`` data type).
+
+        If the data type (either specified or resolved) differs from the data type of ``x``, the input array is cast to
+        the specified data type before computing the sum.
+        Rationale: the ``dtype`` keyword argument is intended to help prevent overflows. Default: ``None``.
+    keepdims: bool
+        If ``True``, the reduced axes (dimensions) are included in the result as singleton dimensions.
+        Accordingly, the result is compatible with the input array.
+        Otherwise, if ``False``, the reduced axes (dimensions) are not included in the result. Default: ``False``.
+
+    Returns
+    -------
+    out: array
+        if the sum was computed over the entire array, a zero-dimensional array containing the sum.
+        Otherwise, an array containing the sums.
+        The returned array has the data type as described by the ``dtype`` parameter above.
+
+    Special Cases
+    -------------
+    Let ``N`` equal the number of elements over which to compute the sum.
+
+    -   If ``N`` is ``0``, the sum is ``0`` (i.e., the empty sum).
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 1], [2, 0]]))
+    >>> o = sparse.sum(a, axis=1)
+    >>> o.todense()
+    array([1, 2])
+    """
     return x.sum(axis=axis, keepdims=keepdims, dtype=dtype)
 
 
 def var(x, /, *, axis=None, correction=0.0, keepdims=False):
+    """
+    Calculates the variance of the input array ``x``.
+
+    Parameters
+    ----------
+    x: array
+        input array of a real-valued floating-point data type.
+    axis: Optional[Union[int, Tuple[int, ...]]]
+        axis or axes along which variances are computed.
+        By default, the variance is computed over the entire array.
+        If a tuple of integers, variances are computed over multiple axes. Default: ``None``.
+    correction: Union[int, float]
+        degrees of freedom adjustment. Setting this parameter to a value other than ``0``
+        has the effect of adjusting the divisor during the calculation of the variance according to ``N-c``
+        where ``N`` corresponds to the total number of elements over which the variance is computed and ``c``
+        corresponds to the provided degrees of freedom adjustment.
+        When computing the variance of a population, setting this parameter to ``0`` is the standard choice
+        (i.e., the provided array contains data constituting an entire population).
+        When computing the unbiased sample variance, setting this parameter to ``1`` is the standard choice
+        (i.e., the provided array contains data sampled from a larger population; this is commonly referred
+        to as Bessel's correction). Default: ``0``.
+    keepdims: bool
+        if ``True``, the reduced axes are included in the result as singleton dimensions, and,
+        accordingly, the result is compatible with the input array.
+        Otherwise, if ``False``, the reduced axes (dimensions) are not included in the result. Default: ``False``.
+
+    Returns
+    -------
+    out: array
+        if the variance was computed over the entire array, a zero-dimensional array containing the variance;
+        otherwise, a non-zero-dimensional array containing the variances.
+        The returned array must have the same data type as ``x``.
+
+    Special Cases
+    -------------
+    Let ``N`` equal the number of elements over which to compute the variance.
+
+    -   If ``N - correction`` is less than or equal to ``0``, the variance is ``NaN``.
+    -   If ``x_i`` is ``NaN``, the variance is ``NaN`` (i.e., ``NaN`` values propagate).
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 2], [-1, 1]]))
+    >>> o = sparse.var(a, axis=1)
+    >>> o.todense()
+    array([1., 1.])
+    """
     return x.var(axis=axis, ddof=correction, keepdims=keepdims)
 
 
 def abs(x, /):
+    """
+    Calculates the absolute value for each element ``x_i`` of the input array ``x``.
+
+    For real-valued input arrays, the element-wise result has the same magnitude as the respective
+    element in ``x`` but has positive sign.
+
+    For complex floating-point operands, the complex absolute value is known as the norm, modulus, or
+    magnitude and, for a complex number :math:`z = a + bj` is computed as
+
+    $$
+    operatorname{abs}(z) = sqrt{a^2 + b^2}
+    $$
+
+    Parameters
+    ----------
+    x: array
+        input array of a numeric data type.
+
+    Returns
+    -------
+    out: array
+        an array containing the absolute value of each element in ``x``.
+        If ``x`` has a real-valued data type, the returned array has the same data type as ``x``.
+        If ``x`` has a complex floating-point data type, the returned array has a real-valued
+        floating-point data type whose precision matches the precision of ``x``
+        (e.g., if ``x`` is ``complex128``, then the returned array must has a ``float64`` data type).
+
+    Special Cases
+    -------------
+    For real-valued floating-point operands,
+
+    - If ``x_i`` is ``NaN``, the result is ``NaN``.
+    - If ``x_i`` is ``-0``, the result is ``+0``.
+    - If ``x_i`` is ``-infinity``, the result is ``+infinity``.
+
+    For complex floating-point operands, let ``a = real(x_i)``, ``b = imag(x_i)``, and
+
+    - If ``a`` is either ``+infinity`` or ``-infinity`` and ``b`` is any value (including ``NaN``),
+    the result is ``+infinity``.
+    - If ``a`` is any value (including ``NaN``) and ``b`` is either ``+infinity`` or ``-infinity``,
+    the result is ``+infinity``.
+    - If ``a`` is either ``+0`` or ``-0``, the result is equal to ``abs(b)``.
+    - If ``b`` is either ``+0`` or ``-0``, the result is equal to ``abs(a)``.
+    - If ``a`` is ``NaN`` and ``b`` is a finite number, the result is ``NaN``.
+    - If ``a`` is a finite number and ``b`` is ``NaN``, the result is ``NaN``.
+    - If ``a`` is ``NaN`` and ``b`` is ``NaN``, the result is ``NaN``.
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, -1], [-2, 0]]))
+    >>> o = sparse.abs(a)
+    >>> o.todense()
+    array([[0, 1],
+           [2, 0]])
+    """
+
     return x.__abs__()
 
 
 def reshape(x, /, shape, *, copy=None):
+    """
+    Reshapes an array without changing its data.
+
+    Parameters
+    ----------
+    x: array
+        input array to reshape.
+    shape: Tuple[int, ...]
+        a new shape compatible with the original shape. One shape dimension is allowed to be ``-1``.
+        When a shape dimension is ``-1``, the corresponding output array shape dimension must be inferred
+        from the length of the array and the remaining dimensions.
+    copy: Optional[bool]
+        whether or not to copy the input array.
+        If ``True``, the function always copies.
+        If ``False``, the function must never copies.
+        If ``None``, the function avoids copying, if possible.
+        Default: ``None``.
+
+    Returns
+    -------
+    out: array
+        an output array having the same data type and elements as ``x``.
+
+    Raises
+    ------
+    ValueError
+        If ``copy=False`` and a copy would be necessary, a ``ValueError``
+        will be raised.
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 1], [2, 0]]))
+    >>> o = sparse.reshape(a, shape=(1, 4))
+    >>> o.todense()
+    array([[0, 1, 2, 0]])
+    """
     return x.reshape(shape=shape)
 
 
 def astype(x, dtype, /, *, copy=True):
+    """
+    Copies an array to a specified data type irrespective of type-promotion rules.
+
+    Parameters
+    ----------
+    x: array
+        array to cast.
+    dtype: dtype
+        desired data type.
+    copy: bool
+        specifies whether to copy an array when the specified ``dtype`` matches the data type
+        of the input array ``x``. If ``True``, a newly allocated array is always returned.
+        If ``False`` and the specified ``dtype`` matches the data type of the input array,
+        the input array is returned; otherwise, a newly allocated array is returned.
+        Default: ``True``.
+
+    Notes
+    -----
+
+       - When casting a boolean input array to a real-valued data type, a value of ``True`` is cast
+         to a real-valued number equal to ``1``, and a value of ``False`` must cast to a real-valued
+         number equal to ``0``.
+
+       - When casting a boolean input array to a complex floating-point data type, a value of ``True``
+       is cast to a complex number equal to ``1 + 0j``, and a value of ``False`` is cast to a complex
+       number equal to ``0 + 0j``.
+
+       - When casting a real-valued input array to ``bool``, a value of ``0`` is cast to ``False``,
+       and a non-zero value is cast to ``True``.
+
+       - When casting a complex floating-point array to ``bool``, a value of ``0 + 0j`` is cast
+       to ``False``, and all other values are cast to ``True``.
+
+    Returns
+    -------
+    out: array
+        an array having the specified data type. The returned array has the same shape as ``x``.
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 1], [2, 0]]))
+    >>> o = sparse.astype(a, "float32")
+    >>> o.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[0., 1.],
+           [2., 0.]], dtype=float32)
+    """
     return x.astype(dtype, copy=copy)
 
 
@@ -2222,15 +2760,112 @@ def squeeze(x, /, axis=None):
 
 @_support_numpy
 def broadcast_to(x, /, shape):
+    """
+    Broadcasts an array to a specified shape.
+
+    Parameters
+    ----------
+    x: array
+        array to broadcast.
+    shape: Tuple[int, ...]
+        array shape. Must be compatible with ``x``.
+        If the array is incompatible with the specified shape, the function raises an exception.
+
+    Returns
+    -------
+    out: array
+        an array having a specified shape and having the same data type as ``x``.
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 1], [2, 0]]))
+    >>> o = sparse.broadcast_to(a, shape=(1, 2, 2))
+    >>> o.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[[0, 1],
+            [2, 0]]])
+    """
     return x.broadcast_to(shape)
 
 
 def broadcast_arrays(*arrays):
+    """
+    Broadcasts one or more arrays against one another.
+
+    Parameters
+    ----------
+    arrays: array
+        an arbitrary number of to-be broadcasted arrays.
+
+    Returns
+    -------
+    out: List[array]
+        a list of broadcasted arrays. Each array has the same shape.
+        Each array has the same dtype as its corresponding input array.
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 1]]))
+    >>> b = sparse.COO.from_numpy(np.array([[0], [2]]))
+    >>> oa, ob = sparse.broadcast_arrays(a, b)
+    >>> oa.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[0, 1],
+            [0, 1]])
+    >>> ob.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[0, 0],
+            [2, 2]])
+    """
+
     shape = np.broadcast_shapes(*[a.shape for a in arrays])
     return [a.broadcast_to(shape) for a in arrays]
 
 
 def equal(x1, x2, /):
+    """
+    Computes the truth value of ``x1_i == x2_i`` for each element ``x1_i`` of the input array ``x1``
+    with the respective element ``x2_i`` of the input array ``x2``.
+
+    Parameters
+    ----------
+    x1: array
+        first input array. May have any data type.
+    x2: array
+        second input array. Must be compatible with ``x1``. May have any data type.
+
+    Returns
+    -------
+    out: array
+        an array containing the element-wise results. The returned array is of  data type of ``bool``.
+
+    Special Cases
+    -------------
+
+    For real-valued floating-point operands,
+
+    - If ``x1_i`` is ``NaN`` or ``x2_i`` is ``NaN``, the result is ``False``.
+    - If ``x1_i`` is ``+infinity`` and ``x2_i`` is ``+infinity``, the result is ``True``.
+    - If ``x1_i`` is ``-infinity`` and ``x2_i`` is ``-infinity``, the result is ``True``.
+    - If ``x1_i`` is ``-0`` and ``x2_i`` is either ``+0`` or ``-0``, the result is ``True``.
+    - If ``x1_i`` is ``+0`` and ``x2_i`` is either ``+0`` or ``-0``, the result is ``True``.
+    - If ``x1_i`` is a finite number, ``x2_i`` is a finite number, and ``x1_i`` equals ``x2_i``, the result is ``True``.
+    - In the remaining cases, the result is ``False``.
+
+    For complex floating-point operands, let ``a = real(x1_i)``, ``b = imag(x1_i)``, ``c = real(x2_i)``,
+    ``d = imag(x2_i)``, and
+
+    - If ``a``, ``b``, ``c``, or ``d`` is ``NaN``, the result is ``False``.
+    - In the remaining cases, the result is the logical AND of the equality comparison between the real values ``a``
+        and ``c`` (real components) and between the real values ``b`` and ``d`` (imaginary components), as described
+        above for real-valued  floating-point operands (i.e., ``a == c AND b == d``).
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 1], [2, 0]]))
+    >>> b = sparse.COO.from_numpy(np.array([[0, 1], [1, 0]]))
+    >>> o = sparse.equal(a, b)  # doctest: +SKIP
+    >>> o.todense()  # doctest: +SKIP
+    array([[ True,  True],
+           [ False,  True]])
+    """
     return x1 == x2
 
 
@@ -2241,23 +2876,169 @@ def round(x, /, decimals=0, out=None):
 
 @_support_numpy
 def isinf(x, /):
+    """
+    Tests each element ``x_i`` of the input array ``x`` to determine if equal to positive or negative infinity.
+
+    Parameters
+    ----------
+    x: array
+        input array of a numeric data type.
+
+    Returns
+    -------
+    out: array
+        an array containing test results. The returned array has a data type of ``bool``.
+
+    Special Cases
+    -------------
+
+    For real-valued floating-point operands,
+
+    - If ``x_i`` is either ``+infinity`` or ``-infinity``, the result is ``True``.
+    - In the remaining cases, the result is ``False``.
+
+    For complex floating-point operands, let ``a = real(x_i)``, ``b = imag(x_i)``, and
+
+    - If ``a`` is either ``+infinity`` or ``-infinity`` and ``b`` is any value (including ``NaN``), the result
+        is ``True``.
+    - If ``a`` is either a finite number or ``NaN`` and ``b`` is either ``+infinity`` or ``-infinity``, the result
+        is ``True``.
+    - In the remaining cases, the result is ``False``.
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 1], [2, np.inf]]))
+    >>> o = sparse.isinf(a)  # doctest: +SKIP
+    >>> o.todense()  # doctest: +SKIP
+    array([[False, False],
+           [False,  True]])
+    """
     return x.isinf()
 
 
 @_support_numpy
 def isnan(x, /):
+    """
+    Tests each element ``x_i`` of the input array ``x`` to determine whether the element is ``NaN``.
+
+    Parameters
+    ----------
+    x: array
+        input array with a numeric data type.
+
+    Returns
+    -------
+    out: array
+        an array containing test results. The returned array has data type ``bool``.
+
+    Notes
+    -----
+
+    For real-valued floating-point operands,
+
+    - If ``x_i`` is ``NaN``, the result is ``True``.
+    - In the remaining cases, the result is ``False``.
+
+    For complex floating-point operands, let ``a = real(x_i)``, ``b = imag(x_i)``, and
+
+    - If ``a`` or ``b`` is ``NaN``, the result is ``True``.
+    - In the remaining cases, the result is ``False``.
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 1], [2, np.nan]]))
+    >>> o = sparse.isnan(a)
+    >>> o.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[False, False],
+           [False,  True]])
+    """
+
     return x.isnan()
 
 
 def nonzero(x, /):
+    """
+    Returns the indices of the array elements which are non-zero.
+
+    If ``x`` has a complex floating-point data type, non-zero elements are those elements having at least
+    one component (real or imaginary) which is non-zero.
+
+    If ``x`` has a boolean data type, non-zero elements are those elements which are equal to ``True``.
+
+    Parameters
+    ----------
+    x: array
+        input array having a positive rank.
+        If ``x`` is zero-dimensional, the function raises an exception.
+
+    Returns
+    -------
+    out: Tuple[array, ...]
+        a tuple of ``k`` arrays, one for each dimension of ``x`` and each of size ``n`` (where ``n`` is
+        the total number of non-zero elements), containing the indices of the non-zero elements in that
+        dimension. The indices must are returned in row-major, C-style order.
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0, 1], [2, 0]]))
+    >>> o = sparse.nonzero(a)
+    >>> o
+    (array([0, 1]), array([1, 0]))
+    """
     return x.nonzero()
 
 
 def imag(x, /):
+    """
+    Returns the imaginary component of a complex number for each element ``x_i`` of the input array ``x``.
+
+    Parameters
+    ----------
+    x: array
+        input array of a complex floating-point data type.
+
+    Returns
+    -------
+    out: array
+        an array containing the element-wise results.
+        The returned array has a floating-point data type with the same floating-point precision as ``x``
+        (e.g., if ``x`` is ``complex64``, the returned array has the floating-point data type ``float32``).
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0 + 1j, 2 + 0j], [0 + 0j, 3 + 1j]]))
+    >>> o = sparse.imag(a)
+    >>> o.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[1., 0.],
+           [0., 1.]])
+    """
     return x.imag
 
 
 def real(x, /):
+    """
+    Returns the real component of a complex number for each element ``x_i`` of the input array ``x``.
+
+    Parameters
+    ----------
+    x: array
+        input array of a complex floating-point data type.
+
+    Returns
+    -------
+    out: array
+        an array containing the element-wise results.
+        The returned array has a floating-point data type with the same floating-point precision as ``x``
+        (e.g., if ``x`` is ``complex64``, the returned array has the floating-point data type ``float32``).
+
+    Examples
+    --------
+    >>> a = sparse.COO.from_numpy(np.array([[0 + 1j, 2 + 0j], [0 + 0j, 3 + 1j]]))
+    >>> o = sparse.real(a)
+    >>> o.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[0., 2.],
+           [0., 3.]])
+    """
     return x.real
 
 
