@@ -49,6 +49,7 @@ coverage.xml
 test_results/
 junit/
 .hypothesis/
+coverage_*.xml
 
 # Translations
 *.mo
@@ -85,4 +86,3 @@ docs/examples_ipynb/
 
 # Pixi envs
 .pixi/
-pixi.lock

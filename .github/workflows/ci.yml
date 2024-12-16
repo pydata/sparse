@@ -50,7 +50,12 @@ jobs:
           pip install -e '.[tests]'
       - name: Run tests
         run: |
-          SPARSE_BACKEND=Numba pytest --pyargs sparse --cov-report=xml:coverage_Numba.xml -n auto -vvv
+          if [ $(python -c 'import numpy as np; print(np.lib.NumpyVersion(np.__version__) >= "2.0.0a1")') = 'True' ]; then
+            pytest --pyargs sparse --doctest-modules --cov-report=xml:coverage_Numba.xml -n auto -vvv
+          else
+            pytest --pyargs sparse --cov-report=xml:coverage_Numba.xml -n auto -vvv
+          fi
+          python -c 'import finch'
           SPARSE_BACKEND=Finch pytest --pyargs sparse/tests --cov-report=xml:coverage_Finch.xml -n auto -vvv
           SPARSE_BACKEND=MLIR pytest --pyargs sparse/mlir_backend --cov-report=xml:coverage_MLIR.xml -n auto -vvv
       - uses: codecov/codecov-action@v5
@@ -126,6 +131,9 @@ jobs:
         SPARSE_BACKEND: ${{ matrix.backend }}
       run: |
         cd ${GITHUB_WORKSPACE}/array-api-tests
+        if [ "${SPARSE_BACKEND}" = "Finch" ]; then
+            python -c 'import finch'
+        fi
         pytest array_api_tests -v -c pytest.ini -n auto --max-examples=2 --derandomize --disable-deadline -o xfail_strict=True --xfails-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-xfails.txt --skips-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-skips.txt
 
 on:

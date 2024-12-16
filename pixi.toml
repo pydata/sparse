@@ -12,12 +12,12 @@ numpy = ">=1.17"
 [dependencies]
 python = ">=3.10,<3.13"
 
-[feature.extras.pypi-dependencies]
+[feature.extra.pypi-dependencies]
 dask = { version = ">=2024", extras = ["array"] }
 scipy = ">=0.19"
 scikit-learn = "*"
 
-[feature.docs.pypi-dependencies]
+[feature.doc.pypi-dependencies]
 mkdocs-material = "*"
 mkdocstrings = { version = "*", extras = ["python"] }
 mkdocs-gen-files = "*"
@@ -25,16 +25,15 @@ mkdocs-literate-nav = "*"
 mkdocs-section-index = "*"
 mkdocs-jupyter = "*"
 
-[feature.tests.tasks]
-test = "pytest --pyargs sparse -n auto"
-test-mlir = { cmd = "pytest --pyargs sparse.mlir_backend -v" }
+[feature.test.tasks]
+test = "pytest -n auto --doctest-modules"
+test-mlir = "pytest --pyargs sparse.mlir_backend -v"
 test-finch = { cmd = "pytest --pyargs sparse/tests -n auto -v", depends-on = ["precompile"] }
 
-[feature.tests.dependencies]
+[feature.test.pypi-dependencies]
 pytest = ">=3.5"
 pytest-cov = "*"
 pytest-xdist = "*"
-pre-commit = "*"
 pytest-codspeed = "*"
 
 [feature.notebooks.pypi-dependencies]
@@ -51,6 +50,7 @@ matrepr = "*"
 precompile = "python -c 'import finch'"
 
 [feature.finch.dependencies]
+python = ">=3.10"
 juliaup = ">=1.17.10"
 
 [feature.finch.pypi-dependencies]
@@ -63,16 +63,20 @@ SPARSE_BACKEND = "Finch"
 [feature.finch.target.osx-arm64.activation.env]
 PYTHONFAULTHANDLER = "${HOME}/faulthandler.log"
 
+[feature.mlir.dependencies]
+python = ">=3.10"
+
 [feature.mlir.pypi-dependencies]
 scipy = ">=0.19"
 finch-mlir = ">=0.0.2"
+"PyYAML" = "*"
 
 [feature.mlir.activation.env]
 SPARSE_BACKEND = "MLIR"
 
 [environments]
-tests = ["tests", "extras"]
-docs = ["docs", "extras"]
-mlir-dev = {features = ["tests", "mlir"], no-default-feature = true}
-finch-dev = {features = ["tests", "finch"], no-default-feature = true}
-notebooks = ["extras", "mlir", "finch", "notebooks"]
+test = ["test", "extra"]
+doc = ["doc", "extra"]
+mlir-dev = {features = ["test", "mlir"], no-default-feature = true}
+finch-dev = {features = ["test", "finch"], no-default-feature = true}
+notebooks = ["extra", "mlir", "finch", "notebooks"]
