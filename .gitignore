@@ -86,3 +86,4 @@ docs/examples_ipynb/
 
 # Pixi envs
 .pixi/
+pixi.lock
