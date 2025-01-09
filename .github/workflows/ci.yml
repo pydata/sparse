@@ -93,17 +93,14 @@ jobs:
       matrix:
         backend: ['Numba', 'Finch']
       fail-fast: false
+    env:
+      ARRAY_API_TESTS_DIR: ${{ github.workspace }}/array-api-tests
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v4
     - name: Checkout array-api-tests
-      uses: actions/checkout@v4
-      with:
-        repository: data-apis/array-api-tests
-        ref: '33f2d2ea2f3dd2b3ceeeb4519d55e08096184149'  # Latest commit as of 2024-05-29
-        submodules: 'true'
-        path: 'array-api-tests'
+      run: ci/clone_array_api_tests.sh
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -111,7 +108,7 @@ jobs:
         cache: 'pip'
     - name: Install build and test dependencies from PyPI
       run: |
-        pip install pytest-xdist -r array-api-tests/requirements.txt
+        pip install pytest-xdist -r "$ARRAY_API_TESTS_DIR/requirements.txt"
     - name: Build and install Sparse
       run: |
         pip install '.[finch]'
