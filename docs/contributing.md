@@ -69,7 +69,6 @@ check code style. You don't need to configure these extensions yourself. Once yo
 configured your environment, you can just `cd` to the root of your repository and run
 
 ```bash
-
 pytest --pyargs sparse
 ```
 
@@ -77,6 +76,16 @@ This automatically checks code style and functionality, and prints code coverage
 even though it doesn't fail on low coverage.
 
 Unit tests are automatically run on Travis CI for pull requests.
+
+### Advanced
+
+To run the complete set of unit tests run in CI for your platform, run the following
+in the repository root:
+
+```bash
+ci/setup_env.sh
+ACTIVATE_VENV=1 ci/test_all.sh
+```
 
 ## Coverage
 

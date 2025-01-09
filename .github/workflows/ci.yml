@@ -30,7 +30,6 @@ jobs:
     env:
       PYTHON_VERSION: ${{ matrix.python }}
       NUMBA_BOUNDSCHECK: ${{ matrix.numba_boundscheck }}
-      PYTHONFAULTHANDLER: '${{ github.workspace }}/faulthandler.log'
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -49,15 +48,7 @@ jobs:
         run: |
           pip install -e '.[tests]'
       - name: Run tests
-        run: |
-          if [ $(python -c 'import numpy as np; print(np.lib.NumpyVersion(np.__version__) >= "2.0.0a1")') = 'True' ]; then
-            pytest --pyargs sparse --doctest-modules --cov-report=xml:coverage_Numba.xml -n auto -vvv
-          else
-            pytest --pyargs sparse --cov-report=xml:coverage_Numba.xml -n auto -vvv
-          fi
-          python -c 'import finch'
-          SPARSE_BACKEND=Finch pytest --pyargs sparse/tests --cov-report=xml:coverage_Finch.xml -n auto -vvv
-          SPARSE_BACKEND=MLIR pytest --pyargs sparse/mlir_backend --cov-report=xml:coverage_MLIR.xml -n auto -vvv
+        run: ci/test_backends.sh
       - uses: codecov/codecov-action@v5
         if: always()
         with:
@@ -79,8 +70,7 @@ jobs:
         pip install -U setuptools wheel
         pip install '.[finch]' scipy
     - name: Run examples
-      run: |
-        source ci/test_examples.sh
+      run: ci/test_examples.sh
 
   notebooks:
     runs-on: ubuntu-latest
@@ -96,8 +86,7 @@ jobs:
       run: |
         pip install -e '.[notebooks]'
     - name: Run notebooks
-      run: |
-        source ci/test_notebooks.sh
+      run: ci/test_notebooks.sh
 
   array_api_tests:
     strategy:
@@ -128,14 +117,8 @@ jobs:
         pip install '.[finch]'
     - name: Run the test suite
       env:
-        ARRAY_API_TESTS_MODULE: sparse
         SPARSE_BACKEND: ${{ matrix.backend }}
-      run: |
-        cd ${GITHUB_WORKSPACE}/array-api-tests
-        if [ "${SPARSE_BACKEND}" = "Finch" ]; then
-            python -c 'import finch'
-        fi
-        pytest array_api_tests -v -c pytest.ini -n auto --max-examples=2 --derandomize --disable-deadline -o xfail_strict=True --xfails-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-xfails.txt --skips-file ${GITHUB_WORKSPACE}/ci/${{ matrix.backend }}-array-api-skips.txt
+      run: ci/test_array_api.sh
 
 on:
   # Trigger the workflow on push or pull request,
