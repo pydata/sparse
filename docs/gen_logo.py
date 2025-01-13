@@ -31,7 +31,7 @@ b = np.tan(np.deg2rad(30))  # constant for transformations
 kwargs = {"x": "0", "y": "0", "width": f"{s}", "height": f"{s}", "stroke": "white"}
 
 # large white squares for background
-bg_kwargs = {**kwargs, "width": f"{5*s}", "height": f"{5*s}", "style": "fill:white;"}
+bg_kwargs = {**kwargs, "width": f"{5 * s}", "height": f"{5 * s}", "style": "fill:white;"}
 
 
 root = ET.Element(

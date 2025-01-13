@@ -590,8 +590,7 @@ def check_zero_fill_value(*args):
     for i, arg in enumerate(args):
         if hasattr(arg, "fill_value") and not equivalent(arg.fill_value, _zero_of_dtype(arg.dtype)):
             raise ValueError(
-                "This operation requires zero fill values, "
-                f"but argument {i:d} had a fill value of {arg.fill_value!s}."
+                f"This operation requires zero fill values, but argument {i:d} had a fill value of {arg.fill_value!s}."
             )
 
 
