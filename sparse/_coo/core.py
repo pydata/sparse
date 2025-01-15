@@ -920,7 +920,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         try:
             return matmul(self, other)
-        except NotImplementedError:
+        except (NotImplementedError, TypeError):
             return NotImplemented
 
     def __rmatmul__(self, other):
@@ -928,7 +928,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         try:
             return matmul(other, self)
-        except NotImplementedError:
+        except (NotImplementedError, TypeError):
             return NotImplemented
 
     def linear_loc(self):

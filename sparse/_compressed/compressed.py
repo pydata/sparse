@@ -777,7 +777,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         try:
             return matmul(self, other)
-        except NotImplementedError:
+        except (NotImplementedError, TypeError):
             return NotImplemented
 
     def __rmatmul__(self, other):
@@ -785,7 +785,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         try:
             return matmul(other, self)
-        except NotImplementedError:
+        except (NotImplementedError, TypeError):
             return NotImplemented
 
     def _prune(self):
