@@ -109,7 +109,7 @@ def test_transpose(random_sparse, copy):
     assert random_sparse.shape == t.shape[::-1]
 
     assert_eq(random_sparse, tt)
-    assert type(random_sparse) == type(tt)
+    assert type(random_sparse) is type(tt)
 
 
 def test_transpose_error(random_sparse):
