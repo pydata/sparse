@@ -84,7 +84,6 @@ einsum_cases = [
 
 @pytest.mark.parametrize("symbols", sparse.numba_backend._common._EINSUM_SYMBOLS_SET)
 def test_symbols(symbols):
-
     arr = sparse.random(shape=10, density=1.0)
 
     # ensure we can use any of the defined symbols
