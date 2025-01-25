@@ -19,7 +19,7 @@ from ._utils import (
     normalize_axis,
 )
 
-_EINSUM_SYMBOLS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+_EINSUM_SYMBOLS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZαβγδϵζηθικλμνξπρστυϕχψωΓΔΕΘΛΠΡΣΦΨΩ"
 _EINSUM_SYMBOLS_SET = set(_EINSUM_SYMBOLS)
 
 
