@@ -1610,11 +1610,9 @@ def eye(N, M=None, k=0, dtype=float, format="coo", *, device=None, **kwargs):
         return zeros((N, M), dtype=dtype, format=format, device=device)
 
     if k > 0:
-        data_length = builtins.max(builtins.min(data_length, M - k), 0)
         n_coords = np.arange(data_length, dtype=np.intp)
         m_coords = n_coords + k
     elif k < 0:
-        data_length = builtins.max(builtins.min(data_length, N + k), 0)
         m_coords = np.arange(data_length, dtype=np.intp)
         n_coords = m_coords - k
     else:
@@ -1888,10 +1886,7 @@ def can_cast(from_: SparseArray, to: np.dtype, /, *, casting: str = "safe") -> b
     --------
     - [`numpy.can_cast`][] : NumPy equivalent function
     """
-    try:
-        from_ = np.dtype(from_)
-    except TypeError:
-        from_ = from_.dtype
+    from_ = np.dtype(from_)
 
     return np.can_cast(from_, to, casting=casting)
 

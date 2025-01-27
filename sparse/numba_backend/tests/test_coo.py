@@ -1203,9 +1203,19 @@ def test_initialization(ndim, rng):
 @pytest.mark.parametrize("N, M", [(4, None), (4, 10), (10, 4), (0, 10)])
 def test_eye(N, M):
     m = M or N
-    for k in [0, N - 2, N + 2, m - 2, m + 2]:
+    for k in [0, N - 2, N + 2, m - 2, m + 2, np.iinfo(np.intp).min]:
         assert_eq(sparse.eye(N, M=M, k=k), np.eye(N, M=M, k=k))
         assert_eq(sparse.eye(N, M=M, k=k, dtype="i4"), np.eye(N, M=M, k=k, dtype="i4"))
+
+
+@pytest.mark.parametrize("from_", [np.int8, np.int64, np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("to", [np.int8, np.int64, np.float32, np.float64, np.complex64, np.complex128])
+@pytest.mark.parametrize("casting", ["no", "safe", "same_kind"])
+def test_can_cast(from_, to, casting):
+    assert sparse.can_cast(sparse.zeros((2, 2), dtype=from_), to, casting=casting) == np.can_cast(
+        np.zeros((2, 2), dtype=from_), to, casting=casting
+    )
+    assert sparse.can_cast(from_, to, casting=casting) == np.can_cast(from_, to, casting=casting)
 
 
 @pytest.mark.parametrize("funcname", ["ones", "zeros"])
