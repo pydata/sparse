@@ -65,13 +65,8 @@ array_api_tests/test_signatures.py::test_array_method_signature[__dlpack__]
 array_api_tests/test_signatures.py::test_array_method_signature[__dlpack_device__]
 array_api_tests/test_signatures.py::test_array_method_signature[__setitem__]
 
-# test_creation_functions
-
 # not implemented
 array_api_tests/test_creation_functions.py::test_meshgrid
-
-# buggy
-array_api_tests/test_creation_functions.py::test_full_like
 
 # test_array_object
 
@@ -179,8 +174,6 @@ array_api_tests/test_indexing_functions.py::test_take
 # not implemented
 array_api_tests/test_linalg.py::test_matrix_transpose
 array_api_tests/test_linalg.py::test_vecdot
-# test suite draws two scalars
-array_api_tests/test_linalg.py::test_tensordot
 
 # test_manipulation_functions
 
