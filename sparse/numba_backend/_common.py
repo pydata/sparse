@@ -1601,6 +1601,13 @@ def eye(N, M=None, k=0, dtype=float, format="coo", *, device=None, **kwargs):
     k = int(k)
 
     data_length = builtins.min(N, M)
+    if k > 0:
+        data_length = builtins.max(builtins.min(data_length, M - k), 0)
+    elif k < 0:
+        data_length = builtins.max(builtins.min(data_length, N + k), 0)
+
+    if data_length == 0:
+        return zeros((N, M), dtype=dtype, format=format, device=device)
 
     if k > 0:
         data_length = builtins.max(builtins.min(data_length, M - k), 0)
@@ -1852,6 +1859,41 @@ def empty_like(a, dtype=None, shape=None, format=None, *, device=None, **kwargs)
 
 
 empty_like.__doc__ = zeros_like.__doc__
+
+
+def can_cast(from_: SparseArray, to: np.dtype, /, *, casting: str = "safe") -> bool:
+    """Determines if one data type can be cast to another data type
+
+    Parameters
+    ----------
+    from_ : dtype or SparseArray
+        Source array or dtype.
+    to : dtype
+        Destination dtype.
+    casting: str
+        Casting kind
+
+    Returns
+    -------
+    out : bool
+        Whether or not a cast is possible.
+
+    Examples
+    --------
+    >>> x = sparse.ones((2, 3), dtype=sparse.int8)
+    >>> sparse.can_cast(x, sparse.float64)
+    True
+
+    See Also
+    --------
+    - [`numpy.can_cast`][] : NumPy equivalent function
+    """
+    try:
+        from_ = np.dtype(from_)
+    except TypeError:
+        from_ = from_.dtype
+
+    return np.can_cast(from_, to, casting=casting)
 
 
 def outer(a, b, out=None):
