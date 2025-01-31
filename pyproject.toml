@@ -54,7 +54,7 @@ tests = [
 tox = ["sparse[tests]", "tox"]
 notebooks = ["sparse[tests]", "nbmake", "matplotlib"]
 all = ["sparse[docs,tox,notebooks,mlir]", "matrepr"]
-finch = ["finch-tensor>=0.2.3"]
+finch = ["finch-tensor>=0.2.4"]
 mlir = ["finch-mlir>=0.0.2"]
 
 [project.urls]
