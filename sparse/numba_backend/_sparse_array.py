@@ -247,18 +247,25 @@ class SparseArray:
             return summary
 
     @abstractmethod
-    def __binsparse__(self) -> tuple[dict, list[np.ndarray]]:
-        """Return a 2-tuple:
-        * First element is a `dict` equivalent to a parsed JSON [`binsparse` descriptor](https://graphblas.org/binsparse-specification/#descriptor)
+    def __binsparse_descriptor__(self) -> dict:
+        """Return a `dict` equivalent to a parsed JSON [`binsparse` descriptor](https://graphblas.org/binsparse-specification/#descriptor)
         of this array.
-        * Second element is a `list[np.ndarray]` of the constituent arrays.
 
         Returns
         -------
         dict
             Parsed `binsparse` descriptor.
-        list[np.ndarray]
-            The constituent arrays
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def __binsparse__(self) -> dict[str, np.ndarray]:
+        """Return a is a `dict[str, np.ndarray]` of the constituent arrays.
+
+        Returns
+        -------
+        dict
+            Parsed `binsparse` descriptor.
         """
         raise NotImplementedError
 

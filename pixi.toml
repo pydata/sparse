@@ -36,13 +36,8 @@ pytest-cov = "*"
 pytest-xdist = "*"
 pytest-codspeed = "*"
 
-<<<<<<< HEAD
 [feature.notebooks.pypi-dependencies]
 ipykernel = "*"
-=======
-[feature.notebooks.dependencies]
-ipython = "*"
->>>>>>> 54b7c1d (Fix `notebooks` feature and add it to development environments.)
 nbmake = "*"
 matplotlib = "*"
 networkx = "*"

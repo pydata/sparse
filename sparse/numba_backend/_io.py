@@ -136,7 +136,8 @@ def load_npz(filename):
 
 @_check_device
 def from_binsparse(arr, /, *, device=None, copy: bool | None = None) -> SparseArray:
-    desc, arrs = arr.__binsparse__()
+    desc = arr.__binsparse_descriptor__()
+    arrs = arr.__binsparse__()
 
     desc = desc["binsparse"]
     version_tuple: tuple[int, ...] = tuple(int(v) for v in desc["version"].split("."))
@@ -216,13 +217,13 @@ def from_binsparse(arr, /, *, device=None, copy: bool | None = None) -> SparseAr
             if transpose != list(range(ndim)):
                 raise RuntimeError(format_err_str)
 
-            ptr_arr: np.ndarray = np.from_dlpack(arrs[0])
+            ptr_arr: np.ndarray = np.from_dlpack(arrs["pointers_to_1"])
             start, end = ptr_arr
             if copy is False and not (start == 0 or end == nnz):
                 raise RuntimeError(format_err_str)
 
-            coord_arr: np.ndarray = np.from_dlpack(arrs[1])
-            value_arr: np.ndarray = np.from_dlpack(arrs[2])
+            coord_arr: np.ndarray = np.from_dlpack(arrs["indices_1"])
+            value_arr: np.ndarray = np.from_dlpack(arrs["values"])
 
             _check_binsparse_dt(coord_arr, coords_dtype)
             _check_binsparse_dt(value_arr, value_dtype)
@@ -262,11 +263,11 @@ def from_binsparse(arr, /, *, device=None, copy: bool | None = None) -> SparseAr
             },
             **_kwargs,
         }:
-            crd_arr = np.from_dlpack(arrs[0])
+            crd_arr = np.from_dlpack(arrs["pointers_to_1"])
             _check_binsparse_dt(crd_arr, crd_dtype)
-            ptr_arr = np.from_dlpack(arrs[1])
+            ptr_arr = np.from_dlpack(arrs["indices_1"])
             _check_binsparse_dt(ptr_arr, ptr_dtype)
-            val_arr = np.from_dlpack(arrs[2])
+            val_arr = np.from_dlpack(arrs["values"])
             _check_binsparse_dt(val_arr, val_dtype)
 
             match transpose:
