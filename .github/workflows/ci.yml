@@ -84,7 +84,8 @@ jobs:
         cache: 'pip'
     - name: Build and install Sparse
       run: |
-        pip install -e '.[notebooks]'
+        pip install -U setuptools wheel
+        pip install '.[notebooks]'
     - name: Run notebooks
       run: ci/test_notebooks.sh
 
@@ -111,6 +112,7 @@ jobs:
         pip install pytest-xdist -r "$ARRAY_API_TESTS_DIR/requirements.txt"
     - name: Build and install Sparse
       run: |
+        pip install -U setuptools wheel
         pip install '.[finch]'
     - name: Run the test suite
       env:
