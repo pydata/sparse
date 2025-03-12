@@ -68,7 +68,7 @@ jobs:
     - name: Build and install Sparse
       run: |
         pip install -U setuptools wheel
-        pip install '.[finch]' scipy
+        pip install '.[finch]' scipy dask networkx graphblas-algorithms
     - name: Run examples
       run: ci/test_examples.sh
 

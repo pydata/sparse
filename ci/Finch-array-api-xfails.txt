@@ -59,7 +59,17 @@ array_api_tests/test_signatures.py::test_extension_func_signature[linalg.pinv]
 array_api_tests/test_signatures.py::test_extension_func_signature[linalg.svdvals]
 array_api_tests/test_signatures.py::test_extension_func_signature[linalg.tensordot]
 array_api_tests/test_signatures.py::test_extension_func_signature[linalg.vecdot]
-array_api_tests/test_signatures.py::test_extension_func_signature[linalg.vector_norm]
+array_api_tests/test_signatures.py::test_extension_func_signature[linalg.det]
+array_api_tests/test_signatures.py::test_extension_func_signature[linalg.diagonal]
+array_api_tests/test_signatures.py::test_extension_func_signature[linalg.eigh]
+array_api_tests/test_signatures.py::test_extension_func_signature[linalg.eigvalsh]
+array_api_tests/test_signatures.py::test_extension_func_signature[linalg.inv]
+array_api_tests/test_signatures.py::test_extension_func_signature[linalg.matrix_power]
+array_api_tests/test_signatures.py::test_extension_func_signature[linalg.qr]
+array_api_tests/test_signatures.py::test_extension_func_signature[linalg.slogdet]
+array_api_tests/test_signatures.py::test_extension_func_signature[linalg.solve]
+array_api_tests/test_signatures.py::test_extension_func_signature[linalg.svd]
+array_api_tests/test_signatures.py::test_extension_func_signature[linalg.trace]
 # Array object namespace
 array_api_tests/test_signatures.py::test_array_method_signature[__dlpack__]
 array_api_tests/test_signatures.py::test_array_method_signature[__dlpack_device__]
@@ -116,7 +126,6 @@ array_api_tests/test_has_names.py::test_has_names[linalg-svdvals]
 array_api_tests/test_has_names.py::test_has_names[linalg-tensordot]
 array_api_tests/test_has_names.py::test_has_names[linalg-trace]
 array_api_tests/test_has_names.py::test_has_names[linalg-vecdot]
-array_api_tests/test_has_names.py::test_has_names[linalg-vector_norm]
 array_api_tests/test_has_names.py::test_has_names[statistical-cumulative_sum]
 array_api_tests/test_has_names.py::test_has_names[statistical-mean]
 array_api_tests/test_has_names.py::test_has_names[statistical-std]
@@ -173,6 +182,27 @@ array_api_tests/test_indexing_functions.py::test_take
 # not implemented
 array_api_tests/test_linalg.py::test_matrix_transpose
 array_api_tests/test_linalg.py::test_vecdot
+array_api_tests/test_linalg.py::test_eigh
+array_api_tests/test_linalg.py::test_eigvalsh
+array_api_tests/test_linalg.py::test_inv
+array_api_tests/test_linalg.py::test_linalg_matmul
+array_api_tests/test_linalg.py::test_matrix_norm
+array_api_tests/test_linalg.py::test_matrix_power
+array_api_tests/test_linalg.py::test_matrix_rank
+array_api_tests/test_linalg.py::test_linalg_matrix_transpose
+array_api_tests/test_linalg.py::test_outer
+array_api_tests/test_linalg.py::test_pinv
+array_api_tests/test_linalg.py::test_qr
+array_api_tests/test_linalg.py::test_slogdet
+array_api_tests/test_linalg.py::test_cholesky
+array_api_tests/test_linalg.py::test_det
+array_api_tests/test_linalg.py::test_diagonal
+array_api_tests/test_linalg.py::test_vector_norm
+array_api_tests/test_linalg.py::test_svdvals
+array_api_tests/test_linalg.py::test_svd
+array_api_tests/test_linalg.py::test_trace
+array_api_tests/test_linalg.py::test_linalg_vecdot
+array_api_tests/test_linalg.py::test_linalg_tensordot
 
 # test_manipulation_functions
 
