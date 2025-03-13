@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     @sparse.compiled()
     def count_triangles_finch(a):
-        return sparse.sum(a @ a * a) / 6
+        return sparse.sum(a @ a * a) / sparse.asarray(6)
 
     # Compile & Benchmark
     result_finch = benchmark(count_triangles_finch, args=[a], info="Finch", iters=ITERS)
