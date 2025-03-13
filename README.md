@@ -16,3 +16,5 @@
 - 🙌 [Contributing](https://github.com/pydata/sparse/blob/main/docs/contributing.md)
 
 - 🪲 [Bug Reports/Feature Requests](https://github.com/pydata/sparse/issues)
+
+- 💬 [Discord Server](https://discord.gg/vur45CbwMz) [Channel](https://discord.com/channels/786703927705862175/1301155724646289420)
