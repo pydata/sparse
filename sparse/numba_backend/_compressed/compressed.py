@@ -913,7 +913,7 @@ class CSR(_Compressed2d):
             self = self.copy()
         if axes == (0, 1):
             return self
-        return CSC((self.data, self.indices, self.indptr), self.shape[::-1])
+        return CSC((self.data, self.indices, self.indptr), self.shape[::-1], fill_value=self.fill_value)
 
 
 class CSC(_Compressed2d):
@@ -945,4 +945,4 @@ class CSC(_Compressed2d):
             self = self.copy()
         if axes == (0, 1):
             return self
-        return CSR((self.data, self.indices, self.indptr), self.shape[::-1])
+        return CSR((self.data, self.indices, self.indptr), self.shape[::-1], fill_value=self.fill_value)

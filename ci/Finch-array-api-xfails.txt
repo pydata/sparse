@@ -162,7 +162,6 @@ array_api_tests/test_has_names.py::test_has_names[array_method-__dlpack__]
 array_api_tests/test_has_names.py::test_has_names[array_method-__dlpack_device__]
 array_api_tests/test_has_names.py::test_has_names[array_method-__setitem__]
 array_api_tests/test_has_names.py::test_has_names[array_attribute-T]
-array_api_tests/test_has_names.py::test_has_names[array_attribute-mT]
 
 # test_indexing_functions
 
