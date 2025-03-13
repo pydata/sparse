@@ -117,6 +117,13 @@ def test_transpose(random_sparse, copy):
         random_sparse.transpose(axes=0)
 
 
+@pytest.mark.parametrize("format", ["csr", "csc"])
+def test_mT_fill_value(format):
+    fv = 1.0
+    arr = sparse.full((10, 20), fill_value=fv, format=format)
+    assert_eq(arr.mT, sparse.full((20, 10), fill_value=fv))
+
+
 def test_transpose_error(random_sparse):
     with pytest.raises(ValueError):
         random_sparse.transpose(axes=1)
