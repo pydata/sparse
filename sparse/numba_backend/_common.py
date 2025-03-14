@@ -3102,4 +3102,4 @@ def vecdot(x1, x2, /, *, axis=-1):
     if np.issubdtype(x1.dtype, np.complexfloating):
         x1 = np.conjugate(x1)
 
-    return np.sum(x1 * x2, axis=axis)
+    return np.sum(x1 * x2, axis=axis, dtype=np.result_type(x1, x2))

@@ -1851,8 +1851,8 @@ def test_vecdot(shape1, shape2, axis, density, rng, is_complex):
         return np.sum(x1 * x2, axis=axis)
 
     actual = sparse.vecdot(s1, s2, axis=axis)
+    assert s1.dtype == s2.dtype == actual.dtype
     expected = np_vecdot(x1, x2, axis=axis)
-
     np.testing.assert_allclose(actual.todense(), expected)
 
 
