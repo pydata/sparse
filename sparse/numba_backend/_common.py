@@ -35,7 +35,7 @@ def _check_device(func):
     def wrapped(*args, **kwargs):
         device = kwargs.get("device")
         if device not in {"cpu", None}:
-            raise ValueError("Device must be `'cpu'` or `None`.")
+            raise BufferError("Device must be `'cpu'` or `None`.")
         return func(*args, **kwargs)
 
     return wrapped

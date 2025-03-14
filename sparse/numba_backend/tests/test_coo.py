@@ -1896,7 +1896,7 @@ def test_invalid_device(func, args, kwargs):
         like = sparse.random((5, 5), density=0.5)
         args = (like,) + args
 
-    with pytest.raises(ValueError, match="Device must be"):
+    with pytest.raises(BufferError, match="Device must be"):
         func(*args, device="invalid_device", **kwargs)
 
 
