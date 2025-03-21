@@ -6,7 +6,7 @@ dependencies:
   - python
   - pip
   - pip:
-    - finch-tensor>=0.2.8
+    - finch-tensor>=0.2.9
     - finch-mlir>=0.0.2
     - pytest-codspeed
     - numpy
