@@ -25,4 +25,9 @@ jobs:
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v3
         with:
-          run: pytest benchmarks/ --codspeed
+          run: SPARSE_BACKEND=Numba pytest benchmarks/ --codspeed
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v3
+        with:
+          run: SPARSE_BACKEND=Finch pytest benchmarks/ --codspeed
