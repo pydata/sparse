@@ -55,7 +55,7 @@ juliaup = ">=1.17.10"
 
 [feature.finch.pypi-dependencies]
 scipy = ">=1.13"
-finch-tensor = ">=0.2.4"
+finch-tensor = ">=0.2.10"
 
 [feature.finch.activation.env]
 SPARSE_BACKEND = "Finch"
