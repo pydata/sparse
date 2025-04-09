@@ -210,9 +210,15 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     @classmethod
     def from_scipy_sparse(cls, x, /, *, fill_value=None):
         if x.format == "csc":
+            if not x.has_canonical_format:
+                x.eliminate_zeros()
+                x.sum_duplicates()
             return cls((x.data, x.indices, x.indptr), shape=x.shape, compressed_axes=(1,), fill_value=fill_value)
 
         x = x.asformat("csr")
+        if not x.has_canonical_format:
+            x.eliminate_zeros()
+            x.sum_duplicates()
         return cls((x.data, x.indices, x.indptr), shape=x.shape, compressed_axes=(0,), fill_value=fill_value)
 
     @classmethod
@@ -903,6 +909,10 @@ class CSR(_Compressed2d):
     @classmethod
     def from_scipy_sparse(cls, x, /, *, fill_value=None):
         x = x.asformat("csr", copy=False)
+        if not x.has_canonical_format:
+            x.eliminate_zeros()
+            x.sum_duplicates()
+
         return cls((x.data, x.indices, x.indptr), shape=x.shape, fill_value=fill_value)
 
     def transpose(self, axes: None = None, copy: bool = False) -> Union["CSC", "CSR"]:
@@ -935,6 +945,10 @@ class CSC(_Compressed2d):
     @classmethod
     def from_scipy_sparse(cls, x, /, *, fill_value=None):
         x = x.asformat("csc", copy=False)
+        if not x.has_canonical_format:
+            x.eliminate_zeros()
+            x.sum_duplicates()
+
         return cls((x.data, x.indices, x.indptr), shape=x.shape, fill_value=fill_value)
 
     def transpose(self, axes: None = None, copy: bool = False) -> Union["CSC", "CSR"]:
