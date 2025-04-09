@@ -447,6 +447,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         True
         """
         x = x.asformat("coo")
+        if not x.has_canonical_format:
+            x.eliminate_zeros()
+            x.sum_duplicates()
+
         coords = np.empty((2, x.nnz), dtype=x.row.dtype)
         coords[0, :] = x.row
         coords[1, :] = x.col
