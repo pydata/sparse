@@ -209,17 +209,14 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     @classmethod
     def from_scipy_sparse(cls, x, /, *, fill_value=None):
-        if x.format == "csc":
-            if not x.has_canonical_format:
-                x.eliminate_zeros()
-                x.sum_duplicates()
-            return cls((x.data, x.indices, x.indptr), shape=x.shape, compressed_axes=(1,), fill_value=fill_value)
-
-        x = x.asformat("csr")
+        is_csc = x.format == "csc"
+        ca = (1,) if is_csc else (0,)
+        if not is_csc:
+            x = x.asformat("csr")
         if not x.has_canonical_format:
             x.eliminate_zeros()
             x.sum_duplicates()
-        return cls((x.data, x.indices, x.indptr), shape=x.shape, compressed_axes=(0,), fill_value=fill_value)
+        return cls((x.data, x.indices, x.indptr), shape=x.shape, compressed_axes=ca, fill_value=fill_value)
 
     @classmethod
     def from_iter(cls, x, shape=None, compressed_axes=None, fill_value=None, idx_dtype=None):
