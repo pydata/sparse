@@ -1307,8 +1307,12 @@ def sort(x, /, *, axis=-1, descending=False, stable=False):
 
     x = x.reshape(x_shape[:-1] + (x_shape[-1],))
     x = moveaxis(x, source=-1, destination=axis)
-
-    return x if original_ndim == x.ndim else x.squeeze()
+    if original_ndim == x.ndim:
+        return x
+    x = x.squeeze()
+    if x.shape == ():
+        return x[None]
+    return x
 
 
 def take(x, indices, /, *, axis=None):
