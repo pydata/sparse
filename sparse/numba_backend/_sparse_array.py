@@ -953,9 +953,9 @@ class SparseArray:
 
     def __array_namespace__(self, *, api_version=None):
         if api_version is None:
-            api_version = "2022.12"
+            api_version = "2024.12"
 
-        if api_version not in {"2021.12", "2022.12"}:
+        if api_version not in {"2021.12", "2022.12", "2024.12"}:
             raise ValueError(f'"{api_version}" Array API version not supported.')
         import sparse
 
