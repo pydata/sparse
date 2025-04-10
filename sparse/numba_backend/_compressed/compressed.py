@@ -11,7 +11,6 @@ from .._coo.common import linear_loc
 from .._coo.core import COO
 from .._sparse_array import SparseArray
 from .._utils import (
-    _zero_of_dtype,
     can_store,
     check_compressed_axes,
     check_fill_value,
@@ -175,13 +174,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         if self.data.ndim != 1:
             raise ValueError("data must be a scalar or 1-dimensional.")
 
-        self.shape = shape
-
-        if fill_value is None:
-            fill_value = _zero_of_dtype(self.data.dtype)
+        SparseArray.__init__(self, shape=shape, fill_value=fill_value)
 
         self._compressed_axes = tuple(compressed_axes) if isinstance(compressed_axes, Iterable) else None
-        self.fill_value = self.data.dtype.type(fill_value)
 
         if prune:
             self._prune()
@@ -261,32 +256,6 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         - [`scipy.sparse.coo_matrix.nnz`][] : The Scipy equivalent property.
         """
         return self.data.shape[0]
-
-    @property
-    def format(self):
-        """
-        The storage format of this array.
-
-        Returns
-        -------
-        str
-            The storage format of this array.
-
-        See Also
-        -------
-        [`scipy.sparse.dok_matrix.format`][] : The Scipy equivalent property.
-
-        Examples
-        -------
-        >>> import sparse
-        >>> s = sparse.random((5, 5), density=0.2, format="dok")
-        >>> s.format
-        'dok'
-        >>> t = sparse.random((5, 5), density=0.2, format="coo")
-        >>> t.format
-        'coo'
-        """
-        return "gcxs"
 
     @property
     def nbytes(self):
@@ -446,7 +415,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
                 fill_value=self.fill_value,
             )
         uncompressed = uncompress_dimension(self.indptr)
-        coords = np.vstack((uncompressed, self.indices))
+        coords = np.stack((uncompressed, self.indices))
         order = np.argsort(self._axis_order)
         return (
             COO(
@@ -847,6 +816,15 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     def isnan(self):
         return self.tocoo().isnan().asformat("gcxs", compressed_axes=self.compressed_axes)
 
+    # `GCXS` is a reshaped/transposed `CSR`, but it can't (usually)
+    # be expressed in the `binsparse` 0.1 language.
+    # We are missing index maps.
+    def __binsparse__(self) -> dict:
+        return super().__binsparse__()
+
+    def __binsparse_descriptor__(self) -> dict[str, np.ndarray]:
+        return super().__binsparse_descriptor__()
+
 
 class _Compressed2d(GCXS):
     class_compressed_axes: tuple[int]
@@ -885,6 +863,30 @@ class _Compressed2d(GCXS):
     def from_numpy(cls, x, fill_value=0, idx_dtype=None):
         coo = COO.from_numpy(x, fill_value=fill_value, idx_dtype=idx_dtype)
         return cls.from_coo(coo, cls.class_compressed_axes, idx_dtype)
+
+    def __binsparse_descriptor__(self) -> dict:
+        from sparse._version import __version__
+
+        data_dt = str(self.data.dtype)
+        if np.issubdtype(data_dt, np.complexfloating):
+            data_dt = f"complex[float{self.data.dtype.itemsize * 4}]"
+        return {
+            "binsparse": {
+                "version": "0.1",
+                "format": self.format.upper(),
+                "shape": list(self.shape),
+                "number_of_stored_values": self.nnz,
+                "data_types": {
+                    "pointers_to_1": str(self.indices.dtype),
+                    "indices_1": str(self.indptr.dtype),
+                    "values": data_dt,
+                },
+            },
+            "original_source": f"`sparse`, version {__version__}",
+        }
+
+    def __binsparse__(self) -> dict[str, np.ndarray]:
+        return {"pointers_to_1": self.indptr, "indices_1": self.indices, "values": self.data}
 
 
 class CSR(_Compressed2d):
