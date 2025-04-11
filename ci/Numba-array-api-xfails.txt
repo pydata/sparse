@@ -157,3 +157,4 @@ array_api_tests/test_operators_and_elementwise_functions.py::test_minimum
 array_api_tests/test_searching_functions.py::test_searchsorted
 array_api_tests/test_signatures.py::test_func_signature[cumulative_sum]
 array_api_tests/test_signatures.py::test_func_signature[cumulative_prod]
+array_api_tests/test_special_cases.py::test_unary[clip(x_i is NaN) -> NaN]
