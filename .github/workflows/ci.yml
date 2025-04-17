@@ -49,11 +49,11 @@ jobs:
           pip install -e '.[tests]'
       - name: Run tests
         run: ci/test_backends.sh
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@2e6e9c5a74ec004831b6d17edfb76c53a54d4d55
         if: always()
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./**/coverage*.xml
+          files: "\"./**/coverage*.xml\""
 
   examples:
     runs-on: ubuntu-latest

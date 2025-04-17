@@ -606,29 +606,6 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         return self.coords.shape[1]
 
     @property
-    def format(self):
-        """
-        The storage format of this array.
-        Returns
-        -------
-        str
-            The storage format of this array.
-        See Also
-        --------
-        [`scipy.sparse.dok_matrix.format`][] : The Scipy equivalent property.
-        Examples
-        -------
-        >>> import sparse
-        >>> s = sparse.random((5, 5), density=0.2, format="dok")
-        >>> s.format
-        'dok'
-        >>> t = sparse.random((5, 5), density=0.2, format="coo")
-        >>> t.format
-        'coo'
-        """
-        return "coo"
-
-    @property
     def nbytes(self):
         """
         The number of bytes taken up by this object. Note that for small arrays,
@@ -1541,6 +1518,46 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             fill_value=new_fill_value,
             prune=True,
         )
+
+    def __binsparse_descriptor__(self) -> dict:
+        from sparse._version import __version__
+
+        data_dt = str(self.data.dtype)
+        if np.issubdtype(data_dt, np.complexfloating):
+            data_dt = f"complex[float{self.data.dtype.itemsize * 4}]"
+        return {
+            "binsparse": {
+                "version": "0.1",
+                "format": {
+                    "custom": {
+                        "level": {
+                            "level_desc": "sparse",
+                            "rank": self.ndim,
+                            "level": {
+                                "level_desc": "element",
+                            },
+                        }
+                    }
+                }
+                if self.ndim != 2
+                else "COOR",
+                "shape": list(self.shape),
+                "number_of_stored_values": self.nnz,
+                "data_types": {
+                    "pointers_to_1": "uint64",
+                    "indices_1": str(self.coords.dtype),
+                    "values": data_dt,
+                },
+            },
+            "original_source": f"`sparse`, version {__version__}",
+        }
+
+    def __binsparse__(self) -> dict[str, np.ndarray]:
+        return {
+            "pointers_to_1": np.array([0, self.nnz], dtype=np.uint64),
+            "indices_1": self.coords,
+            "values": self.data,
+        }
 
 
 def as_coo(x, shape=None, fill_value=None, idx_dtype=None):

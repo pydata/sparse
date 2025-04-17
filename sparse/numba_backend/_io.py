@@ -1,7 +1,9 @@
 import numpy as np
 
-from ._compressed import GCXS
+from ._common import _check_device
+from ._compressed import CSC, CSR, GCXS
 from ._coo.core import COO
+from ._sparse_array import SparseArray
 
 
 def save_npz(filename, matrix, compressed=True):
@@ -130,3 +132,172 @@ def load_npz(filename):
             )
         except KeyError as e:
             raise RuntimeError(f"The file {filename!s} does not contain a valid sparse matrix") from e
+
+
+@_check_device
+def from_binsparse(arr, /, *, device=None, copy: bool | None = None) -> SparseArray:
+    desc = arr.__binsparse_descriptor__()
+    arrs = arr.__binsparse__()
+
+    desc = desc["binsparse"]
+    version_tuple: tuple[int, ...] = tuple(int(v) for v in desc["version"].split("."))
+    if version_tuple != (0, 1):
+        raise RuntimeError("Unsupported `__binsparse__` protocol version.")
+
+    format = desc["format"]
+    format_err_str = f"Unsupported format: `{format!r}`."
+
+    if isinstance(format, str):
+        match format:
+            case "COO" | "COOR":
+                desc["format"] = {
+                    "custom": {
+                        "transpose": [0, 1],
+                        "level": {
+                            "level_desc": "sparse",
+                            "rank": 2,
+                            "level": {
+                                "level_desc": "element",
+                            },
+                        },
+                    }
+                }
+            case "CSC" | "CSR":
+                desc["format"] = {
+                    "custom": {
+                        "transpose": [0, 1] if format == "CSR" else [0, 1],
+                        "level": {
+                            "level_desc": "dense",
+                            "level": {
+                                "level_desc": "sparse",
+                                "level": {
+                                    "level_desc": "element",
+                                },
+                            },
+                        },
+                    },
+                }
+            case _:
+                raise RuntimeError(format_err_str)
+
+    format = desc["format"]["custom"]
+    rank = 0
+    level = format
+    while "level" in level:
+        if "rank" not in level:
+            level["rank"] = 1
+        rank += level["rank"]
+        level = level["level"]
+    if "transpose" not in format:
+        format["transpose"] = list(range(rank))
+
+    match desc:
+        case {
+            "format": {
+                "custom": {
+                    "transpose": transpose,
+                    "level": {
+                        "level_desc": "sparse",
+                        "rank": ndim,
+                        "level": {
+                            "level_desc": "element",
+                        },
+                    },
+                },
+            },
+            "shape": shape,
+            "number_of_stored_values": nnz,
+            "data_types": {
+                "pointers_to_1": _,
+                "indices_1": coords_dtype,
+                "values": value_dtype,
+            },
+            **_kwargs,
+        }:
+            if transpose != list(range(ndim)):
+                raise RuntimeError(format_err_str)
+
+            ptr_arr: np.ndarray = np.from_dlpack(arrs["pointers_to_1"])
+            start, end = ptr_arr
+            if copy is False and not (start == 0 or end == nnz):
+                raise RuntimeError(format_err_str)
+
+            coord_arr: np.ndarray = np.from_dlpack(arrs["indices_1"])
+            value_arr: np.ndarray = np.from_dlpack(arrs["values"])
+
+            _check_binsparse_dt(coord_arr, coords_dtype)
+            _check_binsparse_dt(value_arr, value_dtype)
+
+            return COO(
+                coord_arr[:, start:end],
+                value_arr,
+                shape=shape,
+                has_duplicates=False,
+                sorted=True,
+                prune=False,
+                idx_dtype=coord_arr.dtype,
+            )
+        case {
+            "format": {
+                "custom": {
+                    "transpose": transpose,
+                    "level": {
+                        "level_desc": "dense",
+                        "rank": 1,
+                        "level": {
+                            "level_desc": "sparse",
+                            "rank": 1,
+                            "level": {
+                                "level_desc": "element",
+                            },
+                        },
+                    },
+                },
+            },
+            "shape": shape,
+            "number_of_stored_values": nnz,
+            "data_types": {
+                "pointers_to_1": ptr_dtype,
+                "indices_1": crd_dtype,
+                "values": val_dtype,
+            },
+            **_kwargs,
+        }:
+            crd_arr = np.from_dlpack(arrs["pointers_to_1"])
+            _check_binsparse_dt(crd_arr, crd_dtype)
+            ptr_arr = np.from_dlpack(arrs["indices_1"])
+            _check_binsparse_dt(ptr_arr, ptr_dtype)
+            val_arr = np.from_dlpack(arrs["values"])
+            _check_binsparse_dt(val_arr, val_dtype)
+
+            match transpose:
+                case [0, 1]:
+                    sparse_type = CSR
+                case [1, 0]:
+                    sparse_type = CSC
+                case _:
+                    raise RuntimeError(format_err_str)
+
+            return sparse_type((val_arr, ptr_arr, crd_arr), shape=shape)
+        case _:
+            raise RuntimeError(format_err_str)
+
+
+def _convert_binsparse_dtype(dt: str) -> np.dtype:
+    if dt.startswith("complex[float") and dt.endswith("]"):
+        complex_bits = 2 * int(dt[len("complex[float") : -len("]")])
+        dt: str = f"complex{complex_bits}"
+
+    return np.dtype(dt)
+
+
+def _check_binsparse_dt(arr: np.ndarray, dt: str) -> None:
+    invalid_dtype_str = "Invalid dtype: `{dtype!s}`, expected `{expected!s}`."
+    dt = _convert_binsparse_dtype(dt)
+    if dt != arr.dtype:
+        raise BufferError(
+            invalid_dtype_str.format(
+                dtype=arr.dtype,
+                expected=dt,
+            )
+        )

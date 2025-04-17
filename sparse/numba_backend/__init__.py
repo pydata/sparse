@@ -157,7 +157,7 @@ from ._coo.common import (
     where,
 )
 from ._dok import DOK
-from ._io import load_npz, save_npz
+from ._io import from_binsparse, load_npz, save_npz
 from ._umath import elemwise
 from ._utils import random
 
@@ -226,6 +226,7 @@ __all__ = [
     "float64",
     "floor",
     "floor_divide",
+    "from_binsparse",
     "full",
     "full_like",
     "greater",

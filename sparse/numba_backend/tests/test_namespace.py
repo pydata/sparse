@@ -67,6 +67,7 @@ def test_namespace():
         "float64",
         "floor",
         "floor_divide",
+        "from_binsparse",
         "full",
         "full_like",
         "greater",
