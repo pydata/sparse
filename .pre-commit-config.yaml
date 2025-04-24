@@ -36,4 +36,4 @@ repos:
   hooks:
     - id: codespell
       files: ^.*\.(py|md|yml)$
-      args: ["--write-changes"]
+      # args: ["--write-changes"]
