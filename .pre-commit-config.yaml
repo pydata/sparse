@@ -30,3 +30,10 @@ repos:
   rev: 0.8.1
   hooks:
     - id: nbstripout
+
+- repo: https://github.com/codespell-project/codespell
+  rev: v2.1.0
+  hooks:
+    - id: codespell
+      files: ^.*\.(py|md|yml)$
+      args: ["--ignore-words", ".codespellignore" ]
