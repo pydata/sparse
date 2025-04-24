@@ -36,4 +36,4 @@ repos:
   hooks:
     - id: codespell
       files: ^.*\.(py|md|yml)$
-      args: ["--ignore-words", ".codespellignore" ]
+      args: ["--write-changes"]
