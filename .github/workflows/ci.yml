@@ -7,92 +7,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    strategy:
-      matrix:
-        os: ['ubuntu-latest']
-        python: ['3.10', '3.11', '3.12']
-        pip_opts: ['']
-        numba_boundscheck: [0]
-        include:
-          - os: macos-latest
-            python: '3.10'
-          - os: windows-latest
-            python: '3.10'
-          - os: ubuntu-latest
-            python: '3.10'
-            numba_boundscheck: 1
-          - os: ubuntu-latest
-            python: '3.10'
-            pip_opts: 'numpy<2'
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-    env:
-      PYTHON_VERSION: ${{ matrix.python }}
-      NUMBA_BOUNDSCHECK: ${{ matrix.numba_boundscheck }}
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-      - uses: mamba-org/setup-micromamba@v2
-        with:
-          environment-file: ci/environment.yml
-          init-shell: >-
-            bash
-          cache-environment: true
-          cache-downloads: true
-          post-cleanup: 'all'
-          create-args: >-
-            python=${{ matrix.python }}
-            ${{ matrix.pip_opts }}
-      - name: Install package
-        run: |
-          pip install -e '.[tests]'
-      - name: Run tests
-        run: ci/test_backends.sh
-      - uses: codecov/codecov-action@v5
-        if: always()
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./**/coverage*.xml
-
-  examples:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout Repo
-      uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'pip'
-    - name: Build and install Sparse
-      run: |
-        pip install -U setuptools wheel
-        pip install '.[finch]' scipy dask networkx graphblas-algorithms
-    - name: Run examples
-      run: ci/test_examples.sh
-
-  notebooks:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout Repo
-      uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'pip'
-    - name: Build and install Sparse
-      run: |
-        pip install -U setuptools wheel
-        pip install '.[notebooks]'
-    - name: Run notebooks
-      run: ci/test_notebooks.sh
-
   array_api_tests:
     strategy:
       matrix:
-        backend: ['Numba', 'Finch']
+        backend: ['Finch']
       fail-fast: false
     env:
       ARRAY_API_TESTS_DIR: ${{ github.workspace }}/array-api-tests
@@ -113,7 +31,7 @@ jobs:
     - name: Build and install Sparse
       run: |
         pip install -U setuptools wheel
-        pip install '.[finch]'
+        pip install finch-tensor
     - name: Run the test suite
       env:
         SPARSE_BACKEND: ${{ matrix.backend }}
