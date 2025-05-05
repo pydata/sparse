@@ -55,14 +55,17 @@ def asCOO(x, name="asCOO", check=True):
 
 
 def linear_loc(coords, shape):
+    import array_api_compat
+
+    namespace = array_api_compat.array_namespace(coords)
     if shape == () and len(coords) == 0:
         # `np.ravel_multi_index` is not aware of arrays, so cannot produce a
         # sensible result here (https://github.com/numpy/numpy/issues/15690).
         # Since `coords` is an array and not a sequence, we know the correct
         # dimensions.
-        return np.zeros(coords.shape[1:], dtype=np.intp)
+        return namespace.zeros(coords.shape[1:], dtype=namespace.intp)
 
-    return np.ravel_multi_index(coords, shape)
+    return namespace.ravel_multi_index(coords, shape)
 
 
 def kron(a, b):

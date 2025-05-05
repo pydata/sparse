@@ -83,6 +83,10 @@ test-finch = "ci/test_Finch.sh"
 [feature.mlir.activation.env]
 SPARSE_BACKEND = "MLIR"
 
+[feature.cuda-12.target.linux-64.pypi-dependencies]
+cupy-cuda12x = ">=13"
+array-api-compat = ">=1.11"
+
 [environments]
 test = ["test", "extra"]
 doc = ["doc", "extra"]
@@ -90,3 +94,4 @@ mlir-dev = {features = ["test", "mlir"], no-default-feature = true}
 finch-dev = {features = ["test", "finch"], no-default-feature = true}
 notebooks = ["extra", "mlir", "finch", "notebooks"]
 barebones = {features = ["barebones"], no-default-feature = true}
+cuda-12 = ["cuda-12"]

@@ -195,6 +195,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     __array_priority__ = 12
 
+    __array_members__ = ("data", "coords", "fill_value")
+
     def __init__(
         self,
         coords,
@@ -207,6 +209,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         fill_value=None,
         idx_dtype=None,
     ):
+        from .._common import _coerce_to_supported_dense
+
         if isinstance(coords, COO):
             self._make_shallow_copy_of(coords)
             if data is not None or shape is not None:
@@ -226,8 +230,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 self.enable_caching()
             return
 
-        self.data = np.asarray(data)
-        self.coords = np.asarray(coords)
+        self.data = _coerce_to_supported_dense(data)
+        self.coords = _coerce_to_supported_dense(coords)
 
         if self.coords.ndim == 1:
             if self.coords.size == 0 and shape is not None:
@@ -236,7 +240,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 self.coords = self.coords[None, :]
 
         if self.data.ndim == 0:
-            self.data = np.broadcast_to(self.data, self.coords.shape[1])
+            self.data = self._component_namespace.broadcast_to(self.data, self.coords.shape[1])
 
         if self.data.ndim != 1:
             raise ValueError("`data` must be a scalar or 1-dimensional.")
@@ -251,7 +255,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             shape = tuple(shape)
 
         if shape and not self.coords.size:
-            self.coords = np.zeros((len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp)
+            self.coords = self._component_namespace.zeros(
+                (len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp
+            )
         super().__init__(shape, fill_value=fill_value)
         if idx_dtype:
             if not can_store(idx_dtype, max(shape)):
@@ -369,7 +375,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         x = np.asanyarray(x).view(type=np.ndarray)
 
         if fill_value is None:
-            fill_value = _zero_of_dtype(x.dtype) if x.shape else x
+            fill_value = _zero_of_dtype(x.dtype, x.device) if x.shape else x
 
         coords = np.atleast_2d(np.flatnonzero(~equivalent(x, fill_value)))
         data = x.ravel()[tuple(coords)]
@@ -407,7 +413,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         >>> np.array_equal(x, x2)
         True
         """
-        x = np.full(self.shape, self.fill_value, self.dtype)
+        x = self._component_namespace.full(
+            self.shape, fill_value=self.fill_value, dtype=self.dtype, device=self.data.device
+        )
 
         coords = tuple([self.coords[i, :] for i in range(self.ndim)])
         data = self.data
@@ -446,14 +454,16 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         >>> np.array_equal(x.todense(), s.todense())
         True
         """
+        import array_api_compat
+
         x = x.asformat("coo")
         if not x.has_canonical_format:
             x.eliminate_zeros()
             x.sum_duplicates()
 
-        coords = np.empty((2, x.nnz), dtype=x.row.dtype)
-        coords[0, :] = x.row
-        coords[1, :] = x.col
+        xp = array_api_compat.array_namespace(x.data)
+
+        coords = xp.stack((x.row, x.col))
         return COO(
             coords,
             x.data,
@@ -1184,14 +1194,19 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         - [`sparse.COO.tocsr`][] : Convert to a [`scipy.sparse.csr_matrix`][].
         - [`sparse.COO.tocsc`][] : Convert to a [`scipy.sparse.csc_matrix`][].
         """
-        import scipy.sparse
+        from .._settings import NUMPY_DEVICE
+
+        if self.device == NUMPY_DEVICE:
+            import scipy.sparse as sps
+        else:
+            import cupyx.scipy.sparse as sps
 
         check_fill_value(self, accept_fv=accept_fv)
 
         if self.ndim != 2:
             raise ValueError("Can only convert a 2-dimensional array to a Scipy sparse matrix.")
 
-        result = scipy.sparse.coo_matrix((self.data, (self.coords[0], self.coords[1])), shape=self.shape)
+        result = sps.coo_matrix((self.data, (self.coords[0], self.coords[1])), shape=self.shape)
         result.has_canonical_format = True
         return result
 
@@ -1307,10 +1322,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         """
         linear = self.linear_loc()
 
-        if (np.diff(linear) >= 0).all():  # already sorted
+        if (self._component_namespace.diff(linear) >= 0).all():  # already sorted
             return
 
-        order = np.argsort(linear, kind="mergesort")
+        order = self._component_namespace.argsort(linear, kind="mergesort")
         self.coords = self.coords[:, order]
         self.data = self.data[order]
 
@@ -1336,16 +1351,16 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         # Inspired by scipy/sparse/coo.py::sum_duplicates
         # See https://github.com/scipy/scipy/blob/main/LICENSE.txt
         linear = self.linear_loc()
-        unique_mask = np.diff(linear) != 0
+        unique_mask = self._component_namespace.diff(linear) != 0
 
         if unique_mask.sum() == len(unique_mask):  # already unique
             return
 
-        unique_mask = np.append(True, unique_mask)
+        unique_mask = self._component_namespace.append(True, unique_mask)
 
         coords = self.coords[:, unique_mask]
-        (unique_inds,) = np.nonzero(unique_mask)
-        data = np.add.reduceat(self.data, unique_inds, dtype=self.data.dtype)
+        (unique_inds,) = self._component_namespace.nonzero(unique_mask)
+        data = self._component_namespace.add.reduceat(self.data, unique_inds, dtype=self.data.dtype)
 
         self.data = data
         self.coords = coords

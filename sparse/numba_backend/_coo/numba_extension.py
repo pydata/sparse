@@ -99,7 +99,7 @@ def impl_COO(context, builder, sig, args):
     coo.coords = coords
     coo.data = data
     coo.shape = shape
-    coo.fill_value = context.get_constant_generic(builder, typ.fill_value_type, _zero_of_dtype(typ.data_dtype))
+    coo.fill_value = context.get_constant_generic(builder, typ.fill_value_type, _zero_of_dtype(typ.data_dtype, "cpu"))
     return impl_ret_borrowed(context, builder, sig.return_type, coo._getvalue())
 
 

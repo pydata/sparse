@@ -11,6 +11,7 @@ from numba import literal_unroll
 import numpy as np
 
 from ._coo import as_coo
+from ._settings import SUPPORTED_ARRAY_TYPE
 from ._sparse_array import SparseArray
 from ._utils import (
     _zero_of_dtype,
@@ -28,6 +29,13 @@ def _is_scipy_sparse_obj(x):
     Tests if the supplied argument is a SciPy sparse object.
     """
     return bool(hasattr(x, "__module__") and x.__module__.startswith("scipy.sparse"))
+
+
+def _coerce_to_supported_dense(x) -> SUPPORTED_ARRAY_TYPE:
+    if isinstance(x, SUPPORTED_ARRAY_TYPE):
+        return x
+
+    return np.asarray(x)
 
 
 def _check_device(func):
@@ -84,11 +92,16 @@ def check_class_nan(test):
     """
     from ._compressed import GCXS
     from ._coo import COO
+    from ._settings import NUMPY_DEVICE
 
     if isinstance(test, GCXS | COO):
-        return nan_check(test.fill_value, test.data)
+        if test.device == NUMPY_DEVICE:
+            return nan_check(test.fill_value, test.data)
+        return np.isnan(test.fill_value) or np.isnan(np.min(test.data))
     if _is_scipy_sparse_obj(test):
         return nan_check(test.data)
+    if type(test).__name__ == "ndarray" and not isinstance(test, np.ndarray):
+        return np.isnan(np.min(test))
     return nan_check(test)
 
 
@@ -238,12 +251,30 @@ def matmul(a, b):
     - [`numpy.matmul`][] : NumPy equivalent function.
     - `COO.__matmul__`: Equivalent function for COO objects.
     """
+    from ._coo import COO
+
     check_zero_fill_value(a, b)
     if not hasattr(a, "ndim") or not hasattr(b, "ndim"):
         raise TypeError(f"Cannot perform dot product on types {type(a)}, {type(b)}")
 
     if check_class_nan(a) or check_class_nan(b):
         warnings.warn("Nan will not be propagated in matrix multiplication", RuntimeWarning, stacklevel=1)
+
+    from ._settings import NUMPY_DEVICE
+
+    if a.device != NUMPY_DEVICE or b.device != NUMPY_DEVICE:
+        import cupyx.scipy.sparse as cps
+
+        if isinstance(a, COO):
+            a = a.to_scipy_sparse()
+        if isinstance(b, COO):
+            b = b.to_scipy_sparse()
+
+        cp_res = a @ b
+        if isinstance(cp_res, cps.spmatrix):
+            return COO.from_scipy_sparse(cp_res.asformat("coo"))
+
+        return cp_res
 
     # When b is 2-d, it is equivalent to dot
     if b.ndim <= 2:

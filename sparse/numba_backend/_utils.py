@@ -73,8 +73,7 @@ def assert_gcxs_slicing(s, x):
 
 
 def assert_nnz(s, x):
-    fill_value = s.fill_value if hasattr(s, "fill_value") else _zero_of_dtype(s.dtype)
-
+    fill_value = s.fill_value if hasattr(s, "fill_value") else _zero_of_dtype(s.dtype, s.device)
     assert np.sum(~equivalent(x, fill_value)) == s.nnz
 
 
@@ -82,7 +81,7 @@ def is_canonical(x):
     return not x.shape or ((np.diff(x.linear_loc()) > 0).all() and not equivalent(x.data, x.fill_value).any())
 
 
-def _zero_of_dtype(dtype):
+def _zero_of_dtype(dtype, device):
     """
     Creates a ()-shaped 0-dimensional zero array of a given dtype.
 
@@ -96,7 +95,15 @@ def _zero_of_dtype(dtype):
     np.ndarray
         The zero array.
     """
-    return np.zeros((), dtype=dtype)[()]
+    from ._settings import NUMPY_DEVICE
+
+    if device == NUMPY_DEVICE:
+        return np.zeros((), dtype=dtype)[()]
+
+    import cupy as cp
+
+    with device:
+        return cp.zeros((), dtype=dtype)
 
 
 @numba.jit(nopython=True, nogil=True)
@@ -431,8 +438,13 @@ def equivalent(x, y, /, loose=False):
     >>> equivalent(np.float64(0.0), np.float64(-0.0))
     np.False_
     """
-    x = np.asarray(x)
-    y = np.asarray(y)
+    import array_api_compat
+
+    from ._common import _coerce_to_supported_dense
+
+    namespace = array_api_compat.array_namespace(x, y)
+    x = _coerce_to_supported_dense(x)
+    y = _coerce_to_supported_dense(y)
     # Can't contain NaNs
     dt = np.result_type(x.dtype, y.dtype)
     if not any(np.issubdtype(dt, t) for t in [np.floating, np.complexfloating]):
@@ -446,9 +458,9 @@ def equivalent(x, y, /, loose=False):
         return (x == y) | ((x != x) & (y != y))
 
     if x.size == 0 or y.size == 0:
-        shape = np.broadcast_shapes(x.shape, y.shape)
-        return np.empty(shape, dtype=np.bool_)
-    x, y = np.broadcast_arrays(x[..., None], y[..., None])
+        shape = namespace.broadcast_shapes(x.shape, y.shape)
+        return namespace.empty(shape, dtype=np.bool_)
+    x, y = namespace.broadcast_arrays(x[..., None], y[..., None])
     return (x.astype(dt).view(np.uint8) == y.astype(dt).view(np.uint8)).all(axis=-1)
 
 
@@ -588,7 +600,7 @@ def check_zero_fill_value(*args):
     ValueError: This operation requires zero fill values, but argument 1 had a fill value of 0.5.
     """
     for i, arg in enumerate(args):
-        if hasattr(arg, "fill_value") and not equivalent(arg.fill_value, _zero_of_dtype(arg.dtype)):
+        if hasattr(arg, "fill_value") and not equivalent(arg.fill_value, _zero_of_dtype(arg.dtype, arg.device)):
             raise ValueError(
                 f"This operation requires zero fill values, but argument {i:d} had a fill value of {arg.fill_value!s}."
             )

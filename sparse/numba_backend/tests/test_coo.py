@@ -1913,9 +1913,3 @@ def test_to_device():
     s2 = s.to_device(s.device)
 
     assert s is s2
-
-
-def test_to_invalid_device():
-    s = sparse.random((5, 5), density=0.5)
-    with pytest.raises(ValueError, match=r"Only .* is supported."):
-        s.to_device("invalid_device")
