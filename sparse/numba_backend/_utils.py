@@ -73,7 +73,11 @@ def assert_gcxs_slicing(s, x):
 
 
 def assert_nnz(s, x):
-    fill_value = s.fill_value if hasattr(s, "fill_value") else _zero_of_dtype(s.dtype, s.device)
+    from ._settings import NUMPY_DEVICE
+
+    fill_value = (
+        s.fill_value if hasattr(s, "fill_value") else _zero_of_dtype(s.dtype, getattr(s, "device", NUMPY_DEVICE))
+    )
     assert np.sum(~equivalent(x, fill_value)) == s.nnz
 
 
@@ -442,7 +446,12 @@ def equivalent(x, y, /, loose=False):
 
     from ._common import _coerce_to_supported_dense
 
-    namespace = array_api_compat.array_namespace(x, y)
+    try:
+        xp = array_api_compat.array_namespace(x, y)
+    except TypeError as e:
+        if "multiple" in str(e):
+            raise e
+        xp = np
     x = _coerce_to_supported_dense(x)
     y = _coerce_to_supported_dense(y)
     # Can't contain NaNs
@@ -458,9 +467,9 @@ def equivalent(x, y, /, loose=False):
         return (x == y) | ((x != x) & (y != y))
 
     if x.size == 0 or y.size == 0:
-        shape = namespace.broadcast_shapes(x.shape, y.shape)
-        return namespace.empty(shape, dtype=np.bool_)
-    x, y = namespace.broadcast_arrays(x[..., None], y[..., None])
+        shape = xp.broadcast_shapes(x.shape, y.shape)
+        return xp.empty(shape, dtype=np.bool_)
+    x, y = xp.broadcast_arrays(x[..., None], y[..., None])
     return (x.astype(dt).view(np.uint8) == y.astype(dt).view(np.uint8)).all(axis=-1)
 
 

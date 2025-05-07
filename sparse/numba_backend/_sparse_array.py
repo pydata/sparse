@@ -50,11 +50,14 @@ class SparseArray:
 
             self.fill_value = _zero_of_dtype(self.dtype, getattr(getattr(self, "data", None), "device", NUMPY_DEVICE))
         data = getattr(self, "data", None)
-        if data is not None:
+        if data is not None and not isinstance(data, dict):
             import array_api_compat
 
-            self.fill_value = array_api_compat.array_namespace(data).asarray(self.fill_value)
+            xp = array_api_compat.array_namespace(data)
+        else:
+            xp = np
 
+        self.fill_value = xp.asarray(self.fill_value)
         self.device  # noqa: B018
 
     dtype = None
@@ -402,7 +405,7 @@ class SparseArray:
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         from ._settings import NUMPY_DEVICE
 
-        if not all(i.device == NUMPY_DEVICE for i in inputs):
+        if not all(getattr(i, "device", NUMPY_DEVICE) == NUMPY_DEVICE for i in inputs):
             return self._gpu_ufunc(ufunc, method, *inputs, **kwargs)
         out = kwargs.pop("out", None)
         if out is not None and not all(isinstance(x, type(self)) for x in out):

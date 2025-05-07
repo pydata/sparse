@@ -514,8 +514,9 @@ class _Elemwise:
         import array_api_compat
 
         from ._coo import COO
+        from ._sparse_array import SparseArray
 
-        xp = array_api_compat.array_namespace(*(a.data for a in self.args))
+        xp = array_api_compat.array_namespace(*(a.data if isinstance(a, SparseArray) else a for a in self.args))
 
         def get_zero_arg(x):
             if isinstance(x, COO):

@@ -262,7 +262,7 @@ def matmul(a, b):
 
     from ._settings import NUMPY_DEVICE
 
-    if a.device != NUMPY_DEVICE or b.device != NUMPY_DEVICE:
+    if getattr(a, "device", NUMPY_DEVICE) != NUMPY_DEVICE or getattr(b, "device", NUMPY_DEVICE) != NUMPY_DEVICE:
         import cupyx.scipy.sparse as cps
 
         if isinstance(a, COO):
@@ -2074,7 +2074,10 @@ def pad(array, pad_width, mode="constant", **kwargs):
     if mode.lower() != "constant":
         raise NotImplementedError(f"Mode '{mode}' is not yet supported.")
 
-    if not equivalent(kwargs.pop("constant_values", _zero_of_dtype(array.dtype)), array.fill_value):
+    if not equivalent(
+        array._component_namespace.asarray(kwargs.pop("constant_values", _zero_of_dtype(array.dtype, array.device))),
+        array.fill_value,
+    ):
         raise ValueError("constant_values can only be equal to fill value.")
 
     if kwargs:

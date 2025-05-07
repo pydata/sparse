@@ -184,6 +184,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         self._compressed_axes = tuple(compressed_axes) if isinstance(compressed_axes, Iterable) else None
         self.fill_value = self.data.dtype.type(fill_value)
+        self.data, self.indices, self.indptr = np.asarray(self.data), np.asarray(self.indices), np.asarray(self.indptr)
 
         if prune:
             self._prune()

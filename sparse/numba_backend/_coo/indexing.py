@@ -118,7 +118,7 @@ def getitem(x, index):
             if n != 0:
                 return x.data[mask][0]
 
-            return x.fill_value
+            return x.fill_value[()]
 
     shape = tuple(shape)
     data = x.data[mask]

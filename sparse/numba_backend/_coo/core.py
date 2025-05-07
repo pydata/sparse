@@ -209,6 +209,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         fill_value=None,
         idx_dtype=None,
     ):
+        import array_api_compat
+
         from .._common import _coerce_to_supported_dense
 
         if isinstance(coords, COO):
@@ -232,6 +234,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         self.data = _coerce_to_supported_dense(data)
         self.coords = _coerce_to_supported_dense(coords)
+        xp = array_api_compat.get_namespace(self.data, self.coords)
 
         if self.coords.ndim == 1:
             if self.coords.size == 0 and shape is not None:
@@ -240,7 +243,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 self.coords = self.coords[None, :]
 
         if self.data.ndim == 0:
-            self.data = self._component_namespace.broadcast_to(self.data, self.coords.shape[1])
+            self.data = xp.broadcast_to(self.data, self.coords.shape[1])
 
         if self.data.ndim != 1:
             raise ValueError("`data` must be a scalar or 1-dimensional.")
@@ -255,9 +258,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             shape = tuple(shape)
 
         if shape and not self.coords.size:
-            self.coords = self._component_namespace.zeros(
-                (len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp
-            )
+            self.coords = xp.zeros((len(shape) if isinstance(shape, Iterable) else 1, 0), dtype=np.intp)
         super().__init__(shape, fill_value=fill_value)
         if idx_dtype:
             if not can_store(idx_dtype, max(shape)):
