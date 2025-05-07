@@ -511,14 +511,19 @@ class _Elemwise:
         ValueError
             If the fill-value is inconsistent.
         """
+        import array_api_compat
+
         from ._coo import COO
+        from ._sparse_array import SparseArray
+
+        xp = array_api_compat.array_namespace(*(a.data if isinstance(a, SparseArray) else a for a in self.args))
 
         def get_zero_arg(x):
             if isinstance(x, COO):
-                return np.atleast_1d(x.fill_value)
+                return xp.atleast_1d(x.fill_value)
 
             if isinstance(x, np.generic | np.ndarray):
-                return np.atleast_1d(x)
+                return xp.atleast_1d(x)
 
             return x
 
@@ -533,8 +538,10 @@ class _Elemwise:
         try:
             fill_value = fill_value_array[(0,) * fill_value_array.ndim]
         except IndexError:
+            from ._settings import NUMPY_DEVICE
+
             zero_args = tuple(
-                arg.fill_value if isinstance(arg, COO) else _zero_of_dtype(arg.dtype) for arg in self.args
+                arg.fill_value if isinstance(arg, COO) else _zero_of_dtype(arg.dtype, NUMPY_DEVICE) for arg in self.args
             )
             fill_value = self.func(*zero_args, **self.kwargs)[()]
 

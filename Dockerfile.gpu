@@ -1,0 +1,7 @@
+FROM python:3.12-slim
+
+ADD . .
+
+RUN pip install ".[cuda-12]"
+
+CMD ["python"]

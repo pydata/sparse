@@ -181,8 +181,10 @@ def test_tranpose(a, b):
 @pytest.mark.parametrize("format", [sparse.COO, sparse._compressed.CSR])
 def test_to_scipy_sparse(fill_value_in, fill_value_out, format):
     s = sparse.random((3, 5), density=0.5, format=format, fill_value=fill_value_in)
-
-    if not ((fill_value_in in {0, None} and fill_value_out in {0, None}) or equivalent(fill_value_in, fill_value_out)):
+    if not (
+        (fill_value_in in {0, None} and fill_value_out in {0, None})
+        or equivalent(np.asarray(fill_value_in), np.asarray(fill_value_out))
+    ):
         with pytest.raises(ValueError, match=r"fill_value=.* but should be in .*\."):
             s.to_scipy_sparse(accept_fv=fill_value_out)
         return

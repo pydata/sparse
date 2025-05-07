@@ -40,7 +40,7 @@ def getitem(x, index):
         coords.extend(idx[1:])
 
         fill_value_idx = np.asarray(x.fill_value[index]).flatten()
-        fill_value = fill_value_idx[0] if fill_value_idx.size else _zero_of_dtype(data.dtype)[()]
+        fill_value = fill_value_idx[0] if fill_value_idx.size else _zero_of_dtype(data.dtype, data.device)
 
         if not equivalent(fill_value, fill_value_idx).all():
             raise ValueError("Fill-values in the array are inconsistent.")
@@ -118,7 +118,7 @@ def getitem(x, index):
             if n != 0:
                 return x.data[mask][0]
 
-            return x.fill_value
+            return x.fill_value[()]
 
     shape = tuple(shape)
     data = x.data[mask]

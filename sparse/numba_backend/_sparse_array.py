@@ -1,4 +1,5 @@
 import contextlib
+import copy
 import operator
 import warnings
 from abc import ABCMeta, abstractmethod
@@ -12,6 +13,7 @@ from ._umath import elemwise
 from ._utils import _zero_of_dtype, equivalent, html_table, normalize_axis
 
 _reduce_super_ufunc = {np.add: np.multiply, np.multiply: np.power}
+_reduce_methods = {np.add: np.sum, np.multiply: np.prod}
 
 
 class SparseArray:
@@ -27,6 +29,7 @@ class SparseArray:
     """
 
     __metaclass__ = ABCMeta
+    __array_members__: tuple[str, ...] = ()
 
     def __init__(self, shape, fill_value=None):
         if not isinstance(shape, Iterable):
@@ -43,20 +46,64 @@ class SparseArray:
             else:
                 self.fill_value = fill_value
         else:
-            self.fill_value = _zero_of_dtype(self.dtype)
+            from ._settings import NUMPY_DEVICE
+
+            self.fill_value = _zero_of_dtype(self.dtype, getattr(getattr(self, "data", None), "device", NUMPY_DEVICE))
+        data = getattr(self, "data", None)
+        if data is not None and not isinstance(data, dict):
+            import array_api_compat
+
+            xp = array_api_compat.array_namespace(data)
+        else:
+            xp = np
+
+        self.fill_value = xp.asarray(self.fill_value)
+        self.device  # noqa: B018
 
     dtype = None
 
     @property
     def device(self):
         data = getattr(self, "data", None)
-        return getattr(data, "device", "cpu")
+        device = getattr(data, "device", "cpu")
+        assert all(getattr(self, m).device == device for m in self.__array_members__)
+        return device
+
+    @property
+    def _component_namespace(self):
+        if len(self.__array_members__) == 0:
+            return np
+        import array_api_compat
+
+        return array_api_compat.array_namespace(*(getattr(self, m) for m in self.__array_members__))
 
     def to_device(self, device, /, *, stream=None):
-        if device != "cpu":
-            raise ValueError("Only `device='cpu'` is supported.")
+        if stream is not None:
+            raise NotImplementedError("Only `stream=None` is supported at the moment.")
 
-        return self
+        if device == self.device:
+            return self
+
+        import cupy as cp
+
+        from ._settings import NUMPY_DEVICE
+
+        self_copy = copy.copy(self)
+        if device == NUMPY_DEVICE:
+            for member_name in self.__array_members__:
+                member_array_gpu = getattr(self, member_name)
+                member_array_cpu = cp.asnumpy(member_array_gpu)
+                setattr(self_copy, member_name, member_array_cpu)
+
+            return self_copy
+
+        for member_name in self.__array_members__:
+            member_array_source = getattr(self, member_name)
+            with cp.cuda.Device(device):
+                member_array_dest = cp.asarray(member_array_source)
+                setattr(self_copy, member_name, member_array_dest)
+
+        return self_copy
 
     @property
     @abstractmethod
@@ -319,7 +366,47 @@ class SparseArray:
 
         return self.reduce(method, **kwargs)
 
+    def _gpu_ufunc(self, ufunc, method, *inputs, **kwargs):
+        import functools
+
+        import cupyx.scipy.sparse as cps
+
+        from ._common import normalize_axis
+        from ._coo import COO
+
+        cp_inputs = tuple(i.to_scipy_sparse() if isinstance(i, SparseArray) and i.ndim != 0 else i for i in inputs)
+        if method == "__call__":
+            cp_res = cp_inputs[0] @ cp_inputs[1] if ufunc.__name__ == "matmul" else ufunc(*cp_inputs)
+            if not isinstance(cp_res, cps.spmatrix):
+                return cp_res
+            return COO.from_scipy_sparse(cp_res)
+        if method == "reduce":
+            axis = normalize_axis(kwargs.pop("axis", 0), self.ndim)
+            if not isinstance(axis, tuple):
+                axis = (axis,)
+            keepdims = kwargs.pop("keepdims", False)
+            if axis == ():
+                return self
+            axis = None if tuple(sorted(axis)) == (1, 2) else axis[0]
+            cp_res = _reduce_methods[ufunc](cp_inputs[0], axis=axis, **kwargs)
+            if cp_res.ndim == 0:
+                return cp_res
+            cp_res = cps.coo_matrix(cp_res)
+            if keepdims:
+                return COO.from_scipy_sparse(cp_res)
+            return COO(
+                coords=cp_res.row[None, :] if axis == 1 else cp_res.col[None, :],
+                data=cp_res.data,
+                shape=functools.reduce(operator.mul, cp_res.shape),
+            )
+
+        return NotImplemented
+
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        from ._settings import NUMPY_DEVICE
+
+        if not all(getattr(i, "device", NUMPY_DEVICE) == NUMPY_DEVICE for i in inputs):
+            return self._gpu_ufunc(ufunc, method, *inputs, **kwargs)
         out = kwargs.pop("out", None)
         if out is not None and not all(isinstance(x, type(self)) for x in out):
             return NotImplemented

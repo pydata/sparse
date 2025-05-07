@@ -132,6 +132,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     __array_priority__ = 12
 
+    __array_members__ = ("data", "indices", "indptr", "fill_value")
+
     def __init__(
         self,
         arg,
@@ -178,10 +180,11 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         self.shape = shape
 
         if fill_value is None:
-            fill_value = _zero_of_dtype(self.data.dtype)
+            fill_value = _zero_of_dtype(self.data.dtype, self.data.device)
 
         self._compressed_axes = tuple(compressed_axes) if isinstance(compressed_axes, Iterable) else None
         self.fill_value = self.data.dtype.type(fill_value)
+        self.data, self.indices, self.indptr = np.asarray(self.data), np.asarray(self.indices), np.asarray(self.indptr)
 
         if prune:
             self._prune()
