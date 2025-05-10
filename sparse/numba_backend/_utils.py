@@ -440,7 +440,7 @@ def equivalent(x, y, /, loose=False):
 
     if loose:
         if np.issubdtype(dt, np.complexfloating):
-            return equivalent(x.real, y.real) & equivalent(x.imag, y.imag)
+            return equivalent(x.real, y.real, loose=True) & equivalent(x.imag, y.imag, loose=True)
 
         # TODO: Rec array handling
         return (x == y) | ((x != x) & (y != y))
@@ -559,7 +559,7 @@ def check_fill_value(x, /, *, accept_fv=None) -> None:
         raise ValueError(f"{x.fill_value=} but should be in {accept_fv}.")
 
 
-def check_zero_fill_value(*args):
+def check_zero_fill_value(*args, loose=True):
     """
     Checks if all the arguments have zero fill-values.
 
@@ -588,7 +588,7 @@ def check_zero_fill_value(*args):
     ValueError: This operation requires zero fill values, but argument 1 had a fill value of 0.5.
     """
     for i, arg in enumerate(args):
-        if hasattr(arg, "fill_value") and not equivalent(arg.fill_value, _zero_of_dtype(arg.dtype)):
+        if hasattr(arg, "fill_value") and not equivalent(arg.fill_value, _zero_of_dtype(arg.dtype), loose=loose):
             raise ValueError(
                 f"This operation requires zero fill values, but argument {i:d} had a fill value of {arg.fill_value!s}."
             )
