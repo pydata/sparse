@@ -1013,7 +1013,7 @@ def _diagonal_idx(coordlist, axis1, axis2, offset):
     return np.array([i for i in range(len(coordlist[axis1])) if coordlist[axis1][i] + offset == coordlist[axis2][i]])
 
 
-def clip(a, a_min=None, a_max=None, out=None):
+def clip(a, min=None, max=None, out=None):
     """
     Clip (limit) the values in the array.
 
@@ -1023,10 +1023,10 @@ def clip(a, a_min=None, a_max=None, out=None):
     Parameters
     ----------
     a
-    a_min : scalar or `SparseArray` or `None`
+    min : scalar or `SparseArray` or `None`
         Minimum value. If `None`, clipping is not performed on lower
         interval edge.
-    a_max : scalar or `SparseArray` or `None`
+    max : scalar or `SparseArray` or `None`
         Maximum value. If `None`, clipping is not performed on upper
         interval edge.
     out : SparseArray, optional
@@ -1044,11 +1044,11 @@ def clip(a, a_min=None, a_max=None, out=None):
     --------
     >>> import sparse
     >>> x = sparse.COO.from_numpy([0, 0, 0, 1, 2, 3])
-    >>> sparse.clip(x, a_min=1).todense()  # doctest: +NORMALIZE_WHITESPACE
+    >>> sparse.clip(x, min=1).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([1, 1, 1, 1, 2, 3])
-    >>> sparse.clip(x, a_max=1).todense()  # doctest: +NORMALIZE_WHITESPACE
+    >>> sparse.clip(x, max=1).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([0, 0, 0, 1, 1, 1])
-    >>> sparse.clip(x, a_min=1, a_max=2).todense()  # doctest: +NORMALIZE_WHITESPACE
+    >>> sparse.clip(x, min=1, max=2).todense()  # doctest: +NORMALIZE_WHITESPACE
     array([1, 1, 1, 1, 2, 2])
 
     See Also
@@ -1056,7 +1056,7 @@ def clip(a, a_min=None, a_max=None, out=None):
     numpy.clip : Equivalent NumPy function
     """
     a = asCOO(a, name="clip")
-    return a.clip(a_min, a_max)
+    return a.clip(min, max)
 
 
 def expand_dims(x, /, *, axis=0):
