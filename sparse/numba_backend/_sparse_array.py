@@ -609,8 +609,6 @@ class SparseArray:
         - [sparse.clip][] : For full documentation and more details.
         - [`numpy.clip`][] : Equivalent NumPy function.
         """
-        if min is None and max is None:
-            raise ValueError("One of max or min must be given.")
         if out is not None and not isinstance(out, tuple):
             out = (out,)
         return self.__array_ufunc__(np.clip, "__call__", self, a_min=min, a_max=max, out=out)

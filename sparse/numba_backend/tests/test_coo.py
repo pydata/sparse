@@ -1130,9 +1130,6 @@ def test_clip():
 
     assert_eq(np.clip(s, 1, 3), np.clip(x, 1, 3))
 
-    with pytest.raises(ValueError):
-        s.clip()
-
     out = sparse.COO.from_numpy(np.zeros_like(x))
     out2 = s.clip(min=1, max=3, out=out)
     assert out is out2

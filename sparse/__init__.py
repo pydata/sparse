@@ -48,6 +48,7 @@ else:
     from sparse.numba_backend import *  # noqa: F403
     from sparse.numba_backend import (  # noqa: F401
         __all__,
+        __array_namespace_info__,
         _common,
         _compressed,
         _coo,
