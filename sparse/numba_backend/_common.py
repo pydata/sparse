@@ -2726,7 +2726,8 @@ def reshape(x, /, shape, *, copy=None):
     return x.reshape(shape=shape)
 
 
-def astype(x, dtype, /, *, copy=True):
+@_check_device
+def astype(x, dtype, /, *, copy=True, device=None):
     """
     Copies an array to a specified data type irrespective of type-promotion rules.
 

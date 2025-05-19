@@ -2,7 +2,9 @@ import sparse
 
 
 def test_namespace():
-    assert set(sparse.__all__) == {
+    from sparse.numba_backend._settings import IS_NUMPY2
+
+    all_set = {
         "COO",
         "DOK",
         "GCXS",
@@ -44,6 +46,7 @@ def test_namespace():
         "concat",
         "concatenate",
         "conj",
+        "copysign",
         "cos",
         "cosh",
         "diagonal",
@@ -71,6 +74,7 @@ def test_namespace():
         "full_like",
         "greater",
         "greater_equal",
+        "hypot",
         "iinfo",
         "imag",
         "inf",
@@ -99,8 +103,10 @@ def test_namespace():
         "matrix_transpose",
         "matmul",
         "max",
+        "maximum",
         "mean",
         "min",
+        "minimum",
         "moveaxis",
         "multiply",
         "nan",
@@ -112,6 +118,7 @@ def test_namespace():
         "nansum",
         "negative",
         "newaxis",
+        "nextafter",
         "nonzero",
         "not_equal",
         "ones",
@@ -125,6 +132,7 @@ def test_namespace():
         "prod",
         "random",
         "real",
+        "reciprocal",
         "remainder",
         "reshape",
         "result_type",
@@ -132,6 +140,7 @@ def test_namespace():
         "round",
         "save_npz",
         "sign",
+        "signbit",
         "sin",
         "sinh",
         "sort",
@@ -161,6 +170,11 @@ def test_namespace():
         "zeros",
         "zeros_like",
     }
+
+    if IS_NUMPY2:
+        all_set.update({"isdtype"})
+
+    assert set(sparse.__all__) == all_set
 
     for attr in sparse.__all__:
         assert hasattr(sparse, attr)

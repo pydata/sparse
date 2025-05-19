@@ -18,9 +18,9 @@ repos:
       exclude: ".ipynb"
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.11.5
+  rev: v0.11.10
   hooks:
-    - id: ruff
+    - id: ruff-check
       args: ["--fix"]
       types_or: [ python, pyi, jupyter ]
     - id: ruff-format

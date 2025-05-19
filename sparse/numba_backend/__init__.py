@@ -8,6 +8,7 @@ from numpy import (
     complex64,
     complex128,
     conj,
+    copysign,
     cos,
     cosh,
     divide,
@@ -22,6 +23,7 @@ from numpy import (
     floor_divide,
     greater,
     greater_equal,
+    hypot,
     iinfo,
     inf,
     int8,
@@ -40,15 +42,20 @@ from numpy import (
     logical_not,
     logical_or,
     logical_xor,
+    maximum,
+    minimum,
     multiply,
     nan,
     negative,
     newaxis,
+    nextafter,
     not_equal,
     pi,
     positive,
+    reciprocal,
     remainder,
     sign,
+    signbit,
     sin,
     sinh,
     sqrt,
@@ -158,6 +165,8 @@ from ._coo.common import (
 )
 from ._dok import DOK
 from ._io import load_npz, save_npz
+from ._settings import IS_NUMPY2 as _IS_NUMPY2
+from ._settings import __array_namespace_info__  # noqa: F401
 from ._umath import elemwise
 from ._utils import random
 
@@ -203,6 +212,7 @@ __all__ = [
     "concat",
     "concatenate",
     "conj",
+    "copysign",
     "cos",
     "cosh",
     "diagonal",
@@ -230,6 +240,7 @@ __all__ = [
     "full_like",
     "greater",
     "greater_equal",
+    "hypot",
     "iinfo",
     "imag",
     "inf",
@@ -258,8 +269,10 @@ __all__ = [
     "matmul",
     "matrix_transpose",
     "max",
+    "maximum",
     "mean",
     "min",
+    "minimum",
     "moveaxis",
     "multiply",
     "nan",
@@ -271,6 +284,7 @@ __all__ = [
     "nansum",
     "negative",
     "newaxis",
+    "nextafter",
     "nonzero",
     "not_equal",
     "ones",
@@ -284,6 +298,7 @@ __all__ = [
     "prod",
     "random",
     "real",
+    "reciprocal",
     "remainder",
     "reshape",
     "result_type",
@@ -291,6 +306,7 @@ __all__ = [
     "round",
     "save_npz",
     "sign",
+    "signbit",
     "sin",
     "sinh",
     "sort",
@@ -320,3 +336,13 @@ __all__ = [
     "zeros",
     "zeros_like",
 ]
+
+
+if _IS_NUMPY2:
+    from numpy import isdtype
+
+    __all__ += [
+        "isdtype",
+    ]
+
+__all__.sort()
