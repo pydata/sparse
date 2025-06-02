@@ -134,6 +134,7 @@ def test_namespace():
         "real",
         "reciprocal",
         "remainder",
+        "repeat",
         "reshape",
         "result_type",
         "roll",
