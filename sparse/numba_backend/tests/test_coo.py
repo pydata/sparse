@@ -1934,8 +1934,11 @@ def test_repeat(ndim, repeats):
     rng = np.random.default_rng()
     shape = tuple(rng.integers(1, 4) for _ in range(ndim))
     a = rng.integers(1, 10, size=shape)
+    with pytest.raises(TypeError, match="`a` must be a SparseArray"):
+        sparse.repeat(a, repeats=2)
     sparse_a = COO.from_numpy(a)
-
+    with pytest.raises(Exception, match="`repeats` must be an integer"):
+        sparse.repeat(sparse_a, repeats=[2, 2, 2])
     for axis in range(ndim):
         expected = np.repeat(a, repeats=repeats, axis=axis)
         result_sparse = sparse.repeat(sparse_a, repeats=repeats, axis=axis)
