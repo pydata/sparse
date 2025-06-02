@@ -3104,3 +3104,42 @@ def vecdot(x1, x2, /, *, axis=-1):
         x1 = np.conjugate(x1)
 
     return np.sum(x1 * x2, axis=axis, dtype=np.result_type(x1, x2))
+
+
+def repeat(a, repeats, axis=None):
+    """
+    Repeat each element of an array after themselves
+
+    Parameters
+    ----------
+    a : array_like
+        Input sparse arrays
+    repeats : int
+        The number of repetitions for each element.
+        (Uneven repeats are not yet Implemented.)
+    axis : int, optional
+        The axis along which to repeat values. Returns a flattened sparse array if not specified.
+
+    Returns
+    -------
+    out : SparseArray
+        A sparse array which has the same shape as a, except along the given axis.
+    """
+    if not isinstance(a, SparseArray):
+        raise TypeError("`a` must be a SparseArray.")
+
+    if not isinstance(repeats, int):
+        raise Exception("`repeats` must be an integer, uneven repeats are not yet Implemented.")
+
+    axes = list(range(a.ndim))
+    new_shape = list(a.shape)
+    if axis is not None:
+        axes[a.ndim - 1], axes[axis] = axes[axis], axes[a.ndim - 1]
+        a = a.transpose(axes)
+        new_shape[axis] *= repeats
+    a = a[..., None]
+    shape_to_broadcast = a.shape[:-1] + (a.shape[-1] * repeats,)
+    a = broadcast_to(a, shape_to_broadcast)
+    if axis is None:
+        return a.reshape(-1)
+    return a.reshape(new_shape)

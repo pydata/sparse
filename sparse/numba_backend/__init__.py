@@ -119,6 +119,7 @@ from ._common import (
     permute_dims,
     prod,
     real,
+    repeat,
     reshape,
     round,
     squeeze,
@@ -335,6 +336,7 @@ __all__ = [
     "where",
     "zeros",
     "zeros_like",
+    "repeat",
 ]
 
 
