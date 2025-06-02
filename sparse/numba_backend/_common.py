@@ -10,7 +10,7 @@ from numba import literal_unroll
 
 import numpy as np
 
-from ._coo import as_coo
+from ._coo import as_coo, expand_dims
 from ._sparse_array import SparseArray
 from ._utils import (
     _zero_of_dtype,
@@ -3133,13 +3133,16 @@ def repeat(a, repeats, axis=None):
 
     axes = list(range(a.ndim))
     new_shape = list(a.shape)
-    if axis is not None:
-        axes[a.ndim - 1], axes[axis] = axes[axis], axes[a.ndim - 1]
-        a = a.transpose(axes)
-        new_shape[axis] *= repeats
-    a = a[..., None]
-    shape_to_broadcast = a.shape[:-1] + (a.shape[-1] * repeats,)
-    a = broadcast_to(a, shape_to_broadcast)
+    axis_is_none = False
     if axis is None:
-        return a.reshape(-1)
-    return a.reshape(new_shape)
+        a = a.reshape(-1)
+        axis = 0
+        axis_is_none = True
+    axes[a.ndim - 1], axes[axis] = axes[axis], axes[a.ndim - 1]
+    new_shape[axis] *= repeats
+    a = expand_dims(a, axis=axis + 1)
+    shape_to_broadcast = a.shape[: axis + 1] + (a.shape[axis + 1] * repeats,) + a.shape[axis + 2 :]
+    a = broadcast_to(a, shape_to_broadcast)
+    if not axis_is_none:
+        return a.reshape(new_shape)
+    return a.reshape(new_shape).flatten()

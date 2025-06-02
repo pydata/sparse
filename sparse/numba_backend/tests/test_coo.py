@@ -1926,3 +1926,26 @@ def test_xH_x():
     assert_eq(Ysp.conj().T @ Y, Y.conj().T @ Y)
     assert_eq(Ysp.conj().T @ Ysp, Y.conj().T @ Y)
     assert_eq(Y.conj().T @ Ysp.conj().T, Y.conj().T @ Y.conj().T)
+
+
+@pytest.mark.parametrize("ndim", range(1, 5))
+@pytest.mark.parametrize("repeats", [1, 2, 3])
+def test_repeat(ndim, repeats):
+    rng = np.random.default_rng()
+    shape = tuple(rng.integers(1, 4) for _ in range(ndim))
+    a = rng.integers(1, 10, size=shape)
+    sparse_a = COO.from_numpy(a)
+
+    for axis in range(ndim):
+        expected = np.repeat(a, repeats=repeats, axis=axis)
+        result_sparse = sparse.repeat(sparse_a, repeats=repeats, axis=axis)
+        actual = result_sparse.todense()
+        assert actual.shape == expected.shape, f"Shape mismatch on axis {axis}: {actual.shape} vs {expected.shape}"
+        np.testing.assert_array_equal(actual, expected)
+
+    expected = np.repeat(a, repeats=repeats, axis=None)
+    result_sparse = sparse.repeat(sparse_a, repeats=repeats, axis=None)
+    actual = result_sparse.todense()
+    print(f"Expected: {expected}, Actual: {actual}")
+    assert actual.shape == expected.shape
+    np.testing.assert_array_equal(actual, expected)
