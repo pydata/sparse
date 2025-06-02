@@ -3112,7 +3112,7 @@ def repeat(a, repeats, axis=None):
 
     Parameters
     ----------
-    a : array_like
+    a : SparseArray
         Input sparse arrays
     repeats : int
         The number of repetitions for each element.
