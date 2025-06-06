@@ -70,7 +70,6 @@ array_api_tests/test_creation_functions.py::test_empty_like
 array_api_tests/test_data_type_functions.py::test_finfo[complex64]
 array_api_tests/test_manipulation_functions.py::test_squeeze
 array_api_tests/test_has_names.py::test_has_names[utility-diff]
-
 array_api_tests/test_has_names.py::test_has_names[manipulation-tile]
 array_api_tests/test_has_names.py::test_has_names[manipulation-unstack]
 array_api_tests/test_has_names.py::test_has_names[statistical-cumulative_sum]
@@ -79,7 +78,6 @@ array_api_tests/test_has_names.py::test_has_names[indexing-take_along_axis]
 array_api_tests/test_has_names.py::test_has_names[searching-count_nonzero]
 array_api_tests/test_has_names.py::test_has_names[searching-searchsorted]
 array_api_tests/test_signatures.py::test_func_signature[diff]
-
 array_api_tests/test_signatures.py::test_func_signature[tile]
 array_api_tests/test_signatures.py::test_func_signature[unstack]
 array_api_tests/test_signatures.py::test_func_signature[take_along_axis]
