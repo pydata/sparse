@@ -1928,18 +1928,22 @@ def test_xH_x():
     assert_eq(Y.conj().T @ Ysp.conj().T, Y.conj().T @ Y.conj().T)
 
 
+def test_repeat_invalid_input():
+    a = np.eye(3)
+    with pytest.raises(TypeError, match="`a` must be a SparseArray"):
+        sparse.repeat(a, repeats=2)
+    with pytest.raises(ValueError, match="`repeats` must be an integer"):
+        sparse.repeat(COO.from_numpy(a), repeats=[2, 2, 2])
+
+
 @pytest.mark.parametrize("ndim", range(1, 5))
 @pytest.mark.parametrize("repeats", [1, 2, 3])
 def test_repeat(ndim, repeats):
     rng = np.random.default_rng()
     shape = tuple(rng.integers(1, 4) for _ in range(ndim))
     a = rng.integers(1, 10, size=shape)
-    with pytest.raises(TypeError, match="`a` must be a SparseArray"):
-        sparse.repeat(a, repeats=2)
     sparse_a = COO.from_numpy(a)
-    with pytest.raises(Exception, match="`repeats` must be an integer"):
-        sparse.repeat(sparse_a, repeats=[2, 2, 2])
-    for axis in range(ndim):
+    for axis in [*range(-ndim, ndim), None]:
         expected = np.repeat(a, repeats=repeats, axis=axis)
         result_sparse = sparse.repeat(sparse_a, repeats=repeats, axis=axis)
         actual = result_sparse.todense()

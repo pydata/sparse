@@ -3129,8 +3129,7 @@ def repeat(a, repeats, axis=None):
         raise TypeError("`a` must be a SparseArray.")
 
     if not isinstance(repeats, int):
-        raise Exception("`repeats` must be an integer, uneven repeats are not yet Implemented.")
-
+        raise ValueError("`repeats` must be an integer, uneven repeats are not yet Implemented.")
     axes = list(range(a.ndim))
     new_shape = list(a.shape)
     axis_is_none = False
@@ -3138,6 +3137,8 @@ def repeat(a, repeats, axis=None):
         a = a.reshape(-1)
         axis = 0
         axis_is_none = True
+    if axis < 0:
+        axis = a.ndim + axis
     axes[a.ndim - 1], axes[axis] = axes[axis], axes[a.ndim - 1]
     new_shape[axis] *= repeats
     a = expand_dims(a, axis=axis + 1)
