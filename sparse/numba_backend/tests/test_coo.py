@@ -1937,22 +1937,38 @@ def test_repeat_invalid_input():
 
 
 @pytest.mark.parametrize("ndim", range(1, 5))
-@pytest.mark.parametrize("repeats", [1, 2, 3])
-def test_repeat(ndim, repeats):
+@pytest.mark.parametrize("scalar_repeat", [1, 2, 3])
+def test_repeat(ndim, scalar_repeat):
     rng = np.random.default_rng()
+
     shape = tuple(rng.integers(1, 4) for _ in range(ndim))
     a = rng.integers(1, 10, size=shape)
     sparse_a = COO.from_numpy(a)
-    for axis in [*range(-ndim, ndim), None]:
-        expected = np.repeat(a, repeats=repeats, axis=axis)
-        result_sparse = sparse.repeat(sparse_a, repeats=repeats, axis=axis)
-        actual = result_sparse.todense()
-        assert actual.shape == expected.shape, f"Shape mismatch on axis {axis}: {actual.shape} vs {expected.shape}"
-        np.testing.assert_array_equal(actual, expected)
 
-    expected = np.repeat(a, repeats=repeats, axis=None)
-    result_sparse = sparse.repeat(sparse_a, repeats=repeats, axis=None)
-    actual = result_sparse.todense()
-    print(f"Expected: {expected}, Actual: {actual}")
-    assert actual.shape == expected.shape
-    np.testing.assert_array_equal(actual, expected)
+    for axis in [*range(-ndim, ndim), None]:
+        if axis is not None:
+            axis_len = a.shape[axis % ndim]
+
+            expected = np.repeat(a, repeats=scalar_repeat, axis=axis)
+            result = sparse.repeat(sparse_a, repeats=scalar_repeat, axis=axis).todense()
+            assert result.shape == expected.shape
+            np.testing.assert_array_equal(result, expected)
+
+            list_repeats = rng.integers(1, 4, size=axis_len).tolist()
+            expected = np.repeat(a, repeats=list_repeats, axis=axis)
+            result = sparse.repeat(sparse_a, repeats=list_repeats, axis=axis).todense()
+            assert result.shape == expected.shape
+            np.testing.assert_array_equal(result, expected)
+
+            bad_repeats = list_repeats[:-1] if axis_len > 1 else list_repeats + [1]
+            with pytest.raises(ValueError, match="operands could not be broadcast together"):
+                sparse.repeat(sparse_a, repeats=bad_repeats, axis=axis)
+
+        else:
+            expected = np.repeat(a, repeats=scalar_repeat, axis=None)
+            result = sparse.repeat(sparse_a, repeats=scalar_repeat, axis=None).todense()
+            assert result.shape == expected.shape
+            np.testing.assert_array_equal(result, expected)
+
+            with pytest.raises(ValueError, match="`repeats` must be an integer when `axis` is None. "):
+                sparse.repeat(sparse_a, repeats=[1, 2], axis=None)

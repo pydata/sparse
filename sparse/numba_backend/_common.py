@@ -3114,9 +3114,8 @@ def repeat(a, repeats, axis=None):
     ----------
     a : SparseArray
         Input sparse arrays
-    repeats : int
+    repeats : int | list[int]
         The number of repetitions for each element.
-        (Uneven repeats are not yet Implemented.)
     axis : int, optional
         The axis along which to repeat values. Returns a flattened sparse array if not specified.
 
@@ -3128,22 +3127,48 @@ def repeat(a, repeats, axis=None):
     if not isinstance(a, SparseArray):
         raise TypeError("`a` must be a SparseArray.")
 
-    if not isinstance(repeats, int):
-        raise ValueError("`repeats` must be an integer, uneven repeats are not yet Implemented.")
-    axes = list(range(a.ndim))
-    new_shape = list(a.shape)
-    axis_is_none = False
+    if not isinstance(repeats, int | list):
+        raise ValueError("`repeats` must be an integer or a list of integers.")
+
     if axis is None:
         a = a.reshape(-1)
         axis = 0
         axis_is_none = True
+        if isinstance(repeats, list):
+            raise ValueError("`repeats` must be an integer when `axis` is None. ")
+
+    if not isinstance(repeats, int):
+        if len(repeats) != a.shape[axis]:
+            raise ValueError(f"operands could not be broadcast together with shape ({a.shape[axis]},) ({len(repeats)},")
+        repeat = builtins.max(repeats)
+    else:
+        repeat = repeats
+
+    axes = list(range(a.ndim))
+    new_shape = list(a.shape)
+    axis_is_none = False
+
     if axis < 0:
         axis = a.ndim + axis
+
     axes[a.ndim - 1], axes[axis] = axes[axis], axes[a.ndim - 1]
-    new_shape[axis] *= repeats
+    new_shape[axis] *= repeat
     a = expand_dims(a, axis=axis + 1)
-    shape_to_broadcast = a.shape[: axis + 1] + (a.shape[axis + 1] * repeats,) + a.shape[axis + 2 :]
+    shape_to_broadcast = a.shape[: axis + 1] + (a.shape[axis + 1] * repeat,) + a.shape[axis + 2 :]
     a = broadcast_to(a, shape_to_broadcast)
-    if not axis_is_none:
-        return a.reshape(new_shape)
-    return a.reshape(new_shape).flatten()
+    a = a.reshape(new_shape)
+    if isinstance(repeats, list):
+        a = a.transpose(axes)
+        rows_to_remove = [i * repeat + j for i, rep in enumerate(repeats) for j in range(rep, repeat)]
+        keep_chunks = []
+        for i in range(a.shape[a.ndim - 1]):
+            if i not in rows_to_remove:
+                slicer = [slice(None)] * a.ndim
+                slicer[a.ndim - 1] = slice(i, i + 1)
+                keep_chunks.append(a[tuple(slicer)])
+
+        a = concatenate(keep_chunks, axis=a.ndim - 1)
+        a = a.transpose(axes)
+    if axis_is_none:
+        a = a.flatten()
+    return a
