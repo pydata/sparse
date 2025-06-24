@@ -10,7 +10,7 @@ from numba import literal_unroll
 
 import numpy as np
 
-from ._coo import as_coo
+from ._coo import as_coo, expand_dims
 from ._sparse_array import SparseArray
 from ._utils import (
     _zero_of_dtype,
@@ -3104,3 +3104,46 @@ def vecdot(x1, x2, /, *, axis=-1):
         x1 = np.conjugate(x1)
 
     return np.sum(x1 * x2, axis=axis, dtype=np.result_type(x1, x2))
+
+
+def repeat(a, repeats, axis=None):
+    """
+    Repeat each element of an array after themselves
+
+    Parameters
+    ----------
+    a : SparseArray
+        Input sparse arrays
+    repeats : int
+        The number of repetitions for each element.
+        (Uneven repeats are not yet Implemented.)
+    axis : int, optional
+        The axis along which to repeat values. Returns a flattened sparse array if not specified.
+
+    Returns
+    -------
+    out : SparseArray
+        A sparse array which has the same shape as a, except along the given axis.
+    """
+    if not isinstance(a, SparseArray):
+        raise TypeError("`a` must be a SparseArray.")
+
+    if not isinstance(repeats, int):
+        raise ValueError("`repeats` must be an integer, uneven repeats are not yet Implemented.")
+    axes = list(range(a.ndim))
+    new_shape = list(a.shape)
+    axis_is_none = False
+    if axis is None:
+        a = a.reshape(-1)
+        axis = 0
+        axis_is_none = True
+    if axis < 0:
+        axis = a.ndim + axis
+    axes[a.ndim - 1], axes[axis] = axes[axis], axes[a.ndim - 1]
+    new_shape[axis] *= repeats
+    a = expand_dims(a, axis=axis + 1)
+    shape_to_broadcast = a.shape[: axis + 1] + (a.shape[axis + 1] * repeats,) + a.shape[axis + 2 :]
+    a = broadcast_to(a, shape_to_broadcast)
+    if not axis_is_none:
+        return a.reshape(new_shape)
+    return a.reshape(new_shape).flatten()
