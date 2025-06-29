@@ -1956,3 +1956,28 @@ def test_repeat(ndim, repeats):
     print(f"Expected: {expected}, Actual: {actual}")
     assert actual.shape == expected.shape
     np.testing.assert_array_equal(actual, expected)
+
+
+def test_tile_invalid_input():
+    a = np.eye(3)
+    assert isinstance(sparse.tile(a, 2), sparse.COO)
+
+
+@pytest.mark.parametrize(
+    "arr,reps",
+    [
+        (np.array([1, 2, 3]), (3,)),
+        (np.array([4, 5, 6, 7]), 3),
+        (np.array(1), 3),
+        (np.array([[1, 2], [3, 4]]), (2, 2)),
+        (np.array([[[1], [2]], [[3], [4]]]), (2, 1, 2)),
+        (np.random.default_rng(0).integers(0, 10, (2, 1, 3)), (2, 2, 2)),
+        (np.random.default_rng(1).integers(0, 5, (1, 3, 1, 2)), (2, 1, 3, 1)),
+    ],
+)
+def test_tile(arr, reps):
+    sparse_arr = sparse.COO.from_numpy(arr)
+    expected = np.tile(arr, reps)
+    result = sparse.tile(sparse_arr, reps).todense()
+
+    np.testing.assert_array_equal(result, expected, err_msg=f"Mismatch for shape={arr.shape}, reps={reps}")

@@ -127,6 +127,7 @@ from ._common import (
     std,
     sum,
     tensordot,
+    tile,
     var,
     vecdot,
     zeros,
@@ -337,6 +338,7 @@ __all__ = [
     "zeros",
     "zeros_like",
     "repeat",
+    "tile",
 ]
 
 
