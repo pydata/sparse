@@ -3147,3 +3147,31 @@ def repeat(a, repeats, axis=None):
     if not axis_is_none:
         return a.reshape(new_shape)
     return a.reshape(new_shape).flatten()
+
+
+def tile(a, reps):
+    """
+    Constructs an array by tiling an input array.
+
+    Parameters
+    ----------
+    a : SparseArray
+        Input sparse arrays.
+    reps : int or tuple[int, ...]
+        The number of repetitions for each dimension.
+        If an integer, the same number of repetitions is applied to all dimensions.
+
+    Returns
+    -------
+    out : SparseArray
+        A tiled output array.
+    """
+    if not isinstance(a, SparseArray):
+        a = as_coo(a)
+    if a.ndim == 0:
+        a = a.reshape((1,))
+    if isinstance(reps, int):
+        reps = (reps,)
+    for axis, rep in enumerate(reps):
+        a = concatenate([a] * rep, axis=axis)
+    return a
