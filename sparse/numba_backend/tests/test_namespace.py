@@ -156,6 +156,7 @@ def test_namespace():
         "tan",
         "tanh",
         "tensordot",
+        "tile",
         "tril",
         "triu",
         "trunc",
