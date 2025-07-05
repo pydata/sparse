@@ -3168,10 +3168,21 @@ def tile(a, reps):
     """
     if not isinstance(a, SparseArray):
         a = as_coo(a)
-    if a.ndim == 0:
-        a = a.reshape((1,))
+
     if isinstance(reps, int):
         reps = (reps,)
-    for axis, rep in enumerate(reps):
-        a = concatenate([a] * rep, axis=axis)
-    return a
+    reps = tuple(reps)
+
+    if a.ndim == 0:
+        a = a.reshape((1,))
+
+    if len(reps) < a.ndim:
+        reps = (1,) * (a.ndim - len(reps)) + reps
+    elif len(reps) > a.ndim:
+        a = a.reshape((1,) * (len(reps) - a.ndim) + a.shape)
+
+    shape = a.shape
+    ndim = len(reps)
+    a = a.reshape(tuple(np.column_stack(([1] * ndim, shape)).reshape(-1)))
+    a = a.broadcast_to(tuple(np.column_stack((reps, shape)).reshape(-1)))
+    return a.reshape(tuple(np.multiply(reps, shape)))
