@@ -70,14 +70,12 @@ array_api_tests/test_creation_functions.py::test_empty_like
 array_api_tests/test_data_type_functions.py::test_finfo[complex64]
 array_api_tests/test_manipulation_functions.py::test_squeeze
 array_api_tests/test_has_names.py::test_has_names[utility-diff]
-array_api_tests/test_has_names.py::test_has_names[manipulation-unstack]
 array_api_tests/test_has_names.py::test_has_names[statistical-cumulative_sum]
 array_api_tests/test_has_names.py::test_has_names[statistical-cumulative_prod]
 array_api_tests/test_has_names.py::test_has_names[indexing-take_along_axis]
 array_api_tests/test_has_names.py::test_has_names[searching-count_nonzero]
 array_api_tests/test_has_names.py::test_has_names[searching-searchsorted]
 array_api_tests/test_signatures.py::test_func_signature[diff]
-array_api_tests/test_signatures.py::test_func_signature[unstack]
 array_api_tests/test_signatures.py::test_func_signature[take_along_axis]
 array_api_tests/test_special_cases.py::test_binary[floor_divide(x1_i is +infinity and isfinite(x2_i) and x2_i > 0) -> +infinity]
 array_api_tests/test_special_cases.py::test_binary[floor_divide(x1_i is +infinity and isfinite(x2_i) and x2_i < 0) -> -infinity]
@@ -107,6 +105,5 @@ array_api_tests/test_searching_functions.py::test_count_nonzero
 array_api_tests/test_searching_functions.py::test_searchsorted
 array_api_tests/test_signatures.py::test_func_signature[cumulative_sum]
 array_api_tests/test_signatures.py::test_func_signature[cumulative_prod]
-array_api_tests/test_manipulation_functions.py::test_unstack
 array_api_tests/test_signatures.py::test_func_signature[count_nonzero]
 array_api_tests/test_signatures.py::test_func_signature[searchsorted]

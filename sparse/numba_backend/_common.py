@@ -3186,3 +3186,34 @@ def tile(a, reps):
     a = a.reshape(tuple(np.column_stack(([1] * ndim, shape)).reshape(-1)))
     a = a.broadcast_to(tuple(np.column_stack((reps, shape)).reshape(-1)))
     return a.reshape(tuple(np.multiply(reps, shape)))
+
+
+def unstack(x, axis=0):
+    """
+    Splits an array into a sequence of arrays along the given axis.
+
+    Parameters
+    ----------
+    x : SparseArray
+        Input sparse arrays.
+    axis : int
+        Axis along which the array will be split
+
+    Returns
+    -------
+    out : Tuple[SparseArray,...]
+        Tuple of slices along the given dimension. All the arrays have the same shape.
+    """
+    ndim = x.ndim
+
+    if not (-ndim <= axis < ndim):
+        raise ValueError(f"axis must be in range [-{ndim}, {ndim}), got {axis}")
+
+    if not isinstance(x, SparseArray):
+        raise TypeError("`a` must be a SparseArray.")
+
+    if axis < 0:
+        axis = ndim + axis
+    new_order = (axis,) + tuple(i for i in range(ndim) if i != axis)
+    x = x.transpose(new_order)
+    return (*x,)

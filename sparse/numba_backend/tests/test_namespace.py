@@ -166,6 +166,7 @@ def test_namespace():
         "uint8",
         "unique_counts",
         "unique_values",
+        "unstack",
         "var",
         "vecdot",
         "where",
