@@ -1981,3 +1981,42 @@ def test_tile(arr, reps):
     result = sparse.tile(sparse_arr, reps).todense()
 
     np.testing.assert_array_equal(result, expected, err_msg=f"Mismatch for shape={arr.shape}, reps={reps}")
+
+
+@pytest.mark.parametrize("ndim", range(1, 5))
+@pytest.mark.parametrize("shape_range", [3])
+def test_unstack_matches_numpy(ndim, shape_range):
+    rng = np.random.default_rng(42)
+    shape = tuple(rng.integers(2, shape_range + 2) for _ in range(ndim))
+    a = rng.integers(0, 10, size=shape)
+    sparse_a = COO.from_numpy(a)
+
+    for axis in range(-ndim, ndim):
+        sparse_parts = sparse.unstack(sparse_a, axis=axis)
+        np_parts = np.moveaxis(a, axis, 0)
+
+        assert len(sparse_parts) == np_parts.shape[0], f"Wrong number of slices on axis {axis}"
+
+        for i, part in enumerate(sparse_parts):
+            expected = np_parts[i]
+            if isinstance(part, COO):
+                actual = part.todense()
+            elif np.isscalar(part):
+                actual = np.array(part)
+            else:
+                raise TypeError(f"Unexpected type returned from unstack: {type(part)}")
+
+            np.testing.assert_array_equal(actual, expected, err_msg=f"Mismatch at slice {i} on axis {axis}")
+
+
+@pytest.mark.parametrize("axis", [-10, 10, 100, -100])
+def test_unstack_invalid_axis(axis):
+    a = COO.from_numpy(np.arange(6).reshape(2, 3))
+    with pytest.raises(ValueError, match="axis must be in range"):
+        sparse.unstack(a, axis)
+
+
+def test_unstack_invalid_type():
+    a = np.arange(6).reshape(2, 3)  # not a sparse array
+    with pytest.raises(TypeError, match="must be a SparseArray"):
+        sparse.unstack(a, axis=0)
