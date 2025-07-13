@@ -209,7 +209,7 @@ in the form `x.reduction()`, the following reductions are supported:
 ## Indexing
 
 [`sparse.COO`][] and [`sparse.GCXS`][] arrays can be [indexed](https://numpy.org/doc/stable/user/basics.indexing.html)
-just like regular [`numpy.ndarray`][] objects. They support integer, slice and boolean indexing(sparse boolean index not supported yet).
+just like regular [`numpy.ndarray`][] objects. They support integer, slice and boolean and array indexing (boolean and array indexing is supported only by dense NumPy arrays).
 However, currently, numpy advanced indexing is not properly supported. This
 means that all of the following work like in Numpy, except that they will produce
 [`sparse.SparseArray`][] arrays rather than [`numpy.ndarray`][] objects, and will produce
