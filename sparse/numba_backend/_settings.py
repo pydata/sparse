@@ -28,7 +28,7 @@ class ArrayNamespaceInfo:
     def capabilities(self):
         np_capabilities = self.np_info.capabilities()
         return {
-            "boolean indexing": True,
+            "boolean indexing": False,
             "data-dependent shapes": True,
             "max dimensions": np_capabilities.get("max dimensions", 64) - 1,
         }
