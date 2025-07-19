@@ -3240,7 +3240,6 @@ def diff(x, axis=-1, n=1, prepend=None, append=None):
     if not isinstance(x, SparseArray):
         raise TypeError("`x` must be a SparseArray.")
 
-    check_zero_fill_value(x)
     if axis < 0:
         axis = x.ndim + axis
     if prepend is not None:
