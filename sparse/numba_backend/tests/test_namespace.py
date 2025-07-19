@@ -51,6 +51,7 @@ def test_namespace():
         "cosh",
         "diagonal",
         "diagonalize",
+        "diff",
         "divide",
         "dot",
         "e",
