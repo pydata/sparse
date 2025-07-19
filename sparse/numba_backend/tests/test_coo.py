@@ -6,7 +6,7 @@ import sys
 import sparse
 from sparse import COO, DOK
 from sparse.numba_backend._settings import NEP18_ENABLED
-from sparse.numba_backend._utils import assert_eq, html_table, random_value_array
+from sparse.numba_backend._utils import assert_eq, check_zero_fill_value, html_table, random_value_array
 
 import pytest
 
@@ -1916,6 +1916,14 @@ def test_to_invalid_device():
     s = sparse.random((5, 5), density=0.5)
     with pytest.raises(ValueError, match=r"Only .* is supported."):
         s.to_device("invalid_device")
+
+
+def test_check_zero_fill_value():
+    a = sparse.COO(coords=np.empty((2, 0), dtype=int), data=np.array([]), shape=(1, 0), fill_value=1)
+    check_zero_fill_value(a)  # This should not raise an error
+    with pytest.raises(ValueError, match="This operation requires zero fill values"):
+        s1 = sparse.random((10,), density=0.5, fill_value=1.0)
+        check_zero_fill_value(s1)
 
 
 # regression test for gh-869
