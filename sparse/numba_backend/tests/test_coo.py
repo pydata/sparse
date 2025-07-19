@@ -2030,3 +2030,43 @@ def test_unstack_invalid_type():
     a = np.arange(6).reshape(2, 3)  # not a sparse array
     with pytest.raises(TypeError, match="must be a SparseArray"):
         sparse.unstack(a, axis=0)
+
+
+@pytest.mark.parametrize("ndim", range(1, 4))
+@pytest.mark.parametrize("shape_range", [3])
+@pytest.mark.parametrize("n", [1, 2])
+@pytest.mark.parametrize("use_prepend, use_append", [(False, False), (True, False), (False, True), (True, True)])
+def test_diff_matches_numpy(ndim, shape_range, n, use_prepend, use_append):
+    rng = np.random.default_rng(42)
+    shape = tuple(rng.integers(2, shape_range + 2) for _ in range(ndim))
+    x = rng.integers(0, 10, size=shape)
+    sparse_x = COO.from_numpy(x)
+
+    for axis in range(-ndim, ndim):
+        prepend = rng.integers(0, 10, size=x.shape).astype(x.dtype) if use_prepend else None
+        append = rng.integers(0, 10, size=x.shape).astype(x.dtype) if use_append else None
+
+        sparse_prepend = COO.from_numpy(prepend) if prepend is not None else None
+        sparse_append = COO.from_numpy(append) if append is not None else None
+
+        sparse_result = sparse.diff(sparse_x, axis=axis, n=n, prepend=sparse_prepend, append=sparse_append)
+
+        kwargs = {}
+        if prepend is not None:
+            kwargs["prepend"] = prepend
+        if append is not None:
+            kwargs["append"] = append
+
+        dense_result = np.diff(x, axis=axis, n=n, **kwargs)
+
+        np.testing.assert_array_equal(
+            sparse_result.todense(),
+            dense_result,
+            err_msg=f"Mismatch at axis={axis}, n={n}, prepend={use_prepend}, append={use_append}",
+        )
+
+
+def test_diff_invalid_type():
+    a = np.arange(6).reshape(2, 3)
+    with pytest.raises(TypeError, match="must be a SparseArray"):
+        sparse.diff(a)

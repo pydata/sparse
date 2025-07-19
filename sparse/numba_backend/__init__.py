@@ -95,6 +95,7 @@ from ._common import (
     can_cast,
     concat,
     concatenate,
+    diff,
     dot,
     einsum,
     empty,
@@ -341,6 +342,7 @@ __all__ = [
     "repeat",
     "tile",
     "unstack",
+    "diff",
 ]
 
 

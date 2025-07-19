@@ -3217,3 +3217,36 @@ def unstack(x, axis=0):
     new_order = (axis,) + tuple(i for i in range(ndim) if i != axis)
     x = x.transpose(new_order)
     return (*x,)
+
+
+def diff(x, axis=-1, n=1, prepend=None, append=None):
+    """
+    Calculates the n-th discrete difference along the given axis.
+
+    Parameters
+    ----------
+    x : SparseArray
+        Input sparse arrays.
+    n : int
+        The number of times values are differenced. Default: 1.
+    axis : int
+        The axis along which the difference is taken. Default: -1.
+
+    Returns
+    -------
+    out : SparseArray
+        An array containing the n-th discrete difference along the given axis.
+    """
+    if not isinstance(x, SparseArray):
+        raise TypeError("`x` must be a SparseArray.")
+
+    if axis < 0:
+        axis = x.ndim + axis
+    if prepend is not None:
+        x = concatenate([prepend, x], axis=axis)
+    if append is not None:
+        x = concatenate([x, append], axis=axis)
+    result = x
+    for _ in range(n):
+        result = result[(slice(None),) * axis + (slice(1, None),)] - result[(slice(None),) * axis + (slice(None, -1),)]
+    return result
