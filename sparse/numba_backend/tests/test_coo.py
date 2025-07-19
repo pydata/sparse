@@ -1918,9 +1918,11 @@ def test_to_invalid_device():
         s.to_device("invalid_device")
 
 
+# regression test for gh-877
 def test_check_zero_fill_value():
-    a = sparse.COO(coords=np.empty((2, 0), dtype=int), data=np.array([]), shape=(1, 0), fill_value=1)
-    check_zero_fill_value(a)  # This should not raise an error
+    a = sparse.zeros((1, 0))
+    b = a - sparse.mean(a, axis=1)
+    b @ b.T  # should not raise an error
     with pytest.raises(ValueError, match="This operation requires zero fill values"):
         s1 = sparse.random((10,), density=0.5, fill_value=1.0)
         check_zero_fill_value(s1)
