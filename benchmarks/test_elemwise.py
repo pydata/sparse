@@ -7,7 +7,6 @@ import sparse
 
 import pytest
 
-import numpy as np
 import scipy.sparse as sps
 
 DENSITY = 0.001
@@ -18,11 +17,10 @@ def get_test_id(side):
 
 
 @pytest.fixture(params=[100, 500, 1000], ids=get_test_id)
-def elemwise_args(request, seed, max_size):
+def elemwise_args(request, rng, max_size):
     side = request.param
     if side**2 >= max_size:
         pytest.skip()
-    rng = np.random.default_rng(seed=seed)
     s1_sps = sps.random(side, side, format="csr", density=DENSITY, random_state=rng) * 10
     s1_sps.sum_duplicates()
     s2_sps = sps.random(side, side, format="csr", density=DENSITY, random_state=rng) * 10
