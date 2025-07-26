@@ -1,9 +1,11 @@
 import pytest
 
+import numpy as np
+
 
 @pytest.fixture
-def seed(scope="session"):
-    return 42
+def rng(scope="session"):
+    return np.random.default_rng(seed=42)
 
 
 @pytest.fixture
