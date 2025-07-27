@@ -4,7 +4,7 @@ import numpy as np
 
 
 @pytest.fixture(scope="function")
-def rng(scope="session"):
+def rng():
     return np.random.default_rng(seed=42)
 
 
