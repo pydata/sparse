@@ -12,15 +12,26 @@ def format_id(format):
     return f"{format=}"
 
 
-@pytest.mark.parametrize("format", ["coo", "gcxs"])
-def test_matmul(benchmark, sides, format, rng, max_size, ids=format_id):
+@pytest.fixture(params=["coo", "gcxs"], ids=format_id)
+def format_param(request):
+    return request.param
+
+
+@pytest.fixture
+def matmul_args(sides, format_param, rng, max_size):
     m, n, p = sides
 
     if m * n >= max_size or n * p >= max_size:
         pytest.skip()
 
-    x = sparse.random((m, n), density=DENSITY, format=format, random_state=rng)
-    y = sparse.random((n, p), density=DENSITY, format=format, random_state=rng)
+    x = sparse.random((m, n), density=DENSITY, format=format_param, random_state=rng)
+    y = sparse.random((n, p), density=DENSITY, format=format_param, random_state=rng)
+
+    return x, y
+
+
+def test_matmul(benchmark, matmul_args):
+    x, y = matmul_args
 
     x @ y  # Numba compilation
 
