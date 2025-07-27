@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def rng(scope="session"):
     return np.random.default_rng(seed=42)
 
