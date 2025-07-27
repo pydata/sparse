@@ -1,5 +1,4 @@
 import importlib
-import itertools
 import operator
 import os
 
@@ -28,41 +27,48 @@ def elemwise_args(request, rng, max_size):
     return s1_sps, s2_sps
 
 
-def get_elemwise_id(param):
-    f, backend = param
-    return f"{f=}-{backend=}"
+@pytest.fixture(params=[operator.add, operator.mul, operator.gt])
+def elemwise_function(request):
+    return request.param
 
 
-@pytest.fixture(
-    params=itertools.product([operator.add, operator.mul, operator.gt], ["SciPy", "Numba", "Finch"]),
-    scope="function",
-    ids=get_elemwise_id,
-)
-def backend(request):
-    f, backend = request.param
-    os.environ[sparse._ENV_VAR_NAME] = backend
+@pytest.fixture(params=["SciPy", "Numba", "Finch"])
+def backend_name(request):
+    return request.param
+
+
+@pytest.fixture
+def backend_setup(backend_name):
+    os.environ[sparse._ENV_VAR_NAME] = backend_name
     importlib.reload(sparse)
-    yield f, sparse, backend
+    yield sparse, backend_name
     del os.environ[sparse._ENV_VAR_NAME]
     importlib.reload(sparse)
 
 
-def test_elemwise(benchmark, backend, elemwise_args):
+@pytest.fixture
+def sparse_arrays(elemwise_args, backend_setup):
     s1_sps, s2_sps = elemwise_args
-    f, sparse, backend = backend
+    sparse, backend_name = backend_setup
 
-    if backend == "SciPy":
+    if backend_name == "SciPy":
         s1 = s1_sps
         s2 = s2_sps
-    elif backend == "Numba":
+    elif backend_name == "Numba":
         s1 = sparse.asarray(s1_sps)
         s2 = sparse.asarray(s2_sps)
-    elif backend == "Finch":
+    elif backend_name == "Finch":
         s1 = sparse.asarray(s1_sps.asformat("csc"), format="csc")
         s2 = sparse.asarray(s2_sps.asformat("csc"), format="csc")
 
-    f(s1, s2)
+    return s1, s2
+
+
+def test_elemwise(benchmark, elemwise_function, sparse_arrays):
+    s1, s2 = sparse_arrays
+
+    elemwise_function(s1, s2)
 
     @benchmark
     def bench():
-        f(s1, s2)
+        elemwise_function(s1, s2)
