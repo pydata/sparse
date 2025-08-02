@@ -1,0 +1,1 @@
+- [Sparse Finch](examples/sparse_finch.ipynb)

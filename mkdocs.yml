@@ -52,6 +52,7 @@ plugins:
   - gen-files:
       scripts:
       - scripts/gen_ref_pages.py
+      - scripts/copy_notebooks.py
   - literate-nav
   - mkdocstrings:
       handlers:
@@ -75,6 +76,8 @@ plugins:
       include_source: true
       execute: true
       ignore: ["__init__.py", "utils.py", "gen_logo.py"]
+      include:
+        - examples/*.ipynb
 
 nav:
   - Home:
@@ -101,3 +104,5 @@ nav:
     - completed-tasks.md
     - changelog.md
     - conduct.md
+  - Notebooks:
+    - notebooks.md
