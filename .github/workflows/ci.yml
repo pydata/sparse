@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-latest']
-        python: ['3.10', '3.11', '3.12']
+        python: ['3.11', '3.12', '3.13']
         pip_opts: ['']
         numba_boundscheck: [0]
         include:
