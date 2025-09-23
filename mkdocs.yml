@@ -91,6 +91,7 @@ nav:
     - quickstart.md
     - construct.md
     - operations.md
+    - migration-jl.md
   - API:
     - api.md
     - api/*
