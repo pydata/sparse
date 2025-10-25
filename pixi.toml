@@ -10,7 +10,7 @@ numba = ">=0.49"
 numpy = ">=1.17"
 
 [dependencies]
-python = ">=3.10,<3.13"
+python = ">=3.11,<3.14"
 
 [feature.extra.pypi-dependencies]
 dask = { version = ">=2024", extras = ["array"] }
@@ -55,7 +55,7 @@ juliaup = ">=1.17.10"
 
 [feature.finch.pypi-dependencies]
 scipy = ">=1.13"
-finch-tensor = ">=0.2.12"
+finch-tensor = ">=0.2.13"
 
 [feature.finch.activation.env]
 SPARSE_BACKEND = "Finch"

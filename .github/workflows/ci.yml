@@ -11,19 +11,19 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-latest']
-        python: ['3.10', '3.11', '3.12']
+        python: ['3.11', '3.12', '3.13']
         pip_opts: ['']
         numba_boundscheck: [0]
         include:
           - os: macos-latest
-            python: '3.10'
+            python: '3.11'
           - os: windows-latest
-            python: '3.10'
+            python: '3.11'
           - os: ubuntu-latest
-            python: '3.10'
+            python: '3.11'
             numba_boundscheck: 1
           - os: ubuntu-latest
-            python: '3.10'
+            python: '3.11'
             pip_opts: 'numpy<2'
       fail-fast: false
     runs-on: ${{ matrix.os }}
