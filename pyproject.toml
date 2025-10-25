@@ -35,6 +35,7 @@ docs = [
         "mkdocs-section-index",
         "mkdocs-jupyter",
         "sparse[extras]",
+        "matplotlib",
 ]
 extras = [
     "dask[array]",
