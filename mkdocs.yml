@@ -78,6 +78,7 @@ plugins:
       ignore: ["__init__.py", "utils.py", "gen_logo.py"]
       include:
         - examples/*.ipynb
+        - docs/examples/*.ipynb
 
 nav:
   - Home:
@@ -106,4 +107,4 @@ nav:
     - conduct.md
   - Notebooks:
     - notebooks.md
-    - examples/sparse_finch.ipynb
+    - docs/examples/sparse_finch.ipynb
