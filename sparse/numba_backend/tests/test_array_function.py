@@ -170,9 +170,7 @@ class TestInterp:
         if isinstance(x, sparse.SparseArray):
             assert isinstance(y, type(x))
         else:
-            if module is sparse or any(
-                (isinstance(obj, sparse.SparseArray) for obj in (x, xp, fp))
-            ):
+            if module is sparse or any(isinstance(obj, sparse.SparseArray) for obj in (x, xp, fp)):
                 assert isinstance(y, sparse.COO)
             else:
                 assert isinstance(y, np.ndarray)

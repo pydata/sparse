@@ -3328,6 +3328,6 @@ def interp(x, xp, fp, left=None, right=None, period=None):
     arr = as_coo(x)
     data = interp_func(arr.data)
     fill_value = interp_func(arr.fill_value)
-    return COO(
-        data=data, coords=arr.coords, shape=arr.shape, fill_value=fill_value, prune=True
-    ).asformat(out_type, **out_kwargs)
+    return COO(data=data, coords=arr.coords, shape=arr.shape, fill_value=fill_value, prune=True).asformat(
+        out_type, **out_kwargs
+    )
