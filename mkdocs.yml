@@ -107,4 +107,4 @@ nav:
     - conduct.md
   - Notebooks:
     - notebooks.md
-    - docs/examples/sparse_finch.ipynb
+    - examples/sparse_finch.ipynb
