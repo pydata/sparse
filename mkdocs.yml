@@ -74,7 +74,7 @@ plugins:
 
   - mkdocs-jupyter:
       include_source: true
-      execute: true
+      execute: false
       ignore: ["__init__.py", "utils.py", "gen_logo.py"]
       include:
         - examples/*.ipynb
