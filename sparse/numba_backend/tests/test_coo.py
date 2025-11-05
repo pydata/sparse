@@ -2070,3 +2070,44 @@ def test_diff_invalid_type():
     a = np.arange(6).reshape(2, 3)
     with pytest.raises(TypeError, match="must be a SparseArray"):
         sparse.diff(a)
+
+
+class TestInterp:
+    xp = [-1, 0, 1]
+    fp = [3, 2, 0]
+
+    @pytest.fixture(params=["coo", "dok", "gcxs", "dense"])
+    def x(self, request):
+        arr = sparse.random((10, 10, 10), fill_value=0)
+        if request.param == "dense":
+            return arr.todense()
+        return arr.asformat(request.param)
+
+    @pytest.mark.parametrize(
+        "xp",
+        [
+            xp,
+            sparse.COO.from_numpy(np.array(xp)),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "fp",
+        [
+            fp,
+            sparse.COO.from_numpy(np.array(fp)),
+            sparse.COO.from_numpy(np.array(fp) + 1j),
+        ],
+    )
+    def test_interp(self, x, xp, fp):
+        def to_dense(arr):
+            if isinstance(x, sparse.SparseArray):
+                return arr.todense()
+            return arr
+
+        actual = sparse.interp(x, xp, fp)
+        expected = np.interp(to_dense(x), xp, fp)
+
+        assert isinstance(actual, type(x))
+        if isinstance(x, sparse.SparseArray):
+            assert actual.fill_value == fp[1]
+        np.testing.assert_array_equal(to_dense(actual), expected)

@@ -3250,3 +3250,88 @@ def diff(x, axis=-1, n=1, prepend=None, append=None):
     for _ in range(n):
         result = result[(slice(None),) * axis + (slice(1, None),)] - result[(slice(None),) * axis + (slice(None, -1),)]
     return result
+
+
+def interp(x, xp, fp, left=None, right=None, period=None):
+    """
+    An implementation of ``numpy.interp`` for sparse arrays.
+
+    Thanks to the function dispatch of numpy, this enables interpolation on sparse arrays
+    using the numpy universal function. This function effectively wraps ``np.interp`` by
+    calling it on the array data and the fill value. See the numpy documentation for
+    details on the parameters.
+
+    Parameters
+    ----------
+    x : SparseArray
+        The x-coordinates at which to evaluate the interpolated values.
+    xp : 1-D sequence or SparseArray
+        The x-coordinates of the data points.
+    fp : 1-D sequence or SparseArray
+        The y-coordinates of the data points, same length as ``xp``.
+    left : float or complex, optional
+        Value to return for ``x < xp[0]``, default is ``fp[0]``.
+    right : float or complex, optional
+        Value to return for ``x > xp[-1]``, default is ``fp[-1]``.
+    period : None or float, optional
+        A period for the x-coordinates.
+
+    Returns
+    -------
+    out : SparseArray
+        The interpolated values, same shape as x.
+
+    See Also
+    --------
+    https://numpy.org/doc/stable/reference/generated/numpy.interp.html
+
+    Examples
+    --------
+    When interpolating a sparse array, its data and the fill value are interpolated. The
+    returned array is pruned. Therefore, the fill value and the number of nonzero
+    elements might change.
+
+    >>> import numpy as np
+    >>> xp = [1, 2, 3]
+    >>> fp = [3, 2, 0]
+    >>> y = np.interp(sparse.COO.from_numpy(np.array([0, 1, 1.5, 2.72, 3.14])), xp, fp)
+    >>> y.todense()
+    array([3.  , 3.  , 2.5 , 0.56, 0.  ])
+    >>> y.fill_value
+    np.float64(3.0)
+    >>> y.nnz
+    3
+    """
+    from ._compressed import GCXS
+    from ._coo import COO
+    from ._dok import DOK
+
+    # Densify sparse interpolants
+    if isinstance(xp, SparseArray):
+        xp = xp.todense()
+    if isinstance(fp, SparseArray):
+        fp = fp.todense()
+
+    def interp_func(xx):
+        return np.interp(xx, xp, fp, left=left, right=right, period=period)
+
+    # Shortcut for dense arrays
+    if not isinstance(x, SparseArray):
+        return interp_func(x)
+
+    # Define output type
+    out_kwargs = {}
+    out_type = COO
+    if isinstance(x, GCXS):
+        out_type = GCXS
+        out_kwargs["compressed_axes"] = x.compressed_axes
+    elif isinstance(x, DOK):
+        out_type = DOK
+
+    # Perform interpolation on sparse object
+    arr = as_coo(x)
+    data = interp_func(arr.data)
+    fill_value = interp_func(arr.fill_value)
+    return COO(data=data, coords=arr.coords, shape=arr.shape, fill_value=fill_value, prune=True).asformat(
+        out_type, **out_kwargs
+    )

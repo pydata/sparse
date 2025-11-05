@@ -83,6 +83,7 @@ def test_namespace():
         "int32",
         "int64",
         "int8",
+        "interp",
         "isfinite",
         "isinf",
         "isnan",
