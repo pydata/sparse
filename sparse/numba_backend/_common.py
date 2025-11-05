@@ -3295,7 +3295,7 @@ def interp(x, xp, fp, left=None, right=None, period=None):
     >>> xp = [1, 2, 3]
     >>> fp = [3, 2, 0]
     >>> y = np.interp(sparse.COO.from_numpy(np.array([0, 1, 1.5, 2.72, 3.14])), xp, fp)
-    >>> y.to_dense()
+    >>> y.todense()
     array([3.  , 3.  , 2.5 , 0.56, 0.  ])
     >>> y.fill_value
     3.0
