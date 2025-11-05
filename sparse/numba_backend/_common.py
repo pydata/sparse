@@ -3298,7 +3298,7 @@ def interp(x, xp, fp, left=None, right=None, period=None):
     >>> y.todense()
     array([3.  , 3.  , 2.5 , 0.56, 0.  ])
     >>> y.fill_value
-    3.0
+    np.float64(3.0)
     >>> y.nnz
     3
     """
