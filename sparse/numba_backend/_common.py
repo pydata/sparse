@@ -3312,6 +3312,13 @@ def interp(x, xp, fp, left=None, right=None, period=None):
     if isinstance(fp, SparseArray):
         fp = fp.todense()
 
+    def interp_func(xx):
+        return np.interp(xx, xp, fp, left=left, right=right, period=period)
+
+    # Shortcut for dense arrays
+    if not isinstance(x, SparseArray):
+        return interp_func(x)
+
     # Define output type
     out_kwargs = {}
     out_type = COO
@@ -3321,13 +3328,10 @@ def interp(x, xp, fp, left=None, right=None, period=None):
     elif isinstance(x, DOK):
         out_type = DOK
 
-    def interp_func(xx):
-        return np.interp(xx, xp, fp, left=left, right=right, period=period)
-
-    # Perform interpolation
+    # Perform interpolation on sparse object
     arr = as_coo(x)
     data = interp_func(arr.data)
     fill_value = interp_func(arr.fill_value)
-    return COO(
-        data=data, coords=arr.coords, shape=arr.shape, fill_value=fill_value, prune=True
-    ).asformat(out_type, **out_kwargs)
+    return COO(data=data, coords=arr.coords, shape=arr.shape, fill_value=fill_value, prune=True).asformat(
+        out_type, **out_kwargs
+    )
