@@ -56,7 +56,7 @@ plugins:
   - mkdocstrings:
       handlers:
             python:
-              import:
+              inventories:
               - https://numpy.org/doc/stable/objects.inv
               - https://docs.python.org/3/objects.inv
               - https://docs.scipy.org/doc/scipy/objects.inv
