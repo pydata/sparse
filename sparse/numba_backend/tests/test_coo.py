@@ -642,20 +642,24 @@ def test_scipy_sparse_interface(rng):
     m = 10
     row = rng.integers(0, n, size=n, dtype=np.uint16)
     col = rng.integers(0, m, size=n, dtype=np.uint16)
+    stack = np.zeros(n, dtype=np.uint8)
     data = np.ones(n, dtype=np.uint8)
 
-    inp = (data, (row, col))
+    inp = (data, (stack, row, col))
 
-    x = scipy.sparse.coo_matrix(inp, shape=(n, m))
-    xx = sparse.COO(inp, shape=(n, m))
+    x = scipy.sparse.coo_array(inp, shape=(1, n, m))
+    xx = sparse.COO(inp, shape=(1, n, m))
+
+    def mT(x):
+        return np.moveaxis(x, -1, -2) if x.ndim > 1 else x
 
     assert_eq(x, xx, check_nnz=False)
-    assert_eq(x.T, xx.T, check_nnz=False)
+    assert_eq(mT(x), xx.mT, check_nnz=False)
     assert_eq(xx.to_scipy_sparse(), x, check_nnz=False)
     assert_eq(COO.from_scipy_sparse(xx.to_scipy_sparse()), xx, check_nnz=False)
 
     assert_eq(x, xx, check_nnz=False)
-    assert_eq(x.T.dot(x), xx.T.dot(xx), check_nnz=False)
+    assert_eq(mT(x).dot(x), xx.mT.dot(xx), check_nnz=False)
     assert isinstance(x + xx, COO)
     assert isinstance(xx + x, COO)
 
