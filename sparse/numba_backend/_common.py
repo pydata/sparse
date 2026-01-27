@@ -2073,7 +2073,7 @@ def format_to_string(format):
 
 
 @_check_device
-def asarray(obj, /, *, dtype=None, format="coo", copy=False, device=None):
+def asarray(obj, /, *, dtype=None, format=None, copy=False, device=None):
     """
     Convert the input to a sparse array.
 
@@ -2085,6 +2085,8 @@ def asarray(obj, /, *, dtype=None, format="coo", copy=False, device=None):
         Output array data type.
     format : str, optional
         Output array sparse format.
+        Default: existing format if the input is a `SparseArray`,
+        else COO.
     device : str, optional
         Device on which to place the created array.
     copy : bool, optional
@@ -2102,7 +2104,7 @@ def asarray(obj, /, *, dtype=None, format="coo", copy=False, device=None):
     <COO: shape=(8, 8), dtype=int64, nnz=8, fill_value=0>
     """
 
-    if format not in {"coo", "dok", "gcxs", "csc", "csr"}:
+    if format not in {None, "coo", "dok", "gcxs", "csc", "csr"}:
         raise ValueError(f"{format} format not supported.")
 
     from ._compressed import CSC, CSR, GCXS
@@ -2111,8 +2113,10 @@ def asarray(obj, /, *, dtype=None, format="coo", copy=False, device=None):
 
     format_dict = {"coo": COO, "dok": DOK, "gcxs": GCXS, "csc": CSC, "csr": CSR}
 
-    if isinstance(obj, COO | DOK | GCXS | CSC | CSR):
-        return obj.asformat(format)
+    if isinstance(obj, SparseArray):
+        return obj.asformat(format) if format is not None else obj
+
+    format = "coo" if format is None else format
 
     if _is_scipy_sparse_obj(obj):
         sparse_obj = format_dict[format].from_scipy_sparse(obj)
