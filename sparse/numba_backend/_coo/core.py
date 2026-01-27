@@ -397,7 +397,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         See Also
         --------
         - [`sparse.DOK.todense`][] : Equivalent `DOK` array method.
-        - [`scipy.sparse.coo_matrix.todense`][] : Equivalent Scipy method.
+        - [`scipy.sparse.coo_array.todense`][] : Equivalent Scipy method.
 
         Examples
         --------
@@ -451,11 +451,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             x.eliminate_zeros()
             x.sum_duplicates()
 
-        coords = np.empty((2, x.nnz), dtype=x.row.dtype)
-        coords[0, :] = x.row
-        coords[1, :] = x.col
+        def _coords(x):
+            c = getattr(x, "coords", None)
+            if c is None: # legacy support for SciPy sparse matrices
+                c = (x.row, x.col)
+            return c
+
         return COO(
-            coords,
+            _coords(x),
             x.data,
             shape=x.shape,
             has_duplicates=not x.has_canonical_format,
@@ -562,7 +565,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         See Also
         --------
         - [`numpy.ndarray.dtype`][] : Numpy equivalent property.
-        - [`scipy.sparse.coo_matrix.dtype`][] : Scipy equivalent property.
+        - [`scipy.sparse.coo_array.dtype`][] : Scipy equivalent property.
 
         Examples
         --------
@@ -590,7 +593,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         --------
         - [`sparse.DOK.nnz`][] : Equivalent [`sparse.DOK`][] array property.
         - [`numpy.count_nonzero`][] : A similar Numpy function.
-        - [`scipy.sparse.coo_matrix.nnz`][] : The Scipy equivalent property.
+        - [`scipy.sparse.coo_array.nnz`][] : The Scipy equivalent property.
 
         Examples
         --------
@@ -945,7 +948,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         --------
         - [`sparse.dot`][] : Equivalent function for two arguments.
         - [`numpy.dot`][] : Numpy equivalent function.
-        - [`scipy.sparse.coo_matrix.dot`][] : Scipy equivalent function.
+        - [`scipy.sparse.coo_array.dot`][] : Scipy equivalent function.
 
         Examples
         --------
@@ -1160,7 +1163,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     def to_scipy_sparse(self, /, *, accept_fv=None):
         """
-        Converts this [`sparse.COO`][] object into a [`scipy.sparse.coo_matrix`][].
+        Converts this [`sparse.COO`][] object into a [`scipy.sparse.coo_array`][].
 
         Parameters
         ----------
@@ -1169,7 +1172,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         Returns
         -------
-        scipy.sparse.coo_matrix
+        scipy.sparse.coo_array
             The converted Scipy sparse matrix.
 
         Raises
@@ -1181,17 +1184,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        - [`sparse.COO.tocsr`][] : Convert to a [`scipy.sparse.csr_matrix`][].
-        - [`sparse.COO.tocsc`][] : Convert to a [`scipy.sparse.csc_matrix`][].
+        - [`sparse.COO.tocsr`][] : Convert to a [`scipy.sparse.csr_array`][].
+        - [`sparse.COO.tocsc`][] : Convert to a [`scipy.sparse.csc_array`][].
         """
         import scipy.sparse
 
         check_fill_value(self, accept_fv=accept_fv)
 
-        if self.ndim != 2:
-            raise ValueError("Can only convert a 2-dimensional array to a Scipy sparse matrix.")
-
-        result = scipy.sparse.coo_matrix((self.data, (self.coords[0], self.coords[1])), shape=self.shape)
+        result = scipy.sparse.coo_array((self.data, self.coords), shape=self.shape)
         result.has_canonical_format = True
         return result
 
@@ -1206,15 +1206,15 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         indptr = np.zeros(self.shape[0] + 1, dtype=np.int64)
         np.cumsum(np.bincount(row, minlength=self.shape[0]), out=indptr[1:])
 
-        return scipy.sparse.csr_matrix((self.data, col, indptr), shape=self.shape)
+        return scipy.sparse.csr_array((self.data, col, indptr), shape=self.shape)
 
     def tocsr(self):
         """
-        Converts this array to a [`scipy.sparse.csr_matrix`][].
+        Converts this array to a [`scipy.sparse.csr_array`][].
 
         Returns
         -------
-        scipy.sparse.csr_matrix
+        scipy.sparse.csr_array
             The result of the conversion.
 
         Raises
@@ -1226,9 +1226,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        - [`sparse.COO.tocsc`][] : Convert to a [`scipy.sparse.csc_matrix`][].
-        - [`sparse.COO.to_scipy_sparse`][] : Convert to a [`scipy.sparse.coo_matrix`][].
-        - [`scipy.sparse.coo_matrix.tocsr`][] : Equivalent Scipy function.
+        - [`sparse.COO.tocsc`][] : Convert to a [`scipy.sparse.csc_array`][].
+        - [`sparse.COO.to_scipy_sparse`][] : Convert to a [`scipy.sparse.coo_array`][].
+        - [`scipy.sparse.coo_array.tocsr`][] : Equivalent Scipy function.
         """
         check_zero_fill_value(self)
 
@@ -1250,11 +1250,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     def tocsc(self):
         """
-        Converts this array to a [`scipy.sparse.csc_matrix`][].
+        Converts this array to a [`scipy.sparse.csc_array`][].
 
         Returns
         -------
-        scipy.sparse.csc_matrix
+        scipy.sparse.csc_array
             The result of the conversion.
 
         Raises
@@ -1266,9 +1266,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        - [`sparse.COO.tocsr`][] : Convert to a [`scipy.sparse.csr_matrix`][].
-        - [`sparse.COO.to_scipy_sparse`][] : Convert to a [`scipy.sparse.coo_matrix`][].
-        - [`scipy.sparse.coo_matrix.tocsc`][] : Equivalent Scipy function.
+        - [`sparse.COO.tocsr`][] : Convert to a [`scipy.sparse.csr_array`][].
+        - [`sparse.COO.to_scipy_sparse`][] : Convert to a [`scipy.sparse.coo_array`][].
+        - [`scipy.sparse.coo_array.tocsc`][] : Equivalent Scipy function.
         """
         check_zero_fill_value(self)
 
@@ -1320,7 +1320,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         See Also
         --------
-        scipy.sparse.coo_matrix.sum_duplicates : Equivalent Scipy function.
+        scipy.sparse.coo_array.sum_duplicates : Equivalent Scipy function.
 
         Examples
         --------

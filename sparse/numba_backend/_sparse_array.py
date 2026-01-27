@@ -74,7 +74,7 @@ class SparseArray:
         --------
         - [`sparse.DOK.nnz`][] : Equivalent [`sparse.DOK`][] array property.
         - [`numpy.count_nonzero`][] : A similar Numpy function.
-        - [`scipy.sparse.coo_matrix.nnz`][] : The Scipy equivalent property.
+        - [`scipy.sparse.coo_array.nnz`][] : The Scipy equivalent property.
 
         Examples
         --------
@@ -254,7 +254,7 @@ class SparseArray:
         --------
         - [`sparse.DOK.todense`][] : Equivalent `DOK` array method.
         - [`sparse.COO.todense`][] : Equivalent `COO` array method.
-        - [`scipy.sparse.coo_matrix.todense`][] : Equivalent Scipy method.
+        - [`scipy.sparse.coo_array.todense`][] : Equivalent Scipy method.
 
         Examples
         --------
@@ -453,7 +453,7 @@ class SparseArray:
         See Also
         --------
         - [`numpy.sum`][] : Equivalent numpy function.
-        - [`scipy.sparse.coo_matrix.sum`][] : Equivalent Scipy function.
+        - [`scipy.sparse.coo_array.sum`][] : Equivalent Scipy function.
         """
         return np.add.reduce(self, out=out, axis=axis, keepdims=keepdims, dtype=dtype)
 
@@ -478,7 +478,7 @@ class SparseArray:
         See Also
         --------
         - [`numpy.max`][] : Equivalent numpy function.
-        - [`scipy.sparse.coo_matrix.max`][] : Equivalent Scipy function.
+        - [`scipy.sparse.coo_array.max`][] : Equivalent Scipy function.
         """
         return np.maximum.reduce(self, out=out, axis=axis, keepdims=keepdims)
 
@@ -549,7 +549,7 @@ class SparseArray:
         See Also
         --------
         - [`numpy.min`][] : Equivalent numpy function.
-        - [`scipy.sparse.coo_matrix.min`][] : Equivalent Scipy function.
+        - [`scipy.sparse.coo_array.min`][] : Equivalent Scipy function.
         """
         return np.minimum.reduce(self, out=out, axis=axis, keepdims=keepdims)
 
@@ -619,7 +619,7 @@ class SparseArray:
 
         See Also
         --------
-        - [`scipy.sparse.coo_matrix.astype`][] :
+        - [`scipy.sparse.coo_array.astype`][] :
             SciPy sparse equivalent function
         - [`numpy.ndarray.astype`][] :
             NumPy equivalent ufunc.
@@ -653,7 +653,7 @@ class SparseArray:
         See Also
         --------
         - [`numpy.ndarray.mean`][] : Equivalent numpy method.
-        - [`scipy.sparse.coo_matrix.mean`][] : Equivalent Scipy method.
+        - [`scipy.sparse.coo_array.mean`][] : Equivalent Scipy method.
 
         Notes
         -----

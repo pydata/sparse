@@ -110,8 +110,8 @@ class TestAsarray:
         "input",
         [
             np_eye,
-            scipy.sparse.csr_matrix(np_eye),
-            scipy.sparse.csc_matrix(np_eye),
+            scipy.sparse.csr_array(np_eye),
+            scipy.sparse.csc_array(np_eye),
             4,
             np.array(5),
             np.arange(12).reshape((2, 3, 2)),

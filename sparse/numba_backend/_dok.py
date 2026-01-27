@@ -258,7 +258,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         --------
         - [`sparse.COO.nnz`][] : Equivalent [`sparse.COO`][] array property.
         - [`numpy.count_nonzero`][] : A similar Numpy function.
-        - [`scipy.sparse.coo_matrix.nnz`][] : The Scipy equivalent property.
+        - [`scipy.sparse.coo_array.nnz`][] : The Scipy equivalent property.
 
         Examples
         --------
@@ -450,7 +450,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         See Also
         --------
         - [`sparse.COO.todense`][] : Equivalent `COO` array method.
-        - [`scipy.sparse.coo_matrix.todense`][] : Equivalent Scipy method.
+        - [`scipy.sparse.coo_array.todense`][] : Equivalent Scipy method.
 
         Examples
         --------
