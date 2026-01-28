@@ -451,11 +451,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             x.eliminate_zeros()
             x.sum_duplicates()
 
-        coords = np.empty((2, x.nnz), dtype=x.row.dtype)
-        coords[0, :] = x.row
-        coords[1, :] = x.col
         return COO(
-            coords,
+            x.coords,
             x.data,
             shape=x.shape,
             has_duplicates=not x.has_canonical_format,
@@ -1188,10 +1185,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         check_fill_value(self, accept_fv=accept_fv)
 
-        if self.ndim != 2:
-            raise ValueError("Can only convert a 2-dimensional array to a Scipy sparse matrix.")
-
-        result = scipy.sparse.coo_matrix((self.data, (self.coords[0], self.coords[1])), shape=self.shape)
+        result = scipy.sparse.coo_array((self.data, self.coords), shape=self.shape)
         result.has_canonical_format = True
         return result
 
