@@ -1,19 +1,43 @@
-[project]
+[workspace]
 authors = ["Hameer Abbasi <2190658+hameerabbasi@users.noreply.github.com>"]
-channels = ["conda-forge"]
+channels = ["https://prefix.dev/conda-forge"]
 name = "sparse"
 platforms = ["osx-arm64", "osx-64", "linux-64", "win-64"]
+preview = ["pixi-build"]
 
-[pypi-dependencies]
-sparse = { path = ".", editable = true }
+[environments]
+test = ["test", "extra"]
+doc = ["doc", "extra"]
+mlir-dev = {features = ["test", "mlir"], no-default-feature = true}
+finch-dev = {features = ["test", "finch"], no-default-feature = true}
+notebooks = ["extra", "mlir", "finch", "notebooks"]
+barebones = {features = ["barebones"], no-default-feature = true}
+
+# sparse package definition #
+
+[package]
+version = "0.1.0" # TODO: fix this
+
+[package.build.backend]
+name = "pixi-build-python"
+version = "*"
+
+[package.host-dependencies]
+setuptools = "*"
+
+[package.run-dependencies]
 numba = ">=0.49"
 numpy = ">=1.17"
 
-[dependencies]
-python = ">=3.11,<3.14"
+# default feature definition #
 
-[feature.extra.pypi-dependencies]
-dask = { version = ">=2024", extras = ["array"] }
+[dev]
+sparse.path = "."
+
+# non-default feature definitions #
+
+[feature.extra.dependencies]
+dask = ">=2024"
 scipy = ">=0.19"
 scikit-learn = "*"
 
@@ -26,11 +50,12 @@ mkdocs-section-index = "*"
 mkdocs-jupyter = "*"
 
 [feature.test.tasks]
-test = "ci/test_Numba.sh"
+test = "pytest -n auto -vvv"
+test-numba = "ci/test_Numba.sh"
 test-mlir = "ci/test_MLIR.sh"
 test-finch = "ci/test_Finch.sh"
 
-[feature.test.pypi-dependencies]
+[feature.test.dependencies]
 pytest = ">=3.5"
 pytest-cov = "*"
 pytest-xdist = "*"
@@ -42,9 +67,6 @@ nbmake = "*"
 matplotlib = "*"
 networkx = "*"
 jupyterlab = "*"
-
-[feature.matrepr.pypi-dependencies]
-matrepr = "*"
 
 [feature.finch.tasks]
 precompile = "python -c 'import finch'"
@@ -82,11 +104,3 @@ test-finch = "ci/test_Finch.sh"
 
 [feature.mlir.activation.env]
 SPARSE_BACKEND = "MLIR"
-
-[environments]
-test = ["test", "extra"]
-doc = ["doc", "extra"]
-mlir-dev = {features = ["test", "mlir"], no-default-feature = true}
-finch-dev = {features = ["test", "finch"], no-default-feature = true}
-notebooks = ["extra", "mlir", "finch", "notebooks"]
-barebones = {features = ["barebones"], no-default-feature = true}
