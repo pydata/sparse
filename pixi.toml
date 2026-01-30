@@ -8,10 +8,12 @@ preview = ["pixi-build"]
 [environments]
 test = ["test", "extra"]
 doc = ["doc", "extra"]
-mlir-dev = {features = ["test", "mlir"], no-default-feature = true}
-finch-dev = {features = ["test", "finch"], no-default-feature = true}
+mlir = ["test", "mlir"]
+finch = ["test", "finch"]
+matrepr = ["matrepr"]
 notebooks = ["extra", "mlir", "finch", "notebooks"]
-barebones = {features = ["barebones"], no-default-feature = true}
+core = { features = ["core"], no-default-feature = true }
+mindeps = ["test", "mindeps", "numba-boundscheck", "finch", "mlir"]
 
 # sparse package definition #
 
@@ -23,6 +25,7 @@ name = "pixi-build-python"
 version = "*"
 
 [package.host-dependencies]
+python = ">=3.11,<3.14"
 setuptools = "*"
 
 [package.run-dependencies]
@@ -36,24 +39,24 @@ sparse.path = "."
 
 # non-default feature definitions #
 
+# extra
+
 [feature.extra.dependencies]
 dask = ">=2024"
 scipy = ">=0.19"
 scikit-learn = "*"
 
-[feature.doc.pypi-dependencies]
+# doc
+
+[feature.doc.dependencies]
 mkdocs-material = "*"
-mkdocstrings = { version = "*", extras = ["python"] }
+mkdocstrings-python = "*"
 mkdocs-gen-files = "*"
 mkdocs-literate-nav = "*"
 mkdocs-section-index = "*"
 mkdocs-jupyter = "*"
 
-[feature.test.tasks]
-test = "pytest -n auto -vvv"
-test-numba = "ci/test_Numba.sh"
-test-mlir = "ci/test_MLIR.sh"
-test-finch = "ci/test_Finch.sh"
+# test
 
 [feature.test.dependencies]
 pytest = ">=3.5"
@@ -61,22 +64,31 @@ pytest-cov = "*"
 pytest-xdist = "*"
 pytest-codspeed = "*"
 
-[feature.notebooks.pypi-dependencies]
+[feature.test.tasks.test]
+cmd = "pytest -n auto -vvv"
+default-environment = "test"
+
+[feature.test.tasks.test-numba]
+cmd = "pytest --doctest-modules --cov-report=xml:coverage_Numba.xml -n auto -vvv"
+default-environment = "test"
+
+# notebooks
+
+[feature.notebooks.dependencies]
 ipykernel = "*"
 nbmake = "*"
 matplotlib = "*"
 networkx = "*"
 jupyterlab = "*"
 
-[feature.finch.tasks]
-precompile = "python -c 'import finch'"
+# finch
 
 [feature.finch.dependencies]
 python = ">=3.10"
 juliaup = ">=1.17.10"
+scipy = ">=1.13"
 
 [feature.finch.pypi-dependencies]
-scipy = ">=1.13"
 finch-tensor = ">=0.2.13"
 
 [feature.finch.activation.env]
@@ -85,22 +97,49 @@ SPARSE_BACKEND = "Finch"
 [feature.finch.target.osx-arm64.activation.env]
 PYTHONFAULTHANDLER = "${HOME}/faulthandler.log"
 
+[feature.finch.tasks._precompile]
+cmd = "python -c 'import finch'"
+default-environment = "finch"
+
+[feature.finch.tasks.test-finch]
+cmd = "pytest --pyargs sparse/finch_backend --cov-report=xml:coverage_Finch.xml -n auto -vvv"
+depends-on = ["_precompile"]
+default-environment = "finch"
+
+# mlir
+
 [feature.mlir.dependencies]
-python = ">=3.10,<3.14"
+scipy = ">=0.19"
+pyyaml = "*"
 
 [feature.mlir.pypi-dependencies]
-scipy = ">=0.19"
 finch-mlir = ">=0.0.2"
-"PyYAML" = "*"
-
-[feature.barebones.dependencies]
-python = ">=3.10,<3.13"
-pip = ">=24"
-
-[feature.barebones.tasks]
-setup-env = {cmd = "ci/setup_env.sh" }
-test-all = { cmd = "ci/test_all.sh", env = { ACTIVATE_VENV = "1" }, depends-on = ["setup-env"] }
-test-finch = "ci/test_Finch.sh"
 
 [feature.mlir.activation.env]
 SPARSE_BACKEND = "MLIR"
+
+[feature.mlir.tasks]
+test-mlir = "pytest --pyargs sparse/mlir_backend --cov-report=xml:coverage_MLIR.xml -n auto -vvv"
+
+# matrepr
+
+[feature.matrepr.dependencies]
+matrepr = "*"
+
+# core
+
+[feature.core.tasks]
+setup-env = { cmd = "ci/setup_env.sh" }
+test-all = { cmd = "ci/test_all.sh", env = { ACTIVATE_VENV = "1" }, depends-on = ["setup-env"] }
+
+# mindeps
+
+[feature.mindeps.dependencies]
+python = "3.11.*"
+numpy = "1.*"
+
+[feature.mindeps.tasks]
+test-numba-mindeps = "pytest --cov-report=xml:coverage_Numba.xml -n auto -vvv"
+
+[feature.numba-boundscheck.activation.env]
+NUMBA_BOUNDSCHECK = "1"
