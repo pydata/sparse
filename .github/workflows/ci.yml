@@ -35,7 +35,7 @@ jobs:
       - name: Run tests
         run: |
           for task in ${{ join(matrix.tasks, ' ') }}; do
-            pixi run --skip-deps "$task" -- --durations 3 --timeout=60
+            pixi run "$task"
           done
       - uses: codecov/codecov-action@v5
         with:
