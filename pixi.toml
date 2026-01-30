@@ -70,7 +70,7 @@ cmd = "pytest -n auto -vvv"
 default-environment = "test"
 
 [feature.test.tasks.test-numba]
-cmd = "pytest --doctest-modules --cov-report=xml:coverage_Numba.xml -n auto -vvv"
+cmd = "pytest --pyargs sparse --doctest-modules --cov-report=xml:coverage_Numba.xml -n auto -vvv"
 default-environment = "test"
 
 # notebooks
