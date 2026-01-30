@@ -10,7 +10,7 @@ name: "CI"
 
 jobs:
   test:
-    name: ${{ matrix.os }} ${{ join(matrix.tasks, ' ') }}
+    name: ${{ matrix.os }} — ${{ join(matrix.tasks, ' ') }}
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
@@ -30,6 +30,8 @@ jobs:
           pixi-version: v0.63.2
           cache: true
           environments: ${{ join(matrix.environments, ' ') }}
+      - name: hack for setuptools-scm
+        run: pixi build
       - name: Run tests
         run: |
           for task in ${{ join(matrix.tasks, ' ') }}; do

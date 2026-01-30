@@ -27,6 +27,7 @@ version = "*"
 [package.host-dependencies]
 python = ">=3.11,<3.14"
 setuptools = "*"
+setuptools-scm = "*"
 
 [package.run-dependencies]
 numba = ">=0.49"
