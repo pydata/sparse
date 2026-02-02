@@ -13,7 +13,7 @@ finch = ["test", "finch"]
 matrepr = ["matrepr"]
 notebooks = ["extra", "mlir", "finch", "notebooks"]
 core = { features = ["core"], no-default-feature = true }
-mindeps = ["test", "mindeps", "numba-boundscheck", "finch", "mlir"]
+mindeps = ["test", "extra", "mindeps", "numba-boundscheck", "finch", "mlir"]
 
 # sparse package definition #
 
