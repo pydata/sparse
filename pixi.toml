@@ -140,10 +140,17 @@ test-all = { cmd = "ci/test_all.sh", env = { ACTIVATE_VENV = "1" }, depends-on =
 python = "3.11.*"
 numpy = "1.*"
 
-[feature.mindeps.tasks]
-test-numba-mindeps = "pytest --pyargs sparse --cov-report=xml:coverage_Numba.xml -n auto -vvv"
-test-finch-mindeps = "pytest --pyargs sparse/tests --cov-report=xml:coverage_Finch.xml -n auto -vvv"
-test-mlir-mindeps = "pytest --pyargs sparse/mlir_backend --cov-report=xml:coverage_MLIR.xml -n auto -vvv"
+[feature.mindeps.tasks.test-numba-mindeps]
+cmd = "pytest --pyargs sparse --cov-report=xml:coverage_Numba.xml -n auto -vvv"
+env.SPARSE_BACKEND = "Numba"
+
+[feature.mindeps.tasks.test-finch-mindeps]
+cmd = "pytest --pyargs sparse/tests --cov-report=xml:coverage_Finch.xml -n auto -vvv"
+env.SPARSE_BACKEND = "Finch"
+
+[feature.mindeps.tasks.test-mlir-mindeps]
+cmd = "pytest --pyargs sparse/mlir_backend --cov-report=xml:coverage_MLIR.xml -n auto -vvv"
+env.SPARSE_BACKEND = "MLIR"
 
 [feature.numba-boundscheck.activation.env]
 NUMBA_BOUNDSCHECK = "1"
