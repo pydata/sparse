@@ -103,7 +103,7 @@ cmd = "python -c 'import finch'"
 default-environment = "finch"
 
 [feature.finch.tasks.test-finch]
-cmd = "pytest --pyargs sparse/finch_backend --cov-report=xml:coverage_Finch.xml -n auto -vvv"
+cmd = "pytest --pyargs sparse/tests --cov-report=xml:coverage_Finch.xml -n auto -vvv"
 depends-on = ["_precompile"]
 default-environment = "finch"
 
@@ -119,8 +119,9 @@ finch-mlir = ">=0.0.2"
 [feature.mlir.activation.env]
 SPARSE_BACKEND = "MLIR"
 
-[feature.mlir.tasks]
-test-mlir = "pytest --pyargs sparse/mlir_backend --cov-report=xml:coverage_MLIR.xml -n auto -vvv"
+[feature.mlir.tasks.test-mlir]
+cmd = "pytest --pyargs sparse/mlir_backend --cov-report=xml:coverage_MLIR.xml -n auto -vvv"
+default-environment = "mlir"
 
 # matrepr
 
@@ -140,7 +141,9 @@ python = "3.11.*"
 numpy = "1.*"
 
 [feature.mindeps.tasks]
-test-numba-mindeps = "pytest --cov-report=xml:coverage_Numba.xml -n auto -vvv"
+test-numba-mindeps = "pytest --pyargs sparse --cov-report=xml:coverage_Numba.xml -n auto -vvv"
+test-finch-mindeps = "pytest --pyargs sparse/tests --cov-report=xml:coverage_Finch.xml -n auto -vvv"
+test-mlir-mindeps = "pytest --pyargs sparse/mlir_backend --cov-report=xml:coverage_MLIR.xml -n auto -vvv"
 
 [feature.numba-boundscheck.activation.env]
 NUMBA_BOUNDSCHECK = "1"

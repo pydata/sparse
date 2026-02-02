@@ -14,8 +14,8 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
-        tasks: [[test-numba], [test-finch], [test-mlir]]
-        environments: [[test], [finch], [mlir]]
+        tasks: [[test-numba, test-finch, test-mlir]]
+        environments: [[test, finch, mlir]]
         include:
           - os: ubuntu-latest
             tasks: [test-numba, test-finch, test-mlir, test-numba-mindeps, test-finch-mindeps, test-mlir-mindeps]
