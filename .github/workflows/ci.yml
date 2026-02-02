@@ -6,49 +6,37 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+name: "CI"
+
 jobs:
   test:
+    name: Test ${{ matrix.os }} (${{ join(matrix.tasks, ' ') }})
     strategy:
       matrix:
-        os: ['ubuntu-latest']
-        python: ['3.11', '3.12', '3.13']
-        pip_opts: ['']
-        numba_boundscheck: [0]
+        os: [macos-latest, windows-latest]
+        tasks: [[test-numba, test-finch, test-mlir]]
+        environments: [[test, finch, mlir]]
         include:
-          - os: macos-latest
-            python: '3.11'
-          - os: windows-latest
-            python: '3.11'
           - os: ubuntu-latest
-            python: '3.11'
-            numba_boundscheck: 1
-          - os: ubuntu-latest
-            python: '3.11'
-            pip_opts: 'numpy<2'
+            tasks: [test-numba, test-finch, test-mlir, test-numba-mindeps, test-finch-mindeps, test-mlir-mindeps]
+            environments: [mindeps, test, finch, mlir]
       fail-fast: false
     runs-on: ${{ matrix.os }}
-    env:
-      PYTHON_VERSION: ${{ matrix.python }}
-      NUMBA_BOUNDSCHECK: ${{ matrix.numba_boundscheck }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-      - uses: mamba-org/setup-micromamba@v2
+      - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          environment-file: ci/environment.yml
-          init-shell: >-
-            bash
-          cache-environment: true
-          cache-downloads: true
-          post-cleanup: 'all'
-          create-args: >-
-            python=${{ matrix.python }}
-            ${{ matrix.pip_opts }}
-      - name: Install package
-        run: |
-          pip install -e '.[tests]'
+          pixi-version: v0.63.2
+          cache: true
+          environments: ${{ join(matrix.environments, ' ') }}
+      - name: hack for setuptools-scm
+        run: pixi build
       - name: Run tests
-        run: ci/test_backends.sh
+        run: |
+          for task in ${{ join(matrix.tasks, ' ') }}; do
+            pixi run "$task"
+          done
       - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
