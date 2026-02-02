@@ -453,7 +453,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         def _coords(x):
             c = getattr(x, "coords", None)
-            if c is None: # legacy support for SciPy sparse matrices
+            if c is None:  # legacy support for SciPy sparse matrices
                 c = (x.row, x.col)
             return c
 
