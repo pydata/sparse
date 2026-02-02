@@ -10,7 +10,7 @@ name: "CI"
 
 jobs:
   test:
-    name: ${{ matrix.os }} — ${{ join(matrix.tasks, ' ') }}
+    name: Test ${{ matrix.os }} (${{ join(matrix.tasks, ' ') }})
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
