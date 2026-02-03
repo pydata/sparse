@@ -74,7 +74,7 @@ def test_from_sparse(cls, source_type):
 @pytest.mark.parametrize("scipy_type", ["coo", "csr", "csc", "lil"])
 @pytest.mark.parametrize("CLS", [CSR, CSC, GCXS])
 def test_from_scipy_sparse(scipy_type, CLS, dtype):
-    orig = scipy.sparse.random(20, 30, density=0.2, format=scipy_type, dtype=dtype)
+    orig = scipy.sparse.random_array((20, 30), density=0.2, format=scipy_type, dtype=dtype)
     ref = COO.from_scipy_sparse(orig)
     result = CLS.from_scipy_sparse(orig)
 

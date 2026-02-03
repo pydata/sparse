@@ -637,25 +637,41 @@ def test_sizeof():
     assert 400 < nb < x.nbytes / 10
 
 
-def test_scipy_sparse_interface(rng):
+@pytest.mark.parametrize("sps_class", [scipy.sparse.coo_array, scipy.sparse.coo_matrix])
+def test_scipy_sparse_interface(rng, sps_class):
     n = 100
     m = 10
     row = rng.integers(0, n, size=n, dtype=np.uint16)
     col = rng.integers(0, m, size=n, dtype=np.uint16)
     data = np.ones(n, dtype=np.uint8)
 
-    inp = (data, (row, col))
+    if sps_class is scipy.sparse.coo_array:
+        stack = np.zeros(n, dtype=np.uint8)
+        inp = (data, (stack, row, col))
+        shape = (1, n, m)
+    else:
+        inp = (data, (row, col))
+        shape = (n, m)
 
-    x = scipy.sparse.coo_matrix(inp, shape=(n, m))
-    xx = sparse.COO(inp, shape=(n, m))
+    x = sps_class(inp, shape=shape)
+    xx = sparse.COO(inp, shape=shape)
+
+    def mT(x):
+        match x.ndim:
+            case 0 | 1:
+                return x
+            case 2:
+                return x.T
+            case _:
+                return np.moveaxis(x, -1, -2)
 
     assert_eq(x, xx, check_nnz=False)
-    assert_eq(x.T, xx.T, check_nnz=False)
+    assert_eq(mT(x), xx.mT, check_nnz=False)
     assert_eq(xx.to_scipy_sparse(), x, check_nnz=False)
     assert_eq(COO.from_scipy_sparse(xx.to_scipy_sparse()), xx, check_nnz=False)
 
     assert_eq(x, xx, check_nnz=False)
-    assert_eq(x.T.dot(x), xx.T.dot(xx), check_nnz=False)
+    assert_eq(mT(x).dot(x), xx.mT.dot(xx), check_nnz=False)
     assert isinstance(x + xx, COO)
     assert isinstance(xx + x, COO)
 
@@ -663,7 +679,7 @@ def test_scipy_sparse_interface(rng):
 @pytest.mark.parametrize("scipy_format", ["coo", "csr", "dok", "csc"])
 def test_scipy_sparse_interaction(scipy_format):
     x = sparse.random((10, 20), density=0.2).todense()
-    sp = getattr(scipy.sparse, scipy_format + "_matrix")(x)
+    sp = getattr(scipy.sparse, scipy_format + "_array")(x)
     coo = COO(x)
     assert isinstance(sp + coo, COO)
     assert isinstance(coo + sp, COO)
@@ -678,7 +694,7 @@ def test_op_scipy_sparse(func):
     xs = sparse.random((3, 4), density=0.5)
     y = sparse.random((3, 4), density=0.5).todense()
 
-    ys = scipy.sparse.csr_matrix(y)
+    ys = scipy.sparse.csr_array(y)
     x = xs.todense()
 
     assert_eq(func(x, y), func(xs, ys))
@@ -711,7 +727,7 @@ def test_op_scipy_sparse_left(func):
     ys = sparse.random((3, 4), density=0.5)
     x = sparse.random((3, 4), density=0.5).todense()
 
-    xs = scipy.sparse.csr_matrix(x)
+    xs = scipy.sparse.csr_array(x)
     y = ys.todense()
 
     assert_eq(func(x, y), func(xs, ys))
@@ -721,8 +737,8 @@ def test_cache_csr():
     x = sparse.random((10, 5), density=0.5).todense()
     s = COO(x, cache=True)
 
-    assert isinstance(s.tocsr(), scipy.sparse.csr_matrix)
-    assert isinstance(s.tocsc(), scipy.sparse.csc_matrix)
+    assert isinstance(s.tocsr(), scipy.sparse.csr_array)
+    assert isinstance(s.tocsc(), scipy.sparse.csc_array)
     assert s.tocsr() is s.tocsr()
     assert s.tocsc() is s.tocsc()
 
@@ -998,7 +1014,7 @@ def test_asformat(format):
     assert_eq(s, s2)
 
 
-@pytest.mark.parametrize("format", [sparse.COO, sparse.DOK, scipy.sparse.csr_matrix, np.asarray])
+@pytest.mark.parametrize("format", [sparse.COO, sparse.DOK, scipy.sparse.csr_array, np.asarray])
 def test_as_coo(format):
     x = format(sparse.random((3, 4), density=0.5, format="coo").todense())
 
@@ -1388,7 +1404,7 @@ def test_diagonalize():
     assert_eq(sparse.diagonalize(np.ones(3)), sparse.eye(3))
 
     assert_eq(
-        sparse.diagonalize(scipy.sparse.coo_matrix(np.eye(3))),
+        sparse.diagonalize(scipy.sparse.coo_array(np.eye(3))),
         sparse.diagonalize(sparse.eye(3)),
     )
 

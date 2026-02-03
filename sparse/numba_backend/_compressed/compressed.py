@@ -239,7 +239,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         See Also
         --------
         - [`numpy.ndarray.dtype`][] : Numpy equivalent property.
-        - [`scipy.sparse.csr_matrix.dtype`][] : Scipy equivalent property.
+        - [`scipy.sparse.csr_array.dtype`][] : Scipy equivalent property.
         """
         return self.data.dtype
 
@@ -258,7 +258,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         - [`sparse.COO.nnz`][] : Equivalent [`sparse.COO`][] array property.
         - [`sparse.DOK.nnz`][] : Equivalent [`sparse.DOK`][] array property.
         - [`numpy.count_nonzero`][] : A similar Numpy function.
-        - [`scipy.sparse.coo_matrix.nnz`][] : The Scipy equivalent property.
+        - [`scipy.sparse.coo_array.nnz`][] : The Scipy equivalent property.
         """
         return self.data.shape[0]
 
@@ -388,7 +388,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     def change_compressed_axes(self, new_compressed_axes):
         """
         Returns a new array with specified compressed axes. This operation is similar to converting
-        a scipy.sparse.csc_matrix to a scipy.sparse.csr_matrix.
+        a scipy.sparse.csc_array to a scipy.sparse.csr_array.
 
         Returns
         -------
@@ -474,7 +474,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         --------
         - [`sparse.DOK.todense`][] : Equivalent [`sparse.DOK`][] array method.
         - [`sparse.COO.todense`][] : Equivalent [`sparse.COO`][] array method.
-        - [`scipy.sparse.coo_matrix.todense`][] : Equivalent Scipy method.
+        - [`scipy.sparse.coo_array.todense`][] : Equivalent Scipy method.
 
         """
         if self.compressed_axes is None:
@@ -494,7 +494,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def to_scipy_sparse(self, accept_fv=None):
         """
-        Converts this [`sparse.GCXS`][] object into a [`scipy.sparse.csr_matrix`][] or [`scipy.sparse.csc_matrix`][].
+        Converts this [`sparse.GCXS`][] object into a [`scipy.sparse.csr_array`][] or [`scipy.sparse.csc_array`][].
 
         Parameters
         ----------
@@ -503,7 +503,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         Returns
         -------
-        scipy.sparse.csr_matrix or scipy.sparse.csc_matrix
+        scipy.sparse.csr_array or scipy.sparse.csc_array
             The converted Scipy sparse matrix.
 
         Raises
@@ -520,9 +520,9 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             raise ValueError("Can only convert a 2-dimensional array to a Scipy sparse matrix.")
 
         if 0 in self.compressed_axes:
-            return scipy.sparse.csr_matrix((self.data, self.indices, self.indptr), shape=self.shape)
+            return scipy.sparse.csr_array((self.data, self.indices, self.indptr), shape=self.shape)
 
-        return scipy.sparse.csc_matrix((self.data, self.indices, self.indptr), shape=self.shape)
+        return scipy.sparse.csc_array((self.data, self.indices, self.indptr), shape=self.shape)
 
     def asformat(self, format, **kwargs):
         """
@@ -751,8 +751,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
         See Also
         --------
-        scipy.sparse.csr_matrix.transpose : Scipy equivalent function.
-        scipy.sparse.csc_matrix.transpose : Scipy equivalent function.
+        scipy.sparse.csr_array.transpose : Scipy equivalent function.
+        scipy.sparse.csc_array.transpose : Scipy equivalent function.
         numpy.ndarray.transpose : Numpy equivalent function.
         """
         if self.ndim != 2:
@@ -791,7 +791,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         --------
         - [`sparse.dot`][] : Equivalent function for two arguments.
         - [`numpy.dot`][] : Numpy equivalent function.
-        - [`scipy.sparse.coo_matrix.dot`][] : Scipy equivalent function.
+        - [`scipy.sparse.coo_array.dot`][] : Scipy equivalent function.
         """
         from .._common import dot
 

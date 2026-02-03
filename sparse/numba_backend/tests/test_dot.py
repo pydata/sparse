@@ -154,8 +154,8 @@ def test_matmul(a_shape, b_shape, a_format, b_format, a_kwargs, b_kwargs):
         assert_eq(
             np.matmul(a, b),
             sparse.matmul(
-                scipy.sparse.coo_matrix(a) if a.ndim == 2 else sa,
-                scipy.sparse.coo_matrix(b) if b.ndim == 2 else sb,
+                scipy.sparse.coo_array(a) if a.ndim == 2 else sa,
+                scipy.sparse.coo_array(b) if b.ndim == 2 else sb,
             ),
         )
 

@@ -53,7 +53,7 @@ def test_non_canonical_conversion():
     indices = np.array((1, 0, 0, 1, 1), dtype=int)
     indptr = np.array((0, 2, 5), dtype=int)
 
-    x = sps.csr_matrix((data, indices, indptr), shape=(2, 2))
+    x = sps.csr_array((data, indices, indptr), shape=(2, 2))
     ref = np.array(((1.0, 2.0), (3.0, 4.0)))
 
     gcxs_check = sparse.GCXS(x)

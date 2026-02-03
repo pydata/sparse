@@ -229,9 +229,9 @@ methods:
 * [`sparse.COO.todense`][]: Converts to a [`numpy.ndarray`][] unconditionally.
 * [`sparse.COO.maybe_densify`][]: Converts to a [`numpy.ndarray`][] based on
    certain constraints.
-* [`sparse.COO.to_scipy_sparse`][]: Converts to a [`scipy.sparse.coo_matrix`][] if
+* [`sparse.COO.to_scipy_sparse`][]: Converts to a [`scipy.sparse.coo_array`][] if
    the array is two dimensional.
-* [`sparse.COO.tocsr`][]: Converts to a [`scipy.sparse.csr_matrix`][] if
+* [`sparse.COO.tocsr`][]: Converts to a [`scipy.sparse.csr_array`][] if
    the array is two dimensional.
-* [`sparse.COO.tocsc`][]: Converts to a [`scipy.sparse.csc_matrix`][] if
+* [`sparse.COO.tocsc`][]: Converts to a [`scipy.sparse.csc_array`][] if
    the array is two dimensional.
