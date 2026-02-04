@@ -19,6 +19,8 @@ rng = np.random.default_rng(0)
 if __name__ == "__main__":
     print("MTTKRP Example:\n")
 
+    os.environ[sparse._ENV_VAR_NAME] = "Numba"
+    importlib.reload(sparse)
     B_sps = sparse.random((I_, K_, L_), density=DENSITY, random_state=rng) * 10
     D_sps = rng.random((L_, J_)) * 10
     C_sps = rng.random((K_, J_)) * 10
