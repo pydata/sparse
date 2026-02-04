@@ -72,7 +72,7 @@ jobs:
     name: ${{ matrix.task }}
     strategy:
       matrix:
-        tasks: ['xp-tests-numba', 'xp-tests-finch']
+        task: ['xp-tests-numba', 'xp-tests-finch']
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
