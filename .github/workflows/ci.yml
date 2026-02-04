@@ -64,7 +64,7 @@ jobs:
         pixi-version: v0.63.2
         cache: true
     - name: Run notebooks
-      run: ci/test_notebooks.sh
+      run: pixi run test-notebooks-ci
 
   array_api_tests:
     strategy:
