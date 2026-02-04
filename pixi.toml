@@ -13,7 +13,7 @@ finch = ["test", "finch"]
 matrepr = ["matrepr"]
 notebooks = ["extra", "mlir", "finch", "test", "notebooks"]
 examples = ["extra", "finch", "examples"]
-core = { features = ["core"], no-default-feature = true }
+xp-tests = ["test", "xp-tests", "finch"]
 mindeps = ["test", "extra", "mindeps", "numba-boundscheck", "finch", "mlir"]
 
 # sparse package definition #
@@ -78,6 +78,73 @@ default-environment = "test"
 cmd = "pytest --pyargs sparse --doctest-modules --cov-report=xml:coverage_Numba.xml -n auto -vvv"
 default-environment = "test"
 
+[feature.test.tasks.test-all]
+depends-on = ["test-numba", "test-finch", "test-mlir", "test-examples", "test-notebooks", "xp-tests"]
+
+# xp-tests
+
+[feature.xp-tests.dependencies]
+pytest-json-report = "*"
+hypothesis = "*"
+ndindex = "*"
+
+[feature.xp-tests.tasks.clean-xp-tests]
+cmd = "rm -rf array-api-tests"
+
+[feature.xp-tests.tasks.clone-xp-tests]
+cmd = "git clone https://github.com/data-apis/array-api-tests.git"
+depends-on = ["clean-xp-tests"]
+
+[feature.xp-tests.tasks.checkout-xp-tests]
+cmd = [
+  "git",
+  "reset",
+  "--hard",
+  "$(cat ../xp-tests/array-api-tests-rev.txt)",
+  "&&",
+  "git",
+  "submodule",
+  "update",
+  "--init",
+]
+cwd = "array-api-tests"
+depends-on = ["clone-xp-tests"]
+
+[feature.xp-tests.tasks._xp-tests]
+cmd = [
+  "pytest",
+  "-v",
+  "--ci",
+  "--max-examples=2",
+  "--derandomize",
+  "--disable-deadline",
+  "--disable-warnings",
+  "-o xfail_strict=True",
+  "-nauto",
+  "--xfails-file",
+  "../xp-tests/{{ SPARSE_BACKEND }}-array-api-xfails.txt",
+  "--skips-file",
+  "../xp-tests/{{ SPARSE_BACKEND }}-array-api-skips.txt",
+  "array_api_tests/",
+]
+env.ARRAY_API_TESTS_MODULE = "sparse"
+cwd = "array-api-tests"
+depends-on = ["checkout-xp-tests"]
+env.SPARSE_BACKEND = "{{ SPARSE_BACKEND }}"
+args = [{ arg = "SPARSE_BACKEND", default = "Numba" }]
+
+[feature.xp-tests.tasks.xp-tests-numba]
+depends-on = [{ task = "_xp-tests", args = [{"SPARSE_BACKEND" = "Numba" }]}]
+
+[feature.xp-tests.tasks.xp-tests-finch]
+depends-on = [
+  "_precompile_finch",
+  { task = "_xp-tests", args = [{"SPARSE_BACKEND" = "Finch" }]},
+]
+
+[feature.xp-tests.tasks.xp-tests]
+depends-on = ["xp-tests-numba", "xp-tests-finch"]
+
 # notebooks
 
 [feature.notebooks.dependencies]
@@ -123,13 +190,13 @@ SPARSE_BACKEND = "Finch"
 [feature.finch.target.osx-arm64.activation.env]
 PYTHONFAULTHANDLER = "${HOME}/faulthandler.log"
 
-[feature.finch.tasks._precompile]
+[feature.finch.tasks._precompile_finch]
 cmd = "python -c 'import finch'"
 default-environment = "finch"
 
 [feature.finch.tasks.test-finch]
 cmd = "pytest --pyargs sparse/tests --cov-report=xml:coverage_Finch.xml -n auto -vvv"
-depends-on = ["_precompile"]
+depends-on = ["_precompile_finch"]
 default-environment = "finch"
 
 # mlir
@@ -152,12 +219,6 @@ default-environment = "mlir"
 
 [feature.matrepr.dependencies]
 matrepr = "*"
-
-# core
-
-[feature.core.tasks]
-setup-env = { cmd = "ci/setup_env.sh" }
-test-all = { cmd = "ci/test_all.sh", env = { ACTIVATE_VENV = "1" }, depends-on = ["setup-env"] }
 
 # mindeps
 
