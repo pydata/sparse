@@ -47,32 +47,22 @@ jobs:
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - uses: prefix-dev/setup-pixi@v0.9.4
       with:
-        python-version: '3.11'
-        cache: 'pip'
-    - name: Build and install Sparse
-      run: |
-        pip install -U setuptools wheel
-        pip install '.[finch]' scipy dask networkx graphblas-algorithms
+        pixi-version: v0.63.2
+        cache: true
     - name: Run examples
-      run: ci/test_examples.sh
+      run: pixi run test-examples-ci
 
   notebooks:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - uses: prefix-dev/setup-pixi@v0.9.4
       with:
-        python-version: '3.11'
-        cache: 'pip'
-    - name: Build and install Sparse
-      run: |
-        pip install -U setuptools wheel
-        pip install '.[notebooks]'
+        pixi-version: v0.63.2
+        cache: true
     - name: Run notebooks
       run: ci/test_notebooks.sh
 

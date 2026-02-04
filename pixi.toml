@@ -11,7 +11,8 @@ doc = ["doc", "extra"]
 mlir = ["test", "mlir"]
 finch = ["test", "finch"]
 matrepr = ["matrepr"]
-notebooks = ["extra", "mlir", "finch", "notebooks"]
+notebooks = ["extra", "mlir", "finch", "test", "notebooks"]
+examples = ["extra", "finch", "examples"]
 core = { features = ["core"], no-default-feature = true }
 mindeps = ["test", "extra", "mindeps", "numba-boundscheck", "finch", "mlir"]
 
@@ -35,7 +36,11 @@ numpy = ">=1.17"
 
 # default feature definition #
 
+[dependencies]
+sparse.path = "."
+
 [dev]
+# pulls in host and run dependencies
 sparse.path = "."
 
 # non-default feature definitions #
@@ -81,6 +86,26 @@ nbmake = "*"
 matplotlib = "*"
 networkx = "*"
 jupyterlab = "*"
+
+[feature.notebooks.tasks.test-notebooks-ci]
+cmd = "pytest -n 4 --nbmake --nbmake-timeout=600 ./examples/*.ipynb"
+env.CI_MODE = "1"
+
+[feature.notebooks.tasks.test-notebooks]
+cmd = "pytest -n 4 --nbmake --nbmake-timeout=600 ./examples/*.ipynb"
+
+# examples
+
+[feature.examples.dependencies]
+networkx = "*"
+graphblas-algorithms = "*"
+
+[feature.examples.tasks.test-examples-ci]
+cmd = "scripts/test_examples.sh"
+env.CI_MODE = "1"
+
+[feature.examples.tasks.test-examples]
+cmd = "scripts/test_examples.sh"
 
 # finch
 
