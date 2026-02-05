@@ -37,16 +37,6 @@ This project has a number of requirements for all code contributed.
   count toward coverage.
 * Performance optimizations should have benchmarks added in `benchmarks`.
 
-## Setting up Your Development Environment
-
-The following bash script is all you need to set up your development environment,
-after forking and cloning the repository:
-
-```bash
-
-pip install -e .[all]
-```
-
 ## Pull requests
 
 Please adhere to the following guidelines:
@@ -58,33 +48,18 @@ Please adhere to the following guidelines:
 2. This text will end up in the changelog.
 3. Please follow the instructions in the pull request form and submit.
 
-## Running/Adding Unit Tests
+## Tests
 
 It is best if all new functionality and/or bug fixes have unit tests added
-with each use-case.
-
-We use [pytest](https://docs.pytest.org/en/latest) as our unit testing framework,
-with the `pytest-cov` extension to check code coverage and `pytest-flake8` to
-check code style. You don't need to configure these extensions yourself. Once you've
-configured your environment, you can just `cd` to the root of your repository and run
+with each use-case. You can run the tests with:
 
 ```bash
-pytest --pyargs sparse
-```
-
-This automatically checks code style and functionality, and prints code coverage,
-even though it doesn't fail on low coverage.
-
-Unit tests are automatically run on Travis CI for pull requests.
-
-### Advanced
-
-To run the complete set of unit tests run in CI for your platform, run the following
-in the repository root:
-
-```bash
-ci/setup_env.sh
-ACTIVATE_VENV=1 ci/test_all.sh
+# internal tests
+pixi run test
+# array-api-tests
+pixi run xp-tests
+# or to run tests across various backends, close to the full CI suite (warning, slow):
+pixi run test-all
 ```
 
 ## Coverage
