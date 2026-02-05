@@ -126,10 +126,11 @@ cmd = [
   "../xp-tests/{{ SPARSE_BACKEND }}-array-api-skips.txt",
   "array_api_tests/",
 ]
+args = [{ arg = "SPARSE_BACKEND", default = "Numba" }]
+env.SPARSE_BACKEND = "Numba"  # TODO: set to arg
 env.ARRAY_API_TESTS_MODULE = "sparse"
 cwd = "array-api-tests"
 depends-on = ["checkout-xp-tests"]
-args = [{ arg = "SPARSE_BACKEND", default = "Numba" }]
 
 [feature.xp-tests.tasks.xp-tests-numba]
 depends-on = [{ task = "_xp-tests", args = [{ "SPARSE_BACKEND" = "Numba" }] }]
