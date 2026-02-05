@@ -72,8 +72,11 @@ jobs:
     name: ${{ matrix.task }}
     strategy:
       matrix:
-        task: [xp-tests-numba, xp-tests-finch]
-        environments: [[xp-tests], [finch, xp-tests]]
+        include:
+          - task: xp-tests-numba
+            environments: [xp-tests]
+          - task: xp-tests-finch
+            environments: [finch, xp-tests]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
