@@ -137,6 +137,7 @@ depends-on = [{ task = "_xp-tests", args = [{ "SPARSE_BACKEND" = "Numba" }] }]
 [feature.xp-tests.tasks.xp-tests-finch]
 depends-on = [
   "_precompile_finch",
+  "checkout-xp-tests",
   # { task = "_xp-tests", args = [{"SPARSE_BACKEND" = "Finch" }]},
 ]
 # TODO: depend on `_xp-tests` once it can correctly set SPARSE_BACKEND
