@@ -158,7 +158,6 @@ cmd = [
 env.ARRAY_API_TESTS_MODULE = "sparse"
 env.SPARSE_BACKEND = "Finch"
 cwd = "array-api-tests"
-depends-on = ["checkout-xp-tests"]
 
 [feature.xp-tests.tasks.xp-tests]
 depends-on = ["xp-tests-numba", "xp-tests-finch"]
