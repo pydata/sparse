@@ -47,64 +47,48 @@ jobs:
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - uses: prefix-dev/setup-pixi@v0.9.4
       with:
-        python-version: '3.11'
-        cache: 'pip'
-    - name: Build and install Sparse
-      run: |
-        pip install -U setuptools wheel
-        pip install '.[finch]' scipy dask networkx graphblas-algorithms
+        pixi-version: v0.63.2
+        cache: true
+        environments: examples
     - name: Run examples
-      run: ci/test_examples.sh
+      run: pixi run test-examples-ci
 
   notebooks:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - uses: prefix-dev/setup-pixi@v0.9.4
       with:
-        python-version: '3.11'
-        cache: 'pip'
-    - name: Build and install Sparse
-      run: |
-        pip install -U setuptools wheel
-        pip install '.[notebooks]'
+        pixi-version: v0.63.2
+        cache: true
+        environments: notebooks
     - name: Run notebooks
-      run: ci/test_notebooks.sh
+      run: pixi run test-notebooks-ci
 
   array_api_tests:
+    name: ${{ matrix.task }}
     strategy:
       matrix:
-        backend: ['Numba', 'Finch']
+        include:
+          - task: xp-tests-numba
+            environments: [xp-tests]
+          - task: xp-tests-finch
+            environments: [finch, xp-tests]
       fail-fast: false
-    env:
-      ARRAY_API_TESTS_DIR: ${{ github.workspace }}/array-api-tests
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v4
-    - name: Checkout array-api-tests
-      run: ci/clone_array_api_tests.sh
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - uses: prefix-dev/setup-pixi@v0.9.4
       with:
-        python-version: '3.11'
-        cache: 'pip'
-    - name: Install build and test dependencies from PyPI
-      run: |
-        pip install pytest-xdist -r "$ARRAY_API_TESTS_DIR/requirements.txt"
-    - name: Build and install Sparse
-      run: |
-        pip install -U setuptools wheel
-        pip install '.[finch]'
+        pixi-version: v0.63.2
+        cache: true
+        environments: ${{ join(matrix.environments, ' ') }}
     - name: Run the test suite
-      env:
-        SPARSE_BACKEND: ${{ matrix.backend }}
-      run: ci/test_array_api.sh
+      run: pixi run ${{ matrix.task }}
 
 on:
   # Trigger the workflow on push or pull request,
