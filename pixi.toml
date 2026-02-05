@@ -114,7 +114,6 @@ depends-on = ["clone-xp-tests"]
 cmd = [
   "pytest",
   "-v",
-  "--ci",
   "--max-examples=2",
   "--derandomize",
   "--disable-deadline",
@@ -130,17 +129,36 @@ cmd = [
 env.ARRAY_API_TESTS_MODULE = "sparse"
 cwd = "array-api-tests"
 depends-on = ["checkout-xp-tests"]
-env.SPARSE_BACKEND = "{{ SPARSE_BACKEND }}"
 args = [{ arg = "SPARSE_BACKEND", default = "Numba" }]
 
 [feature.xp-tests.tasks.xp-tests-numba]
-depends-on = [{ task = "_xp-tests", args = [{"SPARSE_BACKEND" = "Numba" }]}]
+depends-on = [{ task = "_xp-tests", args = [{ "SPARSE_BACKEND" = "Numba" }] }]
 
 [feature.xp-tests.tasks.xp-tests-finch]
 depends-on = [
   "_precompile_finch",
-  { task = "_xp-tests", args = [{"SPARSE_BACKEND" = "Finch" }]},
+  # { task = "_xp-tests", args = [{"SPARSE_BACKEND" = "Finch" }]},
 ]
+# TODO: depend on `_xp-tests` once it can correctly set SPARSE_BACKEND
+cmd = [
+  "pytest",
+  "-v",
+  "--max-examples=2",
+  "--derandomize",
+  "--disable-deadline",
+  "--disable-warnings",
+  "-o xfail_strict=True",
+  "-nauto",
+  "--xfails-file",
+  "../xp-tests/Finch-array-api-xfails.txt",
+  "--skips-file",
+  "../xp-tests/Finch-array-api-skips.txt",
+  "array_api_tests/",
+]
+env.ARRAY_API_TESTS_MODULE = "sparse"
+env.SPARSE_BACKEND = "Finch"
+cwd = "array-api-tests"
+depends-on = ["checkout-xp-tests"]
 
 [feature.xp-tests.tasks.xp-tests]
 depends-on = ["xp-tests-numba", "xp-tests-finch"]
