@@ -72,7 +72,8 @@ jobs:
     name: ${{ matrix.task }}
     strategy:
       matrix:
-        task: ['xp-tests-numba', 'xp-tests-finch']
+        task: [xp-tests-numba, xp-tests-finch]
+        environments: [[xp-tests], [finch, xp-tests]]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -82,6 +83,7 @@ jobs:
       with:
         pixi-version: v0.63.2
         cache: true
+        environments: ${{ join(matrix.environments, ' ') }}
     - name: Run the test suite
       run: pixi run ${{ matrix.task }}
 
