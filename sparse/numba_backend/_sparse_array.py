@@ -421,9 +421,6 @@ class SparseArray:
                 shape[ax] = 1
             out = out.reshape(shape)
 
-        if out.ndim == 0:
-            return out[()]
-
         return out
 
     def _reduce_calc(self, method, axis, keepdims, **kwargs):
@@ -709,10 +706,8 @@ class SparseArray:
 
         num = self.sum(axis=axis, keepdims=keepdims, dtype=inter_dtype)
 
-        if num.ndim:
-            out = np.true_divide(num, den, casting="unsafe")
-            return out.astype(dtype) if out.dtype != dtype else out
-        return np.divide(num, den, dtype=dtype, out=out)
+        out = np.true_divide(num, den, casting="unsafe")
+        return out.astype(dtype) if out.dtype != dtype else out
 
     def var(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False):
         """

@@ -136,3 +136,75 @@ class TestAsarray:
 
         if isinstance(input, SparseArray):
             assert sparse.asarray(input).__class__ is input.__class__
+
+
+class TestArrayAPIReductions:
+    """
+    Array API standard compliance: reductions over the entire array must return
+    a zero-dimensional array, not a NumPy scalar.
+
+    See: https://github.com/pydata/sparse/issues/921
+    """
+
+    @pytest.mark.parametrize("format", ["coo", "gcxs"])
+    @pytest.mark.parametrize(
+        "fn, expected",
+        [
+            (sparse.sum, 2.0),
+            (sparse.max, 1.0),
+            (sparse.min, 0.0),
+            (sparse.prod, 0.0),
+            (sparse.mean, 0.5),
+        ],
+    )
+    def test_full_reduction_returns_0d_array(self, fn, expected, format):
+        x = sparse.asarray(np.eye(2), format=format)
+        result = fn(x)
+        assert result.ndim == 0, (
+            f"{fn.__name__}() over entire array returned ndim={result.ndim}, expected 0-D array"
+        )
+        assert isinstance(result, SparseArray), (
+            f"{fn.__name__}() returned {type(result).__name__}, expected a SparseArray"
+        )
+        assert abs(float(result) - expected) < 1e-9, (
+            f"{fn.__name__}() returned {float(result)}, expected {expected}"
+        )
+
+    @pytest.mark.parametrize("fn", [sparse.any, sparse.all])
+    def test_boolean_reduction_returns_0d_array(self, fn):
+        x = sparse.asarray(np.eye(2), format="coo")
+        result = fn(x)
+        assert result.ndim == 0, (
+            f"{fn.__name__}() returned ndim={result.ndim}, expected 0-D array"
+        )
+        assert isinstance(result, SparseArray), (
+            f"{fn.__name__}() returned {type(result).__name__}, expected a SparseArray"
+        )
+
+    def test_partial_reduction_still_returns_nd_array(self):
+        """Axis-specific reductions must still return N-D sparse arrays."""
+        x = sparse.asarray(np.eye(2), format="coo")
+
+        result_ax0 = sparse.sum(x, axis=0)
+        assert result_ax0.shape == (2,), f"Expected shape (2,), got {result_ax0.shape}"
+        assert isinstance(result_ax0, SparseArray)
+
+        result_ax1 = sparse.sum(x, axis=1)
+        assert result_ax1.shape == (2,), f"Expected shape (2,), got {result_ax1.shape}"
+        assert isinstance(result_ax1, SparseArray)
+
+    def test_keepdims_full_reduction(self):
+        """keepdims=True must preserve all dimensions as size-1."""
+        x = sparse.asarray(np.eye(2), format="coo")
+        result = sparse.sum(x, keepdims=True)
+        assert result.shape == (1, 1), f"Expected shape (1, 1), got {result.shape}"
+        assert isinstance(result, SparseArray)
+
+    @pytest.mark.parametrize("format", ["coo", "gcxs"])
+    def test_1d_full_reduction_returns_0d_array(self, format):
+        """1-D input fully reduced must also give a 0-D array."""
+        x = sparse.asarray(np.array([1.0, 2.0, 3.0]), format=format)
+        result = sparse.sum(x)
+        assert result.ndim == 0, f"Expected 0-D array, got ndim={result.ndim}"
+        assert isinstance(result, SparseArray)
+        assert abs(float(result) - 6.0) < 1e-9

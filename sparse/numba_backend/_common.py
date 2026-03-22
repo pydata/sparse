@@ -1344,7 +1344,7 @@ def _einsum_single(lhs, rhs, operand):
 
     if lhs == rhs:
         if not rhs:
-            # ensure scalar output
+            # full contraction — return 0-D array per the Array API standard
             return operand.sum()
         return operand
 
@@ -1390,8 +1390,8 @@ def _einsum_single(lhs, rhs, operand):
         new_data = operand.data
 
     if not rhs:
-        # scalar output - match numpy behaviour by not wrapping as array
-        return new_data.sum()
+        # full contraction — return 0-D COO array per the Array API standard
+        return COO(np.empty((0, 1), dtype=np.intp), new_data.sum(), shape=())
 
     return to_output_format(COO(new_coords, new_data, shape=new_shape, has_duplicates=True))
 
