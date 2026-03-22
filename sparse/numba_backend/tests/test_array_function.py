@@ -160,23 +160,17 @@ class TestArrayAPIReductions:
     def test_full_reduction_returns_0d_array(self, fn, expected, format):
         x = sparse.asarray(np.eye(2), format=format)
         result = fn(x)
-        assert result.ndim == 0, (
-            f"{fn.__name__}() over entire array returned ndim={result.ndim}, expected 0-D array"
-        )
+        assert result.ndim == 0, f"{fn.__name__}() over entire array returned ndim={result.ndim}, expected 0-D array"
         assert isinstance(result, SparseArray), (
             f"{fn.__name__}() returned {type(result).__name__}, expected a SparseArray"
         )
-        assert abs(float(result) - expected) < 1e-9, (
-            f"{fn.__name__}() returned {float(result)}, expected {expected}"
-        )
+        assert abs(float(result) - expected) < 1e-9, f"{fn.__name__}() returned {float(result)}, expected {expected}"
 
     @pytest.mark.parametrize("fn", [sparse.any, sparse.all])
     def test_boolean_reduction_returns_0d_array(self, fn):
         x = sparse.asarray(np.eye(2), format="coo")
         result = fn(x)
-        assert result.ndim == 0, (
-            f"{fn.__name__}() returned ndim={result.ndim}, expected 0-D array"
-        )
+        assert result.ndim == 0, f"{fn.__name__}() returned ndim={result.ndim}, expected 0-D array"
         assert isinstance(result, SparseArray), (
             f"{fn.__name__}() returned {type(result).__name__}, expected a SparseArray"
         )
