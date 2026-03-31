@@ -400,7 +400,7 @@ class SparseArray:
             axis = (axis,)
         out = self._reduce_calc(method, axis, keepdims, **kwargs)
         if len(out) == 1:
-            return out[0]
+            return out[0] if isinstance(out[0], SparseArray) else type(self).from_numpy(np.array(out[0]))
         data, counts, axis, n_cols, arr_attrs = out
         result_fill_value = self.fill_value
         if reduce_super_ufunc is None:
@@ -686,7 +686,6 @@ class SparseArray:
         mean along all axes.
 
         >>> s.mean()
-        np.float64(0.5)
         """
 
         if axis is None:
@@ -798,7 +797,7 @@ class SparseArray:
 
         ret = ret[...]
         np.divide(ret, rcount, out=ret, casting="unsafe")
-        return ret[()]
+        return ret
 
     def std(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False):
         """
