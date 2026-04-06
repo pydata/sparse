@@ -686,6 +686,7 @@ class SparseArray:
         mean along all axes.
 
         >>> s.mean()
+        <COO: shape=(), dtype=float64, nnz=1, fill_value=0.0>
         """
 
         if axis is None:
