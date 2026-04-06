@@ -1391,7 +1391,8 @@ def _einsum_single(lhs, rhs, operand):
 
     if not rhs:
         # full contraction — return 0-D COO array per the Array API standard
-        return COO(np.empty((0, 1), dtype=np.intp), new_data.sum(), shape=())
+        data = np.asarray(new_data.sum())
+        return COO.from_numpy(data)
 
     return to_output_format(COO(new_coords, new_data, shape=new_shape, has_duplicates=True))
 
