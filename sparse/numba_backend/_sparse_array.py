@@ -421,6 +421,11 @@ class SparseArray:
                 shape[ax] = 1
             out = out.reshape(shape)
 
+        if out.ndim == 0:
+            # Return a 0-D array per the Array API standard.
+            # The element value becomes the fill_value (nnz=0 is correct for 0-D).
+            return type(self).from_numpy(out.todense())
+
         return out
 
     def _reduce_calc(self, method, axis, keepdims, **kwargs):
@@ -686,7 +691,7 @@ class SparseArray:
         mean along all axes.
 
         >>> s.mean()
-        <COO: shape=(), dtype=float64, nnz=1, fill_value=0.0>
+        <COO: shape=(), dtype=float64, nnz=0, fill_value=0.5>
         """
 
         if axis is None:
