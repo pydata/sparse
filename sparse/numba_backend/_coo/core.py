@@ -599,12 +599,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         --------
         >>> x = np.array([0, 0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 0])
         >>> np.count_nonzero(x)
-        np.int64(6)
+        6
         >>> s = COO.from_numpy(x)
         >>> s.nnz
         6
         >>> np.count_nonzero(x) == s.nnz
-        np.True_
+        True
         """
         return self.coords.shape[1]
 

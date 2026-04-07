@@ -900,7 +900,7 @@ def diagonalize(a, axis=0):
     >>> a = sparse.random((3, 3, 3, 3, 3), density=0.3)
     >>> a_diag = sparse.diagonalize(a, axis=2)
     >>> (sparse.diagonal(a_diag, axis1=2, axis2=5) == a.transpose([0, 1, 3, 4, 2])).all()
-    np.True_
+    <COO: shape=(), dtype=bool, nnz=0, fill_value=True>
 
     Returns
     -------

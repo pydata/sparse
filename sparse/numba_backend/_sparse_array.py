@@ -82,12 +82,12 @@ class SparseArray:
         >>> from sparse import COO
         >>> x = np.array([0, 0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 0])
         >>> np.count_nonzero(x)
-        np.int64(6)
+        6
         >>> s = COO.from_numpy(x)
         >>> s.nnz
         6
         >>> np.count_nonzero(x) == s.nnz
-        np.True_
+        True
         """
 
     @property
@@ -769,7 +769,7 @@ class SparseArray:
         variance along all axes.
 
         >>> s.var()
-        np.float64(0.5)
+        <COO: shape=(), dtype=float64, nnz=0, fill_value=0.5>
         """
         axis = normalize_axis(axis, self.ndim)
 

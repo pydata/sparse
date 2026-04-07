@@ -87,3 +87,5 @@ docs/examples_ipynb/
 # Envs
 .pixi/
 .venv/
+*.pem
+*.db
