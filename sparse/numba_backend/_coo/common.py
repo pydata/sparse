@@ -14,7 +14,6 @@ from .._utils import (
     check_consistent_fill_value,
     check_zero_fill_value,
     is_unsigned_dtype,
-    isscalar,
     normalize_axis,
 )
 
