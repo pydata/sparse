@@ -82,12 +82,12 @@ class SparseArray:
         >>> from sparse import COO
         >>> x = np.array([0, 0, 1, 0, 1, 2, 0, 1, 2, 3, 0, 0])
         >>> np.count_nonzero(x)
-        6
+        np.int64(6)
         >>> s = COO.from_numpy(x)
         >>> s.nnz
         6
         >>> np.count_nonzero(x) == s.nnz
-        True
+        np.True_
         """
 
     @property
