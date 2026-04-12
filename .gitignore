@@ -89,3 +89,4 @@ docs/examples_ipynb/
 .venv/
 *.pem
 *.db
+array-api-tests/
