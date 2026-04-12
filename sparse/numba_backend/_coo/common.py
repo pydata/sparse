@@ -14,7 +14,6 @@ from .._utils import (
     check_consistent_fill_value,
     check_zero_fill_value,
     is_unsigned_dtype,
-    isscalar,
     normalize_axis,
 )
 
@@ -416,6 +415,19 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
         return (num / den).astype(dtype if dtype is not None else x.dtype)
 
 
+def _contains_nan(ar):
+    """Check if a SparseArray or scalar contains any NaN values.
+    Checks dtype first (fast), then fill_value, then data (slow).
+    """
+    if isinstance(ar, SparseArray):
+        if not np.issubdtype(ar.dtype, np.floating):
+            return False
+        if ar.nnz != ar.size and np.isnan(ar.fill_value):
+            return True
+        return np.isnan(ar.data).any()
+    return np.isnan(ar)
+
+
 def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
     """
     Maximize along the given axes, skipping `NaN` values. Uses all axes by default.
@@ -446,7 +458,7 @@ def nanmax(x, axis=None, keepdims=False, dtype=None, out=None):
 
     ar = x.reduce(np.fmax, axis=axis, keepdims=keepdims, dtype=dtype)
 
-    if (isscalar(ar) and np.isnan(ar)) or np.isnan(ar.data).any():
+    if _contains_nan(ar):
         warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=1)
 
     return ar
@@ -482,7 +494,7 @@ def nanmin(x, axis=None, keepdims=False, dtype=None, out=None):
 
     ar = x.reduce(np.fmin, axis=axis, keepdims=keepdims, dtype=dtype)
 
-    if (isscalar(ar) and np.isnan(ar)) or np.isnan(ar.data).any():
+    if _contains_nan(ar):
         warnings.warn("All-NaN slice encountered", RuntimeWarning, stacklevel=1)
 
     return ar
@@ -901,7 +913,7 @@ def diagonalize(a, axis=0):
     >>> a = sparse.random((3, 3, 3, 3, 3), density=0.3)
     >>> a_diag = sparse.diagonalize(a, axis=2)
     >>> (sparse.diagonal(a_diag, axis1=2, axis2=5) == a.transpose([0, 1, 3, 4, 2])).all()
-    np.True_
+    <COO: shape=(), dtype=bool, nnz=0, fill_value=True>
 
     Returns
     -------

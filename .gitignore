@@ -87,3 +87,6 @@ docs/examples_ipynb/
 # Envs
 .pixi/
 .venv/
+*.pem
+*.db
+array-api-tests/

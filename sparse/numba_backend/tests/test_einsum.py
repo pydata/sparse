@@ -92,8 +92,8 @@ def test_einsum(subscripts, density):
     numpy_out = np.einsum(subscripts, *(s.todense() for s in arrays))
 
     if not numpy_out.shape:
-        # scalar output
-        assert np.allclose(numpy_out, sparse_out)
+        # scalar output — sparse_out is a 0-D COO per the Array API standard
+        assert np.allclose(numpy_out, sparse_out.todense())
     else:
         # array output
         assert np.allclose(numpy_out, sparse_out.todense())
@@ -108,8 +108,8 @@ def test_einsum_nosubscript(input, density):
     numpy_out = np.einsum(*(s.todense() for s in arrays), *input)
 
     if not numpy_out.shape:
-        # scalar output
-        assert np.allclose(numpy_out, sparse_out)
+        # scalar output — sparse_out is a 0-D COO per the Array API standard
+        assert np.allclose(numpy_out, sparse_out.todense())
     else:
         # array output
         assert np.allclose(numpy_out, sparse_out.todense())

@@ -400,7 +400,7 @@ class SparseArray:
             axis = (axis,)
         out = self._reduce_calc(method, axis, keepdims, **kwargs)
         if len(out) == 1:
-            return out[0]
+            return out[0] if isinstance(out[0], SparseArray) else type(self).from_numpy(np.array(out[0]))
         data, counts, axis, n_cols, arr_attrs = out
         result_fill_value = self.fill_value
         if reduce_super_ufunc is None:
@@ -422,7 +422,9 @@ class SparseArray:
             out = out.reshape(shape)
 
         if out.ndim == 0:
-            return out[()]
+            # Return a 0-D array per the Array API standard.
+            # The element value becomes the fill_value (nnz=0 is correct for 0-D).
+            return type(self).from_numpy(out.todense())
 
         return out
 
@@ -689,7 +691,7 @@ class SparseArray:
         mean along all axes.
 
         >>> s.mean()
-        np.float64(0.5)
+        <COO: shape=(), dtype=float64, nnz=0, fill_value=0.5>
         """
 
         if axis is None:
@@ -709,10 +711,8 @@ class SparseArray:
 
         num = self.sum(axis=axis, keepdims=keepdims, dtype=inter_dtype)
 
-        if num.ndim:
-            out = np.true_divide(num, den, casting="unsafe")
-            return out.astype(dtype) if out.dtype != dtype else out
-        return np.divide(num, den, dtype=dtype, out=out)
+        out = np.true_divide(num, den, casting="unsafe")
+        return out.astype(dtype) if out.dtype != dtype else out
 
     def var(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False):
         """
@@ -769,7 +769,7 @@ class SparseArray:
         variance along all axes.
 
         >>> s.var()
-        np.float64(0.5)
+        <COO: shape=(), dtype=float64, nnz=0, fill_value=0.5>
         """
         axis = normalize_axis(axis, self.ndim)
 
@@ -803,7 +803,7 @@ class SparseArray:
 
         ret = ret[...]
         np.divide(ret, rcount, out=ret, casting="unsafe")
-        return ret[()]
+        return ret
 
     def std(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False):
         """
