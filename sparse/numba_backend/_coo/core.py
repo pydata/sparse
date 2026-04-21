@@ -1070,7 +1070,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         if order not in {"C", None}:
             raise NotImplementedError("The `order` parameter is not supported")
 
-        if any(d == -1 for d in shape):
+        if -1 in shape:
             extra = int(self.size / np.prod([d for d in shape if d != -1]))
             shape = tuple([d if d != -1 else extra for d in shape])
         if self.shape == shape:
