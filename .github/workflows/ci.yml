@@ -24,10 +24,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.9.4
+        uses: actions/checkout@v6
+      - uses: prefix-dev/setup-pixi@v0.9.6
         with:
-          pixi-version: v0.63.2
+          pixi-version: v0.69.0
           cache: true
           environments: ${{ join(matrix.environments, ' ') }}
       - name: hack for setuptools-scm
@@ -37,7 +37,7 @@ jobs:
           for task in ${{ join(matrix.tasks, ' ') }}; do
             pixi run "$task"
           done
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./**/coverage*.xml
@@ -46,10 +46,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repo
-      uses: actions/checkout@v4
-    - uses: prefix-dev/setup-pixi@v0.9.4
+      uses: actions/checkout@v6
+    - uses: prefix-dev/setup-pixi@v0.9.6
       with:
-        pixi-version: v0.63.2
+        pixi-version: v0.69.0
         cache: true
         environments: examples
     - name: Run examples
@@ -59,10 +59,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repo
-      uses: actions/checkout@v4
-    - uses: prefix-dev/setup-pixi@v0.9.4
+      uses: actions/checkout@v6
+    - uses: prefix-dev/setup-pixi@v0.9.6
       with:
-        pixi-version: v0.63.2
+        pixi-version: v0.69.0
         cache: true
         environments: notebooks
     - name: Run notebooks
@@ -81,10 +81,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repo
-      uses: actions/checkout@v4
-    - uses: prefix-dev/setup-pixi@v0.9.4
+      uses: actions/checkout@v6
+    - uses: prefix-dev/setup-pixi@v0.9.6
       with:
-        pixi-version: v0.63.2
+        pixi-version: v0.69.0
         cache: true
         environments: ${{ join(matrix.environments, ' ') }}
     - name: Run the test suite
