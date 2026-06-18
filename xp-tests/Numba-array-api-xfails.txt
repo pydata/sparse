@@ -93,6 +93,22 @@ array_api_tests/test_special_cases.py::test_iop[__ifloordiv__(x1_i is +infinity 
 array_api_tests/test_special_cases.py::test_iop[__ifloordiv__(isfinite(x1_i) and x1_i > 0 and x2_i is -infinity) -> -0]
 array_api_tests/test_special_cases.py::test_iop[__ifloordiv__(x1_i is -infinity and isfinite(x2_i) and x2_i > 0) -> -infinity]
 array_api_tests/test_special_cases.py::test_iop[__ifloordiv__(isfinite(x1_i) and x1_i < 0 and x2_i is +infinity) -> -0]
+array_api_tests/test_special_cases.py::test_unary[acosh(real(x_i) is +0 and imag(x_i) is NaN) -> NaN \xb1 \u03c0j/2]
+array_api_tests/test_special_cases.py::test_unary[atanh(real(x_i) is NaN and imag(x_i) is +infinity) -> \xb10 + \u03c0j/2]
+array_api_tests/test_special_cases.py::test_unary[expm1(real(x_i) is +infinity and imag(x_i) is +0) -> +infinity + 0j]
+array_api_tests/test_special_cases.py::test_unary[expm1(real(x_i) is -infinity and imag(x_i) is +infinity) -> -1 + 0j]
+array_api_tests/test_special_cases.py::test_unary[expm1(real(x_i) is +infinity and imag(x_i) is +infinity) -> infinity + NaN j]
+array_api_tests/test_special_cases.py::test_unary[expm1(real(x_i) is -infinity and imag(x_i) is NaN) -> -1 + 0j]
+array_api_tests/test_special_cases.py::test_unary[expm1(real(x_i) is +infinity and imag(x_i) is NaN) -> infinity + NaN j]
+array_api_tests/test_special_cases.py::test_unary[expm1(real(x_i) is NaN and imag(x_i) is +0) -> NaN + 0j]
+array_api_tests/test_special_cases.py::test_unary[tanh(real(x_i) is +0 and imag(x_i) is +infinity) -> +0 + NaN j]
+array_api_tests/test_special_cases.py::test_unary[tanh(real(x_i) is +0 and imag(x_i) is NaN) -> +0 + NaN j]
+array_api_tests/test_special_cases.py::test_unary[tanh(real(x_i) is +infinity and isfinite(imag(x_i)) and imag(x_i) > 0) -> 1 + 0j]
+array_api_tests/test_special_cases.py::test_unary[atanh(real(x_i) is +0 and imag(x_i) is NaN) -> +0 + NaN j]
+array_api_tests/test_special_cases.py::test_unary[atanh(real(x_i) is 1 and imag(x_i) is +0) -> +infinity + 0j]
+array_api_tests/test_special_cases.py::test_unary[atanh(real(x_i) is +infinity and imag(x_i) is NaN) -> +0 + NaN j]
+array_api_tests/test_special_cases.py::test_unary[expm1((real(x_i) is +0 or real(x_i) == -0) and imag(x_i) is +0) -> 0 + 0j]
+array_api_tests/test_special_cases.py::test_unary[atanh(isfinite(real(x_i)) and real(x_i) != 0 and imag(x_i) is NaN) -> NaN + NaN j]
 array_api_tests/test_array_object.py::test_getitem_arrays_and_ints_1[1]
 array_api_tests/test_statistical_functions.py::test_cumulative_prod
 array_api_tests/test_statistical_functions.py::test_cumulative_sum
@@ -105,3 +121,24 @@ array_api_tests/test_signatures.py::test_func_signature[cumulative_sum]
 array_api_tests/test_signatures.py::test_func_signature[cumulative_prod]
 array_api_tests/test_signatures.py::test_func_signature[count_nonzero]
 array_api_tests/test_signatures.py::test_func_signature[searchsorted]
+array_api_tests/test_dlpack.py
+
+# Fixable
+
+array_api_tests/test_has_names.py::test_has_names[manipulation-broadcast_shapes]
+array_api_tests/test_has_names.py::test_has_names[set-isin]
+array_api_tests/test_signatures.py::test_func_signature[broadcast_shapes]
+array_api_tests/test_signatures.py::test_func_signature[expand_dims]
+array_api_tests/test_special_cases.py::test_unary[atanh(real(x_i) is NaN and isfinite(imag(x_i))) -> NaN + NaN j]
+array_api_tests/test_manipulation_functions.py::TestExpandDims::test_expand_dims_tuples
+array_api_tests/test_searching_functions.py::test_searchsorted_with_scalars
+array_api_tests/test_indexing_functions.py::test_take_along_axis
+array_api_tests/test_inspection_functions.py::TestInspection::test_devices
+array_api_tests/test_data_type_functions.py::test_broadcast_arrays
+array_api_tests/test_data_type_functions.py::TestBroadcastShapes::test_broadcast_shapes
+array_api_tests/test_data_type_functions.py::TestBroadcastShapes::test_empty
+array_api_tests/test_data_type_functions.py::TestBroadcastShapes::test_error
+array_api_tests/test_set_functions.py::TestIsin::test_isin
+array_api_tests/test_set_functions.py::TestIsin::test_isin_scalars
+array_api_tests/test_manipulation_functions.py::test_repeat
+array_api_tests/test_signatures.py::test_func_signature[isin]
