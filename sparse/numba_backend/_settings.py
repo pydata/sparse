@@ -40,7 +40,7 @@ class ArrayNamespaceInfo:
         return self.np_info.default_dtypes(device=device)
 
     def devices(self):
-        return self.np_info.devices()
+        return tuple(self.np_info.devices())
 
     def dtypes(self, *, device=None, kind=None):
         return self.np_info.dtypes(device=device, kind=kind)

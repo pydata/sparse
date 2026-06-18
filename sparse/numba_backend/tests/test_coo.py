@@ -1682,7 +1682,7 @@ class TestSqueeze:
     def test_squeeze_validation(self):
         s_arr = sparse.COO.from_numpy(np.eye(3))
 
-        with pytest.raises(IndexError, match="tuple index out of range"):
+        with pytest.raises(ValueError, match="Invalid axis index"):
             s_arr.squeeze(3)
 
         with pytest.raises(ValueError, match="Invalid axis parameter: `1.1`."):

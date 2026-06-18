@@ -1131,7 +1131,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         >>> s.squeeze(axis=1).shape
         (2, 2, 1)
         """
-        squeezable_dims = tuple([d for d in range(self.ndim) if self.shape[d] == 1])
+        squeezable_dims = tuple(d for d in range(self.ndim) if self.shape[d] == 1)
 
         if axis is None:
             axis = squeezable_dims
@@ -1141,6 +1141,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             axis = tuple(axis)
         else:
             raise ValueError(f"Invalid axis parameter: `{axis}`.")
+
+        axis = normalize_axis(axis, self.ndim)
 
         for d in axis:
             if d not in squeezable_dims:
