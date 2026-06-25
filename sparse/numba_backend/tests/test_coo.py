@@ -1743,6 +1743,15 @@ class TestUnique:
         assert all(np.isnan(result.values))
         np.testing.assert_equal(result.counts, [1, 1, 1])
 
+    def test_unique_counts_nan_fill_value(self):
+        # When fill_value is NaN, each un-stored slot is a distinct NaN count.
+        arr = sparse.COO(coords=[[0, 2]], data=[1.0, 2.0], shape=(4,), fill_value=float("nan"))
+        result = sparse.unique_counts(arr)
+        # dense: [1., nan, 2., nan] -> unique counts: [(1., 1), (2., 1), (nan, 1), (nan, 1)]
+        np.testing.assert_equal(result.values[:2], [1.0, 2.0])
+        assert all(np.isnan(result.values[2:]))
+        np.testing.assert_equal(result.counts, [1, 1, 1, 1])
+
     @pytest.mark.parametrize("func", [sparse.unique_counts, sparse.unique_values])
     def test_input_validation(self, func):
         with pytest.raises(ValueError, match="Input must be an instance of SparseArray"):
