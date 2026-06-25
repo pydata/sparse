@@ -1211,13 +1211,19 @@ def unique_counts(x, /):
     x = _validate_coo_input(x)
 
     x = x.flatten()
-    values, counts = np.unique(x.data, return_counts=True)
-    if x.nnz < x.size:
-        values = np.concatenate([[x.fill_value], values])
-        counts = np.concatenate([[x.size - x.nnz], counts])
-        sorted_indices = np.argsort(values)
-        values[sorted_indices] = values.copy()
-        counts[sorted_indices] = counts.copy()
+    values, counts = np.unique(x.data, return_counts=True, equal_nan=False)
+    fill_count = x.size - x.nnz
+    if fill_count > 0:
+        if np.isnan(x.fill_value):
+            # Per the Array API spec, NaNs compare as False, so each NaN is distinct.
+            values = np.concatenate([values, np.full(fill_count, np.nan)])
+            counts = np.concatenate([counts, np.ones(fill_count, dtype=counts.dtype)])
+        else:
+            values = np.concatenate([[x.fill_value], values])
+            counts = np.concatenate([[fill_count], counts])
+            sorted_indices = np.argsort(values)
+            values[sorted_indices] = values.copy()
+            counts[sorted_indices] = counts.copy()
 
     return UniqueCountsResult(values, counts)
 
@@ -1252,9 +1258,14 @@ def unique_values(x, /):
     x = _validate_coo_input(x)
 
     x = x.flatten()
-    values = np.unique(x.data)
-    if x.nnz < x.size:
-        values = np.sort(np.concatenate([[x.fill_value], values]))
+    values = np.unique(x.data, equal_nan=False)
+    fill_count = x.size - x.nnz
+    if fill_count > 0:
+        if np.isnan(x.fill_value):
+            # Per the Array API spec, NaNs compare as False, so each NaN is distinct.
+            values = np.concatenate([values, np.full(fill_count, np.nan)])
+        else:
+            values = np.sort(np.concatenate([[x.fill_value], values]))
     return values
 
 

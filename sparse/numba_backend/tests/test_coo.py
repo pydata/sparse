@@ -1718,6 +1718,31 @@ class TestUnique:
 
         np.testing.assert_equal(result, expected)
 
+    def test_unique_values_nan_distinct(self):
+        # Per the Array API spec, NaN values compare as False and must be treated
+        # as distinct elements, not collapsed into one.
+        arr = sparse.asarray([float("nan"), float("nan")])
+        result = sparse.unique_values(arr)
+        assert result.shape == (2,)
+        assert all(np.isnan(result))
+
+    def test_unique_values_nan_fill_value(self):
+        # When fill_value is NaN, each un-stored slot is a distinct NaN.
+        arr = sparse.COO(coords=[[0, 2]], data=[1.0, 2.0], shape=(4,), fill_value=float("nan"))
+        result = sparse.unique_values(arr)
+        # dense: [1., nan, 2., nan] -> unique (nan distinct): [1., 2., nan, nan]
+        assert result.shape == (4,)
+        np.testing.assert_equal(result[:2], [1.0, 2.0])
+        assert all(np.isnan(result[2:]))
+
+    def test_unique_counts_nan_distinct(self):
+        # Each NaN occurrence must be counted separately.
+        arr = sparse.asarray([float("nan"), float("nan"), float("nan")])
+        result = sparse.unique_counts(arr)
+        assert result.values.shape == (3,)
+        assert all(np.isnan(result.values))
+        np.testing.assert_equal(result.counts, [1, 1, 1])
+
     @pytest.mark.parametrize("func", [sparse.unique_counts, sparse.unique_values])
     def test_input_validation(self, func):
         with pytest.raises(ValueError, match="Input must be an instance of SparseArray"):
