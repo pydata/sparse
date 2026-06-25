@@ -1216,7 +1216,7 @@ def unique_counts(x, /):
     if fill_count > 0:
         if np.isnan(x.fill_value):
             # Per the Array API spec, NaNs compare as False, so each NaN is distinct.
-            values = np.concatenate([values, np.full(fill_count, np.nan)])
+            values = np.concatenate([values, np.full(fill_count, x.fill_value)])
             counts = np.concatenate([counts, np.ones(fill_count, dtype=counts.dtype)])
         else:
             values = np.concatenate([[x.fill_value], values])
@@ -1263,7 +1263,7 @@ def unique_values(x, /):
     if fill_count > 0:
         if np.isnan(x.fill_value):
             # Per the Array API spec, NaNs compare as False, so each NaN is distinct.
-            values = np.concatenate([values, np.full(fill_count, np.nan)])
+            values = np.concatenate([values, np.full(fill_count, x.fill_value)])
         else:
             values = np.sort(np.concatenate([[x.fill_value], values]))
     return values
