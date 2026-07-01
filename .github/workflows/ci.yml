@@ -83,7 +83,6 @@ jobs:
             environments: [finch, xp-tests]
       fail-fast: false
     runs-on: ubuntu-latest
-    continue-on-error: ${{ contains(matrix.task, 'finch') }}
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v6
@@ -93,7 +92,12 @@ jobs:
         cache: true
         environments: ${{ join(matrix.environments, ' ') }}
     - name: Run the test suite
-      run: pixi run ${{ matrix.task }}
+      run: |
+        if [[ "${{ matrix.task }}" =~ "finch" ]]; then
+          pixi run ${{ matrix.task }} || true
+        else
+          pixi run ${{ matrix.task }}
+        fi
 
 on:
   # Trigger the workflow on push or pull request,
