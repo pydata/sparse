@@ -7,6 +7,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from ._slicing import normalize_index
 from ._sparse_array import SparseArray
 from ._utils import equivalent
+import copy as _copy
 
 
 class DOK(SparseArray, NDArrayOperatorsMixin):
@@ -548,6 +549,17 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
             raise NotImplementedError("The 'order' parameter is not supported")
 
         return DOK.from_coo(self.to_coo().reshape(shape))
+
+    def copy(self, deep=True):
+        """Return a copy of the array.
+
+        Parameters
+        ----------
+        deep : boolean, optional
+            If True (default), the internal data dict and arrays are also
+            copied. Set to ``False`` to only make a shallow copy.
+        """
+        return _copy.deepcopy(self) if deep else _copy.copy(self)
 
 
 def to_slice(k):
