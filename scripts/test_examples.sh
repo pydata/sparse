@@ -2,9 +2,9 @@
 set -euxo pipefail
 
 for example in $(find ./examples/ -iname '*.py'); do
-  if [[ ! "$example" =~ "finch" ]]; then
-    python "$example"
-  else
+  if grep -iq finch "$example"; then
     echo "Skipping finch example: $example"
+    continue
   fi
+  python "$example"
 done
