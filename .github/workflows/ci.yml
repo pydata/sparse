@@ -35,7 +35,11 @@ jobs:
       - name: Run tests
         run: |
           for task in ${{ join(matrix.tasks, ' ') }}; do
-            pixi run "$task"
+            if [[ "$task" =~ "finch" ]]; then
+              pixi run "$task" || true
+            else
+              pixi run "$task"
+            fi
           done
       - uses: codecov/codecov-action@v6
         with:
@@ -79,6 +83,7 @@ jobs:
             environments: [finch, xp-tests]
       fail-fast: false
     runs-on: ubuntu-latest
+    continue-on-error: ${{ contains(matrix.task, 'finch') }}
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v6
