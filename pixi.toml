@@ -174,11 +174,11 @@ networkx = "*"
 jupyterlab = "*"
 
 [feature.notebooks.tasks.test-notebooks-ci]
-cmd = "pytest -n 4 --nbmake --nbmake-timeout=600 ./examples/*.ipynb"
+cmd = "./scripts/test_notebooks.sh"
 env.CI_MODE = "1"
 
 [feature.notebooks.tasks.test-notebooks]
-cmd = "pytest -n 4 --nbmake --nbmake-timeout=600 ./examples/*.ipynb"
+cmd = "./scripts/test_notebooks.sh"
 
 # examples
 
