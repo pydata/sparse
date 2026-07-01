@@ -1025,7 +1025,9 @@ def test_as_coo(format):
     assert_eq(x, s2)
 
 
-@pytest.mark.parametrize("format", [sparse.COO, sparse.GCXS, sparse.DOK, sparse._compressed.CSC, sparse._compressed.CSR])
+@pytest.mark.parametrize(
+    "format", [sparse.COO, sparse.GCXS, sparse.DOK, sparse._compressed.CSC, sparse._compressed.CSR]
+)
 def test_as_copy(format):
     x = format.from_numpy(np.array([[1, 0], [0, 2]]))
     y = sparse.asarray(x, copy=True)

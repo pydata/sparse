@@ -1,3 +1,4 @@
+import copy as _copy
 from collections.abc import Iterable
 from numbers import Integral
 
@@ -7,7 +8,6 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from ._slicing import normalize_index
 from ._sparse_array import SparseArray
 from ._utils import equivalent
-import copy as _copy
 
 
 class DOK(SparseArray, NDArrayOperatorsMixin):
