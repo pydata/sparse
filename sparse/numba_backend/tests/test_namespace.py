@@ -37,6 +37,7 @@ def test_namespace():
         "bitwise_xor",
         "bool",
         "broadcast_arrays",
+        "broadcast_shapes",
         "broadcast_to",
         "can_cast",
         "ceil",

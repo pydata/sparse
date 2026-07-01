@@ -118,7 +118,7 @@ cmd = [
   "--derandomize",
   "--disable-deadline",
   "--disable-warnings",
-  "-o xfail_strict=True",
+  "-o", "strict_xfail=True",
   "-nauto",
   "--xfails-file",
   "../xp-tests/{{ SPARSE_BACKEND }}-array-api-xfails.txt",
@@ -149,7 +149,7 @@ cmd = [
   "--derandomize",
   "--disable-deadline",
   "--disable-warnings",
-  "-o xfail_strict=True",
+  "-o", "strict_xfail=True",
   "-nauto",
   "--xfails-file",
   "../xp-tests/Finch-array-api-xfails.txt",
@@ -174,11 +174,11 @@ networkx = "*"
 jupyterlab = "*"
 
 [feature.notebooks.tasks.test-notebooks-ci]
-cmd = "pytest -n 4 --nbmake --nbmake-timeout=600 ./examples/*.ipynb"
+cmd = "./scripts/test_notebooks.sh"
 env.CI_MODE = "1"
 
 [feature.notebooks.tasks.test-notebooks]
-cmd = "pytest -n 4 --nbmake --nbmake-timeout=600 ./examples/*.ipynb"
+cmd = "./scripts/test_notebooks.sh"
 
 # examples
 

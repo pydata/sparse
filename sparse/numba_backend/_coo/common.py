@@ -1071,7 +1071,7 @@ def clip(a, min=None, max=None, out=None):
     return a.clip(min, max)
 
 
-def expand_dims(x, /, *, axis=0):
+def expand_dims(x, axis: int | tuple[int, ...] = 0):
     """
     Expands the shape of an array by inserting a new axis (dimension) of size
     one at the position specified by ``axis``.
@@ -1080,7 +1080,7 @@ def expand_dims(x, /, *, axis=0):
     ----------
     a : COO
         Input COO array.
-    axis : int
+    axis : int | tuple[int, ...]
         Position in the expanded axes where the new axis is placed.
 
     Returns
@@ -1102,23 +1102,31 @@ def expand_dims(x, /, *, axis=0):
     (1, 6, 1)
 
     """
+    from .core import COO
+
+    if isinstance(x, np.generic | np.ndarray):
+        x = COO.from_numpy(x)
 
     x = _validate_coo_input(x)
 
-    if not isinstance(axis, int):
-        raise IndexError(f"Invalid axis position: {axis}")
+    if isinstance(axis, int):
+        axis = (axis,)
 
-    axis = normalize_axis(axis, x.ndim + 1)
+    axis = normalize_axis(axis, x.ndim + len(axis))
 
-    new_coords = np.insert(x.coords, obj=axis, values=np.zeros(x.nnz, dtype=np.intp), axis=0)
-    new_shape = list(x.shape)
-    new_shape.insert(axis, 1)
-    new_shape = tuple(new_shape)
+    iter_curr_coords = iter(x.coords)
+    iter_curr_shape = iter(x.shape)
+    new_coords = []
+    new_shape = []
 
-    from .core import COO
+    for d in range(x.ndim + len(axis)):
+        s = next(iter_curr_shape) if d not in axis else 1
+        c = next(iter_curr_coords) if d not in axis else np.zeros_like(x.data, dtype=x.coords.dtype)
+        new_shape.append(s)
+        new_coords.append(c)
 
     return COO(
-        new_coords,
+        np.stack(new_coords, axis=0) if len(new_coords) > 0 else np.empty((0, x.coords.shape[1]), dtype=x.coords.dtype),
         x.data,
         shape=new_shape,
         fill_value=x.fill_value,
@@ -1586,3 +1594,25 @@ def matrix_transpose(x, /):
     transpose_axes[-2:] = transpose_axes[-2:][::-1]
 
     return x.transpose(transpose_axes)
+
+
+def broadcast_shapes(*shapes: tuple[int, ...]) -> tuple[int, ...]:
+    """
+    Broadcasts shapes against each other and returns the resulting shape.
+
+    Parameters
+    ----------
+    shapes : tuple[int, ...]
+        Shapes to broadcast.
+
+    Returns
+    -------
+    out : tuple[int, ...]
+        The broadcasted shape.
+
+    Raises
+    ------
+    ValueError
+        If the shapes are not broadcastable.
+    """
+    return np.broadcast_shapes(*shapes)

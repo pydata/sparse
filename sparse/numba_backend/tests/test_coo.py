@@ -1025,6 +1025,15 @@ def test_as_coo(format):
     assert_eq(x, s2)
 
 
+@pytest.mark.parametrize(
+    "format", [sparse.COO, sparse.GCXS, sparse.DOK, sparse._compressed.CSC, sparse._compressed.CSR]
+)
+def test_as_copy(format):
+    x = format.from_numpy(np.array([[1, 0], [0, 2]]))
+    y = sparse.asarray(x, copy=True)
+    assert y is not x
+
+
 def test_invalid_attrs_error():
     s = sparse.random((3, 4), density=0.5, format="coo")
 
@@ -1682,7 +1691,7 @@ class TestSqueeze:
     def test_squeeze_validation(self):
         s_arr = sparse.COO.from_numpy(np.eye(3))
 
-        with pytest.raises(IndexError, match="tuple index out of range"):
+        with pytest.raises(ValueError, match="Invalid axis index"):
             s_arr.squeeze(3)
 
         with pytest.raises(ValueError, match="Invalid axis parameter: `1.1`."):
