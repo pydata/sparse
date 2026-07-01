@@ -2115,6 +2115,8 @@ def asarray(obj, /, *, dtype=None, format=None, copy=False, device=None):
     format_dict = {"coo": COO, "dok": DOK, "gcxs": GCXS, "csc": CSC, "csr": CSR}
 
     if isinstance(obj, SparseArray):
+        if copy:
+            obj = obj.copy()
         return obj.asformat(format) if format is not None else obj
 
     format = "coo" if format is None else format
