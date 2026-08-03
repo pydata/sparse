@@ -762,6 +762,25 @@ def test_large_sum(rng):
     assert b.nnz > 100000
 
 
+def test_reduce_narrow_idx_dtype(rng):
+    # Regression test: a narrow idx_dtype is a legitimate choice when the array
+    # *shape* is small, but reductions must not reuse that dtype for internal
+    # group offsets, which index into the (possibly much larger) nnz-length data
+    # array. Previously overflowed/wrapped negative once nnz exceeded the dtype's
+    # max (e.g. 32767 for int16), raising "IndexError: index ... out-of-bounds in
+    # add.reduceat".
+    shape = (200, 20, 10)
+    coords = np.mgrid[0 : shape[0], 0 : shape[1], 0 : shape[2]].reshape(3, -1)
+    data = rng.random(coords.shape[1])
+    a = COO(coords, data, shape=shape, idx_dtype=np.int16)
+    assert a.nnz > np.iinfo(np.int16).max
+
+    x = a.todense()
+    assert_eq(a.sum(axis=(1, 2)), x.sum(axis=(1, 2)))
+    assert_eq(a.mean(axis=(1, 2)), x.mean(axis=(1, 2)))
+    assert_eq(a.max(axis=(1, 2)), x.max(axis=(1, 2)))
+
+
 def test_add_many_sparse_arrays():
     x = COO({(1, 1): 1}, shape=(2, 2))
     y = sum([x] * 100)

@@ -1600,13 +1600,18 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
 
 @numba.jit(nopython=True, nogil=True)  # pragma: no cover
 def _calc_counts_invidx(groups):
+    # NB: inv_idx/counts index into the (potentially much larger) nnz-length data
+    # array, so they must not be narrowed to groups.dtype, which is only sized to fit
+    # the group values (e.g. a shape dimension). Doing so silently overflows for
+    # arrays with more stored elements than the dtype max, e.g. int16 wraps negative
+    # past 32767 nnz, causing an IndexError in the np.add.reduceat call downstream.
     inv_idx = []
     counts = []
 
     if len(groups) == 0:
         return (
-            np.array(inv_idx, dtype=groups.dtype),
-            np.array(counts, dtype=groups.dtype),
+            np.array(inv_idx, dtype=np.intp),
+            np.array(counts, dtype=np.intp),
         )
 
     inv_idx.append(0)
@@ -1614,13 +1619,13 @@ def _calc_counts_invidx(groups):
     last_group = groups[0]
     for i in range(1, len(groups)):
         if groups[i] != last_group:
-            counts.append(i - inv_idx[-1])
-            inv_idx.append(i)
+            counts.append(np.intp(i - inv_idx[-1]))
+            inv_idx.append(np.intp(i))
             last_group = groups[i]
 
-    counts.append(len(groups) - inv_idx[-1])
+    counts.append(np.intp(len(groups) - inv_idx[-1]))
 
-    return (np.array(inv_idx, dtype=groups.dtype), np.array(counts, dtype=groups.dtype))
+    return (np.array(inv_idx, dtype=np.intp), np.array(counts, dtype=np.intp))
 
 
 def _grouped_reduce(x, groups, method, **kwargs):
