@@ -1610,8 +1610,8 @@ def _calc_counts_invidx(groups):
 
     if len(groups) == 0:
         return (
-            np.array(inv_idx, dtype=np.int64),
-            np.array(counts, dtype=np.int64),
+            np.array(inv_idx, dtype=np.intp),
+            np.array(counts, dtype=np.intp),
         )
 
     inv_idx.append(0)
@@ -1619,13 +1619,13 @@ def _calc_counts_invidx(groups):
     last_group = groups[0]
     for i in range(1, len(groups)):
         if groups[i] != last_group:
-            counts.append(i - inv_idx[-1])
-            inv_idx.append(i)
+            counts.append(np.intp(i - inv_idx[-1]))
+            inv_idx.append(np.intp(i))
             last_group = groups[i]
 
-    counts.append(len(groups) - inv_idx[-1])
+    counts.append(np.intp(len(groups) - inv_idx[-1]))
 
-    return (np.array(inv_idx, dtype=np.int64), np.array(counts, dtype=np.int64))
+    return (np.array(inv_idx, dtype=np.intp), np.array(counts, dtype=np.intp))
 
 
 def _grouped_reduce(x, groups, method, **kwargs):
