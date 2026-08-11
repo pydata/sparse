@@ -33,7 +33,7 @@ class SparseArray:
             shape = (shape,)
 
         if not all(isinstance(sh, Integral) and int(sh) >= 0 for sh in shape):
-            raise ValueError("shape must be an non-negative integer or a tuple of non-negative integers.")
+            raise ValueError("shape must be a non-negative integer or a tuple of non-negative integers.")
 
         self.shape = tuple(int(sh) for sh in shape)
 
