@@ -408,7 +408,10 @@ class SparseArray:
             data[missing_counts] = method(data[missing_counts], self.fill_value, **kwargs)
         else:
             n_fill = n_cols - counts
-            contribution = reduce_super_ufunc(self.fill_value, n_fill)
+            with np.errstate(invalid="ignore"):
+                # Suppresses spurious "invalid value" warnings from e.g. `nan * 0`
+                # below, for entries the following `np.where` discards anyway.
+                contribution = reduce_super_ufunc(self.fill_value, n_fill)
             if method.identity is not None:
                 # Positions with no fill-value contribution (n_fill == 0) must reduce
                 # to the ufunc's identity, not `reduce_super_ufunc(fill_value, 0)`:
