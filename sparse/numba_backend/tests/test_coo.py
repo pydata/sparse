@@ -165,6 +165,24 @@ def test_nan_reductions(reduction, axis, keepdims, fraction):
     assert_eq(expected, actual)
 
 
+@pytest.mark.parametrize("reduction", ["sum", "mean"])
+@pytest.mark.parametrize("axis", [None, 0, 1])
+def test_reduction_nan_fill_value(reduction, axis):
+    # Regression test: a NaN `fill_value` must not poison reduction results for
+    # positions/slices that have no implicit (fill) elements contributing to them.
+    # `reduce_super_ufunc(fill_value, n_fill)` (e.g. `fill_value * n_fill` for `sum`)
+    # must use the ufunc's identity when `n_fill == 0`, since e.g. `nan * 0 == nan`
+    # even though 0 is the correct contribution of "no missing elements".
+    coords = [[0, 0, 1, 1, 2, 2], [0, 1, 0, 1, 0, 1]]
+    data = [0.586, 0.021, np.nan, 0.156, 0.363, 0.281]
+    s = COO(coords, data, shape=(3, 2), fill_value=np.nan)
+    x = s.todense()
+
+    expected = getattr(np, reduction)(x, axis=axis)
+    actual = getattr(s, reduction)(axis=axis)
+    assert_eq(expected, actual)
+
+
 @pytest.mark.parametrize("reduction", ["nanmax", "nanmin", "nanmean"])
 @pytest.mark.parametrize("axis", [None, 0, 1])
 def test_all_nan_reduction_warning(reduction, axis):
