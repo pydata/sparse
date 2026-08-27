@@ -695,7 +695,7 @@ def _replace_nan(array, value):
 
 def nanreduce(x, method, identity=None, axis=None, keepdims=False, **kwargs):
     """
-    Performs an `NaN` skipping reduction on this array. See the documentation
+    Performs a `NaN` skipping reduction on this array. See the documentation
     on [`sparse.COO.reduce`][] for examples.
 
     Parameters
