@@ -1424,7 +1424,7 @@ def test_prune_coo():
 def test_diagonal():
     # Square matrix with positive, zero, and negative offsets
     a = sparse.random((4, 4), density=0.5)
-    for offset in [-3, -2, -1, 0, 1, 2, 3]:
+    for offset in range(-3, 4):
         assert_eq(sparse.diagonal(a, offset=offset), np.diagonal(a.todense(), offset=offset))
 
     # Rectangular matrices
@@ -1435,7 +1435,7 @@ def test_diagonal():
 
     # N-D arrays
     a_4d = sparse.random((4, 5, 4, 6), density=0.5)
-    for offset in [-2, -1, 0, 1, 2]:
+    for offset in range(-2, 3):
         assert_eq(
             sparse.diagonal(a_4d, offset=offset, axis1=0, axis2=2),
             np.diagonal(a_4d.todense(), offset=offset, axis1=0, axis2=2),
@@ -1443,7 +1443,7 @@ def test_diagonal():
 
     a_3d = sparse.random((2, 3, 4), density=0.5)
     for a1, a2 in [(0, 1), (1, 2), (0, 2), (-2, -1), (-3, -1)]:
-        for offset in [-2, -1, 0, 1, 2]:
+        for offset in range(-2, 3):
             assert_eq(
                 sparse.diagonal(a_3d, offset=offset, axis1=a1, axis2=a2),
                 np.diagonal(a_3d.todense(), offset=offset, axis1=a1, axis2=a2),
