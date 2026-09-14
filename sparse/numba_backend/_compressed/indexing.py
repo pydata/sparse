@@ -118,6 +118,7 @@ def getitem(x, key):
         compressed_axes = (0,)  # defaults to 0
         row_size = starts.size
 
+    # This is the output buffer; selection helpers never write to x.indptr.
     indptr = np.empty(row_size + 1, dtype=x.indptr.dtype)
     indptr[0] = 0
     if basic_columns:
@@ -199,7 +200,7 @@ def getitem(x, key):
 
 def _asindexarrays(key, dtype):
     """Convert normalized indices to typed arrays for Cartesian flattening."""
-    arrays = []
+    arrays = List.empty_list(numba.types.Array(numba.from_dtype(np.dtype(dtype)), 1, "A", readonly=True))
     for ind in key:
         if isinstance(ind, Integral):
             ind = np.array([ind])
@@ -208,12 +209,12 @@ def _asindexarrays(key, dtype):
         elif isinstance(ind, np.ndarray) and ind.ndim > 1:
             raise IndexError("Only one-dimensional iterable indices supported.")
         arrays.append(ind.astype(dtype, copy=False))
-    return List(arrays)
+    return arrays
 
 
 @numba.jit(nopython=True, nogil=True)
 def get_basic_selection(
-    arr_data, arr_indices, indptr, starts, ends, shape, column_starts, steps, lengths
+    arr_data, arr_indices, out_indptr, starts, ends, shape, column_starts, steps, lengths
 ):  # pragma: no cover
     """
     Filter stored columns for basic indexing without expanding the slice grid.
@@ -222,15 +223,17 @@ def get_basic_selection(
     the sliced shape. Integer keys are represented by a length-one slice. The
     temporary storage is bounded by the entries in the selected compressed rows,
     including repetitions of a row, rather than the logical number of columns.
+    The caller provides a newly allocated output buffer in ``out_indptr``.
     """
     if np.any(lengths == 0):
-        indptr[:] = 0
-        return arr_data[:0].copy(), arr_indices[:0].copy(), indptr
+        out_indptr[:] = 0
+        return arr_data[:0].copy(), arr_indices[:0].copy(), out_indptr
 
     strides = np.empty(len(shape), dtype=np.intp)
     out_strides = np.empty(len(shape), dtype=np.intp)
     stride = 1
     out_stride = 1
+    # Numba's nopython mode does not support reversed(range(...)).
     for axis in range(len(shape) - 1, -1, -1):
         strides[axis] = stride
         out_strides[axis] = out_stride
@@ -261,8 +264,8 @@ def get_basic_selection(
             order = np.argsort(indices[row_start:count])
             indices[row_start:count] = indices[row_start:count][order]
             positions[row_start:count] = positions[row_start:count][order]
-        indptr[row + 1] = count
-    return arr_data[positions[:count]], indices[:count].copy(), indptr
+        out_indptr[row + 1] = count
+    return arr_data[positions[:count]], indices[:count].copy(), out_indptr
 
 
 @numba.jit(nopython=True, nogil=True)

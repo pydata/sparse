@@ -5,9 +5,56 @@ from sparse.numba_backend._compressed import indexing
 from sparse.numba_backend._compressed.compressed import CSC, CSR
 from sparse.numba_backend._utils import assert_eq
 
+import numba
 import pytest
 
 import numpy as np
+
+
+@pytest.mark.parametrize("idx_dtype", [np.int8, np.int16, np.int32, np.int64])
+def test_empty_index_arrays_can_be_passed_to_numba(idx_dtype):
+    @numba.njit
+    def count_arrays(arrays):
+        return len(arrays)
+
+    arrays = indexing._asindexarrays([], np.dtype(idx_dtype))
+    assert count_arrays(arrays) == 0
+
+
+@pytest.mark.parametrize("idx_dtype", [np.int8, np.int16, np.int32, np.int64])
+@pytest.mark.parametrize("readonly", [False, True])
+@pytest.mark.filterwarnings("error::numba.core.errors.NumbaTypeSafetyWarning")
+def test_mixed_index_dtypes(idx_dtype, readonly):
+    key = [np.array([2, 0], dtype=np.int16), np.array([3, 1], dtype=np.int64)[::-1]]
+    if readonly:
+        for ind in key:
+            ind.flags.writeable = False
+    original = [ind.copy() for ind in key]
+
+    arrays = indexing._asindexarrays(key, np.dtype(idx_dtype))
+    result = indexing.convert_to_flat(arrays, (3, 4), np.dtype(idx_dtype))
+
+    np.testing.assert_array_equal(result, [9, 11, 1, 3])
+    for actual, expected in zip(key, original, strict=True):
+        np.testing.assert_array_equal(actual, expected)
+
+
+@pytest.mark.parametrize("compressed_axes", [(0,), (1,)])
+def test_empty_column_slice_preserves_readonly_input(compressed_axes):
+    dense = np.arange(12).reshape(3, 4)
+    x = sparse.GCXS.from_numpy(dense, compressed_axes=compressed_axes)
+    original = (x.data.copy(), x.indices.copy(), x.indptr.copy())
+    for array in (x.data, x.indices, x.indptr):
+        array.flags.writeable = False
+    key = [slice(None), slice(None)]
+    key[1 - compressed_axes[0]] = slice(0, 0)
+
+    result = x[tuple(key)]
+
+    assert_eq(result, dense[tuple(key)])
+    for actual, expected in zip((x.data, x.indices, x.indptr), original, strict=True):
+        np.testing.assert_array_equal(actual, expected)
+    assert not np.shares_memory(result.indptr, x.indptr)
 
 
 @pytest.mark.parametrize(
