@@ -136,45 +136,48 @@ def load_npz(filename):
     with np.load(filename) as fp:
         if "format" in fp:
             fmt = str(fp["format"][()])
-            if fmt == "coo":
-                return COO(
-                    coords=fp["coords"],
-                    data=fp["data"],
-                    shape=tuple(fp["shape"]),
-                    sorted=True,
-                    has_duplicates=False,
-                    fill_value=fp["fill_value"][()],
-                )
-            if fmt == "csr":
-                return CSR(
-                    (fp["data"], fp["indices"], fp["indptr"]),
-                    shape=tuple(fp["shape"]),
-                    fill_value=fp["fill_value"][()],
-                )
-            if fmt == "csc":
-                return CSC(
-                    (fp["data"], fp["indices"], fp["indptr"]),
-                    shape=tuple(fp["shape"]),
-                    fill_value=fp["fill_value"][()],
-                )
-            if fmt == "gcxs":
-                comp_axes = tuple(fp["compressed_axes"]) if fp["compressed_axes"].size > 0 else None
-                return GCXS(
-                    (fp["data"], fp["indices"], fp["indptr"]),
-                    shape=tuple(fp["shape"]),
-                    fill_value=fp["fill_value"][()],
-                    compressed_axes=comp_axes,
-                )
-            if fmt == "dok":
-                coo = COO(
-                    coords=fp["coords"],
-                    data=fp["data"],
-                    shape=tuple(fp["shape"]),
-                    sorted=True,
-                    has_duplicates=False,
-                    fill_value=fp["fill_value"][()],
-                )
-                return DOK.from_coo(coo)
+            try:
+                if fmt == "coo":
+                    return COO(
+                        coords=fp["coords"],
+                        data=fp["data"],
+                        shape=tuple(fp["shape"]),
+                        sorted=True,
+                        has_duplicates=False,
+                        fill_value=fp["fill_value"][()],
+                    )
+                if fmt == "csr":
+                    return CSR(
+                        (fp["data"], fp["indices"], fp["indptr"]),
+                        shape=tuple(fp["shape"]),
+                        fill_value=fp["fill_value"][()],
+                    )
+                if fmt == "csc":
+                    return CSC(
+                        (fp["data"], fp["indices"], fp["indptr"]),
+                        shape=tuple(fp["shape"]),
+                        fill_value=fp["fill_value"][()],
+                    )
+                if fmt == "gcxs":
+                    comp_axes = tuple(fp["compressed_axes"]) if fp["compressed_axes"].size > 0 else None
+                    return GCXS(
+                        (fp["data"], fp["indices"], fp["indptr"]),
+                        shape=tuple(fp["shape"]),
+                        fill_value=fp["fill_value"][()],
+                        compressed_axes=comp_axes,
+                    )
+                if fmt == "dok":
+                    coo = COO(
+                        coords=fp["coords"],
+                        data=fp["data"],
+                        shape=tuple(fp["shape"]),
+                        sorted=True,
+                        has_duplicates=False,
+                        fill_value=fp["fill_value"][()],
+                    )
+                    return DOK.from_coo(coo)
+            except KeyError as e:
+                raise RuntimeError(f"The file {filename!s} does not contain a valid sparse matrix") from e
             raise RuntimeError(f"Unknown sparse format {fmt!r} in {filename!s}")
 
         try:

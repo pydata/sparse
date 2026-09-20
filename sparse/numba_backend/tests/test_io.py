@@ -112,6 +112,14 @@ def test_load_corrupted_archive_exception(tmp_path):
         load_npz(filename)
 
 
+@pytest.mark.parametrize("format", ["coo", "csr", "csc", "gcxs", "dok"])
+def test_load_corrupted_tagged_archive_exception(tmp_path, format):
+    filename = tmp_path / f"corrupted_{format}.npz"
+    np.savez(filename, format=format)
+    with pytest.raises(RuntimeError, match="does not contain a valid sparse matrix"):
+        load_npz(filename)
+
+
 def test_save_invalid_type_exception(tmp_path):
     filename = tmp_path / "invalid_type.npz"
     with pytest.raises(ValueError, match="Cannot save array of type"):
