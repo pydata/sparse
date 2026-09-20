@@ -1,7 +1,8 @@
 import numpy as np
 
-from ._compressed import GCXS
+from ._compressed.compressed import CSC, CSR, GCXS
 from ._coo.core import COO
+from ._dok import DOK
 
 
 def save_npz(filename, matrix, compressed=True):
@@ -49,18 +50,51 @@ def save_npz(filename, matrix, compressed=True):
 
     """
 
-    nodes = {
-        "data": matrix.data,
-        "shape": matrix.shape,
-        "fill_value": matrix.fill_value,
-    }
-
-    if type(matrix) is COO:
-        nodes["coords"] = matrix.coords
-    elif type(matrix) is GCXS:
-        nodes["indices"] = matrix.indices
-        nodes["indptr"] = matrix.indptr
-        nodes["compressed_axes"] = matrix.compressed_axes
+    if isinstance(matrix, COO):
+        nodes = {
+            "format": "coo",
+            "shape": matrix.shape,
+            "data": matrix.data,
+            "coords": matrix.coords,
+            "fill_value": matrix.fill_value,
+        }
+    elif isinstance(matrix, (CSR, CSC)):
+        fmt = "csr" if isinstance(matrix, CSR) else "csc"
+        nodes = {
+            "format": fmt,
+            "shape": matrix.shape,
+            "data": matrix.data,
+            "indices": matrix.indices,
+            "indptr": matrix.indptr,
+            "compressed_axes": np.array(matrix.compressed_axes, dtype=np.intp),
+            "fill_value": matrix.fill_value,
+        }
+    elif isinstance(matrix, GCXS):
+        comp_axes = (
+            np.array([], dtype=np.intp)
+            if matrix.compressed_axes is None
+            else np.array(matrix.compressed_axes, dtype=np.intp)
+        )
+        nodes = {
+            "format": "gcxs",
+            "shape": matrix.shape,
+            "data": matrix.data,
+            "indices": matrix.indices,
+            "indptr": matrix.indptr,
+            "compressed_axes": comp_axes,
+            "fill_value": matrix.fill_value,
+        }
+    elif isinstance(matrix, DOK):
+        coo = matrix.to_coo()
+        nodes = {
+            "format": "dok",
+            "shape": coo.shape,
+            "data": coo.data,
+            "coords": coo.coords,
+            "fill_value": coo.fill_value,
+        }
+    else:
+        raise ValueError(f"Cannot save array of type {type(matrix).__name__} to npz")
 
     if compressed:
         np.savez_compressed(filename, **nodes)
@@ -100,6 +134,49 @@ def load_npz(filename):
     """
 
     with np.load(filename) as fp:
+        if "format" in fp:
+            fmt = str(fp["format"][()])
+            if fmt == "coo":
+                return COO(
+                    coords=fp["coords"],
+                    data=fp["data"],
+                    shape=tuple(fp["shape"]),
+                    sorted=True,
+                    has_duplicates=False,
+                    fill_value=fp["fill_value"][()],
+                )
+            if fmt == "csr":
+                return CSR(
+                    (fp["data"], fp["indices"], fp["indptr"]),
+                    shape=tuple(fp["shape"]),
+                    fill_value=fp["fill_value"][()],
+                )
+            if fmt == "csc":
+                return CSC(
+                    (fp["data"], fp["indices"], fp["indptr"]),
+                    shape=tuple(fp["shape"]),
+                    fill_value=fp["fill_value"][()],
+                )
+            if fmt == "gcxs":
+                comp_axes = tuple(fp["compressed_axes"]) if fp["compressed_axes"].size > 0 else None
+                return GCXS(
+                    (fp["data"], fp["indices"], fp["indptr"]),
+                    shape=tuple(fp["shape"]),
+                    fill_value=fp["fill_value"][()],
+                    compressed_axes=comp_axes,
+                )
+            if fmt == "dok":
+                coo = COO(
+                    coords=fp["coords"],
+                    data=fp["data"],
+                    shape=tuple(fp["shape"]),
+                    sorted=True,
+                    has_duplicates=False,
+                    fill_value=fp["fill_value"][()],
+                )
+                return DOK.from_coo(coo)
+            raise RuntimeError(f"Unknown sparse format {fmt!r} in {filename!s}")
+
         try:
             coords = fp["coords"]
             data = fp["data"]
@@ -119,7 +196,7 @@ def load_npz(filename):
             data = fp["data"]
             indices = fp["indices"]
             indptr = fp["indptr"]
-            comp_axes = fp["compressed_axes"]
+            comp_axes = tuple(fp["compressed_axes"]) if fp["compressed_axes"].size > 0 else None
             shape = tuple(fp["shape"])
             fill_value = fp["fill_value"][()]
             return GCXS(
