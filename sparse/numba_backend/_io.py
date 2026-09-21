@@ -2,7 +2,13 @@ import numpy as np
 
 from ._compressed.compressed import CSC, CSR, GCXS
 from ._coo.core import COO
-from ._dok import DOK
+
+_FORMAT_CLS = {
+    "coo": COO,
+    "gcxs": GCXS,
+    "csr": CSR,
+    "csc": CSC,
+}
 
 
 def save_npz(filename, matrix, compressed=True):
@@ -58,40 +64,21 @@ def save_npz(filename, matrix, compressed=True):
             "coords": matrix.coords,
             "fill_value": matrix.fill_value,
         }
-    elif isinstance(matrix, (CSR, CSC)):
-        fmt = "csr" if isinstance(matrix, CSR) else "csc"
-        nodes = {
-            "format": fmt,
-            "shape": matrix.shape,
-            "data": matrix.data,
-            "indices": matrix.indices,
-            "indptr": matrix.indptr,
-            "compressed_axes": np.array(matrix.compressed_axes, dtype=np.intp),
-            "fill_value": matrix.fill_value,
-        }
     elif isinstance(matrix, GCXS):
+        fmt = "csr" if isinstance(matrix, CSR) else "csc" if isinstance(matrix, CSC) else "gcxs"
         comp_axes = (
             np.array([], dtype=np.intp)
             if matrix.compressed_axes is None
             else np.array(matrix.compressed_axes, dtype=np.intp)
         )
         nodes = {
-            "format": "gcxs",
+            "format": fmt,
             "shape": matrix.shape,
             "data": matrix.data,
             "indices": matrix.indices,
             "indptr": matrix.indptr,
             "compressed_axes": comp_axes,
             "fill_value": matrix.fill_value,
-        }
-    elif isinstance(matrix, DOK):
-        coo = matrix.to_coo()
-        nodes = {
-            "format": "dok",
-            "shape": coo.shape,
-            "data": coo.data,
-            "coords": coo.coords,
-            "fill_value": coo.fill_value,
         }
     else:
         raise ValueError(f"Cannot save array of type {type(matrix).__name__} to npz")
@@ -135,50 +122,35 @@ def load_npz(filename):
 
     with np.load(filename) as fp:
         if "format" in fp:
-            fmt = str(fp["format"][()])
+            fmt = str(fp["format"][()]).lower()
+            cls = _FORMAT_CLS.get(fmt)
+            if cls is None:
+                raise RuntimeError(f"Unknown sparse format {fmt!r} in {filename!s}")
+
             try:
-                if fmt == "coo":
+                shape = tuple(fp["shape"])
+                fill_value = fp["fill_value"][()]
+                data = fp["data"]
+
+                if cls is COO:
                     return COO(
                         coords=fp["coords"],
-                        data=fp["data"],
-                        shape=tuple(fp["shape"]),
+                        data=data,
+                        shape=shape,
                         sorted=True,
                         has_duplicates=False,
-                        fill_value=fp["fill_value"][()],
+                        fill_value=fill_value,
                     )
-                if fmt == "csr":
-                    return CSR(
-                        (fp["data"], fp["indices"], fp["indptr"]),
-                        shape=tuple(fp["shape"]),
-                        fill_value=fp["fill_value"][()],
-                    )
-                if fmt == "csc":
-                    return CSC(
-                        (fp["data"], fp["indices"], fp["indptr"]),
-                        shape=tuple(fp["shape"]),
-                        fill_value=fp["fill_value"][()],
-                    )
-                if fmt == "gcxs":
+                if issubclass(cls, GCXS):
                     comp_axes = tuple(fp["compressed_axes"]) if fp["compressed_axes"].size > 0 else None
-                    return GCXS(
-                        (fp["data"], fp["indices"], fp["indptr"]),
-                        shape=tuple(fp["shape"]),
-                        fill_value=fp["fill_value"][()],
+                    return cls(
+                        (data, fp["indices"], fp["indptr"]),
+                        shape=shape,
                         compressed_axes=comp_axes,
+                        fill_value=fill_value,
                     )
-                if fmt == "dok":
-                    coo = COO(
-                        coords=fp["coords"],
-                        data=fp["data"],
-                        shape=tuple(fp["shape"]),
-                        sorted=True,
-                        has_duplicates=False,
-                        fill_value=fp["fill_value"][()],
-                    )
-                    return DOK.from_coo(coo)
-            except KeyError as e:
+            except (KeyError, TypeError, AttributeError) as e:
                 raise RuntimeError(f"The file {filename!s} does not contain a valid sparse matrix") from e
-            raise RuntimeError(f"Unknown sparse format {fmt!r} in {filename!s}")
 
         try:
             coords = fp["coords"]
@@ -208,5 +180,5 @@ def load_npz(filename):
                 fill_value=fill_value,
                 compressed_axes=comp_axes,
             )
-        except KeyError as e:
+        except (KeyError, TypeError) as e:
             raise RuntimeError(f"The file {filename!s} does not contain a valid sparse matrix") from e

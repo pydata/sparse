@@ -8,7 +8,7 @@ import numpy as np
 
 
 @pytest.mark.parametrize("compression", [True, False])
-@pytest.mark.parametrize("format", ["coo", "gcxs", "csr", "csc", "dok"])
+@pytest.mark.parametrize("format", ["coo", "gcxs", "csr", "csc"])
 def test_save_load_npz_formats(tmp_path, compression, format):
     x = sparse.random((4, 5), density=0.25, format=format)
     y = x.todense()
@@ -31,7 +31,6 @@ def test_save_load_npz_formats(tmp_path, compression, format):
         ((10,), "gcxs"),
         ((2, 3, 4), "coo"),
         ((2, 3, 4), "gcxs"),
-        ((2, 3, 4), "dok"),
     ],
 )
 def test_save_load_npz_dimensions(tmp_path, shape, format):
@@ -46,7 +45,7 @@ def test_save_load_npz_dimensions(tmp_path, shape, format):
     assert_eq(sparse_arr.todense(), z.todense())
 
 
-@pytest.mark.parametrize("format", ["coo", "gcxs", "csr", "csc", "dok"])
+@pytest.mark.parametrize("format", ["coo", "gcxs", "csr", "csc"])
 @pytest.mark.parametrize("fill_value", [1.5, np.nan])
 def test_save_load_npz_fill_value(tmp_path, format, fill_value):
     x = sparse.random((4, 5), density=0.3, format=format, fill_value=fill_value)
@@ -112,7 +111,7 @@ def test_load_corrupted_archive_exception(tmp_path):
         load_npz(filename)
 
 
-@pytest.mark.parametrize("format", ["coo", "csr", "csc", "gcxs", "dok"])
+@pytest.mark.parametrize("format", ["coo", "csr", "csc", "gcxs"])
 def test_load_corrupted_tagged_archive_exception(tmp_path, format):
     filename = tmp_path / f"corrupted_{format}.npz"
     np.savez(filename, format=format)
@@ -127,3 +126,8 @@ def test_save_invalid_type_exception(tmp_path):
 
     with pytest.raises(ValueError, match="Cannot save array of type"):
         save_npz(filename, np.array([1, 2, 3]))
+
+    # DOK is not serializable by design
+    d = sparse.DOK((3, 3))
+    with pytest.raises(ValueError, match="Cannot save array of type DOK"):
+        save_npz(filename, d)
