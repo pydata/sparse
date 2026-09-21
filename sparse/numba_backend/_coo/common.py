@@ -855,7 +855,7 @@ def diagonal(a, offset=0, axis1=0, axis2=1):
     Raises
     ------
     ValueError
-        If a.shape[axis1] != a.shape[axis2]
+        If `a.ndim < 2` or `axis1 == axis2`.
 
     See Also
     --------
@@ -863,19 +863,33 @@ def diagonal(a, offset=0, axis1=0, axis2=1):
     """
     from .core import COO
 
-    if a.shape[axis1] != a.shape[axis2]:
-        raise ValueError("a.shape[axis1] != a.shape[axis2]")
+    if a.ndim < 2:
+        raise ValueError("array must be at least 2-d")
 
-    diag_axes = [axis for axis in range(len(a.shape)) if axis != axis1 and axis != axis2] + [axis1]
-    diag_shape = [a.shape[axis] for axis in diag_axes]
-    diag_shape[-1] -= abs(offset)
+    axis1 = normalize_axis(axis1, a.ndim)
+    axis2 = normalize_axis(axis2, a.ndim)
 
-    diag_idx = _diagonal_idx(a.coords, axis1, axis2, offset)
+    if axis1 == axis2:
+        raise ValueError("axis1 and axis2 cannot be the same")
 
-    diag_coords = [a.coords[axis][diag_idx] for axis in diag_axes]
-    diag_data = a.data[diag_idx]
+    M = a.shape[axis1]
+    N = a.shape[axis2]
 
-    return COO(diag_coords, diag_data, diag_shape)
+    diag_len = max(0, min(M, N - offset)) if offset >= 0 else max(0, min(M + offset, N))
+
+    diag_axes = [axis for axis in range(a.ndim) if axis != axis1 and axis != axis2]
+    diag_shape = [a.shape[axis] for axis in diag_axes] + [diag_len]
+
+    if diag_len == 0 or a.nnz == 0:
+        diag_coords = np.empty((len(diag_shape), 0), dtype=a.coords.dtype)
+        diag_data = np.empty(0, dtype=a.dtype)
+    else:
+        diag_idx = _diagonal_idx(a.coords, axis1, axis2, offset)
+        diag_coord = a.coords[axis1][diag_idx] if offset >= 0 else a.coords[axis1][diag_idx] + offset
+        diag_coords = [a.coords[axis][diag_idx] for axis in diag_axes] + [diag_coord]
+        diag_data = a.data[diag_idx]
+
+    return COO(diag_coords, diag_data, diag_shape, fill_value=a.fill_value)
 
 
 def diagonalize(a, axis=0):

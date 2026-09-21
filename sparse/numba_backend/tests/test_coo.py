@@ -1422,28 +1422,54 @@ def test_prune_coo():
 
 
 def test_diagonal():
+    # Square matrix with positive, zero, and negative offsets
     a = sparse.random((4, 4), density=0.5)
+    for offset in range(-3, 4):
+        assert_eq(sparse.diagonal(a, offset=offset), np.diagonal(a.todense(), offset=offset))
 
-    assert_eq(sparse.diagonal(a, offset=0), np.diagonal(a.todense(), offset=0))
-    assert_eq(sparse.diagonal(a, offset=1), np.diagonal(a.todense(), offset=1))
-    assert_eq(sparse.diagonal(a, offset=2), np.diagonal(a.todense(), offset=2))
+    # Rectangular matrices
+    for shape in [(2, 4), (4, 2)]:
+        rect = sparse.random(shape, density=0.5)
+        for offset in range(-4, 5):
+            assert_eq(sparse.diagonal(rect, offset=offset), np.diagonal(rect.todense(), offset=offset))
 
-    a = sparse.random((4, 5, 4, 6), density=0.5)
+    # N-D arrays
+    a_4d = sparse.random((4, 5, 4, 6), density=0.5)
+    for offset in range(-2, 3):
+        assert_eq(
+            sparse.diagonal(a_4d, offset=offset, axis1=0, axis2=2),
+            np.diagonal(a_4d.todense(), offset=offset, axis1=0, axis2=2),
+        )
 
-    assert_eq(
-        sparse.diagonal(a, offset=0, axis1=0, axis2=2),
-        np.diagonal(a.todense(), offset=0, axis1=0, axis2=2),
-    )
+    a_3d = sparse.random((2, 3, 4), density=0.5)
+    for a1, a2 in [(0, 1), (1, 2), (0, 2), (-2, -1), (-3, -1)]:
+        for offset in range(-2, 3):
+            assert_eq(
+                sparse.diagonal(a_3d, offset=offset, axis1=a1, axis2=a2),
+                np.diagonal(a_3d.todense(), offset=offset, axis1=a1, axis2=a2),
+            )
 
-    assert_eq(
-        sparse.diagonal(a, offset=1, axis1=0, axis2=2),
-        np.diagonal(a.todense(), offset=1, axis1=0, axis2=2),
-    )
+    # Empty diagonal (offset out of bounds)
+    assert_eq(sparse.diagonal(a, offset=10), np.diagonal(a.todense(), offset=10))
+    assert_eq(sparse.diagonal(a, offset=-10), np.diagonal(a.todense(), offset=-10))
 
-    assert_eq(
-        sparse.diagonal(a, offset=2, axis1=0, axis2=2),
-        np.diagonal(a.todense(), offset=2, axis1=0, axis2=2),
-    )
+    # Fill value preservation
+    a_fv = sparse.COO.from_numpy(np.array([[1.0, 2.0], [0.0, 3.0]]), fill_value=1.5)
+    assert_eq(sparse.diagonal(a_fv, offset=-1), np.diagonal(a_fv.todense(), offset=-1))
+    assert sparse.diagonal(a_fv, offset=-1).fill_value == 1.5
+
+    a_nan = sparse.COO.from_numpy(np.array([[1.0, np.nan], [np.nan, 3.0]]), fill_value=np.nan)
+    assert_eq(sparse.diagonal(a_nan, offset=0), np.diagonal(a_nan.todense(), offset=0))
+
+    # Error conditions
+    with pytest.raises(ValueError, match="array must be at least 2-d"):
+        sparse.diagonal(sparse.COO.from_numpy(np.array([1, 2, 3])))
+
+    with pytest.raises(ValueError, match="axis1 and axis2 cannot be the same"):
+        sparse.diagonal(a, axis1=0, axis2=0)
+
+    with pytest.raises(ValueError, match="axis1 and axis2 cannot be the same"):
+        sparse.diagonal(a, axis1=1, axis2=-1)
 
 
 def test_diagonalize():
