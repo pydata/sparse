@@ -1,7 +1,6 @@
-import numpy as np
+import sparse
 
-from ._compressed import GCXS
-from ._coo.core import COO
+import numpy as np
 
 
 def save_npz(filename, matrix, compressed=True):
@@ -49,18 +48,10 @@ def save_npz(filename, matrix, compressed=True):
 
     """
 
-    nodes = {
-        "data": matrix.data,
-        "shape": matrix.shape,
-        "fill_value": matrix.fill_value,
-    }
-
-    if type(matrix) is COO:
-        nodes["coords"] = matrix.coords
-    elif type(matrix) is GCXS:
-        nodes["indices"] = matrix.indices
-        nodes["indptr"] = matrix.indptr
-        nodes["compressed_axes"] = matrix.compressed_axes
+    try:
+        nodes = matrix.get_nodes()
+    except (AttributeError, TypeError) as e:
+        raise ValueError(f"Cannot save array of type {type(matrix).__name__} to npz") from e
 
     if compressed:
         np.savez_compressed(filename, **nodes)
@@ -100,33 +91,5 @@ def load_npz(filename):
     """
 
     with np.load(filename) as fp:
-        try:
-            coords = fp["coords"]
-            data = fp["data"]
-            shape = tuple(fp["shape"])
-            fill_value = fp["fill_value"][()]
-            return COO(
-                coords=coords,
-                data=data,
-                shape=shape,
-                sorted=True,
-                has_duplicates=False,
-                fill_value=fill_value,
-            )
-        except KeyError:
-            pass
-        try:
-            data = fp["data"]
-            indices = fp["indices"]
-            indptr = fp["indptr"]
-            comp_axes = fp["compressed_axes"]
-            shape = tuple(fp["shape"])
-            fill_value = fp["fill_value"][()]
-            return GCXS(
-                (data, indices, indptr),
-                shape=shape,
-                fill_value=fill_value,
-                compressed_axes=comp_axes,
-            )
-        except KeyError as e:
-            raise RuntimeError(f"The file {filename!s} does not contain a valid sparse matrix") from e
+        cls = getattr(sparse, fp["format"].item().upper())
+        return cls.from_nodes(fp)

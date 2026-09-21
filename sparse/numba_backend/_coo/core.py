@@ -631,6 +631,30 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         """
         return "coo"
 
+    def get_nodes(self):
+        return {
+            "format": self.format,
+            "shape": self.shape,
+            "data": self.data,
+            "coords": self.coords,
+            "fill_value": self.fill_value,
+        }
+
+    @classmethod
+    def from_nodes(cls, nodes):
+        shape = tuple(nodes["shape"])
+        fill_value = nodes["fill_value"][()]
+        data = nodes["data"]
+        coords = nodes["coords"]
+        return cls(
+            coords=coords,
+            data=data,
+            shape=shape,
+            sorted=True,
+            has_duplicates=False,
+            fill_value=fill_value,
+        )
+
     @property
     def nbytes(self):
         """

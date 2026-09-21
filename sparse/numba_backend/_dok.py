@@ -296,6 +296,13 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         """
         return "dok"
 
+    def get_nodes(self):
+        raise TypeError("DOK arrays cannot be serialized to npz format.")
+
+    @classmethod
+    def from_nodes(cls, nodes):
+        raise TypeError("DOK arrays cannot be loaded from npz format.")
+
     @property
     def nbytes(self):
         """

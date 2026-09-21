@@ -288,6 +288,37 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         """
         return "gcxs"
 
+    def get_nodes(self):
+        comp_axes = (
+            np.array([], dtype=np.intp)
+            if self.compressed_axes is None
+            else np.array(self.compressed_axes, dtype=np.intp)
+        )
+        return {
+            "format": self.format,
+            "shape": self.shape,
+            "data": self.data,
+            "indices": self.indices,
+            "indptr": self.indptr,
+            "compressed_axes": comp_axes,
+            "fill_value": self.fill_value,
+        }
+
+    @classmethod
+    def from_nodes(cls, nodes):
+        shape = tuple(nodes["shape"])
+        fill_value = nodes["fill_value"][()]
+        data = nodes["data"]
+        indices = nodes["indices"]
+        indptr = nodes["indptr"]
+        comp_axes = tuple(nodes["compressed_axes"]) if nodes["compressed_axes"].size > 0 else None
+        return cls(
+            (data, indices, indptr),
+            shape=shape,
+            compressed_axes=comp_axes,
+            fill_value=fill_value,
+        )
+
     @property
     def nbytes(self):
         """
