@@ -1,14 +1,6 @@
+import sparse
+
 import numpy as np
-
-from ._compressed.compressed import CSC, CSR, GCXS
-from ._coo.core import COO
-
-_FORMAT_CLS = {
-    "coo": COO,
-    "gcxs": GCXS,
-    "csr": CSR,
-    "csc": CSC,
-}
 
 
 def save_npz(filename, matrix, compressed=True):
@@ -56,32 +48,10 @@ def save_npz(filename, matrix, compressed=True):
 
     """
 
-    if isinstance(matrix, COO):
-        nodes = {
-            "format": "coo",
-            "shape": matrix.shape,
-            "data": matrix.data,
-            "coords": matrix.coords,
-            "fill_value": matrix.fill_value,
-        }
-    elif isinstance(matrix, GCXS):
-        fmt = "csr" if isinstance(matrix, CSR) else "csc" if isinstance(matrix, CSC) else "gcxs"
-        comp_axes = (
-            np.array([], dtype=np.intp)
-            if matrix.compressed_axes is None
-            else np.array(matrix.compressed_axes, dtype=np.intp)
-        )
-        nodes = {
-            "format": fmt,
-            "shape": matrix.shape,
-            "data": matrix.data,
-            "indices": matrix.indices,
-            "indptr": matrix.indptr,
-            "compressed_axes": comp_axes,
-            "fill_value": matrix.fill_value,
-        }
-    else:
-        raise ValueError(f"Cannot save array of type {type(matrix).__name__} to npz")
+    try:
+        nodes = matrix.get_nodes()
+    except (AttributeError, TypeError) as e:
+        raise ValueError(f"Cannot save array of type {type(matrix).__name__} to npz") from e
 
     if compressed:
         np.savez_compressed(filename, **nodes)
@@ -121,64 +91,20 @@ def load_npz(filename):
     """
 
     with np.load(filename) as fp:
-        if "format" in fp:
-            fmt = str(fp["format"][()]).lower()
-            cls = _FORMAT_CLS.get(fmt)
-            if cls is None:
-                raise RuntimeError(f"Unknown sparse format {fmt!r} in {filename!s}")
-
-            try:
-                shape = tuple(fp["shape"])
-                fill_value = fp["fill_value"][()]
-                data = fp["data"]
-
-                if cls is COO:
-                    return COO(
-                        coords=fp["coords"],
-                        data=data,
-                        shape=shape,
-                        sorted=True,
-                        has_duplicates=False,
-                        fill_value=fill_value,
-                    )
-                if issubclass(cls, GCXS):
-                    comp_axes = tuple(fp["compressed_axes"]) if fp["compressed_axes"].size > 0 else None
-                    return cls(
-                        (data, fp["indices"], fp["indptr"]),
-                        shape=shape,
-                        compressed_axes=comp_axes,
-                        fill_value=fill_value,
-                    )
-            except (KeyError, TypeError, AttributeError) as e:
-                raise RuntimeError(f"The file {filename!s} does not contain a valid sparse matrix") from e
-
         try:
-            coords = fp["coords"]
-            data = fp["data"]
-            shape = tuple(fp["shape"])
-            fill_value = fp["fill_value"][()]
-            return COO(
-                coords=coords,
-                data=data,
-                shape=shape,
-                sorted=True,
-                has_duplicates=False,
-                fill_value=fill_value,
-            )
+            fmt = fp["format"].item().lower()
         except KeyError:
-            pass
-        try:
-            data = fp["data"]
-            indices = fp["indices"]
-            indptr = fp["indptr"]
-            comp_axes = tuple(fp["compressed_axes"]) if fp["compressed_axes"].size > 0 else None
-            shape = tuple(fp["shape"])
-            fill_value = fp["fill_value"][()]
-            return GCXS(
-                (data, indices, indptr),
-                shape=shape,
-                fill_value=fill_value,
-                compressed_axes=comp_axes,
-            )
-        except (KeyError, TypeError) as e:
-            raise RuntimeError(f"The file {filename!s} does not contain a valid sparse matrix") from e
+            try:
+                return sparse.COO.from_nodes(fp)
+            except (KeyError, TypeError):
+                pass
+            try:
+                return sparse.GCXS.from_nodes(fp)
+            except (KeyError, TypeError) as e:
+                raise RuntimeError(f"The file {filename!s} does not contain a valid sparse matrix") from e
+        else:
+            try:
+                cls = getattr(sparse, fmt.upper())
+                return cls.from_nodes(fp)
+            except (AttributeError, KeyError, TypeError) as e:
+                raise RuntimeError(f"The file {filename!s} does not contain a valid sparse matrix") from e

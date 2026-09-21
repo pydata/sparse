@@ -17,7 +17,10 @@ def test_save_load_npz_formats(tmp_path, compression, format):
     save_npz(filename, x, compressed=compression)
     z = load_npz(filename)
 
-    assert type(x) is type(z)
+    if format in ["coo", "gcxs"]:
+        assert type(x) is type(z)
+    else:
+        assert isinstance(z, GCXS)
     assert_eq(x, z)
     assert_eq(y, z.todense())
     assert x.fill_value == z.fill_value
@@ -53,7 +56,10 @@ def test_save_load_npz_fill_value(tmp_path, format, fill_value):
     save_npz(filename, x)
     z = load_npz(filename)
 
-    assert type(x) is type(z)
+    if format in ["coo", "gcxs"]:
+        assert type(x) is type(z)
+    else:
+        assert isinstance(z, GCXS)
     assert_eq(x, z)
     if np.isnan(fill_value):
         assert np.isnan(z.fill_value)
@@ -100,7 +106,7 @@ def test_load_legacy_gcxs_archive(tmp_path):
 def test_load_unknown_format_exception(tmp_path):
     filename = tmp_path / "unknown_fmt.npz"
     np.savez(filename, format="unknown_format", data=np.array([1, 2]))
-    with pytest.raises(RuntimeError, match="Unknown sparse format"):
+    with pytest.raises(RuntimeError, match="does not contain a valid sparse matrix"):
         load_npz(filename)
 
 

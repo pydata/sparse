@@ -240,6 +240,19 @@ class SparseArray:
         """
 
     @abstractmethod
+    def get_nodes(self):
+        """
+        Get the nodes dictionary for serialization to .npz format.
+        """
+
+    @classmethod
+    @abstractmethod
+    def from_nodes(cls, nodes):
+        """
+        Reconstruct a sparse array from a nodes mapping.
+        """
+
+    @abstractmethod
     def todense(self):
         """
         Convert this [`sparse.SparseArray`][] array to a dense [`numpy.ndarray`][]. Note that
