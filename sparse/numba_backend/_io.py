@@ -91,20 +91,5 @@ def load_npz(filename):
     """
 
     with np.load(filename) as fp:
-        try:
-            fmt = fp["format"].item().lower()
-        except KeyError:
-            try:
-                return sparse.COO.from_nodes(fp)
-            except (KeyError, TypeError):
-                pass
-            try:
-                return sparse.GCXS.from_nodes(fp)
-            except (KeyError, TypeError) as e:
-                raise RuntimeError(f"The file {filename!s} does not contain a valid sparse matrix") from e
-        else:
-            try:
-                cls = getattr(sparse, fmt.upper())
-                return cls.from_nodes(fp)
-            except (AttributeError, KeyError, TypeError) as e:
-                raise RuntimeError(f"The file {filename!s} does not contain a valid sparse matrix") from e
+        cls = getattr(sparse, fp["format"].item().upper())
+        return cls.from_nodes(fp)

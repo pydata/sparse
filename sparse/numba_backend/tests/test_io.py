@@ -1,5 +1,5 @@
 import sparse
-from sparse import COO, GCXS, load_npz, save_npz
+from sparse import COO, load_npz, save_npz
 from sparse.numba_backend._utils import assert_eq
 
 import pytest
@@ -17,10 +17,7 @@ def test_save_load_npz_formats(tmp_path, compression, format):
     save_npz(filename, x, compressed=compression)
     z = load_npz(filename)
 
-    if format in ["coo", "gcxs"]:
-        assert type(x) is type(z)
-    else:
-        assert isinstance(z, GCXS)
+    assert x.format == z.format
     assert_eq(x, z)
     assert_eq(y, z.todense())
     assert x.fill_value == z.fill_value
@@ -56,10 +53,7 @@ def test_save_load_npz_fill_value(tmp_path, format, fill_value):
     save_npz(filename, x)
     z = load_npz(filename)
 
-    if format in ["coo", "gcxs"]:
-        assert type(x) is type(z)
-    else:
-        assert isinstance(z, GCXS)
+    assert x.format == z.format
     assert_eq(x, z)
     if np.isnan(fill_value):
         assert np.isnan(z.fill_value)
@@ -67,61 +61,25 @@ def test_save_load_npz_fill_value(tmp_path, format, fill_value):
         assert z.fill_value == fill_value
 
 
-def test_load_legacy_coo_archive(tmp_path):
-    # Archive without "format" key, only COO keys
-    filename = tmp_path / "legacy_coo.npz"
-    coords = np.array([[0, 1], [1, 2]], dtype=np.intp)
-    data = np.array([3.0, 4.0], dtype=np.float64)
-    shape = (3, 4)
-    fill_value = 0.0
-
-    np.savez(filename, coords=coords, data=data, shape=shape, fill_value=fill_value)
-    z = load_npz(filename)
-
-    assert isinstance(z, COO)
-    assert z.shape == shape
-    assert_eq(z, COO(coords, data, shape=shape, fill_value=fill_value))
-
-
-def test_load_legacy_gcxs_archive(tmp_path):
-    # Archive without "format" key, only GCXS keys
-    filename = tmp_path / "legacy_gcxs.npz"
-    g = GCXS.from_numpy(np.array([[1.0, 0.0], [0.0, 2.0]]))
-
-    np.savez(
-        filename,
-        data=g.data,
-        indices=g.indices,
-        indptr=g.indptr,
-        compressed_axes=g.compressed_axes,
-        shape=g.shape,
-        fill_value=g.fill_value,
-    )
-    z = load_npz(filename)
-
-    assert isinstance(z, GCXS)
-    assert_eq(z, g)
-
-
 def test_load_unknown_format_exception(tmp_path):
     filename = tmp_path / "unknown_fmt.npz"
     np.savez(filename, format="unknown_format", data=np.array([1, 2]))
-    with pytest.raises(RuntimeError, match="does not contain a valid sparse matrix"):
+    with pytest.raises(AttributeError):
         load_npz(filename)
 
 
 def test_load_corrupted_archive_exception(tmp_path):
     filename = tmp_path / "corrupted.npz"
     np.savez(filename, a=np.array([1, 2, 3]))
-    with pytest.raises(RuntimeError, match="does not contain a valid sparse matrix"):
+    with pytest.raises(KeyError):
         load_npz(filename)
 
 
-@pytest.mark.parametrize("format", ["coo", "csr", "csc", "gcxs"])
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
 def test_load_corrupted_tagged_archive_exception(tmp_path, format):
     filename = tmp_path / f"corrupted_{format}.npz"
     np.savez(filename, format=format)
-    with pytest.raises(RuntimeError, match="does not contain a valid sparse matrix"):
+    with pytest.raises(KeyError):
         load_npz(filename)
 
 
