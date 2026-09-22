@@ -245,7 +245,9 @@ whose shape matches the leading dimensions of `x`. A mask with the same shape
 as `x` produces a one-dimensional result, in NumPy's row-major order. A mask
 with fewer dimensions preserves the remaining dimensions after the selected
 axis. A zero-dimensional boolean mask inserts a leading axis of length one or
-zero. The result retains the input's fill value and is a COO or GCXS array,
+zero; Python and NumPy boolean scalars behave the same way. As in NumPy, a
+mask axis may also have length zero, producing an empty selection.
+The result retains the input's fill value and is a COO or GCXS array,
 respectively.
 
 ```python

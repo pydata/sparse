@@ -102,3 +102,21 @@ def test_sparse_boolean_indexing_unsigned_coords():
     np.testing.assert_array_equal(result.coords, np.array([[0], [size - 1]], dtype=np.intp))
     assert np.issubdtype(result.coords.dtype, np.integer)
     np.testing.assert_array_equal(result.data, [3])
+
+
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@pytest.mark.parametrize("mask_shape", [(0,), (0, 3), (2, 0), (0, 0)])
+def test_sparse_boolean_indexing_empty_mask(format, mask_shape):
+    dense = np.arange(24).reshape(2, 3, 4)
+    x = sparse.COO.from_numpy(dense).asformat(format)
+    mask = sparse.COO.from_numpy(np.ones(mask_shape, dtype=bool), fill_value=True)
+    assert_eq(x[mask], dense[mask.todense()])
+
+
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@pytest.mark.parametrize("shape", [(), (0,), (2, 3)])
+@pytest.mark.parametrize("mask", [True, False, np.True_, np.False_])
+def test_sparse_boolean_indexing_boolean_scalar(format, shape, mask):
+    dense = np.full(shape, 3)
+    x = sparse.COO.from_numpy(dense).asformat(format)
+    assert_eq(x[mask], dense[mask])

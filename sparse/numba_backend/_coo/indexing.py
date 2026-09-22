@@ -31,6 +31,8 @@ def getitem(x, index):
     from .core import COO
 
     mask = index[0] if isinstance(index, tuple) and len(index) == 1 else index
+    if isinstance(mask, bool | np.bool_):
+        mask = COO.from_numpy(np.asarray(mask))
     if isinstance(mask, COO | GCXS) and mask.dtype == np.bool_:
         return _boolean_index(x, mask.asformat("coo"))
 
@@ -143,8 +145,16 @@ def _boolean_index(x, mask):
     from .common import linear_loc
     from .core import COO
 
-    if mask.ndim > x.ndim or mask.shape != x.shape[: mask.ndim]:
+    if mask.ndim > x.ndim or any(m not in (n, 0) for m, n in zip(mask.shape, x.shape[: mask.ndim], strict=True)):
         raise IndexError("boolean index did not match indexed array")
+
+    if mask.size == 0:
+        return COO(
+            np.empty((1 + x.ndim - mask.ndim, 0), dtype=np.intp),
+            x.data[:0],
+            shape=(0,) + x.shape[mask.ndim :],
+            fill_value=x.fill_value,
+        )
 
     # Ignore explicitly stored fill values. For a True fill, these locations
     # are the excluded positions, so we never enumerate the implicit True entries.

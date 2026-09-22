@@ -23,6 +23,8 @@ def getitem(x, key):
     from .compressed import GCXS
 
     mask = key[0] if isinstance(key, tuple) and len(key) == 1 else key
+    if isinstance(mask, bool | np.bool_):
+        mask = COO.from_numpy(np.asarray(mask))
     if isinstance(mask, COO | GCXS) and mask.dtype == np.bool_:
         return GCXS.from_coo(x.tocoo()[mask])
 
