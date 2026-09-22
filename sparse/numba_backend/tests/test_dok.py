@@ -40,6 +40,39 @@ def test_convert_from_numpy(rng):
     assert_eq(x, s)
 
 
+@pytest.mark.parametrize("constructor", [DOK, DOK.from_numpy])
+@pytest.mark.parametrize("value", [np.int16(0), np.int8(4), np.float32(np.nan), np.complex64(1 + 2j), np.bool_(True)])
+def test_convert_scalar_from_numpy(constructor, value):
+    dense = np.asarray(value)
+    result = constructor(dense)
+    assert_eq(result, dense)
+    assert result.nnz == int(value != 0)
+    assert result.fill_value == 0
+
+
+@pytest.mark.parametrize("convert", [sparse.COO, DOK.to_coo, lambda x: x.asformat("coo")])
+@pytest.mark.parametrize(
+    "value, fill_value",
+    [
+        (np.int8(-3), 0),
+        (np.int16(0), 0),
+        (np.int16(0), 5),
+        (np.float32(0.5), 0),
+        (np.float64(np.nan), np.nan),
+        (np.float64(np.nan), 0),
+        (np.complex64(1 + 2j), 0),
+        (np.bool_(True), False),
+    ],
+)
+def test_scalar_coo_roundtrip(convert, value, fill_value):
+    original = sparse.COO.from_numpy(np.asarray(value), fill_value=fill_value)
+    dok = DOK.from_coo(original)
+    result = convert(dok)
+    assert_eq(result, original)
+    np.testing.assert_equal(result.fill_value, original.fill_value)
+    assert result.nnz == original.nnz
+
+
 def test_convert_to_numpy():
     s = sparse.random((2, 3, 4), 0.5, format="dok")
     x = s.todense()

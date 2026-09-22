@@ -1084,6 +1084,38 @@ def test_invalid_attrs_error():
         sparse.as_coo(s, fill_value=0.0)
 
 
+@pytest.mark.parametrize("kind", ["dict", "list", "iterator", "separate"])
+@pytest.mark.parametrize("value", [np.int8(4), np.float32(0.5), np.complex64(1 + 2j), np.bool_(True)])
+def test_from_iter_scalar(kind, value):
+    items = [((), value)]
+    if kind == "dict":
+        items = dict(items)
+    elif kind == "iterator":
+        items = iter(items)
+    elif kind == "separate":
+        items = ([value], ())
+    result = COO.from_iter(items, shape=())
+    assert_eq(result, np.asarray(value))
+    assert result.coords.shape == (0, 1)
+    assert np.issubdtype(result.coords.dtype, np.integer)
+
+
+@pytest.mark.parametrize("kind", ["list", "separate"])
+def test_from_iter_scalar_duplicates(kind):
+    items = [((), 2), ((), 3)] if kind == "list" else ([2, 3], ())
+    result = COO.from_iter(items, shape=())
+    assert_eq(result, np.asarray(5))
+    assert result.nnz == 1
+
+
+@pytest.mark.parametrize("shape", [(), (3,), (2, 3)])
+def test_from_iter_empty_separate(shape):
+    coords = tuple([] for _ in shape)
+    result = COO.from_iter(([], coords), shape=shape, dtype=np.float32, fill_value=2)
+    assert_eq(result, np.full(shape, 2, dtype=np.float32))
+    assert result.nnz == 0
+
+
 def test_invalid_iterable_error():
     with pytest.raises(ValueError):
         x = [(3, 4, 5)]
