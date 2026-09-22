@@ -1092,7 +1092,7 @@ def expand_dims(x, axis: int | tuple[int, ...] = 0):
 
     Parameters
     ----------
-    a : COO
+    x : COO
         Input COO array.
     axis : int | tuple[int, ...]
         Position in the expanded axes where the new axis is placed.
@@ -1155,7 +1155,7 @@ def flip(x, /, *, axis=None):
 
     Parameters
     ----------
-    a : COO
+    x : COO
         Input COO array.
     axis : int or tuple of ints, optional
         Axis (or axes) along which to flip. If ``axis`` is ``None``, the function must
