@@ -1038,6 +1038,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         """
         Returns a new [`sparse.COO`][] array that is a flattened version of this array.
 
+        Parameters
+        ----------
+        order : {"C", "F"}, optional
+            Read the elements in row-major ("C") or column-major ("F") index order.
+            The default is "C". `None` is also accepted as an alias for "C".
+
         Returns
         -------
         COO
@@ -1045,8 +1051,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         Notes
         -----
-        The `order` parameter is provided just for compatibility with
-        Numpy and isn't actually supported.
+        Only "C" and "F" index orders are supported. Neither order requires
+        converting the array to a dense representation.
 
         Examples
         --------
@@ -1054,9 +1060,13 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         >>> s2 = s.reshape((2, 5)).flatten()
         >>> s2.todense()
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        >>> s.reshape((2, 5)).flatten(order="F").todense()
+        array([0, 5, 1, 6, 2, 7, 3, 8, 4, 9])
         """
+        if order == "F":
+            return self.T.reshape(-1)
         if order not in {"C", None}:
-            raise NotImplementedError("The `order` parameter is notsupported.")
+            raise NotImplementedError("Only 'C' and 'F' orders are supported.")
 
         return self.reshape(-1)
 

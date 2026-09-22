@@ -1571,6 +1571,75 @@ def test_flatten(in_shape):
     assert_eq(e, a)
 
 
+@pytest.mark.parametrize("shape", [(), (0,), (2, 0, 3), (5,), (2, 3), (2, 3, 4), (1, 2, 1, 3)])
+@pytest.mark.parametrize("order", ["C", "F", None])
+@pytest.mark.parametrize("fill_value", [0, 5, np.nan])
+def test_flatten_order(shape, order, fill_value):
+    x = np.full(shape, fill_value)
+    x.flat[::2] = np.arange(x.size)[::2] + 1
+    s = COO.from_numpy(x, fill_value=fill_value)
+
+    actual = s.flatten(order=order)
+
+    assert_eq(x.flatten(order="C" if order is None else order), actual)
+    assert actual.nnz == s.nnz
+    np.testing.assert_equal(actual.fill_value, s.fill_value)
+    assert_eq(s, x)
+
+
+@pytest.mark.parametrize("fill_value", [0, 5, np.nan])
+def test_flatten_fortran_all_fill(fill_value):
+    x = np.full((2, 3, 4), fill_value)
+    s = COO.from_numpy(x, fill_value=fill_value)
+
+    actual = s.flatten(order="F")
+
+    assert_eq(x.flatten(order="F"), actual)
+    assert actual.nnz == 0
+    np.testing.assert_equal(actual.fill_value, s.fill_value)
+
+
+def test_flatten_fortran_large_sparse(monkeypatch):
+    s = COO([[0, 2, 999999], [999999, 1, 0]], np.array([7, 8, 9], dtype=np.int16), shape=(10**6, 10**6))
+
+    def no_densification(*args, **kwargs):
+        pytest.fail("flatten must not convert a sparse array to dense")
+
+    monkeypatch.setattr(COO, "todense", no_densification)
+    actual = s.flatten(order="F")
+
+    assert actual.shape == (10**12,)
+    assert actual.dtype == s.dtype
+    np.testing.assert_array_equal(actual.coords, [[999999, 1000002, 999999000000]])
+    np.testing.assert_array_equal(actual.data, [9, 8, 7])
+
+
+def test_flatten_fortran_upcast():
+    s = COO([[0, 19], [19, 0]], [3, 4], shape=(20, 20), idx_dtype=np.uint8)
+    x = s.todense()
+
+    actual = s.flatten(order="F")
+
+    assert_eq(x.flatten(order="F"), actual)
+    assert actual.coords.dtype == np.uint16
+
+
+def test_flatten_order_cache():
+    x = np.arange(24).reshape(2, 3, 4)
+    s = COO.from_numpy(x)
+    s.enable_caching()
+
+    for order in ["F", "C", "F", None]:
+        assert_eq(x.flatten(order="C" if order is None else order), s.flatten(order=order))
+
+
+@pytest.mark.parametrize("order", ["A", "K", "invalid"])
+def test_flatten_unsupported_order(order):
+    s = COO.from_numpy(np.arange(6).reshape(2, 3))
+    with pytest.raises(NotImplementedError, match="order"):
+        s.flatten(order=order)
+
+
 def test_asnumpy():
     s = sparse.COO(data=[1], coords=[2], shape=(5,))
     assert_eq(sparse.asnumpy(s), s.todense())
