@@ -19,7 +19,12 @@ def getitem(x, key):
     2-dimensional key and then iterate through each of the relevent rows and
     columns.
     """
+    from .._coo import COO
     from .compressed import GCXS
+
+    mask = key[0] if isinstance(key, tuple) and len(key) == 1 else key
+    if isinstance(mask, COO | GCXS) and mask.dtype == np.bool_:
+        return GCXS.from_coo(x.tocoo()[mask])
 
     if x.ndim == 1:
         result = x.tocoo()[key]

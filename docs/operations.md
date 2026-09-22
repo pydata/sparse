@@ -209,7 +209,8 @@ in the form `x.reduction()`, the following reductions are supported:
 ## Indexing
 
 [`sparse.COO`][] and [`sparse.GCXS`][] arrays can be [indexed](https://numpy.org/doc/stable/user/basics.indexing.html)
-just like regular [`numpy.ndarray`][] objects. They support integer, slice and boolean and array indexing (boolean and array indexing is supported only by dense NumPy arrays).
+just like regular [`numpy.ndarray`][] objects. They support integer, slice, and dense
+array indices, as well as a single sparse boolean mask as described below.
 However, currently, numpy advanced indexing is not properly supported. This
 means that all of the following work like in Numpy, except that they will produce
 [`sparse.SparseArray`][] arrays rather than [`numpy.ndarray`][] objects, and will produce
@@ -236,6 +237,32 @@ z[-6]
 ```
 
 **Advanced Indexing**
+
+**Sparse boolean masks**
+
+For the Numba backend, `x[mask]` and `x[(mask,)]` accept a COO or GCXS boolean array
+whose shape matches the leading dimensions of `x`. A mask with the same shape
+as `x` produces a one-dimensional result, in NumPy's row-major order. A mask
+with fewer dimensions preserves the remaining dimensions after the selected
+axis. A zero-dimensional boolean mask inserts a leading axis of length one or
+zero. The result retains the input's fill value and is a COO or GCXS array,
+respectively.
+
+```python
+>>> x = sparse.COO.from_numpy(np.array([0, 1, 0, 2]))
+>>> x[x > 0].todense()
+array([1, 2])
+>>> x[x == 0].todense()
+array([0, 0])
+```
+
+Masks with either `False` or `True` fill values are supported without densifying
+either operand or listing the mask's implicit entries. GCXS uses a COO
+conversion for this operation. Combining sparse masks with other indices in
+one indexing operation, DOK masks, sparse integer indices, and assignment through a
+sparse mask are not supported.
+
+**Dense array indices**
 
 Advanced indexing (indexing arrays with other arrays) is supported, but only for indexing
 with a *single array*. Indexing a single array with multiple arrays is not supported at
