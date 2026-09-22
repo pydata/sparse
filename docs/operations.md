@@ -240,7 +240,7 @@ z[-6]
 
 **Sparse boolean masks**
 
-For the Numba backend, `x[mask]` and `x[(mask,)]` accept a COO or GCXS boolean array
+For the Numba backend, `x[mask]` and `x[(mask,)]` accept a COO, GCXS, or DOK boolean array
 whose shape matches the leading dimensions of `x`. A mask with the same shape
 as `x` produces a one-dimensional result, in NumPy's row-major order. A mask
 with fewer dimensions preserves the remaining dimensions after the selected
@@ -261,7 +261,7 @@ array([0, 0])
 Masks with either `False` or `True` fill values are supported without densifying
 either operand or listing the mask's implicit entries. GCXS uses a COO
 conversion for this operation. Combining sparse masks with other indices in
-one indexing operation, DOK masks, sparse integer indices, and assignment through a
+one indexing operation, sparse integer indices, and assignment through a
 sparse mask are not supported.
 
 **Dense array indices**

@@ -7,7 +7,7 @@ import numpy as np
 
 
 @pytest.mark.parametrize("format", ["coo", "gcxs"])
-@pytest.mark.parametrize("mask_format", ["coo", "gcxs"])
+@pytest.mark.parametrize("mask_format", ["coo", "gcxs", "dok"])
 @pytest.mark.parametrize("mask_fill", [False, True])
 @pytest.mark.parametrize("fill_value", [0, 2, np.nan])
 @pytest.mark.parametrize("mask_ndim", [1, 2, 3])
@@ -50,7 +50,7 @@ def test_sparse_boolean_indexing_explicit_fill(format, mask_fill):
 
 
 @pytest.mark.parametrize("format", ["coo", "gcxs"])
-@pytest.mark.parametrize("mask_format", ["coo", "gcxs"])
+@pytest.mark.parametrize("mask_format", ["coo", "gcxs", "dok"])
 @pytest.mark.parametrize("mask_fill", [False, True])
 @pytest.mark.parametrize("selected", [False, True])
 @pytest.mark.parametrize("dense", [np.array(7), np.array([[0, 2], [3, 0]])])

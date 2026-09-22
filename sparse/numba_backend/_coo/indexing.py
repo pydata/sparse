@@ -27,13 +27,13 @@ def getitem(x, index):
     index : {tuple, str}
         The index into the array.
     """
-    from .._compressed import GCXS
+    from .._sparse_array import SparseArray
     from .core import COO
 
     mask = index[0] if isinstance(index, tuple) and len(index) == 1 else index
     if isinstance(mask, bool | np.bool_):
         mask = COO.from_numpy(np.asarray(mask))
-    if isinstance(mask, COO | GCXS) and mask.dtype == np.bool_:
+    if isinstance(mask, SparseArray) and mask.dtype == np.bool_:
         return _boolean_index(x, mask.asformat("coo"))
 
     # If string, this is an index into an np.void
