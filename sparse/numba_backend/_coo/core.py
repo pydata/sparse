@@ -538,12 +538,17 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             data = np.empty((0,), dtype=dtype)
             shape = () if shape is None else shape
 
-        elif not isinstance(x[0][0], Iterable):
-            coords = np.stack(x[1], axis=0)
+        elif len(x[0]) == 0 or not isinstance(x[0][0], Iterable):
             data = np.asarray(x[0], dtype=dtype)
+            coords = np.stack(x[1], axis=0) if len(x[1]) else np.empty((0, data.size), dtype=np.uint8)
         else:
             coords = np.array([item[0] for item in x]).T
             data = np.array([item[1] for item in x], dtype=dtype)
+
+        # Empty coordinate tuples describe scalars. NumPy otherwise infers
+        # float64 for these empty arrays, although their coordinates are valid.
+        if coords.size == 0:
+            coords = coords.astype(np.uint8)
 
         if not (
             coords.ndim == 2 and data.ndim == 1 and np.issubdtype(coords.dtype, np.integer) and np.all(coords >= 0)
