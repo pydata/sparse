@@ -27,7 +27,14 @@ def getitem(x, index):
     index : {tuple, str}
         The index into the array.
     """
+    from .._sparse_array import SparseArray
     from .core import COO
+
+    mask = index[0] if isinstance(index, tuple) and len(index) == 1 else index
+    if isinstance(mask, bool | np.bool_):
+        mask = COO.from_numpy(np.asarray(mask))
+    if isinstance(mask, SparseArray) and mask.dtype == np.bool_:
+        return _boolean_index(x, mask.asformat("coo"))
 
     # If string, this is an index into an np.void
 
@@ -129,6 +136,54 @@ def getitem(x, index):
         shape=shape,
         has_duplicates=False,
         sorted=sorted,
+        fill_value=x.fill_value,
+    )
+
+
+def _boolean_index(x, mask):
+    """Select with a sparse boolean mask over the leading axes of a COO array."""
+    from .common import linear_loc
+    from .core import COO
+
+    if mask.ndim > x.ndim or any(m not in (n, 0) for m, n in zip(mask.shape, x.shape[: mask.ndim], strict=True)):
+        raise IndexError("boolean index did not match indexed array")
+
+    if mask.size == 0:
+        return COO(
+            np.empty((1 + x.ndim - mask.ndim, 0), dtype=np.intp),
+            x.data[:0],
+            shape=(0,) + x.shape[mask.ndim :],
+            fill_value=x.fill_value,
+        )
+
+    # Ignore explicitly stored fill values. For a True fill, these locations
+    # are the excluded positions, so we never enumerate the implicit True entries.
+    mask_loc = mask.linear_loc()[mask.data != mask.fill_value]
+    x_loc = linear_loc(x.coords[: mask.ndim], mask.shape)
+    ranks = np.searchsorted(mask_loc, x_loc)
+    matches = np.zeros(x.nnz, dtype=bool)
+    in_bounds = ranks < mask_loc.size
+    matches[in_bounds] = mask_loc[ranks[in_bounds]] == x_loc[in_bounds]
+
+    if mask.fill_value:
+        selected = ~matches
+        ranks = x_loc - ranks
+        count = mask.size - mask_loc.size
+    else:
+        selected = matches
+        count = mask_loc.size
+
+    # Use an integer buffer: stacking intp ranks with uint64 coordinates can
+    # promote to float64 and lose exact positions on large trailing axes.
+    coords = np.empty((1 + x.ndim - mask.ndim, np.count_nonzero(selected)), dtype=np.intp)
+    coords[0] = ranks[selected]
+    coords[1:] = x.coords[mask.ndim :, selected]
+    return COO(
+        coords,
+        x.data[selected],
+        shape=(count,) + x.shape[mask.ndim :],
+        has_duplicates=False,
+        sorted=True,
         fill_value=x.fill_value,
     )
 
