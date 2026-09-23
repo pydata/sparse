@@ -113,7 +113,6 @@ depends-on = ["clone-xp-tests"]
 [feature.xp-tests.tasks._xp-tests]
 cmd = [
   "pytest",
-  "-p", "numba_masking",
   "-v",
   "--max-examples=2",
   "--derandomize",
@@ -130,7 +129,6 @@ cmd = [
 args = [{ arg = "SPARSE_BACKEND", default = "Numba" }]
 env.SPARSE_BACKEND = "Numba"  # TODO: set to arg
 env.ARRAY_API_TESTS_MODULE = "sparse"
-env.PYTHONPATH = "../xp-tests"
 cwd = "array-api-tests"
 depends-on = ["checkout-xp-tests"]
 

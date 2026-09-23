@@ -1,8 +1,5 @@
 array_api_tests/test_array_object.py::test_setitem
 array_api_tests/test_array_object.py::test_setitem_masking
-# NumPy scalar operands cannot be indexed by sparse zero-dimensional masks.
-# The sparse-array parameter runs the full masking property without an xfail.
-array_api_tests/test_array_object.py::test_getitem_masking[numpy-scalar]
 array_api_tests/test_creation_functions.py::test_arange
 array_api_tests/test_creation_functions.py::test_linspace
 array_api_tests/test_creation_functions.py::test_meshgrid
