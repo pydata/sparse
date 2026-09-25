@@ -1526,10 +1526,11 @@ def _arg_minmax_common(
 
     if not isinstance(axis, int | type(None)):
         raise ValueError(f"`axis` must be `int` or `None`, but it's: {type(axis)}.")
-    if isinstance(axis, int) and axis >= x.ndim:
+    if isinstance(axis, int) and not -x.ndim <= axis < x.ndim:
         raise ValueError(f"`axis={axis}` is out of bounds for array of dimension {x.ndim}.")
     if x.ndim == 0:
         raise ValueError("Input array must be at least 1-D, but it's 0-D.")
+    axis = normalize_axis(axis, x.ndim)
 
     # If `axis` is None then we need to flatten the input array and memorize
     # the original dimensionality for the final reshape operation.

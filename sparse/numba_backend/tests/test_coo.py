@@ -1737,12 +1737,51 @@ def test_argmax_argmin_3D(axis, mode):
     np.testing.assert_equal(result, expected)
 
 
+@pytest.mark.parametrize(
+    ("arr", "axis"),
+    [
+        (np.array([[0, 3, 0], [1, 2, 0]]), -1),
+        (np.array([[0, 3, 0], [1, 2, 0]]), -2),
+        (np.array([[[0, 0], [1, 0]], [[5, 0], [0, -3]]]), -1),
+        (np.array([[[0, 0], [1, 0]], [[5, 0], [0, -3]]]), -2),
+        (np.array([[[0, 0], [1, 0]], [[5, 0], [0, -3]]]), -3),
+    ],
+)
+@pytest.mark.parametrize("keepdims", [True, False])
+@pytest.mark.parametrize("mode", [(sparse.argmax, np.argmax), (sparse.argmin, np.argmin)])
+def test_argmax_argmin_negative_axis(arr, axis, keepdims, mode):
+    sparse_func, np_func = mode
+
+    s_arr = sparse.COO.from_numpy(arr)
+
+    result = sparse_func(s_arr, axis=axis, keepdims=keepdims).todense()
+    expected = np_func(arr, axis=axis, keepdims=keepdims)
+
+    np.testing.assert_equal(result, expected)
+
+
+@pytest.mark.parametrize("mode", [(sparse.argmax, np.argmax), (sparse.argmin, np.argmin)])
+def test_argmax_argmin_negative_axis_1d(mode):
+    sparse_func, np_func = mode
+
+    arr = np.array([0, 3, 0, 2])
+    s_arr = sparse.COO.from_numpy(arr)
+
+    result = sparse_func(s_arr, axis=-1).todense()
+    expected = np_func(arr, axis=-1)
+
+    np.testing.assert_equal(result, expected)
+
+
 @pytest.mark.parametrize("func", [sparse.argmax, sparse.argmin])
 def test_argmax_argmin_constraint(func):
     s = sparse.COO.from_numpy(np.full((2, 2), 2), fill_value=2)
 
     with pytest.raises(ValueError, match="`axis=2` is out of bounds for array of dimension 2."):
         func(s, axis=2)
+
+    with pytest.raises(ValueError, match="`axis=-3` is out of bounds for array of dimension 2."):
+        func(s, axis=-3)
 
 
 @pytest.mark.parametrize("config", [(np.inf, "isinf"), (np.nan, "isnan")])
