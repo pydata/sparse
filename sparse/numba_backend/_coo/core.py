@@ -56,6 +56,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         [`sparse.COO.enable_caching`][].
     fill_value: scalar, optional
         The fill value for this array.
+    idx_dtype : numpy.dtype, optional
+        Integer dtype for the stored coordinates. It must be able to represent
+        the coordinate indices. Operations that use flattened indices may also
+        require the total array size to fit in this dtype; see
+        [`sparse.COO.from_numpy`][].
 
     Attributes
     ----------
@@ -349,6 +354,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         fill_value : scalar
             The fill value of the constructed [`sparse.COO`][] array. Zero if
             unspecified.
+        idx_dtype : numpy.dtype, optional
+            Integer dtype for the stored coordinates. Conversion first flattens
+            ``x``, so this dtype must be able to represent ``x.size``, not just
+            the length of each axis. For example, ``np.uint8`` cannot be used
+            for a ``(25, 25)`` array; omit this argument or use ``np.uint16``.
 
         Returns
         -------
