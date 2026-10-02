@@ -342,6 +342,8 @@ def _dot(a, b, return_type=None):
     from ._coo import COO
     from ._sparse_array import SparseArray
 
+    # Dense operands bypass sparse constructors, but Numba also requires
+    # their values to have native byte order (see gh-521).
     if isinstance(a, np.ndarray):
         a = _as_native_byteorder(a)
     if isinstance(b, np.ndarray):

@@ -172,21 +172,15 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         if len(shape) == 1:
             compressed_axes = None
 
-        data, self.indices, self.indptr = arg
-        self.data = _as_native_byteorder(data)
-        if self.data is not data and fill_value is not None:
-            fill_value = np.asarray(fill_value, dtype=self.data.dtype)[()]
+        self.data, self.indices, self.indptr = arg
 
         if self.data.ndim != 1:
             raise ValueError("data must be a scalar or 1-dimensional.")
 
+        self.data = _as_native_byteorder(self.data)
         self.shape = shape
-
-        if fill_value is None:
-            fill_value = _zero_of_dtype(self.data.dtype)
-
         self._compressed_axes = tuple(compressed_axes) if isinstance(compressed_axes, Iterable) else None
-        self.fill_value = self.data.dtype.type(fill_value)
+        self.fill_value = _zero_of_dtype(self.data.dtype) if fill_value is None else self.data.dtype.type(fill_value)
 
         if prune:
             self._prune()

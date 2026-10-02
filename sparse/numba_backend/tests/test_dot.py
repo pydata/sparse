@@ -504,3 +504,13 @@ def test_dot_non_native_empty_gcxs_format():
     assert isinstance(actual, GCXS)
     assert actual.compressed_axes == (0,)
     assert_eq(np.empty((0, 3)), actual)
+
+
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@pytest.mark.parametrize("func", [sparse.dot, sparse.matmul])
+def test_dot_non_native_dense_vector(format, func):
+    # A native sparse constructor cannot normalize the dense operand from gh-521.
+    a = COO.from_numpy(np.asarray([[0.0, 1.0], [2.0, 0.0]])).asformat(format)
+    b = np.asarray([3.0, 4.0], dtype=np.dtype("f8").newbyteorder("S"))
+
+    assert_eq(func(a, b), np.asarray([4.0, 6.0]))
