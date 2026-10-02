@@ -11,6 +11,7 @@ from .._coo.common import linear_loc
 from .._coo.core import COO
 from .._sparse_array import SparseArray
 from .._utils import (
+    _as_native_byteorder,
     _zero_of_dtype,
     can_store,
     check_compressed_axes,
@@ -104,6 +105,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     arg : tuple (data, indices, indptr)
         A tuple of arrays holding the data, indices, and
         index pointers for the nonzero values of the array.
+        Values are stored in native byte order; non-native input data is copied.
     shape : tuple[int] (COO.ndim,)
         The shape of the array.
     compressed_axes : Iterable[int]
@@ -170,7 +172,10 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         if len(shape) == 1:
             compressed_axes = None
 
-        self.data, self.indices, self.indptr = arg
+        data, self.indices, self.indptr = arg
+        self.data = _as_native_byteorder(data)
+        if self.data is not data and fill_value is not None:
+            fill_value = np.asarray(fill_value, dtype=self.data.dtype)[()]
 
         if self.data.ndim != 1:
             raise ValueError("data must be a scalar or 1-dimensional.")

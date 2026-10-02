@@ -13,6 +13,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from .._sparse_array import SparseArray
 from .._umath import broadcast_to
 from .._utils import (
+    _as_native_byteorder,
     _zero_of_dtype,
     can_store,
     check_fill_value,
@@ -38,6 +39,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     data : numpy.ndarray (COO.nnz,)
         An array of Values. A scalar can also be supplied if the data is the same across
         all coordinates. If not given, defers to [`sparse.as_coo`][].
+        Values are stored in native byte order; non-native input data is copied.
     shape : tuple[int] (COO.ndim,)
         The shape of the array.
     has_duplicates : bool, optional
@@ -211,6 +213,17 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             self._make_shallow_copy_of(coords)
             if data is not None or shape is not None:
                 raise ValueError("If `coords` is `COO`, then no other arguments should be provided.")
+            native_data = _as_native_byteorder(self.data)
+            if native_data is not self.data:
+                self.data = native_data
+                self.fill_value = np.asarray(self.fill_value, dtype=self.data.dtype)[()]
+                if fill_value is not None:
+                    fill_value = np.asarray(fill_value, dtype=self.data.dtype)[()]
+                self._cache = None
+                if coords._cache is not None:
+                    self.enable_caching()
+                self.__dict__.pop("_csr", None)
+                self.__dict__.pop("_csc", None)
             if fill_value is not None:
                 self.fill_value = self.data.dtype.type(fill_value)
             return
@@ -226,7 +239,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 self.enable_caching()
             return
 
-        self.data = np.asarray(data)
+        data = np.asarray(data)
+        self.data = _as_native_byteorder(data)
+        if self.data is not data and fill_value is not None:
+            fill_value = np.asarray(fill_value, dtype=self.data.dtype)[()]
         self.coords = np.asarray(coords)
 
         if self.coords.ndim == 1:

@@ -82,6 +82,14 @@ def is_canonical(x):
     return not x.shape or ((np.diff(x.linear_loc()) > 0).all() and not equivalent(x.data, x.fill_value).any())
 
 
+def _as_native_byteorder(x):
+    """Return native-byte-order values, copying only when conversion is needed."""
+    # isnative can miss non-native fields nested in subarray dtypes.
+    if x.dtype.isnative and x.dtype.fields is None:
+        return x
+    return x.astype(x.dtype.newbyteorder("="), casting="equiv", copy=False)
+
+
 def _zero_of_dtype(dtype):
     """
     Creates a ()-shaped 0-dimensional zero array of a given dtype.
