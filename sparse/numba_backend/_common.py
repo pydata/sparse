@@ -242,6 +242,9 @@ def matmul(a, b):
     if not hasattr(a, "ndim") or not hasattr(b, "ndim"):
         raise TypeError(f"Cannot perform dot product on types {type(a)}, {type(b)}")
 
+    a = _as_native_byteorder(a)
+    b = _as_native_byteorder(b)
+
     if check_class_nan(a) or check_class_nan(b):
         warnings.warn("Nan will not be propagated in matrix multiplication", RuntimeWarning, stacklevel=1)
 
@@ -336,10 +339,40 @@ def dot(a, b):
     return tensordot(a, b, axes=(a_axis, b_axis))
 
 
+def _as_native_byteorder(x):
+    """Normalize values for Numba without copying native inputs or sparse indices."""
+    if x.dtype.isnative:
+        return x
+
+    from ._compressed import GCXS
+
+    dtype = x.dtype.newbyteorder("=")
+    if isinstance(x, COO):
+        return COO(
+            x.coords,
+            x.data.astype(dtype),
+            shape=x.shape,
+            has_duplicates=False,
+            sorted=True,
+            fill_value=x.fill_value,
+        )
+    if isinstance(x, GCXS):
+        return GCXS(
+            (x.data.astype(dtype), x.indices, x.indptr),
+            shape=x.shape,
+            compressed_axes=x.compressed_axes,
+            fill_value=x.fill_value,
+        )
+    return x.astype(dtype)
+
+
 def _dot(a, b, return_type=None):
     from ._compressed import GCXS
     from ._coo import COO
     from ._sparse_array import SparseArray
+
+    a = _as_native_byteorder(a)
+    b = _as_native_byteorder(b)
 
     out_shape = (a.shape[0], b.shape[1])
     if builtins.all(isinstance(arr, SparseArray) for arr in [a, b]) and builtins.any(
