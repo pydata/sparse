@@ -326,7 +326,8 @@ def dot(a, b):
             a = as_coo(a)
         if isinstance(b, SparseArray):
             b = as_coo(b)
-        return (a * b).sum()
+        # Sum in the product dtype like NumPy, e.g. ``bool`` stays ``bool``.
+        return (a * b).sum(dtype=_dot_dtype(a.dtype, b.dtype))
 
     a_axis = -1
     b_axis = -2
