@@ -277,6 +277,7 @@ def triu(x, k=0):
     """
     from .core import COO
 
+    x = _validate_coo_input(x)
     check_zero_fill_value(x)
 
     if not x.ndim >= 2:
@@ -318,6 +319,7 @@ def tril(x, k=0):
     """
     from .core import COO
 
+    x = _validate_coo_input(x)
     check_zero_fill_value(x)
 
     if not x.ndim >= 2:
@@ -862,6 +864,8 @@ def diagonal(a, offset=0, axis1=0, axis2=1):
     [`numpy.diagonal`][] : NumPy equivalent function
     """
     from .core import COO
+
+    a = _validate_coo_input(a)
 
     if a.ndim < 2:
         raise ValueError("array must be at least 2-d")
