@@ -131,6 +131,12 @@ do the following to get an equivalent [`sparse.COO`][] array:
 s = COO.from_numpy(x)
 ```
 
+If you pass `idx_dtype`, it must be able to represent the **total number of
+elements** in `x`, because `from_numpy` builds flattened indices before
+reshaping the result. For example, `COO.from_numpy(x, idx_dtype=np.uint8)`
+raises a `ValueError` when `x.shape == (25, 25)`: `x.size` is 625, although
+each axis has only 25 entries. Use `np.uint16` or leave `idx_dtype` unspecified.
+
 ## Generating random [`sparse.COO`][] objects
 
 The [`sparse.random`][] method can be used to create random
