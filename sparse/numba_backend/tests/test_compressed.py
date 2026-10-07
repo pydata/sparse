@@ -457,3 +457,25 @@ def test_triu_tril_diagonal(compressed_axes, k):
     assert_eq(sparse.triu(s, k=k), np.triu(x, k=k))
     assert_eq(sparse.tril(s, k=k), np.tril(x, k=k))
     assert_eq(sparse.diagonal(s, offset=k), np.diagonal(x, offset=k))
+
+
+@pytest.mark.parametrize("compressed_axes", [(0,), (1,)])
+def test_nonzero(compressed_axes):
+    x = np.array([[0, 2, 0], [3, 0, 4]])
+    s = GCXS.from_numpy(x, compressed_axes=compressed_axes)
+
+    for actual, expected in zip(sparse.nonzero(s), np.nonzero(x), strict=True):
+        np.testing.assert_equal(actual, expected)
+    np.testing.assert_equal(sparse.argwhere(s), np.argwhere(x))
+
+
+@pytest.mark.parametrize("compressed_axes", [(0,), (1,)])
+@pytest.mark.parametrize("shape", [(4, 3), (2, 2, 3)])
+def test_broadcast_to(compressed_axes, shape):
+    x = np.array([[0, 2, 0]])
+    s = GCXS.from_numpy(x, compressed_axes=compressed_axes)
+
+    result = sparse.broadcast_to(s, shape)
+    assert isinstance(result, GCXS)
+    assert_eq(result, np.broadcast_to(x, shape))
+    assert_eq(sparse.tile(s, (2, 3)), np.tile(x, (2, 3)))

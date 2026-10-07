@@ -878,6 +878,14 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     def isnan(self):
         return self.tocoo().isnan().asformat("gcxs", compressed_axes=self.compressed_axes)
 
+    def nonzero(self):
+        return self.tocoo().nonzero()
+
+    def broadcast_to(self, shape):
+        result = self.tocoo().broadcast_to(shape)
+        compressed_axes = self.compressed_axes if result.ndim == self.ndim else None
+        return result.asformat("gcxs", compressed_axes=compressed_axes)
+
 
 class _Compressed2d(GCXS):
     class_compressed_axes: tuple[int]
