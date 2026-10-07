@@ -255,6 +255,13 @@ def test_complex_methods(complex):
         (1, Ellipsis, None),
         (1, 1, 1, Ellipsis),
         (Ellipsis, 1, None),
+        # New axes after integer indices
+        (0, None),
+        (1, None, slice(1, 3)),
+        (1, None, 2),
+        (1, 2, None),
+        (None, 1, None, slice(None), 0),
+        (1, None, 1, 1),
         # Pathological - Slices larger than array
         (slice(None, 1000)),
         (slice(None), slice(None, 1000)),
@@ -268,6 +275,14 @@ def test_complex_methods(complex):
 @pytest.mark.parametrize("compressed_axes", [(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)])
 def test_slicing(index, compressed_axes):
     s = sparse.random((2, 3, 4), density=0.5, format="gcxs", compressed_axes=compressed_axes)
+    x = s.todense()
+    assert_eq(x[index], s[index])
+
+
+@pytest.mark.parametrize("index", [(None, 0), (0, None), (1, None, 2), (None, slice(1, 3), 2), (None, 2, [0, 3])])
+@pytest.mark.parametrize("compressed_axes", [(0,), (1,)])
+def test_slicing_new_axes_2d(index, compressed_axes):
+    s = sparse.random((4, 5), density=0.5, format="gcxs", compressed_axes=compressed_axes)
     x = s.todense()
     assert_eq(x[index], s[index])
 
