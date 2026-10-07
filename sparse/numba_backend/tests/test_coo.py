@@ -1267,6 +1267,20 @@ def test_clip_array_bounds(format, min, max):
     assert_eq(s.clip(max=max), np.clip(x, None, max))
 
 
+def test_clip_no_bounds():
+    x = np.array([[0, 0, 1, 0, 2], [5, 0, 0, 3, 0]])
+    s = sparse.COO.from_numpy(x)
+
+    # NumPy < 2.1 requires one of the bounds
+    try:
+        expected = np.clip(x, None, None)
+    except ValueError:
+        with pytest.raises(ValueError):
+            s.clip()
+    else:
+        assert_eq(s.clip(), expected)
+
+
 class TestFailFillValue:
     # Check failed fill_value op
     def test_nonzero_fv(self):
