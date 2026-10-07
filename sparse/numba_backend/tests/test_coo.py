@@ -857,6 +857,19 @@ def test_empty_reduction():
     assert_eq(x.sum(axis=(0, 2)), xs.sum(axis=(0, 2)))
 
 
+@pytest.mark.parametrize("reduction", ["all", "any"])
+@pytest.mark.parametrize("fill_value", [False, True])
+@pytest.mark.parametrize("axis", [None, 0, (0, 1)])
+@pytest.mark.parametrize("keepdims", [False, True])
+def test_logical_reduction_over_empty_axis(reduction, fill_value, axis, keepdims):
+    x = np.full((0, 3), fill_value)
+    s = COO.from_numpy(x, fill_value=fill_value)
+
+    expected = getattr(np, reduction)(x, axis=axis, keepdims=keepdims)
+    actual = getattr(sparse, reduction)(s, axis=axis, keepdims=keepdims)
+    assert_eq(expected, actual)
+
+
 @pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4)])
 @pytest.mark.parametrize("density", [0.1, 0.3, 0.5, 0.7])
 def test_random_shape(shape, density):
