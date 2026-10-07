@@ -1243,6 +1243,30 @@ def test_clip():
     assert_eq(out, x.clip(min=1, max=3))
 
 
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@pytest.mark.parametrize(
+    "min, max",
+    [
+        (np.array([[0, 1, 0, 1, 0], [1, 0, 0, 1, 0]]), 3),
+        (0, np.array([[1, 1, 2, 2, 3], [3, 4, 4, 2, 1]])),
+        (np.zeros(5, dtype=np.int64), np.full((2, 1), 3)),
+        ("sparse", 3),
+    ],
+)
+def test_clip_array_bounds(format, min, max):
+    x = np.array([[0, 0, 1, 0, 2], [5, 0, 0, 3, 0]])
+    s = sparse.COO.from_numpy(x).asformat(format)
+    if isinstance(min, str):
+        min = np.array([[0, 1, 0, 1, 0], [1, 0, 0, 1, 0]])
+        min_s = sparse.COO.from_numpy(min).asformat(format)
+    else:
+        min_s = min
+
+    assert_eq(sparse.clip(s, min_s, max), np.clip(x, min, max))
+    assert_eq(s.clip(min=min_s), np.clip(x, min, None))
+    assert_eq(s.clip(max=max), np.clip(x, None, max))
+
+
 class TestFailFillValue:
     # Check failed fill_value op
     def test_nonzero_fv(self):

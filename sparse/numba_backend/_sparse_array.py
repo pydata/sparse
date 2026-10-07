@@ -637,7 +637,15 @@ class SparseArray:
         """
         if out is not None and not isinstance(out, tuple):
             out = (out,)
-        return self.__array_ufunc__(np.clip, "__call__", self, a_min=min, a_max=max, out=out)
+        # Pass the bounds as operands, not keyword arguments, so that array bounds are
+        # broadcast against `self` like in NumPy.
+        if min is not None and max is not None:
+            return self.__array_ufunc__(np.clip, "__call__", self, min, max, out=out)
+        if min is not None:
+            return self.__array_ufunc__(np.maximum, "__call__", self, min, out=out)
+        if max is not None:
+            return self.__array_ufunc__(np.minimum, "__call__", self, max, out=out)
+        return self.__array_ufunc__(np.clip, "__call__", self, a_min=None, a_max=None, out=out)
 
     def astype(self, dtype, casting="unsafe", copy=True):
         """
