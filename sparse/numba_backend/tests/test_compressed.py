@@ -479,3 +479,34 @@ def test_broadcast_to(compressed_axes, shape):
     assert isinstance(result, GCXS)
     assert_eq(result, np.broadcast_to(x, shape))
     assert_eq(sparse.tile(s, (2, 3)), np.tile(x, (2, 3)))
+
+
+@pytest.mark.parametrize(
+    "in_shape,compressed_axes,shape",
+    [
+        ((3,), None, (3,)),
+        ((1,), None, (4,)),
+        ((3,), None, (2, 3)),
+        ((2, 1, 3), (0,), (2, 4, 3)),
+        ((2, 1, 3), (1,), (5, 2, 4, 3)),
+        ((1, 3, 1), (0, 2), (2, 3, 4)),
+        ((2, 1, 3), (0, 1), (2, 2, 3)),
+    ],
+)
+def test_broadcast_to_nd(in_shape, compressed_axes, shape):
+    rng = np.random.default_rng(42)
+    x = rng.choice([0, 0, 1, 2], size=in_shape)
+    s = GCXS.from_numpy(x, compressed_axes=compressed_axes)
+
+    result = s.broadcast_to(shape)
+    assert isinstance(result, GCXS)
+    assert_eq(result, np.broadcast_to(x, shape))
+    if compressed_axes is not None:
+        offset = len(shape) - len(in_shape)
+        assert result.compressed_axes == tuple(ax + offset for ax in compressed_axes)
+
+
+def test_broadcast_to_invalid():
+    s = GCXS.from_numpy(np.ones((2, 3)))
+    with pytest.raises(ValueError):
+        s.broadcast_to((3, 3))
