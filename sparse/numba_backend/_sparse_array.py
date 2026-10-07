@@ -3,7 +3,7 @@ import operator
 import warnings
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Iterable
-from functools import reduce
+from functools import partial, reduce
 from numbers import Integral
 
 import numpy as np
@@ -12,6 +12,11 @@ from ._umath import elemwise
 from ._utils import _zero_of_dtype, equivalent, html_table, normalize_axis
 
 _reduce_super_ufunc = {np.add: np.multiply, np.multiply: np.power}
+
+
+def _ufunc_output(ufunc, index, *args, **kwargs):
+    """Returns one output of a ufunc with several outputs."""
+    return ufunc(*args, **kwargs)[index]
 
 
 class SparseArray:
@@ -339,6 +344,15 @@ class SparseArray:
 
         if getattr(ufunc, "signature", None) is not None:
             return self.__array_function__(ufunc, (np.ndarray, type(self)), inputs, kwargs)
+
+        if getattr(ufunc, "nout", 1) > 1:
+            # e.g. `divmod`, `modf` or `frexp`: compute each output separately
+            if method != "__call__" or out is not None:
+                return NotImplemented
+            results = tuple(elemwise(partial(_ufunc_output, ufunc, i), *inputs, **kwargs) for i in range(ufunc.nout))
+            if any(result is NotImplemented for result in results):
+                return NotImplemented
+            return results
 
         if out is not None:
             test_args = [np.empty((1,), dtype=a.dtype) if hasattr(a, "dtype") else a for a in inputs]
