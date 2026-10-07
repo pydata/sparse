@@ -706,7 +706,7 @@ def _dot_csr_csr_type(dt1, dt2):
 
             indptr[i + 1] = nnz
 
-        if len(indices) == (n_col * n_row):
+        if n_col > 0 and len(indices) == (n_col * n_row):
             for i in range(len(indices) // n_col):
                 j = n_col * i
                 k = n_col * (1 + i)
