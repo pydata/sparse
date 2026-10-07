@@ -133,6 +133,7 @@ class TestAsarray:
         expected = input.todense() if hasattr(input, "todense") else np.asarray(input)
 
         np.testing.assert_equal(actual, expected)
+        assert s.dtype == dtype
 
         if isinstance(input, SparseArray):
             assert sparse.asarray(input).__class__ is input.__class__

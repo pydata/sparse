@@ -326,7 +326,8 @@ def dot(a, b):
             a = as_coo(a)
         if isinstance(b, SparseArray):
             b = as_coo(b)
-        return (a * b).sum()
+        # Sum in the product dtype like NumPy, e.g. ``bool`` stays ``bool``.
+        return (a * b).sum(dtype=_dot_dtype(a.dtype, b.dtype))
 
     a_axis = -1
     b_axis = -2
@@ -706,7 +707,7 @@ def _dot_csr_csr_type(dt1, dt2):
 
             indptr[i + 1] = nnz
 
-        if len(indices) == (n_col * n_row):
+        if n_col > 0 and len(indices) == (n_col * n_row):
             for i in range(len(indices) // n_col):
                 j = n_col * i
                 k = n_col * (1 + i)
@@ -2117,7 +2118,11 @@ def asarray(obj, /, *, dtype=None, format=None, copy=False, device=None):
     if isinstance(obj, SparseArray):
         if copy:
             obj = obj.copy()
-        return obj.asformat(format) if format is not None else obj
+        if format is not None:
+            obj = obj.asformat(format)
+        if dtype is not None and obj.dtype != dtype:
+            obj = obj.astype(dtype)
+        return obj
 
     format = "coo" if format is None else format
 

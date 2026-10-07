@@ -419,6 +419,9 @@ class SparseArray:
         if reduce_super_ufunc is None:
             missing_counts = counts != n_cols
             data[missing_counts] = method(data[missing_counts], self.fill_value, **kwargs)
+            if n_cols == 0 and method.identity is not None:
+                # Reducing over an empty axis gives the identity, e.g. ``True`` for ``all``.
+                result_fill_value = method.reduce(np.empty(0, dtype=self.dtype), **kwargs)
         else:
             n_fill = n_cols - counts
             with np.errstate(invalid="ignore"):

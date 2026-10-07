@@ -1244,8 +1244,8 @@ def unique_counts(x, /):
             values = np.concatenate([[x.fill_value], values])
             counts = np.concatenate([[fill_count], counts])
             sorted_indices = np.argsort(values)
-            values[sorted_indices] = values.copy()
-            counts[sorted_indices] = counts.copy()
+            values = values[sorted_indices]
+            counts = counts[sorted_indices]
 
     return UniqueCountsResult(values, counts)
 
