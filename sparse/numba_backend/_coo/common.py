@@ -1450,7 +1450,7 @@ def _sort_coo(
                 sorted_data = np.sort(data[group_slice])
                 if descending:
                     # Reverse only the non-NaN values so NaNs stay at the end.
-                    n_valid = np.sum(sorted_data == sorted_data)
+                    n_valid = group_size - np.sum(np.isnan(sorted_data))
                     sorted_data[:n_valid] = sorted_data[:n_valid][::-1].copy()
                 data[group_slice] = sorted_data
 
@@ -1461,7 +1461,7 @@ def _sort_coo(
             for pos in range(group_size):
                 value = data[group_slice][pos]
                 # NaNs go after the fill value, as in NumPy.
-                if (value != value) or (not descending and fill_value < value) or (descending and fill_value > value):
+                if np.isnan(value) or (not descending and fill_value < value) or (descending and fill_value > value):
                     indices[pos:] += fill_value_count
                     break
             result_indices[group_first_idx:group_last_idx] = indices
