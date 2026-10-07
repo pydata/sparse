@@ -2117,7 +2117,11 @@ def asarray(obj, /, *, dtype=None, format=None, copy=False, device=None):
     if isinstance(obj, SparseArray):
         if copy:
             obj = obj.copy()
-        return obj.asformat(format) if format is not None else obj
+        if format is not None:
+            obj = obj.asformat(format)
+        if dtype is not None and obj.dtype != dtype:
+            obj = obj.astype(dtype)
+        return obj
 
     format = "coo" if format is None else format
 
