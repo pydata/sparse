@@ -406,7 +406,11 @@ class SparseArray:
         axis = normalize_axis(axis, self.ndim)
         zero_reduce_result = method.reduce([self.fill_value, self.fill_value], **kwargs)
         reduce_super_ufunc = _reduce_super_ufunc.get(method)
-        if not equivalent(zero_reduce_result, self.fill_value) and reduce_super_ufunc is None:
+        # Compare in the result dtype: e.g. `any` of a NaN fill value is `True`,
+        # which is the fill value cast to bool, so the result stays sparse.
+        with np.errstate(invalid="ignore"):
+            result_dtype_fill_value = np.asarray(self.fill_value).astype(np.result_type(zero_reduce_result))
+        if not equivalent(zero_reduce_result, result_dtype_fill_value) and reduce_super_ufunc is None:
             raise ValueError(f"Performing this reduction operation would produce a dense result: {method!s}")
 
         if not isinstance(axis, tuple):
