@@ -1447,18 +1447,21 @@ def _sort_coo(
                 # np.sort in numba doesn't support `np.sort`'s arguments so `stable`
                 # keyword can't be supported.
                 # https://numba.pydata.org/numba-doc/latest/reference/numpysupported.html#other-methods
-                data[group_slice] = np.sort(data[group_slice])
+                sorted_data = np.sort(data[group_slice])
                 if descending:
-                    data[group_slice] = data[group_slice][::-1]
+                    # Reverse only the non-NaN values so NaNs stay at the end.
+                    n_valid = group_size - np.sum(np.isnan(sorted_data))
+                    sorted_data[:n_valid] = sorted_data[:n_valid][::-1].copy()
+                data[group_slice] = sorted_data
 
             # SORT INDICES
             fill_value_count = sort_axis_len - group_size
             indices = np.arange(group_size)
             # find a place where fill_value would be
             for pos in range(group_size):
-                if (not descending and fill_value < data[group_slice][pos]) or (
-                    descending and fill_value > data[group_slice][pos]
-                ):
+                value = data[group_slice][pos]
+                # NaNs go after the fill value, as in NumPy.
+                if np.isnan(value) or (not descending and fill_value < value) or (descending and fill_value > value):
                     indices[pos:] += fill_value_count
                     break
             result_indices[group_first_idx:group_last_idx] = indices

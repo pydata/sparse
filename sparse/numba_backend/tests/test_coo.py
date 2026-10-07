@@ -2038,6 +2038,18 @@ def test_sort_only_fill_value(fill_value, descending):
     np.testing.assert_equal(result.todense(), expected)
 
 
+@pytest.mark.parametrize("fill_value", [-1, 0, 1, np.nan])
+@pytest.mark.parametrize("descending", [False, True])
+def test_sort_nan(fill_value, descending):
+    arr = np.array([[0.0, np.nan, -2.0, 0.0, 3.0], [np.nan, 0.0, 1.0, np.nan, -1.0]])
+    s_arr = sparse.COO.from_numpy(arr, fill_value)
+
+    result = sparse.sort(s_arr, axis=-1, descending=descending)
+    expected = -np.sort(-arr, axis=-1) if descending else np.sort(arr, axis=-1)
+
+    np.testing.assert_equal(result.todense(), expected)
+
+
 @pytest.mark.parametrize("axis", [None, -1, 0, 1, 2, (0, 1), (2, 0)])
 def test_flip(axis):
     arr = np.arange(24).reshape((2, 3, 4))
