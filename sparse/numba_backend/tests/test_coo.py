@@ -1870,6 +1870,23 @@ def test_argmax_argmin_negative_axis_1d(mode):
     np.testing.assert_equal(result, expected)
 
 
+@pytest.mark.parametrize("fill_value", [0.0, 1.0, -2.0])
+@pytest.mark.parametrize("axis", [None, 0, 1])
+@pytest.mark.parametrize("mode", [(sparse.argmax, np.argmax), (sparse.argmin, np.argmin)])
+def test_argmax_argmin_nan(fill_value, axis, mode):
+    # Like NumPy, the first NaN is returned, also when no stored value beats the
+    # fill value
+    sparse_func, np_func = mode
+
+    arr = np.array([[1.0, np.nan, -2.0], [np.nan, 0.0, 5.0], [-2.0, 1.0, np.nan]])
+    s_arr = sparse.COO.from_numpy(arr, fill_value=fill_value)
+
+    result = sparse_func(s_arr, axis=axis).todense()
+    expected = np_func(arr, axis=axis)
+
+    np.testing.assert_equal(result, expected)
+
+
 @pytest.mark.parametrize("func", [sparse.argmax, sparse.argmin])
 def test_argmax_argmin_constraint(func):
     s = sparse.COO.from_numpy(np.full((2, 2), 2), fill_value=2)

@@ -1494,6 +1494,9 @@ def _compute_minmax_args(
         masked_data = data[mask]
 
         compared_data = operator.gt(masked_data, fill_value) if max_mode_flag else operator.lt(masked_data, fill_value)
+        if not np.isnan(fill_value):
+            # like NumPy, a NaN wins over any other value
+            compared_data = compared_data | np.isnan(masked_data)
 
         if np.any(compared_data) or len(masked_data) == reduce_size:
             # best value is a non-fill value
