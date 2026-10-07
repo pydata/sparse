@@ -506,7 +506,28 @@ def test_broadcast_to_nd(in_shape, compressed_axes, shape):
         assert result.compressed_axes == tuple(ax + offset for ax in compressed_axes)
 
 
-def test_broadcast_to_invalid():
+@pytest.mark.parametrize("shape", [(3, 3), (3,)])
+def test_broadcast_to_invalid(shape):
     s = GCXS.from_numpy(np.ones((2, 3)))
     with pytest.raises(ValueError):
-        s.broadcast_to((3, 3))
+        s.broadcast_to(shape)
+
+
+def test_broadcast_to_0d():
+    x = np.array(5.0)
+    s = GCXS.from_numpy(x)
+
+    result = s.broadcast_to((2, 3))
+    assert isinstance(result, GCXS)
+    assert_eq(result, np.broadcast_to(x, (2, 3)))
+
+
+def test_nonzero_1d_0d():
+    x = np.array([0, 3, 0, 4])
+    s = GCXS.from_numpy(x)
+
+    for actual, expected in zip(sparse.nonzero(s), np.nonzero(x), strict=True):
+        np.testing.assert_equal(actual, expected)
+
+    with pytest.raises(ValueError):
+        GCXS.from_numpy(np.array(0)).nonzero()
