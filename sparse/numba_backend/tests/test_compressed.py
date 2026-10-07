@@ -446,3 +446,14 @@ def test_pad_invalid(pad_width, constant_values, fill_value=0):
     y = sparse.random((50, 50, 3), density=0.15, format="gcxs")
     with pytest.raises(ValueError):
         np.pad(y, pad_width, constant_values=constant_values)
+
+
+@pytest.mark.parametrize("compressed_axes", [(0,), (1,)])
+@pytest.mark.parametrize("k", [-1, 0, 1])
+def test_triu_tril_diagonal(compressed_axes, k):
+    x = np.arange(1, 13).reshape(3, 4)
+    s = GCXS.from_numpy(x, compressed_axes=compressed_axes)
+
+    assert_eq(sparse.triu(s, k=k), np.triu(x, k=k))
+    assert_eq(sparse.tril(s, k=k), np.tril(x, k=k))
+    assert_eq(sparse.diagonal(s, offset=k), np.diagonal(x, offset=k))
