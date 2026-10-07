@@ -1813,8 +1813,10 @@ class TestUnique:
     arr = np.array([[0, 0, 1, 5, 3, 0], [1, 0, 4, 0, 3, 0], [0, 1, 0, 1, 1, 0]], dtype=np.int64)
     arr_empty = np.zeros((5, 5))
     arr_full = np.arange(1, 10)
+    # the fill value sorts after several stored values
+    arr_negative = np.array([[-3, -2, 0, 0], [-1, 2, 0, -2]], dtype=np.int64)
 
-    @pytest.mark.parametrize("arr", [arr, arr_empty, arr_full])
+    @pytest.mark.parametrize("arr", [arr, arr_empty, arr_full, arr_negative])
     @pytest.mark.parametrize("fill_value", [-1, 0, 1])
     def test_unique_counts(self, arr, fill_value):
         s_arr = sparse.COO.from_numpy(arr, fill_value)
