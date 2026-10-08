@@ -133,11 +133,41 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
            [ 0. ,  0. ,  1. ,  2.2],
            [ 0. ,  0. ,  0. ,  1. ]])
 
-    Operations that will result in a dense array will usually result in a different
-    fill value, such as the following.
+    Element-wise operations compute the output fill value by applying the operation
+    to the input fill values. A scalar input contributes its own value. For example,
+    `np.exp(0)` is `1`, so exponentiation changes the fill value without storing
+    every implicit element.
 
     >>> np.exp(s)
     <COO: shape=(4, 4), dtype=float16, nnz=5, fill_value=1.0>
+
+    Comparisons follow the same rule, and `np.where` uses the condition's fill value
+    to select the output fill value. Replacing ones with `NaN` leaves the implicit
+    zeros unchanged because the condition is false at those positions.
+
+    >>> a = COO.from_numpy(np.eye(3), fill_value=0)
+    >>> bool((a == 1).fill_value)
+    False
+    >>> result = np.where(a == 1, np.nan, a)
+    >>> result
+    <COO: shape=(3, 3), dtype=float64, nnz=3, fill_value=0.0>
+    >>> result.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[nan,  0.,  0.],
+           [ 0., nan,  0.],
+           [ 0.,  0., nan]])
+
+    Replacing values less than one also replaces the implicit zeros. The condition's
+    fill value is now true, so the output fill value is `NaN`.
+
+    >>> bool((a < 1).fill_value)
+    True
+    >>> result = np.where(a < 1, np.nan, a)
+    >>> result
+    <COO: shape=(3, 3), dtype=float64, nnz=3, fill_value=nan>
+    >>> result.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[ 1., nan, nan],
+           [nan,  1., nan],
+           [nan, nan,  1.]])
 
     You can also create [`sparse.COO`][] arrays from coordinates and data.
 
