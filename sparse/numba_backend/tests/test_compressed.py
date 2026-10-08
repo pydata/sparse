@@ -388,6 +388,33 @@ def test_flatten(in_shape):
     assert_eq(e, a)
 
 
+@pytest.mark.parametrize(
+    "arr, axis",
+    [
+        (np.eye(2).reshape(1, 2, 1, 2), None),
+        (np.eye(2).reshape(1, 2, 1, 2), 0),
+        (np.eye(2).reshape(1, 2, 1, 2), (0, -2)),
+        (np.arange(3.0).reshape(3, 1), 1),
+        (np.ones((1, 1)), None),
+    ],
+)
+def test_squeeze(arr, axis):
+    s = GCXS.from_numpy(arr)
+    expected = np.squeeze(arr, axis=axis)
+
+    result = sparse.squeeze(s, axis=axis)
+    assert isinstance(result, GCXS)
+    assert_eq(result, expected)
+    assert_eq(s.squeeze(axis=axis), expected)
+
+
+def test_squeeze_validation():
+    s = GCXS.from_numpy(np.eye(3))
+
+    with pytest.raises(ValueError, match="Specified axis `0` has a size greater than one: 3"):
+        s.squeeze(0)
+
+
 def test_gcxs_valerr():
     a = np.arange(300)
     with pytest.raises(ValueError):
