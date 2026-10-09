@@ -13,6 +13,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from .._sparse_array import SparseArray
 from .._umath import broadcast_to
 from .._utils import (
+    _as_native_byteorder,
     _zero_of_dtype,
     can_store,
     check_fill_value,
@@ -38,6 +39,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
     data : numpy.ndarray (COO.nnz,)
         An array of Values. A scalar can also be supplied if the data is the same across
         all coordinates. If not given, defers to [`sparse.as_coo`][].
+        Values are stored in native byte order; non-native input data is copied.
     shape : tuple[int] (COO.ndim,)
         The shape of the array.
     has_duplicates : bool, optional
@@ -261,7 +263,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 self.enable_caching()
             return
 
-        self.data = np.asarray(data)
+        self.data = _as_native_byteorder(np.asarray(data))
         self.coords = np.asarray(coords)
 
         if self.coords.ndim == 1:

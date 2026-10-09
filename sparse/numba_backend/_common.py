@@ -13,6 +13,7 @@ import numpy as np
 from ._coo import COO, as_coo, expand_dims
 from ._sparse_array import SparseArray
 from ._utils import (
+    _as_native_byteorder,
     _zero_of_dtype,
     check_zero_fill_value,
     equivalent,
@@ -88,8 +89,8 @@ def check_class_nan(test):
     if isinstance(test, GCXS | COO):
         return nan_check(test.fill_value, test.data)
     if _is_scipy_sparse_obj(test):
-        return nan_check(test.data)
-    return nan_check(test)
+        return nan_check(_as_native_byteorder(test.data))
+    return nan_check(_as_native_byteorder(test))
 
 
 def tensordot(a, b, axes=2, *, return_type=None):
@@ -341,6 +342,13 @@ def _dot(a, b, return_type=None):
     from ._compressed import GCXS
     from ._coo import COO
     from ._sparse_array import SparseArray
+
+    # Dense operands bypass sparse constructors, but Numba also requires
+    # their values to have native byte order (see gh-521).
+    if isinstance(a, np.ndarray):
+        a = _as_native_byteorder(a)
+    if isinstance(b, np.ndarray):
+        b = _as_native_byteorder(b)
 
     out_shape = (a.shape[0], b.shape[1])
     if builtins.all(isinstance(arr, SparseArray) for arr in [a, b]) and builtins.any(

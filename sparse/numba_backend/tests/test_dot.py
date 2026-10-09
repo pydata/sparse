@@ -417,3 +417,123 @@ def test_matmul_GCXS_slicing(a_shape, b_shape):
     a_b = np.matmul(a, b)
 
     assert_gcxs_slicing(sa_sb, a_b)
+
+
+@pytest.mark.parametrize(
+    "a_dtype,b_dtype", [("f4", "f4"), ("f8", "f8"), ("c8", "c8"), ("c16", "c16"), ("f4", "f8"), ("f8", "c8")]
+)
+@pytest.mark.parametrize("a_order,b_order", [("S", "="), ("=", "S"), ("S", "S")])
+@pytest.mark.parametrize("a_sparse,b_sparse", [(True, False), (False, True), (True, True)])
+@pytest.mark.parametrize("func", [sparse.dot, sparse.matmul])
+def test_dot_non_native_byte_order(a_dtype, b_dtype, a_order, b_order, a_sparse, b_sparse, func):
+    a = np.arange(48).reshape(4, 12) % 5
+    b = np.arange(24).reshape(6, 4) % 7
+    if np.dtype(a_dtype).kind == "c":
+        a = a * (1 + 2j)
+    if np.dtype(b_dtype).kind == "c":
+        b = b * (2 - 1j)
+    a = a.astype(np.dtype(a_dtype).newbyteorder(a_order))[:, ::2]
+    b = b.astype(np.dtype(b_dtype).newbyteorder(b_order))[:, ::2]
+    expected = np.dot(a, b)
+    a = COO.from_numpy(a) if a_sparse else a
+    b = COO.from_numpy(b) if b_sparse else b
+    for x in (a, b):
+        if isinstance(x, COO):
+            # Keep genuinely strided sparse values; from_numpy compacts them.
+            data = np.empty(x.nnz * 2, dtype=x.dtype)
+            data[::2] = x.data
+            x.data = data[::2]
+            x.enable_caching()
+            x.transpose()
+    buffers = [x.data if isinstance(x, COO) else x for x in (a, b)]
+    originals = [(x.dtype, x.tobytes()) for x in buffers]
+    for x in buffers:
+        x.flags.writeable = False
+
+    actual = func(a, b)
+
+    assert_eq(expected, actual)
+    assert actual.dtype == expected.dtype
+    assert actual.dtype.isnative
+    assert isinstance(actual, COO if a_sparse and b_sparse else np.ndarray)
+    for x, (dtype, data) in zip(buffers, originals, strict=True):
+        assert x.dtype == dtype
+        assert x.tobytes() == data
+        assert not x.flags.writeable
+
+
+@pytest.mark.parametrize(
+    "a_format,b_format",
+    [("coo", "coo"), ("coo", "gcxs"), ("gcxs", "coo"), ("gcxs", "gcxs"), ("gcxs", "dense"), ("dense", "gcxs")],
+)
+@pytest.mark.parametrize("compressed_axes", [(0,), (1,)])
+@pytest.mark.parametrize("return_type", [None, COO, GCXS, np.ndarray])
+def test_tensordot_non_native_byte_order(a_format, b_format, compressed_axes, return_type):
+    dtype = np.dtype("f8").newbyteorder("S")
+    a = (np.arange(24).reshape(4, 6) % 5).astype(dtype)
+    b = (np.arange(18).reshape(6, 3) % 7).astype(dtype)
+    expected = np.tensordot(a, b, axes=1)
+    operands = []
+    for x, format in ((a, a_format), (b, b_format)):
+        if format != "dense":
+            x = COO.from_numpy(x)
+            if format == "gcxs":
+                x = x.asformat(format, compressed_axes=compressed_axes)
+        operands.append(x)
+
+    actual = sparse.tensordot(*operands, axes=1, return_type=return_type)
+
+    assert_eq(expected, actual)
+    assert actual.dtype == expected.dtype
+    if return_type is not None:
+        assert isinstance(actual, return_type)
+
+
+@pytest.mark.parametrize("a_shape,b_shape", [((4, 0), (0, 3)), ((4, 6), (6, 3))])
+@pytest.mark.parametrize("a_sparse,b_sparse", [(True, False), (False, True), (True, True)])
+def test_dot_non_native_empty(a_shape, b_shape, a_sparse, b_sparse):
+    dtype = np.dtype("c16").newbyteorder("S")
+    a = np.zeros(a_shape, dtype=dtype)
+    b = np.zeros(b_shape, dtype=dtype)
+    expected = np.dot(a, b)
+    a = COO.from_numpy(a) if a_sparse else a
+    b = COO.from_numpy(b) if b_sparse else b
+
+    actual = sparse.dot(a, b)
+
+    assert_eq(expected, actual)
+    assert actual.dtype == expected.dtype
+
+
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+def test_matmul_non_native_batched(format):
+    dtype = np.dtype("c8").newbyteorder("S")
+    a = ((np.arange(48).reshape(2, 4, 6) % 5) * (1 + 2j)).astype(dtype)
+    b = ((np.arange(18).reshape(1, 6, 3) % 7) * (2 - 1j)).astype(dtype)
+    sa = COO.from_numpy(a).asformat(format)
+    sb = COO.from_numpy(b).asformat(format)
+
+    assert_eq(np.matmul(a, b), sparse.matmul(sa, sb))
+    assert_eq(np.matmul(a, b), sparse.matmul(sa, b))
+    assert_eq(np.matmul(a, b), sparse.matmul(a, sb))
+
+
+def test_dot_non_native_empty_gcxs_format():
+    a = GCXS.from_numpy(np.zeros((0, 2), dtype=np.dtype("f8").newbyteorder("S")), compressed_axes=(0,))
+    b = COO.from_numpy(np.arange(6).reshape(2, 3).astype("f8"))
+
+    actual = sparse.dot(a, b)
+
+    assert isinstance(actual, GCXS)
+    assert actual.compressed_axes == (0,)
+    assert_eq(np.empty((0, 3)), actual)
+
+
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@pytest.mark.parametrize("func", [sparse.dot, sparse.matmul])
+def test_dot_non_native_dense_vector(format, func):
+    # A native sparse constructor cannot normalize the dense operand from gh-521.
+    a = COO.from_numpy(np.asarray([[0.0, 1.0], [2.0, 0.0]])).asformat(format)
+    b = np.asarray([3.0, 4.0], dtype=np.dtype("f8").newbyteorder("S"))
+
+    assert_eq(func(a, b), np.asarray([4.0, 6.0]))
