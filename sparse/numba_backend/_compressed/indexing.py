@@ -54,6 +54,13 @@ def getitem(x, key):
 
     # remove Nones from key, evaluate them at the end
     Nones_removed = [k for k in key if k is not None]
+
+    # a single element with new axes, e.g. x[1, None, 2]
+    if all(isinstance(k, Integral) for k in Nones_removed):
+        value = get_single_element(x, Nones_removed)
+        shape = (1,) * (len(key) - len(Nones_removed))
+        return GCXS.from_numpy(np.full(shape, value, dtype=x.dtype), fill_value=x.fill_value)
+
     count = 0
     for i, ind in enumerate(Nones_removed):
         if isinstance(ind, Integral):
@@ -189,13 +196,23 @@ def getitem(x, key):
 
     arg = (data, indices, indptr)
 
-    # if there were Nones in the key, we insert them back here
+    if indptr is None and len(Nones_removed) != len(key):
+        # A 1-d result has no index pointer, so add the new axes by reshaping it
+        result = GCXS(arg, shape=tuple(shape.tolist()), fill_value=x.fill_value)
+        return result.reshape(tuple(1 if ind is None else -1 for ind in key if not isinstance(ind, Integral)))
+
+    # if there were Nones in the key, we insert them back here, counting only
+    # the axes that are kept in the result (integer indices remove an axis)
     compressed_axes = np.array(compressed_axes)
     shape = shape.tolist()
-    for i in range(len(key)):
-        if key[i] is None:
-            shape.insert(i, 1)
-            compressed_axes[compressed_axes >= i] += 1
+    axis = 0
+    for ind in key:
+        if ind is None:
+            shape.insert(axis, 1)
+            compressed_axes[compressed_axes >= axis] += 1
+            axis += 1
+        elif not isinstance(ind, Integral):
+            axis += 1
 
     compressed_axes = tuple(compressed_axes)
     shape = tuple(shape)
