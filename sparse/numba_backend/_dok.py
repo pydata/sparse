@@ -5,7 +5,7 @@ from numbers import Integral
 import numpy as np
 from numpy.lib.mixins import NDArrayOperatorsMixin
 
-from ._slicing import normalize_index
+from ._slicing import check_index, normalize_index, posify_index
 from ._sparse_array import SparseArray
 from ._utils import equivalent
 
@@ -341,6 +341,7 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
                 raise NotImplementedError(f"Index sequences for all {self.ndim} array dimensions needed!")
             if not all(len(key[0]) == len(k) for k in key):
                 raise IndexError("Unequal length of index sequences!")
+            key = self._normalize_fancy_index(key)
             return self._fancy_getitem(key)
 
         key = normalize_index(key, self.shape)
@@ -350,6 +351,19 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
             ret = ret.asformat("dok")
 
         return ret
+
+    def _normalize_fancy_index(self, key):
+        """Validate integer index sequences and normalize negative coordinates."""
+        normalized = []
+        for ind, dimension in zip(key, self.shape, strict=True):
+            ind = np.empty(0, dtype=np.intp) if not hasattr(ind, "dtype") and len(ind) == 0 else np.asanyarray(ind)
+            if not np.issubdtype(ind.dtype, np.integer):
+                raise IndexError("Indices must be sequences of integer types!")
+            if ind.ndim != 1:
+                raise IndexError("Indices are not 1d sequences!")
+            check_index(ind, dimension)
+            normalized.append(tuple(posify_index(dimension, int(i)) for i in ind))
+        return tuple(normalized)
 
     def _fancy_getitem(self, key):
         """Subset of fancy indexing, when all dimensions are accessed"""
@@ -386,21 +400,17 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         self._setitem(key_list, value)
 
     def _fancy_setitem(self, idxs, values):
-        idxs = tuple(np.asanyarray(idxs) for idxs in idxs)
-        if not all(np.issubdtype(k.dtype, np.integer) for k in idxs):
-            raise IndexError("Indices must be sequences of integer types!")
-        if idxs[0].ndim != 1:
-            raise IndexError("Indices are not 1d sequences!")
+        idxs = self._normalize_fancy_index(idxs)
         if values.ndim == 0:
-            values = np.full(idxs[0].size, values, self.dtype)
+            values = np.full(len(idxs[0]), values, self.dtype)
         elif values.ndim > 1:
             raise ValueError(f"Dimension of values ({values.ndim}) must be 0 or 1!")
-        if not idxs[0].shape == values.shape:
-            raise ValueError(f"Shape mismatch of indices ({idxs[0].shape}) and values ({values.shape})!")
+        if values.shape != (len(idxs[0]),):
+            raise ValueError(f"Shape mismatch of indices ({(len(idxs[0]),)}) and values ({values.shape})!")
         fill_value = self.fill_value
         data = self.data
         for idx, value in zip(zip(*idxs, strict=True), values, strict=True):
-            if value != fill_value:
+            if not equivalent(value, fill_value):
                 data[idx] = value
             elif idx in data:
                 del data[idx]

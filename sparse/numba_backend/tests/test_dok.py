@@ -371,3 +371,119 @@ def test_dok_indexing():
     s[1, 2] = 0.5
     x = s.todense()
     assert_eq(x[1::-1], s[1::-1])
+
+
+@pytest.mark.parametrize("fill_value", [0, 5, np.nan])
+@pytest.mark.parametrize(
+    "indices",
+    [
+        ([-1, 0], [0, -1]),
+        ([-3, -1], [-4, -1]),
+        ([-1, -1], [0, 0]),
+        (np.array([-1, 0], dtype=np.int8), np.array([0, -1], dtype=np.int8)),
+        (np.array([2, 0], dtype=np.uint64), np.array([0, 3], dtype=np.uint64)),
+        ([], []),
+    ],
+)
+def test_fancy_getitem_normalizes_indices(indices, fill_value):
+    x = np.arange(12, dtype=float).reshape(3, 4)
+    x[2, 0] = fill_value
+    s = DOK(sparse.COO.from_numpy(x, fill_value=fill_value))
+
+    result = s[indices]
+
+    assert isinstance(result, DOK)
+    assert_eq(result, x[indices])
+    np.testing.assert_equal(result.fill_value, fill_value)
+
+
+@pytest.mark.parametrize("fill_value", [0, 5, np.nan])
+@pytest.mark.parametrize("value", [9, None, [9, 8]])
+@pytest.mark.parametrize("indices", [([-1, 0], [0, -1]), ([-3, -1], [-4, -1]), ([-1, -1], [0, 0])])
+def test_fancy_setitem_normalizes_indices(indices, value, fill_value):
+    x = np.arange(12, dtype=float).reshape(3, 4)
+    s = DOK(sparse.COO.from_numpy(x, fill_value=fill_value))
+    if value is None:
+        value = fill_value
+
+    s[indices] = value
+    x[indices] = value
+
+    assert_eq(s, x)
+    assert all(0 <= i < dim for key in s.data for i, dim in zip(key, s.shape, strict=True))
+
+
+@pytest.mark.parametrize("dtype", [np.int8, np.uint8])
+@pytest.mark.parametrize("operation", ["get", "set"])
+def test_fancy_index_narrow_dtype(dtype, operation):
+    x = np.arange(300)
+    s = DOK(x)
+    index = np.array([-1] if dtype == np.int8 else [1], dtype=dtype)
+    if operation == "get":
+        assert_eq(s[index], x[index])
+    else:
+        s[index] = 999
+        x[index] = 999
+        assert_eq(s, x)
+
+
+@pytest.mark.parametrize("operation", ["get", "set"])
+@pytest.mark.parametrize(
+    "indices",
+    [
+        ([0, 3], [0, 0]),
+        ([-4, 0], [0, 0]),
+        ([0, 1], [0, 4]),
+        ([0, 1], [0, -5]),
+        (np.array([0, np.iinfo(np.uint64).max], dtype=np.uint64), [0, 0]),
+    ],
+)
+def test_fancy_index_out_of_bounds(indices, operation):
+    x = np.arange(12).reshape(3, 4)
+    s = DOK(x)
+    original = s.data.copy()
+
+    with pytest.raises(IndexError, match="out of bounds"):
+        if operation == "get":
+            s[indices]
+        else:
+            s[indices] = 99
+
+    assert s.data == original
+    assert_eq(s, x)
+
+
+@pytest.mark.parametrize("operation", ["get", "set"])
+@pytest.mark.parametrize(
+    "indices",
+    [
+        ([0.0], [0]),
+        ([0], [1.0]),
+        ([[0]], [0]),
+        ([0], [[1]]),
+        ([True], [False]),
+        (np.array([], dtype=float), np.array([], dtype=int)),
+    ],
+)
+def test_fancy_index_invalid_sequences(indices, operation):
+    x = np.arange(12).reshape(3, 4)
+    s = DOK(x)
+    original = s.data.copy()
+
+    with pytest.raises(IndexError):
+        if operation == "get":
+            s[indices]
+        else:
+            s[indices] = 99
+
+    assert s.data == original
+
+
+def test_fancy_setitem_empty():
+    x = np.arange(12).reshape(3, 4)
+    s = DOK(x)
+
+    s[([], [])] = []
+    x[([], [])] = []
+
+    assert_eq(s, x)
