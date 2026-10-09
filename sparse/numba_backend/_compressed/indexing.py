@@ -19,6 +19,7 @@ def getitem(x, key):
     2-dimensional key and then iterate through each of the relevent rows and
     columns.
     """
+    from .._sparse_array import SparseArray
     from .compressed import GCXS
 
     if x.ndim == 1:
@@ -27,7 +28,14 @@ def getitem(x, key):
             return result
         return GCXS.from_coo(result)
 
+    orig_key = key
     key = list(normalize_index(key, x.shape))
+
+    # Several index arrays select elements pointwise (like ``zip``), not their
+    # Cartesian product, which the compressed selection below assumes
+    if sum(isinstance(k, np.ndarray) for k in key) > 1:
+        result = x.tocoo()[orig_key]
+        return GCXS.from_coo(result) if isinstance(result, SparseArray) else result
 
     # zip_longest so things like x[..., None] are picked up.
     if len(key) != 0 and all(isinstance(k, slice) and k == slice(0, dim, 1) for k, dim in zip_longest(key, x.shape)):
