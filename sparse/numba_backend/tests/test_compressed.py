@@ -408,6 +408,18 @@ def test_squeeze(arr, axis):
     assert_eq(s.squeeze(axis=axis), expected)
 
 
+@pytest.mark.parametrize("compressed_axes", [(0,), (1,), (2,), (1, 3)])
+@pytest.mark.parametrize("axis", [None, 1, (1, 3)])
+def test_squeeze_compressed_axes(compressed_axes, axis):
+    arr = np.arange(6.0).reshape(2, 1, 3, 1)
+    s = GCXS.from_numpy(arr, compressed_axes=compressed_axes, fill_value=1.0)
+
+    result = s.squeeze(axis=axis)
+    assert isinstance(result, GCXS)
+    assert result.fill_value == 1.0
+    assert_eq(result, np.squeeze(arr, axis=axis))
+
+
 def test_squeeze_validation():
     s = GCXS.from_numpy(np.eye(3))
 

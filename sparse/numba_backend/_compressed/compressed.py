@@ -732,7 +732,28 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         --------
         - [sparse.COO.squeeze][] : The equivalent COO function.
         """
-        return self.tocoo().squeeze(axis=axis).asformat("gcxs")
+        squeezable_dims = tuple(d for d in range(self.ndim) if self.shape[d] == 1)
+
+        if axis is None:
+            axis = squeezable_dims
+        if isinstance(axis, int):
+            axis = (axis,)
+        elif isinstance(axis, Iterable):
+            axis = tuple(axis)
+        else:
+            raise ValueError(f"Invalid axis parameter: `{axis}`.")
+
+        axis = normalize_axis(axis, self.ndim)
+
+        for d in axis:
+            if d not in squeezable_dims:
+                raise ValueError(f"Specified axis `{d}` has a size greater than one: {self.shape[d]}")
+
+        if len(set(axis)) == self.ndim:
+            # an integer index on every axis would return a scalar
+            return self.reshape(())
+
+        return self[tuple(0 if d in axis else slice(None) for d in range(self.ndim))]
 
     @property
     def compressed_axes(self):
