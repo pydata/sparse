@@ -165,6 +165,49 @@ def test_nan_reductions(reduction, axis, keepdims, fraction):
     assert_eq(expected, actual)
 
 
+@pytest.mark.parametrize("reduction", ["nansum", "nanprod"])
+@pytest.mark.parametrize("dtype", [np.complex64, np.complex128])
+@pytest.mark.parametrize("fill_value", [0, 1 + 1j, complex(np.nan, 0), complex(0, np.nan)])
+@pytest.mark.parametrize("axis", [None, 0, 1, (), (0, 1), -1])
+@pytest.mark.parametrize("keepdims", [False, True])
+def test_complex_nan_reductions(reduction, dtype, fill_value, axis, keepdims):
+    x = np.array(
+        [
+            [1 + 2j, complex(np.nan, 0), complex(0, np.nan), complex(np.nan, np.nan)],
+            [0, 1 + 1j, 2 - 1j, 3j],
+        ],
+        dtype=dtype,
+    )
+    s = COO.from_numpy(x, fill_value=fill_value)
+    original_data = s.data.copy()
+    original_coords = s.coords.copy()
+    s.data.flags.writeable = False
+    s.coords.flags.writeable = False
+
+    expected = getattr(np, reduction)(x, axis=axis, keepdims=keepdims)
+    actual = getattr(sparse, reduction)(s, axis=axis, keepdims=keepdims)
+    assert_eq(expected, actual)
+    assert_eq(expected, getattr(np, reduction)(s, axis=axis, keepdims=keepdims))
+    np.testing.assert_array_equal(s.data, original_data)
+    np.testing.assert_array_equal(s.coords, original_coords)
+    assert not s.data.flags.writeable
+    assert not s.coords.flags.writeable
+    assert_eq(x, s)
+
+
+@pytest.mark.parametrize("reduction", ["nansum", "nanprod"])
+@pytest.mark.parametrize("dtype", [np.complex64, np.complex128])
+@pytest.mark.parametrize("shape", [(0,), (0, 2), (2, 0), (2, 3), ()])
+@pytest.mark.parametrize("fill_value", [complex(np.nan, 0), complex(0, np.nan), 1 + 2j])
+def test_complex_nan_reduction_empty(reduction, dtype, shape, fill_value):
+    x = np.full(shape, fill_value, dtype=dtype)
+    s = COO.from_numpy(x, fill_value=fill_value)
+    assert s.nnz == 0
+    expected = getattr(np, reduction)(x, keepdims=True, dtype=np.complex128)
+    actual = getattr(sparse, reduction)(s, keepdims=True, dtype=np.complex128)
+    assert_eq(expected, actual)
+
+
 @pytest.mark.parametrize("reduction", ["sum", "mean"])
 @pytest.mark.parametrize("axis", [None, 0, 1])
 def test_reduction_nan_fill_value(reduction, axis):

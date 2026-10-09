@@ -689,7 +689,7 @@ def _replace_nan(array, value):
     COO
         A copy of ``array`` with the ``NaN``s replaced.
     """
-    if not np.issubdtype(array.dtype, np.floating):
+    if not (np.issubdtype(array.dtype, np.floating) or np.issubdtype(array.dtype, np.complexfloating)):
         return array
 
     return where(np.isnan(array), value, array)
