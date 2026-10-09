@@ -174,7 +174,10 @@ or slices of the original array. Broadcasting rules are followed.
 s[1:3, 3:1:-1] = [[6, 5]]
 ```
 
-DOK arrays also support fancy indexing assignment if and only if all dimensions are indexed.
+DOK arrays also support fancy indexing assignment with equal-length,
+one-dimensional integer sequences, one for each dimension. Negative indices
+count from the end of each axis. Out-of-bounds indices raise `IndexError`
+before any values are changed.
 
 ```python
 
