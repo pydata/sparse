@@ -15,10 +15,11 @@ from .._utils import (
     can_store,
     check_compressed_axes,
     check_fill_value,
+    check_zero_fill_value,
     equivalent,
     normalize_axis,
 )
-from .convert import _1d_reshape, _transpose, uncompress_dimension
+from .convert import _1d_reshape, _broadcast_to, _transpose, uncompress_dimension
 from .indexing import getitem
 
 
@@ -877,6 +878,64 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     def isnan(self):
         return self.tocoo().isnan().asformat("gcxs", compressed_axes=self.compressed_axes)
+
+    def nonzero(self):
+        check_zero_fill_value(self)
+        if self.ndim == 0:
+            raise ValueError("`nonzero` is undefined for `self.ndim == 0`.")
+        if self.ndim == 1:
+            return (self.indices.astype(np.intp),)
+        axis_order = self._axis_order
+        reordered_shape = self._reordered_shape
+        axisptr = self._axisptr
+        coords = np.empty((self.ndim, self.nnz), dtype=np.intp)
+        coords[axis_order[:axisptr]] = np.unravel_index(uncompress_dimension(self.indptr), reordered_shape[:axisptr])
+        coords[axis_order[axisptr:]] = np.unravel_index(self.indices, reordered_shape[axisptr:])
+        # Return the indices in C order, like NumPy and COO
+        order = np.lexsort(coords[::-1])
+        return tuple(coords[:, order])
+
+    def broadcast_to(self, shape):
+        shape = tuple(shape)
+        if np.broadcast_shapes(self.shape, shape) != shape:
+            raise ValueError(f"cannot broadcast array of shape {self.shape} to shape {shape}")
+        if self.ndim == 0:
+            return self.tocoo().broadcast_to(shape).asformat("gcxs")
+
+        ndim = len(shape)
+        offset = ndim - self.ndim
+        if self.ndim >= 2:
+            compressed_axes = tuple(int(ax) + offset for ax in self.compressed_axes)
+        elif ndim >= 2:
+            compressed_axes = (0,)
+        else:
+            compressed_axes = ()
+        axis_order = list(compressed_axes) + [ax for ax in range(ndim) if ax not in compressed_axes]
+        axisptr = len(compressed_axes)
+        # The new leading axes are uncompressed and come first among those axes, so
+        # padding the input with them leaves its row and column indices unchanged.
+        in_shape = (1,) * offset + self.shape
+        in_reordered = np.array([in_shape[ax] for ax in axis_order], dtype=np.intp)
+        out_reordered = np.array([shape[ax] for ax in axis_order], dtype=np.intp)
+        indptr = self.indptr if self.ndim >= 2 else np.array([0, self.nnz], dtype=np.intp)
+
+        indptr, indices, data = _broadcast_to(
+            indptr,
+            self.indices,
+            self.data,
+            in_reordered[:axisptr],
+            out_reordered[:axisptr],
+            in_reordered[axisptr:],
+            out_reordered[axisptr:],
+        )
+        if ndim == 1:
+            return GCXS((data, indices, ()), shape=shape, fill_value=self.fill_value)
+        return GCXS(
+            (data, indices, indptr),
+            shape=shape,
+            compressed_axes=compressed_axes,
+            fill_value=self.fill_value,
+        )
 
 
 class _Compressed2d(GCXS):

@@ -337,3 +337,69 @@ def _convert_coords(
             new_linear[i] = ravel_multi_index(c_compressed, new_reordered_shape)
             # reshape
             new_coords[:, i] = unravel_index(new_linear[i], new_compressed_shape)
+
+
+@numba.jit(nopython=True, nogil=True)
+def _broadcast_to(indptr, indices, data, in_row_shape, out_row_shape, in_col_shape, out_col_shape):  # pragma: no cover
+    """
+    Broadcasts compressed rows and columns. The shapes are those of the rows and the
+    columns in the reordered (compressed) layout, with the input padded to the output's
+    number of dimensions.
+    """
+    n_rows = 1
+    for d in out_row_shape:
+        n_rows *= d
+    # Number of output values made from each stored value
+    n_repeats = 1
+    for i in range(len(out_col_shape)):
+        if in_col_shape[i] == 1:
+            n_repeats *= out_col_shape[i]
+
+    in_rows = np.empty(n_rows, dtype=np.intp)
+    out_indptr = np.empty(n_rows + 1, dtype=np.intp)
+    out_indptr[0] = 0
+    for r in range(n_rows):
+        rem = r
+        in_r = 0
+        in_stride = 1
+        for i in range(len(out_row_shape) - 1, -1, -1):
+            idx = rem % out_row_shape[i]
+            rem //= out_row_shape[i]
+            if in_row_shape[i] != 1:
+                in_r += idx * in_stride
+            in_stride *= in_row_shape[i]
+        in_rows[r] = in_r
+        out_indptr[r + 1] = out_indptr[r] + (indptr[in_r + 1] - indptr[in_r]) * n_repeats
+
+    nnz = out_indptr[-1]
+    out_indices = np.empty(nnz, dtype=np.intp)
+    out_data = np.empty(nnz, dtype=data.dtype)
+    for r in range(n_rows):
+        in_r = in_rows[r]
+        k = out_indptr[r]
+        for j in range(indptr[in_r], indptr[in_r + 1]):
+            for t in range(n_repeats):
+                rem_col = indices[j]
+                rem_t = t
+                col = 0
+                out_stride = 1
+                for i in range(len(out_col_shape) - 1, -1, -1):
+                    if in_col_shape[i] == 1:
+                        idx = rem_t % out_col_shape[i]
+                        rem_t //= out_col_shape[i]
+                    else:
+                        idx = rem_col % in_col_shape[i]
+                        rem_col //= in_col_shape[i]
+                    col += idx * out_stride
+                    out_stride *= out_col_shape[i]
+                out_indices[k] = col
+                out_data[k] = data[j]
+                k += 1
+        if n_repeats > 1:
+            # Repeated values are interleaved, so sort the row by column
+            start = out_indptr[r]
+            order = np.argsort(out_indices[start:k], kind="mergesort")
+            out_indices[start:k] = out_indices[start:k][order]
+            out_data[start:k] = out_data[start:k][order]
+
+    return out_indptr, out_indices, out_data
