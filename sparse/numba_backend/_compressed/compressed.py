@@ -712,6 +712,49 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
             fill_value=self.fill_value,
         )
 
+    def squeeze(self, axis=None):
+        """
+        Removes singleton dimensions (axes) from ``x``.
+
+        Parameters
+        ----------
+        axis : Union[None, int, Tuple[int, ...]]
+            The axis (or axes) to squeeze. If a specified axis has a size greater than one,
+            a `ValueError` is raised. ``axis=None`` removes all singleton dimensions.
+            Default: ``None``.
+
+        Returns
+        -------
+        GCXS
+            The output array without ``axis`` dimensions.
+
+        See Also
+        --------
+        - [sparse.COO.squeeze][] : The equivalent COO function.
+        """
+        squeezable_dims = tuple(d for d in range(self.ndim) if self.shape[d] == 1)
+
+        if axis is None:
+            axis = squeezable_dims
+        if isinstance(axis, int):
+            axis = (axis,)
+        elif isinstance(axis, Iterable):
+            axis = tuple(axis)
+        else:
+            raise ValueError(f"Invalid axis parameter: `{axis}`.")
+
+        axis = normalize_axis(axis, self.ndim)
+
+        for d in axis:
+            if d not in squeezable_dims:
+                raise ValueError(f"Specified axis `{d}` has a size greater than one: {self.shape[d]}")
+
+        if len(set(axis)) == self.ndim:
+            # an integer index on every axis would return a scalar
+            return self.reshape(())
+
+        return self[tuple(0 if d in axis else slice(None) for d in range(self.ndim))]
+
     @property
     def compressed_axes(self):
         return self._compressed_axes
