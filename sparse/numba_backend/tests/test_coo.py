@@ -165,6 +165,49 @@ def test_nan_reductions(reduction, axis, keepdims, fraction):
     assert_eq(expected, actual)
 
 
+@pytest.mark.parametrize("reduction", ["nansum", "nanprod"])
+@pytest.mark.parametrize("dtype", [np.complex64, np.complex128])
+@pytest.mark.parametrize("fill_value", [0, 1 + 1j, complex(np.nan, 0), complex(0, np.nan)])
+@pytest.mark.parametrize("axis", [None, 0, 1, (), (0, 1), -1])
+@pytest.mark.parametrize("keepdims", [False, True])
+def test_complex_nan_reductions(reduction, dtype, fill_value, axis, keepdims):
+    x = np.array(
+        [
+            [1 + 2j, complex(np.nan, 0), complex(0, np.nan), complex(np.nan, np.nan)],
+            [0, 1 + 1j, 2 - 1j, 3j],
+        ],
+        dtype=dtype,
+    )
+    s = COO.from_numpy(x, fill_value=fill_value)
+    original_data = s.data.copy()
+    original_coords = s.coords.copy()
+    s.data.flags.writeable = False
+    s.coords.flags.writeable = False
+
+    expected = getattr(np, reduction)(x, axis=axis, keepdims=keepdims)
+    actual = getattr(sparse, reduction)(s, axis=axis, keepdims=keepdims)
+    assert_eq(expected, actual)
+    assert_eq(expected, getattr(np, reduction)(s, axis=axis, keepdims=keepdims))
+    np.testing.assert_array_equal(s.data, original_data)
+    np.testing.assert_array_equal(s.coords, original_coords)
+    assert not s.data.flags.writeable
+    assert not s.coords.flags.writeable
+    assert_eq(x, s)
+
+
+@pytest.mark.parametrize("reduction", ["nansum", "nanprod"])
+@pytest.mark.parametrize("dtype", [np.complex64, np.complex128])
+@pytest.mark.parametrize("shape", [(0,), (0, 2), (2, 0), (2, 3), ()])
+@pytest.mark.parametrize("fill_value", [complex(np.nan, 0), complex(0, np.nan), 1 + 2j])
+def test_complex_nan_reduction_empty(reduction, dtype, shape, fill_value):
+    x = np.full(shape, fill_value, dtype=dtype)
+    s = COO.from_numpy(x, fill_value=fill_value)
+    assert s.nnz == 0
+    expected = getattr(np, reduction)(x, keepdims=True, dtype=np.complex128)
+    actual = getattr(sparse, reduction)(s, keepdims=True, dtype=np.complex128)
+    assert_eq(expected, actual)
+
+
 @pytest.mark.parametrize("reduction", ["sum", "mean"])
 @pytest.mark.parametrize("axis", [None, 0, 1])
 def test_reduction_nan_fill_value(reduction, axis):
@@ -488,6 +531,12 @@ def test_slicing(index):
         (Ellipsis, [2, 1, 3]),
         (slice(None), [2, 1, 2]),
         (1, [2, 0, 1]),
+        # Advanced indices separated by a slice, None or Ellipsis come first
+        (1, slice(None), [0, 2]),
+        ([1, 0], slice(None), [0, 2]),
+        (1, None, [0, 2]),
+        (slice(None), 1, Ellipsis, [0, 2]),
+        ([True, False], slice(1, None), 2),
     ],
 )
 def test_advanced_indexing(index):
@@ -855,6 +904,34 @@ def test_empty_reduction():
     xs = COO.from_numpy(x)
 
     assert_eq(x.sum(axis=(0, 2)), xs.sum(axis=(0, 2)))
+
+
+@pytest.mark.parametrize("reduction", ["all", "any"])
+@pytest.mark.parametrize("fill_value", [False, True])
+@pytest.mark.parametrize("axis", [None, 0, (0, 1)])
+@pytest.mark.parametrize("keepdims", [False, True])
+def test_logical_reduction_over_empty_axis(reduction, fill_value, axis, keepdims):
+    x = np.full((0, 3), fill_value)
+    s = COO.from_numpy(x, fill_value=fill_value)
+
+    expected = getattr(np, reduction)(x, axis=axis, keepdims=keepdims)
+    actual = getattr(sparse, reduction)(s, axis=axis, keepdims=keepdims)
+    assert_eq(expected, actual)
+
+
+@pytest.mark.parametrize("reduction", ["all", "any"])
+@pytest.mark.parametrize("fill_value", [np.nan, 2.0, -1.0])
+@pytest.mark.parametrize("axis", [None, 0, 1, (0, 2)])
+@pytest.mark.parametrize("keepdims", [False, True])
+def test_logical_reduction_nonzero_fill_value(reduction, fill_value, axis, keepdims):
+    x = np.full((3, 4, 2), fill_value)
+    x[0, 1, 1] = 0.0
+    x[2, :, 0] = [0.0, 1.0, np.nan, 3.0]
+    s = COO.from_numpy(x, fill_value=fill_value)
+
+    expected = getattr(np, reduction)(x, axis=axis, keepdims=keepdims)
+    actual = getattr(sparse, reduction)(s, axis=axis, keepdims=keepdims)
+    assert_eq(expected, actual)
 
 
 @pytest.mark.parametrize("shape", [(2,), (2, 3), (2, 3, 4)])
@@ -1230,6 +1307,44 @@ def test_clip():
     assert_eq(out, x.clip(min=1, max=3))
 
 
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@pytest.mark.parametrize(
+    "min, max",
+    [
+        (np.array([[0, 1, 0, 1, 0], [1, 0, 0, 1, 0]]), 3),
+        (0, np.array([[1, 1, 2, 2, 3], [3, 4, 4, 2, 1]])),
+        (np.zeros(5, dtype=np.int64), np.full((2, 1), 3)),
+        ("sparse", 3),
+    ],
+)
+def test_clip_array_bounds(format, min, max):
+    x = np.array([[0, 0, 1, 0, 2], [5, 0, 0, 3, 0]])
+    s = sparse.COO.from_numpy(x).asformat(format)
+    if isinstance(min, str):
+        min = np.array([[0, 1, 0, 1, 0], [1, 0, 0, 1, 0]])
+        min_s = sparse.COO.from_numpy(min).asformat(format)
+    else:
+        min_s = min
+
+    assert_eq(sparse.clip(s, min_s, max), np.clip(x, min, max))
+    assert_eq(s.clip(min=min_s), np.clip(x, min, None))
+    assert_eq(s.clip(max=max), np.clip(x, None, max))
+
+
+def test_clip_no_bounds():
+    x = np.array([[0, 0, 1, 0, 2], [5, 0, 0, 3, 0]])
+    s = sparse.COO.from_numpy(x)
+
+    # NumPy < 2.1 requires one of the bounds
+    try:
+        expected = np.clip(x, None, None)
+    except ValueError:
+        with pytest.raises(ValueError):
+            s.clip()
+    else:
+        assert_eq(s.clip(), expected)
+
+
 class TestFailFillValue:
     # Check failed fill_value op
     def test_nonzero_fv(self):
@@ -1571,6 +1686,75 @@ def test_flatten(in_shape):
     assert_eq(e, a)
 
 
+@pytest.mark.parametrize("shape", [(), (0,), (2, 0, 3), (5,), (2, 3), (2, 3, 4), (1, 2, 1, 3)])
+@pytest.mark.parametrize("order", ["C", "F", None])
+@pytest.mark.parametrize("fill_value", [0, 5, np.nan])
+def test_flatten_order(shape, order, fill_value):
+    x = np.full(shape, fill_value)
+    x.flat[::2] = np.arange(x.size)[::2] + 1
+    s = COO.from_numpy(x, fill_value=fill_value)
+
+    actual = s.flatten(order=order)
+
+    assert_eq(x.flatten(order="C" if order is None else order), actual)
+    assert actual.nnz == s.nnz
+    np.testing.assert_equal(actual.fill_value, s.fill_value)
+    assert_eq(s, x)
+
+
+@pytest.mark.parametrize("fill_value", [0, 5, np.nan])
+def test_flatten_fortran_all_fill(fill_value):
+    x = np.full((2, 3, 4), fill_value)
+    s = COO.from_numpy(x, fill_value=fill_value)
+
+    actual = s.flatten(order="F")
+
+    assert_eq(x.flatten(order="F"), actual)
+    assert actual.nnz == 0
+    np.testing.assert_equal(actual.fill_value, s.fill_value)
+
+
+def test_flatten_fortran_large_sparse(monkeypatch):
+    s = COO([[0, 2, 999999], [999999, 1, 0]], np.array([7, 8, 9], dtype=np.int16), shape=(10**6, 10**6))
+
+    def no_densification(*args, **kwargs):
+        pytest.fail("flatten must not convert a sparse array to dense")
+
+    monkeypatch.setattr(COO, "todense", no_densification)
+    actual = s.flatten(order="F")
+
+    assert actual.shape == (10**12,)
+    assert actual.dtype == s.dtype
+    np.testing.assert_array_equal(actual.coords, [[999999, 1000002, 999999000000]])
+    np.testing.assert_array_equal(actual.data, [9, 8, 7])
+
+
+def test_flatten_fortran_upcast():
+    s = COO([[0, 19], [19, 0]], [3, 4], shape=(20, 20), idx_dtype=np.uint8)
+    x = s.todense()
+
+    actual = s.flatten(order="F")
+
+    assert_eq(x.flatten(order="F"), actual)
+    assert actual.coords.dtype == np.uint16
+
+
+def test_flatten_order_cache():
+    x = np.arange(24).reshape(2, 3, 4)
+    s = COO.from_numpy(x)
+    s.enable_caching()
+
+    for order in ["F", "C", "F", None]:
+        assert_eq(x.flatten(order="C" if order is None else order), s.flatten(order=order))
+
+
+@pytest.mark.parametrize("order", ["A", "K", "invalid"])
+def test_flatten_unsupported_order(order):
+    s = COO.from_numpy(np.arange(6).reshape(2, 3))
+    with pytest.raises(NotImplementedError, match="order"):
+        s.flatten(order=order)
+
+
 def test_asnumpy():
     s = sparse.COO(data=[1], coords=[2], shape=(5,))
     assert_eq(sparse.asnumpy(s), s.todense())
@@ -1737,12 +1921,68 @@ def test_argmax_argmin_3D(axis, mode):
     np.testing.assert_equal(result, expected)
 
 
+@pytest.mark.parametrize(
+    ("arr", "axis"),
+    [
+        (np.array([[0, 3, 0], [1, 2, 0]]), -1),
+        (np.array([[0, 3, 0], [1, 2, 0]]), -2),
+        (np.array([[[0, 0], [1, 0]], [[5, 0], [0, -3]]]), -1),
+        (np.array([[[0, 0], [1, 0]], [[5, 0], [0, -3]]]), -2),
+        (np.array([[[0, 0], [1, 0]], [[5, 0], [0, -3]]]), -3),
+    ],
+)
+@pytest.mark.parametrize("keepdims", [True, False])
+@pytest.mark.parametrize("mode", [(sparse.argmax, np.argmax), (sparse.argmin, np.argmin)])
+def test_argmax_argmin_negative_axis(arr, axis, keepdims, mode):
+    sparse_func, np_func = mode
+
+    s_arr = sparse.COO.from_numpy(arr)
+
+    result = sparse_func(s_arr, axis=axis, keepdims=keepdims).todense()
+    expected = np_func(arr, axis=axis, keepdims=keepdims)
+
+    np.testing.assert_equal(result, expected)
+
+
+@pytest.mark.parametrize("mode", [(sparse.argmax, np.argmax), (sparse.argmin, np.argmin)])
+def test_argmax_argmin_negative_axis_1d(mode):
+    sparse_func, np_func = mode
+
+    arr = np.array([0, 3, 0, 2])
+    s_arr = sparse.COO.from_numpy(arr)
+
+    result = sparse_func(s_arr, axis=-1).todense()
+    expected = np_func(arr, axis=-1)
+
+    np.testing.assert_equal(result, expected)
+
+
+@pytest.mark.parametrize("fill_value", [0.0, 1.0, -2.0])
+@pytest.mark.parametrize("axis", [None, 0, 1])
+@pytest.mark.parametrize("mode", [(sparse.argmax, np.argmax), (sparse.argmin, np.argmin)])
+def test_argmax_argmin_nan(fill_value, axis, mode):
+    # Like NumPy, the first NaN is returned, also when no stored value beats the
+    # fill value
+    sparse_func, np_func = mode
+
+    arr = np.array([[1.0, np.nan, -2.0], [np.nan, 0.0, 5.0], [-2.0, 1.0, np.nan]])
+    s_arr = sparse.COO.from_numpy(arr, fill_value=fill_value)
+
+    result = sparse_func(s_arr, axis=axis).todense()
+    expected = np_func(arr, axis=axis)
+
+    np.testing.assert_equal(result, expected)
+
+
 @pytest.mark.parametrize("func", [sparse.argmax, sparse.argmin])
 def test_argmax_argmin_constraint(func):
     s = sparse.COO.from_numpy(np.full((2, 2), 2), fill_value=2)
 
     with pytest.raises(ValueError, match="`axis=2` is out of bounds for array of dimension 2."):
         func(s, axis=2)
+
+    with pytest.raises(ValueError, match="`axis=-3` is out of bounds for array of dimension 2."):
+        func(s, axis=-3)
 
 
 @pytest.mark.parametrize("config", [(np.inf, "isinf"), (np.nan, "isnan")])
@@ -1800,8 +2040,10 @@ class TestUnique:
     arr = np.array([[0, 0, 1, 5, 3, 0], [1, 0, 4, 0, 3, 0], [0, 1, 0, 1, 1, 0]], dtype=np.int64)
     arr_empty = np.zeros((5, 5))
     arr_full = np.arange(1, 10)
+    # the fill value sorts after several stored values
+    arr_negative = np.array([[-3, -2, 0, 0], [-1, 2, 0, -2]], dtype=np.int64)
 
-    @pytest.mark.parametrize("arr", [arr, arr_empty, arr_full])
+    @pytest.mark.parametrize("arr", [arr, arr_empty, arr_full, arr_negative])
     @pytest.mark.parametrize("fill_value", [-1, 0, 1])
     def test_unique_counts(self, arr, fill_value):
         s_arr = sparse.COO.from_numpy(arr, fill_value)
@@ -1911,6 +2153,18 @@ def test_sort_only_fill_value(fill_value, descending):
 
     result = sparse.sort(s_arr, axis=0, descending=descending)
     expected = np.sort(arr, axis=0)
+
+    np.testing.assert_equal(result.todense(), expected)
+
+
+@pytest.mark.parametrize("fill_value", [-1, 0, 1, np.nan])
+@pytest.mark.parametrize("descending", [False, True])
+def test_sort_nan(fill_value, descending):
+    arr = np.array([[0.0, np.nan, -2.0, 0.0, 3.0], [np.nan, 0.0, 1.0, np.nan, -1.0]])
+    s_arr = sparse.COO.from_numpy(arr, fill_value)
+
+    result = sparse.sort(s_arr, axis=-1, descending=descending)
+    expected = -np.sort(-arr, axis=-1) if descending else np.sort(arr, axis=-1)
 
     np.testing.assert_equal(result.todense(), expected)
 

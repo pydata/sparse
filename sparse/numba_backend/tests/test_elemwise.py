@@ -125,6 +125,30 @@ def test_elemwise_unsupported(format):
     assert sparse.elemwise(operator.add, s1, x2) is NotImplemented
 
 
+@pytest.mark.parametrize(
+    "func, args",
+    [
+        (np.modf, ()),
+        (np.frexp, ()),
+        (np.divmod, (3.0,)),
+        (divmod, (2.0,)),
+    ],
+)
+@pytest.mark.parametrize("format", [COO, GCXS])
+def test_elemwise_multiple_outputs(func, args, format):
+    s = sparse.random((2, 3, 4), density=0.5, format=format, data_rvs=lambda n: np.linspace(-5, 5, n))
+    x = s.todense()
+
+    actual = func(s, *args)
+    expected = func(x, *args)
+
+    assert isinstance(actual, tuple)
+    assert len(actual) == len(expected)
+    for a, e in zip(actual, expected, strict=True):
+        assert isinstance(a, format)
+        assert_eq(a, e)
+
+
 @pytest.mark.parametrize("format", [COO, GCXS, DOK])
 def test_elemwise_mixed_broadcast(format, rng):
     s1 = sparse.random((2, 3, 4), density=0.5, format=format)

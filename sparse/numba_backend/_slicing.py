@@ -62,6 +62,49 @@ def normalize_index(idx, shape):
     return tuple(map(clip_slice, idx, none_shape))
 
 
+def advanced_index_axis(index, normalized_index):
+    """
+    Find the axis that NumPy moves to the front for an index.
+
+    NumPy puts the axis made by the advanced indices first when they (arrays, and
+    integers used together with them) are separated by a slice, ``None`` or an
+    ``Ellipsis``.
+
+    Parameters
+    ----------
+    index : tuple
+        The index as given.
+    normalized_index : tuple
+        The index after `normalize_index`.
+
+    Returns
+    -------
+    axis : int or None
+        The axis of the advanced indices in the result before it is moved, or
+        ``None`` if it stays in place.
+
+    Examples
+    --------
+    >>> index = (1, slice(None), [0, 2])
+    >>> advanced_index_axis(index, normalize_index(index, (3, 4, 5)))
+    1
+    >>> index = (slice(None), 1, [0, 2])
+    >>> advanced_index_axis(index, normalize_index(index, (3, 4, 5))) is None
+    True
+    """
+    if not any(isinstance(ind, np.ndarray) for ind in normalized_index):
+        return None
+    advanced = [
+        i
+        for i, ind in enumerate(index)
+        if isinstance(ind, Integral) or (isinstance(ind, Iterable) and not isinstance(ind, str))
+    ]
+    if advanced[-1] - advanced[0] + 1 == len(advanced):
+        return None
+    first = next(i for i, ind in enumerate(normalized_index) if isinstance(ind, np.ndarray))
+    return sum(1 for ind in normalized_index[:first] if not isinstance(ind, Integral))
+
+
 def replace_ellipsis(n, index):
     """Replace ... with slices, :, : ,:
     >>> replace_ellipsis(4, (3, Ellipsis, 2))

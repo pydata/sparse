@@ -3,7 +3,7 @@ import operator
 import warnings
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable, Iterable
-from functools import reduce
+from functools import partial, reduce
 from numbers import Integral
 
 import numpy as np
@@ -12,6 +12,11 @@ from ._umath import elemwise
 from ._utils import _zero_of_dtype, equivalent, html_table, normalize_axis
 
 _reduce_super_ufunc = {np.add: np.multiply, np.multiply: np.power}
+
+
+def _ufunc_output(ufunc, index, *args, **kwargs):
+    """Returns one output of a ufunc with several outputs."""
+    return ufunc(*args, **kwargs)[index]
 
 
 class SparseArray:
@@ -340,6 +345,15 @@ class SparseArray:
         if getattr(ufunc, "signature", None) is not None:
             return self.__array_function__(ufunc, (np.ndarray, type(self)), inputs, kwargs)
 
+        if getattr(ufunc, "nout", 1) > 1:
+            # e.g. `divmod`, `modf` or `frexp`: compute each output separately
+            if method != "__call__" or out is not None:
+                return NotImplemented
+            results = tuple(elemwise(partial(_ufunc_output, ufunc, i), *inputs, **kwargs) for i in range(ufunc.nout))
+            if any(result is NotImplemented for result in results):
+                return NotImplemented
+            return results
+
         if out is not None:
             test_args = [np.empty((1,), dtype=a.dtype) if hasattr(a, "dtype") else a for a in inputs]
             test_kwargs = kwargs.copy()
@@ -406,7 +420,11 @@ class SparseArray:
         axis = normalize_axis(axis, self.ndim)
         zero_reduce_result = method.reduce([self.fill_value, self.fill_value], **kwargs)
         reduce_super_ufunc = _reduce_super_ufunc.get(method)
-        if not equivalent(zero_reduce_result, self.fill_value) and reduce_super_ufunc is None:
+        # Compare in the result dtype: e.g. `any` of a NaN fill value is `True`,
+        # which is the fill value cast to bool, so the result stays sparse.
+        with np.errstate(invalid="ignore"):
+            result_dtype_fill_value = np.asarray(self.fill_value).astype(np.result_type(zero_reduce_result))
+        if not equivalent(zero_reduce_result, result_dtype_fill_value) and reduce_super_ufunc is None:
             raise ValueError(f"Performing this reduction operation would produce a dense result: {method!s}")
 
         if not isinstance(axis, tuple):
@@ -419,6 +437,9 @@ class SparseArray:
         if reduce_super_ufunc is None:
             missing_counts = counts != n_cols
             data[missing_counts] = method(data[missing_counts], self.fill_value, **kwargs)
+            if n_cols == 0 and method.identity is not None:
+                # Reducing over an empty axis gives the identity, e.g. ``True`` for ``all``.
+                result_fill_value = method.reduce(np.empty(0, dtype=self.dtype), **kwargs)
         else:
             n_fill = n_cols - counts
             with np.errstate(invalid="ignore"):
@@ -634,7 +655,15 @@ class SparseArray:
         """
         if out is not None and not isinstance(out, tuple):
             out = (out,)
-        return self.__array_ufunc__(np.clip, "__call__", self, a_min=min, a_max=max, out=out)
+        # Pass the bounds as operands, not keyword arguments, so that array bounds are
+        # broadcast against `self` like in NumPy.
+        if min is not None and max is not None:
+            return self.__array_ufunc__(np.clip, "__call__", self, min, max, out=out)
+        if min is not None:
+            return self.__array_ufunc__(np.maximum, "__call__", self, min, out=out)
+        if max is not None:
+            return self.__array_ufunc__(np.minimum, "__call__", self, max, out=out)
+        return self.__array_ufunc__(np.clip, "__call__", self, a_min=None, a_max=None, out=out)
 
     def astype(self, dtype, casting="unsafe", copy=True):
         """

@@ -6,12 +6,13 @@ hide:
 
 # Sparse
 This project implements sparse arrays of arbitrary dimension on top of
-[`numpy`][] and
-[`scipy.sparse`][]. It generalizes the
-[`scipy.sparse.coo_matrix`][] and
-[`scipy.sparse.dok_matrix`][] layouts, but
-extends beyond just rows and columns to an arbitrary number of
-dimensions.
+[`numpy`][] and [`scipy.sparse`][]. [`sparse.COO`][] and [`sparse.DOK`][]
+generalize the [`scipy.sparse.coo_matrix`][] and
+[`scipy.sparse.dok_matrix`][] layouts. [`sparse.GCXS`][] extends compressed
+sparse storage beyond two dimensions: for a two-dimensional array,
+compressing rows (`compressed_axes=(0,)`) corresponds to
+[`scipy.sparse.csr_matrix`][], while compressing columns
+(`compressed_axes=(1,)`) corresponds to [`scipy.sparse.csc_matrix`][].
 <br>
 <br>
 ![Sparse](./assets/images/logo.png){width=20%, align=left}

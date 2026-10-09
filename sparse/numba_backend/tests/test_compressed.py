@@ -255,6 +255,13 @@ def test_complex_methods(complex):
         (1, Ellipsis, None),
         (1, 1, 1, Ellipsis),
         (Ellipsis, 1, None),
+        # New axes after integer indices
+        (0, None),
+        (1, None, slice(1, 3)),
+        (1, None, 2),
+        (1, 2, None),
+        (None, 1, None, slice(None), 0),
+        (1, None, 1, 1),
         # Pathological - Slices larger than array
         (slice(None, 1000)),
         (slice(None), slice(None, 1000)),
@@ -272,6 +279,14 @@ def test_slicing(index, compressed_axes):
     assert_eq(x[index], s[index])
 
 
+@pytest.mark.parametrize("index", [(None, 0), (0, None), (1, None, 2), (None, slice(1, 3), 2), (None, 2, [0, 3])])
+@pytest.mark.parametrize("compressed_axes", [(0,), (1,)])
+def test_slicing_new_axes_2d(index, compressed_axes):
+    s = sparse.random((4, 5), density=0.5, format="gcxs", compressed_axes=compressed_axes)
+    x = s.todense()
+    assert_eq(x[index], s[index])
+
+
 @pytest.mark.parametrize(
     "index",
     [
@@ -285,6 +300,12 @@ def test_slicing(index, compressed_axes):
         (Ellipsis, [2, 1, 3]),
         (slice(None), [2, 1, 2]),
         (1, [2, 0, 1]),
+        # Several index arrays select elements pointwise
+        ([1, 0], [2, 0]),
+        ([1, 0], [2, 0], [3, 1]),
+        (slice(None), [2, 0], [1, 3]),
+        ([1, 1, 0], [0, 2, 2], 1),
+        (0, [0, 2], [1, 3]),
     ],
 )
 @pytest.mark.parametrize("compressed_axes", [(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)])
@@ -446,3 +467,14 @@ def test_pad_invalid(pad_width, constant_values, fill_value=0):
     y = sparse.random((50, 50, 3), density=0.15, format="gcxs")
     with pytest.raises(ValueError):
         np.pad(y, pad_width, constant_values=constant_values)
+
+
+@pytest.mark.parametrize("compressed_axes", [(0,), (1,)])
+@pytest.mark.parametrize("k", [-1, 0, 1])
+def test_triu_tril_diagonal(compressed_axes, k):
+    x = np.arange(1, 13).reshape(3, 4)
+    s = GCXS.from_numpy(x, compressed_axes=compressed_axes)
+
+    assert_eq(sparse.triu(s, k=k), np.triu(x, k=k))
+    assert_eq(sparse.tril(s, k=k), np.tril(x, k=k))
+    assert_eq(sparse.diagonal(s, offset=k), np.diagonal(x, offset=k))

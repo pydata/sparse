@@ -56,6 +56,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         [`sparse.COO.enable_caching`][].
     fill_value: scalar, optional
         The fill value for this array.
+    idx_dtype : numpy.dtype, optional
+        Integer dtype for the stored coordinates. It must be able to represent
+        the coordinate indices. Operations that use flattened indices may also
+        require the total array size to fit in this dtype; see
+        [`sparse.COO.from_numpy`][].
 
     Attributes
     ----------
@@ -128,11 +133,41 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
            [ 0. ,  0. ,  1. ,  2.2],
            [ 0. ,  0. ,  0. ,  1. ]])
 
-    Operations that will result in a dense array will usually result in a different
-    fill value, such as the following.
+    Element-wise operations compute the output fill value by applying the operation
+    to the input fill values. A scalar input contributes its own value. For example,
+    `np.exp(0)` is `1`, so exponentiation changes the fill value without storing
+    every implicit element.
 
     >>> np.exp(s)
     <COO: shape=(4, 4), dtype=float16, nnz=5, fill_value=1.0>
+
+    Comparisons follow the same rule, and `np.where` uses the condition's fill value
+    to select the output fill value. Replacing ones with `NaN` leaves the implicit
+    zeros unchanged because the condition is false at those positions.
+
+    >>> a = COO.from_numpy(np.eye(3), fill_value=0)
+    >>> bool((a == 1).fill_value)
+    False
+    >>> result = np.where(a == 1, np.nan, a)
+    >>> result
+    <COO: shape=(3, 3), dtype=float64, nnz=3, fill_value=0.0>
+    >>> result.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[nan,  0.,  0.],
+           [ 0., nan,  0.],
+           [ 0.,  0., nan]])
+
+    Replacing values less than one also replaces the implicit zeros. The condition's
+    fill value is now true, so the output fill value is `NaN`.
+
+    >>> bool((a < 1).fill_value)
+    True
+    >>> result = np.where(a < 1, np.nan, a)
+    >>> result
+    <COO: shape=(3, 3), dtype=float64, nnz=3, fill_value=nan>
+    >>> result.todense()  # doctest: +NORMALIZE_WHITESPACE
+    array([[ 1., nan, nan],
+           [nan,  1., nan],
+           [nan, nan,  1.]])
 
     You can also create [`sparse.COO`][] arrays from coordinates and data.
 
@@ -349,6 +384,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         fill_value : scalar
             The fill value of the constructed [`sparse.COO`][] array. Zero if
             unspecified.
+        idx_dtype : numpy.dtype, optional
+            Integer dtype for the stored coordinates. Conversion first flattens
+            ``x``, so this dtype must be able to represent ``x.size``, not just
+            the length of each axis. For example, ``np.uint8`` cannot be used
+            for a ``(25, 25)`` array; omit this argument or use ``np.uint16``.
 
         Returns
         -------
@@ -1038,6 +1078,12 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         """
         Returns a new [`sparse.COO`][] array that is a flattened version of this array.
 
+        Parameters
+        ----------
+        order : {"C", "F"}, optional
+            Read the elements in row-major ("C") or column-major ("F") index order.
+            The default is "C". `None` is also accepted as an alias for "C".
+
         Returns
         -------
         COO
@@ -1045,8 +1091,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
         Notes
         -----
-        The `order` parameter is provided just for compatibility with
-        Numpy and isn't actually supported.
+        Only "C" and "F" index orders are supported. Neither order requires
+        converting the array to a dense representation.
 
         Examples
         --------
@@ -1054,9 +1100,13 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         >>> s2 = s.reshape((2, 5)).flatten()
         >>> s2.todense()
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+        >>> s.reshape((2, 5)).flatten(order="F").todense()
+        array([0, 5, 1, 6, 2, 7, 3, 8, 4, 9])
         """
+        if order == "F":
+            return self.T.reshape(-1)
         if order not in {"C", None}:
-            raise NotImplementedError("The `order` parameter is notsupported.")
+            raise NotImplementedError("Only 'C' and 'F' orders are supported.")
 
         return self.reshape(-1)
 

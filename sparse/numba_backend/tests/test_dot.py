@@ -89,6 +89,29 @@ def test_tensordot_empty():
     assert_eq(np.tensordot(x1, x2), sparse.tensordot(s1, s2))
 
 
+@pytest.mark.parametrize("a_shape, b_shape", [((0, 3), (3, 0)), ((2, 3), (3, 0))])
+@pytest.mark.parametrize("compressed_axes", [(0,), (1,)])
+def test_matmul_GCXS_no_output_columns(a_shape, b_shape, compressed_axes):
+    a = np.ones(a_shape)
+    b = np.ones(b_shape)
+    sa = GCXS.from_numpy(a, compressed_axes=compressed_axes)
+    sb = GCXS.from_numpy(b, compressed_axes=compressed_axes)
+
+    assert_eq(sa @ sb, a @ b)
+
+
+@pytest.mark.parametrize("dtype", [np.bool_, np.int8, np.uint8, np.int32, np.float32])
+@pytest.mark.parametrize("func, np_func", [(sparse.dot, np.dot), (sparse.matmul, np.matmul)])
+def test_vector_dot_dtype(dtype, func, np_func):
+    a = np.array([1, 0, 1, 1], dtype=dtype)
+    s = COO.from_numpy(a)
+
+    expected = np_func(a, a)
+    actual = func(s, s)
+    assert actual.dtype == expected.dtype
+    assert_eq(actual, expected)
+
+
 def test_tensordot_valueerror():
     x1 = sparse.COO(np.array(1))
     x2 = sparse.COO(np.array(1))

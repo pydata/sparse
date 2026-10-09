@@ -277,6 +277,7 @@ def triu(x, k=0):
     """
     from .core import COO
 
+    x = _validate_coo_input(x)
     check_zero_fill_value(x)
 
     if not x.ndim >= 2:
@@ -318,6 +319,7 @@ def tril(x, k=0):
     """
     from .core import COO
 
+    x = _validate_coo_input(x)
     check_zero_fill_value(x)
 
     if not x.ndim >= 2:
@@ -687,7 +689,7 @@ def _replace_nan(array, value):
     COO
         A copy of ``array`` with the ``NaN``s replaced.
     """
-    if not np.issubdtype(array.dtype, np.floating):
+    if not (np.issubdtype(array.dtype, np.floating) or np.issubdtype(array.dtype, np.complexfloating)):
         return array
 
     return where(np.isnan(array), value, array)
@@ -862,6 +864,8 @@ def diagonal(a, offset=0, axis1=0, axis2=1):
     [`numpy.diagonal`][] : NumPy equivalent function
     """
     from .core import COO
+
+    a = _validate_coo_input(a)
 
     if a.ndim < 2:
         raise ValueError("array must be at least 2-d")
@@ -1244,8 +1248,8 @@ def unique_counts(x, /):
             values = np.concatenate([[x.fill_value], values])
             counts = np.concatenate([[fill_count], counts])
             sorted_indices = np.argsort(values)
-            values[sorted_indices] = values.copy()
-            counts[sorted_indices] = counts.copy()
+            values = values[sorted_indices]
+            counts = counts[sorted_indices]
 
     return UniqueCountsResult(values, counts)
 
@@ -1443,18 +1447,21 @@ def _sort_coo(
                 # np.sort in numba doesn't support `np.sort`'s arguments so `stable`
                 # keyword can't be supported.
                 # https://numba.pydata.org/numba-doc/latest/reference/numpysupported.html#other-methods
-                data[group_slice] = np.sort(data[group_slice])
+                sorted_data = np.sort(data[group_slice])
                 if descending:
-                    data[group_slice] = data[group_slice][::-1]
+                    # Reverse only the non-NaN values so NaNs stay at the end.
+                    n_valid = group_size - np.sum(np.isnan(sorted_data))
+                    sorted_data[:n_valid] = sorted_data[:n_valid][::-1].copy()
+                data[group_slice] = sorted_data
 
             # SORT INDICES
             fill_value_count = sort_axis_len - group_size
             indices = np.arange(group_size)
             # find a place where fill_value would be
             for pos in range(group_size):
-                if (not descending and fill_value < data[group_slice][pos]) or (
-                    descending and fill_value > data[group_slice][pos]
-                ):
+                value = data[group_slice][pos]
+                # NaNs go after the fill value, as in NumPy.
+                if np.isnan(value) or (not descending and fill_value < value) or (descending and fill_value > value):
                     indices[pos:] += fill_value_count
                     break
             result_indices[group_first_idx:group_last_idx] = indices
@@ -1487,6 +1494,9 @@ def _compute_minmax_args(
         masked_data = data[mask]
 
         compared_data = operator.gt(masked_data, fill_value) if max_mode_flag else operator.lt(masked_data, fill_value)
+        if not np.isnan(fill_value):
+            # like NumPy, a NaN wins over any other value
+            compared_data = compared_data | np.isnan(masked_data)
 
         if np.any(compared_data) or len(masked_data) == reduce_size:
             # best value is a non-fill value
@@ -1526,10 +1536,11 @@ def _arg_minmax_common(
 
     if not isinstance(axis, int | type(None)):
         raise ValueError(f"`axis` must be `int` or `None`, but it's: {type(axis)}.")
-    if isinstance(axis, int) and axis >= x.ndim:
+    if isinstance(axis, int) and not -x.ndim <= axis < x.ndim:
         raise ValueError(f"`axis={axis}` is out of bounds for array of dimension {x.ndim}.")
     if x.ndim == 0:
         raise ValueError("Input array must be at least 1-D, but it's 0-D.")
+    axis = normalize_axis(axis, x.ndim)
 
     # If `axis` is None then we need to flatten the input array and memorize
     # the original dimensionality for the final reshape operation.
