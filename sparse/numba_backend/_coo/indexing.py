@@ -5,7 +5,7 @@ import numba
 
 import numpy as np
 
-from .._slicing import normalize_index
+from .._slicing import advanced_index_axis, normalize_index
 from .._utils import _zero_of_dtype, equivalent
 
 
@@ -62,6 +62,7 @@ def getitem(x, index):
     last_ellipsis = len(index) > 0 and index[-1] is Ellipsis
 
     # Normalize the index into canonical form.
+    orig_index = index
     index = normalize_index(index, x.shape)
 
     # zip_longest so things like x[..., None] are picked up.
@@ -123,7 +124,7 @@ def getitem(x, index):
     shape = tuple(shape)
     data = x.data[mask]
 
-    return COO(
+    result = COO(
         coords,
         data,
         shape=shape,
@@ -131,6 +132,14 @@ def getitem(x, index):
         sorted=sorted,
         fill_value=x.fill_value,
     )
+
+    # Like NumPy, move the advanced-index axis to the front when the advanced
+    # indices are not next to each other
+    adv_axis = advanced_index_axis(orig_index, index)
+    if adv_axis:
+        result = result.transpose((adv_axis,) + tuple(ax for ax in range(result.ndim) if ax != adv_axis))
+
+    return result
 
 
 def _mask(coords, indices, shape):

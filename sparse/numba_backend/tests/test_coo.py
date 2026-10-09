@@ -531,6 +531,12 @@ def test_slicing(index):
         (Ellipsis, [2, 1, 3]),
         (slice(None), [2, 1, 2]),
         (1, [2, 0, 1]),
+        # Advanced indices separated by a slice, None or Ellipsis come first
+        (1, slice(None), [0, 2]),
+        ([1, 0], slice(None), [0, 2]),
+        (1, None, [0, 2]),
+        (slice(None), 1, Ellipsis, [0, 2]),
+        ([True, False], slice(1, None), 2),
     ],
 )
 def test_advanced_indexing(index):
