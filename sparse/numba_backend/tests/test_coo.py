@@ -2064,6 +2064,26 @@ class TestUnique:
 
         np.testing.assert_equal(result, expected)
 
+    @pytest.mark.parametrize(
+        "coords, data",
+        [
+            ([[0, 1, 3]], [0, 2, 0]),
+            # every element is stored, some of them with the fill value
+            ([[0, 1, 2, 3, 4]], [0, 2, 0, 0, 1]),
+        ],
+    )
+    def test_unique_stored_fill_value(self, coords, data):
+        # Stored entries equal to the fill value (e.g. explicit zeros from SciPy) are not a separate value
+        s_arr = sparse.COO(coords=coords, data=data, shape=(5,))
+        arr = s_arr.todense()
+
+        result_values, result_counts = sparse.unique_counts(s_arr)
+        expected_values, expected_counts = np.unique(arr, return_counts=True)
+
+        np.testing.assert_equal(result_values, expected_values)
+        np.testing.assert_equal(result_counts, expected_counts)
+        np.testing.assert_equal(sparse.unique_values(s_arr), expected_values)
+
     def test_unique_values_nan_distinct(self):
         # Per the Array API spec, NaN values compare as False and must be treated
         # as distinct elements, not collapsed into one.
