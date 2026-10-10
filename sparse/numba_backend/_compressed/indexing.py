@@ -8,7 +8,7 @@ from numba.typed import List
 
 import numpy as np
 
-from .._slicing import normalize_index
+from .._slicing import advanced_index_axis, normalize_index
 from .convert import convert_to_flat, is_sorted, uncompress_dimension
 
 
@@ -28,7 +28,7 @@ def getitem(x, key):
             return result
         return GCXS.from_coo(result)
 
-    orig_key = key
+    orig_key = key if isinstance(key, tuple) else (key,)
     key = list(normalize_index(key, x.shape))
 
     # Several index arrays select elements pointwise (like ``zip``), not their
@@ -199,7 +199,8 @@ def getitem(x, key):
     if indptr is None and len(Nones_removed) != len(key):
         # A 1-d result has no index pointer, so add the new axes by reshaping it
         result = GCXS(arg, shape=tuple(shape.tolist()), fill_value=x.fill_value)
-        return result.reshape(tuple(1 if ind is None else -1 for ind in key if not isinstance(ind, Integral)))
+        result = result.reshape(tuple(1 if ind is None else -1 for ind in key if not isinstance(ind, Integral)))
+        return _move_advanced_axis_first(result, orig_key, key)
 
     # if there were Nones in the key, we insert them back here, counting only
     # the axes that are kept in the result (integer indices remove an axis)
@@ -220,7 +221,16 @@ def getitem(x, key):
     if len(shape) == 1:
         compressed_axes = None
 
-    return GCXS(arg, shape=shape, compressed_axes=compressed_axes, fill_value=x.fill_value)
+    result = GCXS(arg, shape=shape, compressed_axes=compressed_axes, fill_value=x.fill_value)
+    return _move_advanced_axis_first(result, orig_key, key)
+
+
+def _move_advanced_axis_first(result, orig_key, key):
+    """Like NumPy, move the advanced-index axis first if the advanced indices are separated."""
+    adv_axis = advanced_index_axis(orig_key, key)
+    if not adv_axis:
+        return result
+    return result.transpose((adv_axis,) + tuple(ax for ax in range(result.ndim) if ax != adv_axis))
 
 
 def _asindexarrays(key, dtype):

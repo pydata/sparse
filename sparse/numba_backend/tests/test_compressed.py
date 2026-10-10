@@ -306,6 +306,11 @@ def test_slicing_new_axes_2d(index, compressed_axes):
         (slice(None), [2, 0], [1, 3]),
         ([1, 1, 0], [0, 2, 2], 1),
         (0, [0, 2], [1, 3]),
+        # Advanced indices separated by a slice, None or Ellipsis come first
+        (1, slice(None), [0, 2]),
+        (1, None, [0, 2]),
+        (slice(None), 1, Ellipsis, [0, 2]),
+        ([True, False], slice(1, None), 2),
     ],
 )
 @pytest.mark.parametrize("compressed_axes", [(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)])
