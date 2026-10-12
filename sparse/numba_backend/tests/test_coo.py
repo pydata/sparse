@@ -2232,6 +2232,11 @@ def test_matrix_transpose(ndim, density):
         ((3, 4, 1), (3, 4, 2), 0),
         ((3, 1), (3, 4), -2),
         ((1, 4), (3, 4), 1),
+        ((2, 4), (2, 3, 4), 0),
+        ((2, 3, 4), (2, 4), 0),
+        ((2,), (2, 2), 0),
+        ((2,), (2, 4), 0),
+        ((4, 2, 5), (3, 2, 4, 5), 1),
     ],
 )
 @pytest.mark.parametrize("density", [0.0, 0.1, 0.25, 1.0])
@@ -2250,15 +2255,36 @@ def test_vecdot(shape1, shape2, axis, density, rng, is_complex):
     x2 = s2.todense()
 
     def np_vecdot(x1, x2, /, *, axis=-1):
+        if hasattr(np, "vecdot"):
+            return np.vecdot(x1, x2, axis=axis)
         if np.issubdtype(x1.dtype, np.complexfloating):
             x1 = np.conjugate(x1)
 
-        return np.sum(x1 * x2, axis=axis)
+        return np.einsum("...i,...i->...", np.moveaxis(x1, axis, -1), np.moveaxis(x2, axis, -1))
 
     actual = sparse.vecdot(s1, s2, axis=axis)
     assert s1.dtype == s2.dtype == actual.dtype
     expected = np_vecdot(x1, x2, axis=axis)
     np.testing.assert_allclose(actual.todense(), expected)
+
+
+@pytest.mark.parametrize("shape1,shape2", [((2, 4), (2, 3, 4)), ((2, 4), (2, 4))])
+@pytest.mark.parametrize(
+    "format1,format2", [("coo", "gcxs"), ("gcxs", "coo"), ("coo", "dense"), ("dense", "coo"), ("dense", "dense")]
+)
+def test_vecdot_mixed_formats(shape1, shape2, format1, format2):
+    left = np.arange(np.prod(shape1)).reshape(shape1) * (1 + 2j)
+    right = np.arange(np.prod(shape2)).reshape(shape2) * (2 - 1j)
+    sparse_left = left if format1 == "dense" else COO.from_numpy(left).asformat(format1)
+    sparse_right = right if format2 == "dense" else COO.from_numpy(right).asformat(format2)
+
+    result = sparse.vecdot(sparse_left, sparse_right, axis=0)
+    expected = np.einsum("...i,...i->...", np.moveaxis(left.conj(), 0, -1), np.moveaxis(right, 0, -1))
+    actual = result.todense() if isinstance(result, sparse.SparseArray) else result
+
+    assert result.dtype == expected.dtype
+    assert result.shape == expected.shape
+    np.testing.assert_allclose(actual, expected)
 
 
 @pytest.mark.parametrize(
