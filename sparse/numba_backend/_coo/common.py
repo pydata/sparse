@@ -575,7 +575,7 @@ def where(condition, x=None, y=None):
     if not (x_given or y_given):
         check_zero_fill_value(condition)
         condition = asCOO(condition, name=str(np.where))
-        return tuple(condition.coords)
+        return condition.nonzero()
 
     if x_given != y_given:
         raise ValueError("either both or neither of x and y should be given")
