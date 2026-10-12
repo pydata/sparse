@@ -2442,12 +2442,18 @@ def test_unstack_invalid_type():
 
 @pytest.mark.parametrize("ndim", range(1, 4))
 @pytest.mark.parametrize("shape_range", [3])
+@pytest.mark.parametrize("dtype", [np.bool_, np.int64, np.uint8, np.float64, np.complex128])
 @pytest.mark.parametrize("n", [1, 2])
 @pytest.mark.parametrize("use_prepend, use_append", [(False, False), (True, False), (False, True), (True, True)])
-def test_diff_matches_numpy(ndim, shape_range, n, use_prepend, use_append):
+def test_diff_matches_numpy(ndim, shape_range, dtype, n, use_prepend, use_append):
     rng = np.random.default_rng(42)
     shape = tuple(rng.integers(2, shape_range + 2) for _ in range(ndim))
     x = rng.integers(0, 10, size=shape)
+    if dtype == np.float64:
+        x = x / 3
+    elif dtype == np.complex128:
+        x = x + 1j * rng.integers(0, 10, size=shape)
+    x = x.astype(dtype)
     sparse_x = COO.from_numpy(x)
 
     for axis in range(-ndim, ndim):
@@ -2467,11 +2473,53 @@ def test_diff_matches_numpy(ndim, shape_range, n, use_prepend, use_append):
 
         dense_result = np.diff(x, axis=axis, n=n, **kwargs)
 
+        assert sparse_result.dtype == dense_result.dtype
         np.testing.assert_array_equal(
             sparse_result.todense(),
             dense_result,
             err_msg=f"Mismatch at axis={axis}, n={n}, prepend={use_prepend}, append={use_append}",
         )
+
+
+@pytest.mark.parametrize("fill_value", [False, True])
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@pytest.mark.parametrize("n", [1, 2])
+def test_diff_boolean_fill_value(fill_value, format, n):
+    array = np.array([[False, True, True, False], [True, False, True, False]])
+    sparse_array = COO.from_numpy(array, fill_value=fill_value).asformat(format)
+
+    for axis in (0, 1, -1):
+        result = sparse.diff(sparse_array, n=n, axis=axis)
+        expected = np.diff(array, n=n, axis=axis)
+
+        assert result.dtype == expected.dtype
+        assert result.shape == expected.shape
+        np.testing.assert_array_equal(result.todense(), expected)
+
+
+@pytest.mark.parametrize("dtype", [np.int64, np.float64, np.complex128])
+@pytest.mark.parametrize("n", [1, 2])
+@pytest.mark.parametrize("use_prepend, use_append", [(True, False), (False, True), (True, True)])
+def test_diff_boolean_with_numeric_edges(dtype, n, use_prepend, use_append):
+    array = np.array([False, True, True, False])
+    edge = np.array([2, 3], dtype=dtype)
+    if dtype == np.complex128:
+        edge += 1j
+
+    kwargs = {}
+    sparse_kwargs = {}
+    if use_prepend:
+        kwargs["prepend"] = edge
+        sparse_kwargs["prepend"] = COO.from_numpy(edge)
+    if use_append:
+        kwargs["append"] = edge
+        sparse_kwargs["append"] = COO.from_numpy(edge)
+
+    result = sparse.diff(COO.from_numpy(array), n=n, **sparse_kwargs)
+    expected = np.diff(array, n=n, **kwargs)
+
+    assert result.dtype == expected.dtype
+    np.testing.assert_array_equal(result.todense(), expected)
 
 
 def test_diff_invalid_type():
