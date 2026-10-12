@@ -2376,6 +2376,26 @@ def test_repeat(ndim, repeats):
     np.testing.assert_array_equal(actual, expected)
 
 
+@pytest.mark.parametrize("value", [0, 5])
+@pytest.mark.parametrize("repeats", [0, 1, 3])
+@pytest.mark.parametrize("axis", [None, 0, -1])
+def test_repeat_scalar(value, repeats, axis):
+    array = np.asarray(value)
+    sparse_array = COO.from_numpy(array)
+
+    result = sparse.repeat(sparse_array, repeats, axis=axis)
+    expected = np.repeat(array, repeats, axis=axis)
+
+    assert result.shape == expected.shape
+    np.testing.assert_array_equal(result.todense(), expected)
+
+
+@pytest.mark.parametrize("axis", [1, -2])
+def test_repeat_scalar_invalid_axis(axis):
+    with pytest.raises(IndexError):
+        sparse.repeat(COO.from_numpy(np.asarray(5)), 3, axis=axis)
+
+
 def test_tile_invalid_input():
     a = np.eye(3)
     assert isinstance(sparse.tile(a, 2), sparse.COO)
