@@ -3136,6 +3136,7 @@ def repeat(a, repeats, axis: int | None = None):
         (Uneven repeats are not yet Implemented.)
     axis : int, optional
         The axis along which to repeat values. Returns a flattened sparse array if not specified.
+        Scalar inputs are treated as one-element arrays.
 
     Returns
     -------
@@ -3147,16 +3148,16 @@ def repeat(a, repeats, axis: int | None = None):
 
     if not isinstance(repeats, int):
         raise ValueError("`repeats` must be an integer, uneven repeats are not yet Implemented.")
-    axes = list(range(a.ndim))
-    new_shape = list(a.shape)
     axis_is_none = False
     if axis is None:
         a = a.reshape(-1)
         axis = 0
         axis_is_none = True
+    elif a.ndim == 0 and axis in (0, -1):
+        a = a.reshape(1)
     if axis < 0:
         axis = a.ndim + axis
-    axes[a.ndim - 1], axes[axis] = axes[axis], axes[a.ndim - 1]
+    new_shape = list(a.shape)
     new_shape[axis] *= repeats
     a = expand_dims(a, axis=axis + 1)
     shape_to_broadcast = a.shape[: axis + 1] + (a.shape[axis + 1] * repeats,) + a.shape[axis + 2 :]
