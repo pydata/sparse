@@ -758,6 +758,11 @@ def roll(a, shift, axis=None):
     -------
     res : ndarray
         Output array, with the same shape as a.
+
+    Raises
+    ------
+    ValueError
+        If the coordinate dtype cannot safely represent the shifted indices.
     """
     from .core import COO, as_coo
 
@@ -788,7 +793,10 @@ def roll(a, shift, axis=None):
     if len(axis) != len(shift):
         raise ValueError("If 'shift' is a 1D sequence, 'axis' must have equal length.")
 
-    if not can_store(a.coords.dtype, max(a.shape + shift)):
+    if any(
+        not can_store(a.coords.dtype, sh) or not can_store(a.coords.dtype, max(0, a.shape[ax] - 1) + int(sh))
+        for sh, ax in zip(shift, axis, strict=True)
+    ):
         raise ValueError(
             f"cannot roll with coords.dtype {a.coords.dtype} and shift {shift}. Try casting coords to a larger dtype."
         )
