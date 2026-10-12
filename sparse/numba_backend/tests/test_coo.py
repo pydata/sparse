@@ -1113,6 +1113,54 @@ def test_nonzero():
         assert_eq(e, a, compare_dtype=False)
 
 
+@pytest.mark.parametrize("dtype", ["bool", "i8", "f8", "c16"])
+@pytest.mark.parametrize("source", ["coo", "csr", "coordinates"])
+@pytest.mark.parametrize("func", [np.nonzero, np.where, np.argwhere])
+def test_nonzero_explicit_zeros(dtype, source, func):
+    coords = np.array([[0, 0, 1, 1, 2], [0, 2, 0, 2, 1]])
+    data = np.array([0, 1, 0, 2, -1], dtype=dtype)
+    if np.issubdtype(data.dtype, np.complexfloating):
+        data[1] = 2j
+        data[4] = complex(0, np.nan)
+    elif np.issubdtype(data.dtype, np.floating):
+        data[4] = np.nan
+    if source == "coordinates":
+        s = COO(coords, data, shape=(3, 3))
+    else:
+        scipy_array = scipy.sparse.coo_array((data, coords), shape=(3, 3))
+        scipy_array.sum_duplicates()
+        if source == "csr":
+            scipy_array = scipy_array.tocsr()
+        s = COO.from_scipy_sparse(scipy_array)
+    assert s.nnz == 5
+    s.data.flags.writeable = False
+    s.coords.flags.writeable = False
+    original_data = s.data.copy()
+    original_coords = s.coords.copy()
+
+    expected = func(s.todense())
+    actual = func(s)
+    if func is np.argwhere:
+        np.testing.assert_array_equal(actual, expected)
+    else:
+        for a, e in zip(actual, expected, strict=True):
+            np.testing.assert_array_equal(a, e)
+    np.testing.assert_array_equal(s.data, original_data)
+    np.testing.assert_array_equal(s.coords, original_coords)
+
+
+@pytest.mark.parametrize("func", [np.nonzero, np.where, np.argwhere])
+def test_nonzero_all_explicit_zeros(func):
+    s = COO([[0, 1], [0, 1]], [0, 0], shape=(2, 2))
+    actual = func(s)
+    expected = func(s.todense())
+    if func is np.argwhere:
+        np.testing.assert_array_equal(actual, expected)
+    else:
+        for a, e in zip(actual, expected, strict=True):
+            np.testing.assert_array_equal(a, e)
+
+
 def test_argwhere():
     s = sparse.random((2, 3, 4), density=0.5)
     x = s.todense()
