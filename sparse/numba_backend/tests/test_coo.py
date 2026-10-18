@@ -1957,6 +1957,21 @@ def test_argmax_argmin_negative_axis_1d(mode):
     np.testing.assert_equal(result, expected)
 
 
+@pytest.mark.parametrize("axis", [0, -1])
+@pytest.mark.parametrize("keepdims", [True, False])
+@pytest.mark.parametrize("mode", [(sparse.argmax, np.argmax), (sparse.argmin, np.argmin)])
+def test_argmax_argmin_keepdims_1d(axis, keepdims, mode):
+    sparse_func, np_func = mode
+
+    arr = np.array([0, 3, 0, 2])
+    s_arr = sparse.COO.from_numpy(arr)
+
+    result = sparse_func(s_arr, axis=axis, keepdims=keepdims).todense()
+    expected = np_func(arr, axis=axis, keepdims=keepdims)
+
+    np.testing.assert_equal(result, expected)
+
+
 @pytest.mark.parametrize("fill_value", [0.0, 1.0, -2.0])
 @pytest.mark.parametrize("axis", [None, 0, 1])
 @pytest.mark.parametrize("mode", [(sparse.argmax, np.argmax), (sparse.argmin, np.argmin)])
