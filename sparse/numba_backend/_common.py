@@ -16,6 +16,7 @@ from ._utils import (
     _zero_of_dtype,
     check_zero_fill_value,
     equivalent,
+    get_out_dtype,
     normalize_axis,
 )
 
@@ -2032,7 +2033,9 @@ def pad(array, pad_width, mode="constant", **kwargs):
         If mode != 'constant' or there are unknown arguments.
 
     ValueError
-        If constant_values != self.fill_value
+        If widths are negative or constant_values != self.fill_value.
+    TypeError
+        If widths are not integers.
 
     See Also
     --------
@@ -2056,8 +2059,14 @@ def pad(array, pad_width, mode="constant", **kwargs):
     array = array.asformat("coo")
 
     pad_width = np.broadcast_to(pad_width, (len(array.shape), 2))
-    new_coords = array.coords + pad_width[:, 0:1]
-    new_shape = tuple([array.shape[i] + pad_width[i, 0] + pad_width[i, 1] for i in range(len(array.shape))])
+    if np.any(pad_width < 0):
+        raise ValueError("index can't contain negative values")
+    # Calculate the shape without narrow NumPy scalar arithmetic, then widen indices.
+    new_shape = tuple(
+        index(dim) + index(before) + index(after) for dim, (before, after) in zip(array.shape, pad_width, strict=True)
+    )
+    coords_dtype = get_out_dtype(array.coords, builtins.max(new_shape, default=0))
+    new_coords = array.coords.astype(coords_dtype, copy=False) + pad_width[:, 0:1].astype(coords_dtype)
     new_data = array.data
     return COO(new_coords, new_data, new_shape, fill_value=array.fill_value)
 

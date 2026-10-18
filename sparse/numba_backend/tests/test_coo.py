@@ -1850,6 +1850,59 @@ def test_pad_valid(pad_width, constant_values):
 
 
 @pytest.mark.parametrize(
+    "shape,coord_dtype,width_dtype,width,format",
+    [
+        ((255,), np.uint8, np.uint8, 2, "coo"),
+        ((255,), np.uint8, np.int8, 2, "coo"),
+        ((65535,), np.uint16, np.uint16, 2, "coo"),
+        ((255,), np.uint8, np.uint64, (2, 1), "coo"),
+        ((255, 2), np.intp, np.uint8, ((2, 1), (1, 2)), "gcxs"),
+        ((255, 2), np.intp, np.int64, ((2, 1), (1, 2)), "dok"),
+    ],
+)
+def test_pad_integer_widths(shape, coord_dtype, width_dtype, width, format):
+    """Small integer widths must not narrow padded shapes or wrap coordinates."""
+    x = np.zeros(shape)
+    x.flat[-1] = 7
+    s = sparse.COO.from_numpy(x, idx_dtype=coord_dtype).asformat(format)
+    pad_width = np.array(width, dtype=width_dtype)
+    original_width = pad_width.copy()
+
+    # NumPy rejects unsigned width arrays; Python integers provide the value oracle.
+    expected = np.pad(x, width)
+    result = np.pad(s, pad_width)
+
+    assert_eq(result, expected)
+    assert result.shape == expected.shape
+    assert np.issubdtype(result.coords.dtype, np.integer)
+    assert_eq(s, x)
+    np.testing.assert_array_equal(pad_width, original_width)
+
+
+def test_pad_large_unsigned_coordinates():
+    """Padding wide integer coordinates must not round them through floating point."""
+    coords = np.array([[2**53 + 7]], dtype=np.uint64)
+    s = sparse.COO(coords.copy(), np.array([7]), shape=(2**53 + 11,))
+    result = sparse.pad(s, np.uint64(2))
+    assert result.shape == (2**53 + 15,)
+    assert result.nnz == 1
+    assert int(result.coords[0, 0]) == 2**53 + 9
+    np.testing.assert_array_equal(result.data, s.data)
+    np.testing.assert_array_equal(s.coords, coords)
+
+
+@pytest.mark.parametrize("width,error", [(-1, ValueError), (1.5, TypeError)])
+def test_pad_invalid_width(width, error):
+    """Reject invalid widths rather than cropping or truncating the requested padding."""
+    x = np.array([0, 1, 0])
+    s = sparse.COO.from_numpy(x)
+    with pytest.raises(error):
+        np.pad(x, width)
+    with pytest.raises(error):
+        np.pad(s, width)
+
+
+@pytest.mark.parametrize(
     "pad_width",
     [
         ((2, 1), (5, 7)),
