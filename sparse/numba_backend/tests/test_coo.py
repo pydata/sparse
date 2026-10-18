@@ -1619,6 +1619,31 @@ def test_diagonal():
         sparse.diagonal(a, axis1=1, axis2=-1)
 
 
+@pytest.mark.parametrize(
+    "coord_dtype,offset,axis1,axis2",
+    [
+        (np.uint8, -1, 0, 1),
+        (np.uint16, -1, 0, 1),
+        (np.uint64, -1, 0, 1),
+        (np.uint8, -1, -1, -2),
+        (np.intp, -1, 0, 1),
+        (np.uint8, 1, 0, 1),
+        (np.uint8, -4, 0, 1),
+    ],
+)
+def test_diagonal_unsigned_coordinates(coord_dtype, offset, axis1, axis2):
+    """Signed offsets work with compact unsigned coordinate storage."""
+    x = np.arange(1, 13).reshape(3, 4)
+    s = sparse.COO.from_numpy(x, idx_dtype=coord_dtype)
+    original_coords = s.coords.copy()
+
+    result = sparse.diagonal(s, offset=offset, axis1=axis1, axis2=axis2)
+    expected = np.diagonal(x, offset=offset, axis1=axis1, axis2=axis2)
+
+    assert_eq(result, expected)
+    np.testing.assert_array_equal(s.coords, original_coords)
+
+
 def test_diagonalize():
     assert_eq(sparse.diagonalize(np.ones(3)), sparse.eye(3))
 
