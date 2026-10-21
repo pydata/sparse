@@ -6,7 +6,7 @@ import sys
 import sparse
 from sparse import COO, DOK
 from sparse.numba_backend._settings import NEP18_ENABLED
-from sparse.numba_backend._utils import assert_eq, check_zero_fill_value, html_table, random_value_array
+from sparse.numba_backend._utils import assert_eq, check_zero_fill_value, html_table, normalize_axis, random_value_array
 
 import pytest
 
@@ -74,6 +74,30 @@ def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
     xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize("axes", [(0, 1), (-1,), ()])
+@pytest.mark.parametrize("axis_type", [tuple, list, iter])
+@pytest.mark.parametrize("keepdims", [True, False])
+def test_reduction_axis_iterables(axes, axis_type, keepdims):
+    dense = np.arange(24).reshape((2, 3, 4))
+    array = COO.from_numpy(dense)
+
+    actual = array.sum(axis=axis_type(axes), keepdims=keepdims)
+    expected = dense.sum(axis=axes, keepdims=keepdims)
+
+    assert_eq(actual, expected)
+
+
+@pytest.mark.parametrize("axes, expected", [((0, 1), (0, 1)), ((-1,), (2,)), ((), ())])
+def test_normalize_axis_generator(axes, expected):
+    assert normalize_axis((axis for axis in axes), 3) == expected
+
+
+@pytest.mark.parametrize("axes", [(0, "1"), (3,), (-4,)])
+def test_normalize_axis_invalid_generator(axes):
+    with pytest.raises(ValueError):
+        normalize_axis((axis for axis in axes), 3)
 
 
 @pytest.mark.xfail(reason=("Setting output dtype=float16 produces results inconsistent with numpy"))
