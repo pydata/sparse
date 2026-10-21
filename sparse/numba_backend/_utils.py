@@ -395,6 +395,7 @@ def normalize_axis(axis, ndim):
         return axis
 
     if isinstance(axis, Iterable):
+        axis = tuple(axis)
         if not all(isinstance(a, Integral) for a in axis):
             raise ValueError(f"axis {axis} not understood")
 
