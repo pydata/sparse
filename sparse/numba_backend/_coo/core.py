@@ -1150,7 +1150,14 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
             raise NotImplementedError("The `order` parameter is not supported")
 
         if -1 in shape:
-            extra = int(self.size / np.prod([d for d in shape if d != -1]))
+            if shape.count(-1) > 1:
+                raise ValueError("can only specify one unknown dimension")
+            known_size = reduce(operator.mul, (int(d) for d in shape if d != -1), 1)
+            if known_size == 0:
+                raise ValueError(f"cannot reshape array of size {self.size} into shape {shape}")
+            extra, remainder = divmod(self.size, known_size)
+            if remainder:
+                raise ValueError(f"cannot reshape array of size {self.size} into shape {shape}")
             shape = tuple([d if d != -1 else extra for d in shape])
         if self.shape == shape:
             return self
