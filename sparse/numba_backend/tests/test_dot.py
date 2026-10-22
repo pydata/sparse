@@ -186,6 +186,42 @@ def test_matmul(a_shape, b_shape, a_format, b_format, a_kwargs, b_kwargs):
         assert_eq(operator.matmul(a, b), operator.matmul(sa, sb))
 
 
+@pytest.mark.parametrize(
+    "a_shape,b_shape",
+    [
+        ((0, 2, 3), (0, 3, 4)),
+        ((0, 2, 3), (1, 3, 4)),
+        ((1, 2, 3), (0, 3, 4)),
+        ((2, 0, 2, 3), (1, 0, 3, 4)),
+        ((0, 2, 3), (2, 1, 3, 4)),
+    ],
+)
+@pytest.mark.parametrize(
+    "a_format,b_format",
+    [(a, b) for a in ["coo", "gcxs", "dense"] for b in ["coo", "gcxs", "dense"] if (a, b) != ("dense", "dense")],
+)
+def test_matmul_empty_batches(a_shape, b_shape, a_format, b_format):
+    a = np.zeros(a_shape, dtype=np.float32)
+    b = np.zeros(b_shape, dtype=np.float64)
+    sa = a if a_format == "dense" else COO.from_numpy(a).asformat(a_format)
+    sb = b if b_format == "dense" else COO.from_numpy(b).asformat(b_format)
+
+    result = sparse.matmul(sa, sb)
+
+    expected_type = np.ndarray if "dense" in (a_format, b_format) else sparse.SparseArray
+    assert isinstance(result, expected_type)
+    assert_eq(result, np.matmul(a, b))
+
+
+@pytest.mark.parametrize("b_shape", [(0, 5, 4), (2, 3, 4)])
+def test_matmul_empty_batches_invalid_shapes(b_shape):
+    a = COO.from_numpy(np.zeros((0, 2, 3)))
+    b = COO.from_numpy(np.zeros(b_shape))
+
+    with pytest.raises(ValueError):
+        sparse.matmul(a, b)
+
+
 def test_matmul_errors():
     with pytest.raises(ValueError):
         sa = sparse.random((3, 4, 5, 6), 0.5)
