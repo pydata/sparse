@@ -371,6 +371,8 @@ class SparseArray:
             cum_ndim = 0
             inputs_transformed = []
             for inp in reversed(inputs):
+                if not isinstance(inp, SparseArray):
+                    inp = np.asarray(inp)
                 inputs_transformed.append(inp[(Ellipsis,) + (None,) * cum_ndim])
                 cum_ndim += inp.ndim
 

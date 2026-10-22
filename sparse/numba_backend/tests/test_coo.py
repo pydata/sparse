@@ -1777,6 +1777,17 @@ def test_outer(shape1, shape2):
     assert_eq(np.multiply.outer(s1, s2), np.multiply.outer(x1, x2))
 
 
+@pytest.mark.parametrize("other", [2, np.float32(2), [1, 2], (1, 2), [[1, 2], [3, 4]]])
+@pytest.mark.parametrize("reverse", [False, True])
+def test_ufunc_outer_array_like(other, reverse):
+    x = np.array([[0, 2], [3, 0]])
+    s = COO.from_numpy(x)
+    sparse_args = (other, s) if reverse else (s, other)
+    dense_args = (other, x) if reverse else (x, other)
+
+    assert_eq(np.multiply.outer(*sparse_args), np.multiply.outer(*dense_args))
+
+
 def test_scalar_list_init():
     a = sparse.COO([], [], ())
     b = sparse.COO([], [1], ())
