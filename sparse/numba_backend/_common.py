@@ -204,10 +204,14 @@ def tensordot(a, b, axes=2, *, return_type=None):
         res = COO(
             np.empty((len(olda) + len(oldb), 0), dtype=np.uintp), data=np.empty(0, dtype=dt), shape=tuple(olda + oldb)
         )
-        if isinstance(a, np.ndarray) or isinstance(b, np.ndarray):
-            res = res.todense()
-
-        return res
+        if return_type is None:
+            if isinstance(a, np.ndarray) or isinstance(b, np.ndarray):
+                return_type = np.ndarray
+            else:
+                return_type = GCXS if isinstance(a, GCXS) or isinstance(b, GCXS) else COO
+        if return_type is np.ndarray:
+            return res.todense()
+        return res.asformat(return_type)
 
     at = a.transpose(newaxes_a).reshape(newshape_a)
     bt = b.transpose(newaxes_b).reshape(newshape_b)
