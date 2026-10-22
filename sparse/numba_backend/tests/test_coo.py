@@ -356,6 +356,34 @@ def test_reshape_same():
     assert s.reshape(s.shape) is s
 
 
+@pytest.mark.parametrize("rows", [2**53 + 1, 2**53 + 3])
+def test_reshape_inferred_dimension_integer_precision(rows):
+    size = rows * 3
+    s = COO(np.array([[size - 1]], dtype=np.int64), [7], shape=(size,))
+
+    result = s.reshape((-1, 3))
+
+    assert result.shape == (rows, 3)
+    np.testing.assert_array_equal(result.coords, [[rows - 1], [2]])
+    np.testing.assert_array_equal(result.data, [7])
+
+
+@pytest.mark.parametrize("shape", [(-1, -1), (1, -1, -1), (-2,)])
+def test_reshape_invalid_inferred_dimensions(shape):
+    s = COO.from_numpy(np.array([1]))
+
+    with pytest.raises(ValueError):
+        s.reshape(shape)
+
+
+@pytest.mark.parametrize("shape", [(-1, 0), (0, -1, 2)])
+def test_reshape_ambiguous_empty_inference(shape):
+    s = COO.from_numpy(np.empty(0))
+
+    with pytest.raises(ValueError, match="cannot reshape"):
+        s.reshape(shape)
+
+
 @pytest.mark.parametrize("format", [COO, DOK])
 def test_reshape_function(format):
     s = sparse.random((5, 3), density=0.5, format=format)
