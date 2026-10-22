@@ -2157,6 +2157,23 @@ def test_sort_only_fill_value(fill_value, descending):
     np.testing.assert_equal(result.todense(), expected)
 
 
+@pytest.mark.parametrize("shape", [(0,), (2, 0), (0, 3), (2, 0, 3), (1, 3, 1)])
+@pytest.mark.parametrize("descending", [False, True])
+def test_sort_empty_and_singleton_dimensions(shape, descending):
+    arr = np.arange(np.prod(shape), dtype=np.int32).reshape(shape)
+    s_arr = sparse.COO.from_numpy(arr, fill_value=-1)
+
+    for axis in range(arr.ndim):
+        result = sparse.sort(s_arr, axis=axis, descending=descending)
+        expected = np.sort(arr, axis=axis)
+        if descending:
+            expected = np.flip(expected, axis=axis)
+        assert_eq(result, expected)
+        assert result.fill_value == s_arr.fill_value
+        assert result is not s_arr
+        np.testing.assert_equal(s_arr.todense(), arr)
+
+
 @pytest.mark.parametrize("fill_value", [-1, 0, 1, np.nan])
 @pytest.mark.parametrize("descending", [False, True])
 def test_sort_nan(fill_value, descending):
