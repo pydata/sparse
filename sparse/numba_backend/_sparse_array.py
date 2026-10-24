@@ -453,7 +453,11 @@ class SparseArray:
                 # contribution of "no missing/fill elements" to a sum.
                 contribution = np.where(n_fill == 0, method.identity, contribution)
             data = method(data, contribution).astype(data.dtype)
-            result_fill_value = reduce_super_ufunc(self.fill_value, n_cols)
+            if n_cols == 0:
+                # Non-finite fill values must not contribute to an empty slice.
+                result_fill_value = method.reduce(np.empty(0, dtype=self.dtype), **kwargs)
+            else:
+                result_fill_value = reduce_super_ufunc(self.fill_value, n_cols)
 
         out = self._reduce_return(data, arr_attrs, result_fill_value)
 
