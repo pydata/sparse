@@ -1450,8 +1450,16 @@ def einsum(*operands, **kwargs):
     sizes = {}
     for t, term in enumerate(terms):
         shape = operands[t].shape
+        operand_sizes = {}
         for ix, d in zip(term, shape, strict=False):
-            if d != sizes.setdefault(ix, d):
+            # Diagonals require equal dimensions, even for dense operands whose
+            # empty diagonal may be accepted by NumPy's single-operand einsum.
+            if d != operand_sizes.setdefault(ix, d):
+                raise ValueError("Repeated indices must have the same dimension.")
+            # Shared indices may broadcast across different operands.
+            if ix not in sizes or sizes[ix] == 1:
+                sizes[ix] = d
+            elif d != 1 and d != sizes[ix]:
                 raise ValueError(f"Inconsistent shape for index '{ix}'.")
             total.setdefault(ix, set()).add(t)
     for ix in rhs:
