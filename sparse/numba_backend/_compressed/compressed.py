@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import copy as _copy
 import operator
 from collections.abc import Iterable
 from functools import reduce
-from typing import Union
+
+from numba import jit
 
 import numpy as np
 from numpy.lib.mixins import NDArrayOperatorsMixin
@@ -24,14 +27,14 @@ from .indexing import getitem
 
 def _from_coo(x, compressed_axes=None, idx_dtype=None):
     if x.ndim == 0:
-        if compressed_axes is not None:
+        if compressed_axes not in (None, ()):
             raise ValueError("no axes to compress for 0d array")
-        return ((x.data, x.coords, []), x.shape, None, x.fill_value)
+        return ((x.data, np.zeros(x.nnz, dtype=np.intp), [0, x.nnz]), x.shape, (), x.fill_value)
 
     if x.ndim == 1:
-        if compressed_axes is not None:
+        if compressed_axes not in (None, ()):
             raise ValueError("no axes to compress for 1d array")
-        return ((x.data, x.coords[0], ()), x.shape, None, x.fill_value)
+        return ((x.data, x.coords[0], [0, x.nnz]), x.shape, (), x.fill_value)
 
     compressed_axes = normalize_axis(compressed_axes, x.ndim)
     if compressed_axes is None:
@@ -165,12 +168,36 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         if shape is None:
             raise ValueError("missing `shape` argument")
 
-        check_compressed_axes(len(shape), compressed_axes)
+        data, indices, indptr = arg
 
-        if len(shape) == 1:
-            compressed_axes = None
+        if not isinstance(data, np.ndarray):
+            data = np.asarray(data)
 
-        self.data, self.indices, self.indptr = arg
+        if not isinstance(indices, np.ndarray):
+            indices = np.asarray(indices, dtype=np.intp) if len(indices) == 0 else np.asarray(indices)
+
+        if len(shape) < 2:
+            # 0-d and 1-d arrays have no compressed axes: a single row holding every entry
+            if compressed_axes is not None and len(compressed_axes) != 0:
+                raise ValueError(f"no axes to compress for {len(shape)}d array")
+            compressed_axes = ()
+            if indptr is None or len(indptr) == 0:
+                indptr = [0, len(data)]
+        elif compressed_axes is None:
+            # infer from the number of compressed rows: leading axes first, then single axes
+            n_rows = len(indptr) - 1
+            candidates = [tuple(range(i)) for i in range(1, len(shape))] + [(i,) for i in range(1, len(shape))]
+            compressed_axes = next((c for c in candidates if np.prod([shape[i] for i in c]) == n_rows), None)
+            if compressed_axes is None:
+                raise ValueError("cannot infer `compressed_axes` from `indptr`; pass it explicitly.")
+
+        if len(shape) >= 2:
+            check_compressed_axes(len(shape), compressed_axes)
+
+        if not isinstance(indptr, np.ndarray):
+            indptr = np.asarray(indptr, dtype=np.intp) if len(indptr) == 0 else np.asarray(indptr)
+
+        self.data, self.indices, self.indptr = data, indices, indptr
 
         if self.data.ndim != 1:
             raise ValueError("data must be a scalar or 1-dimensional.")
@@ -180,8 +207,10 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         if fill_value is None:
             fill_value = _zero_of_dtype(self.data.dtype)
 
-        self._compressed_axes = tuple(compressed_axes) if isinstance(compressed_axes, Iterable) else None
+        self._compressed_axes = tuple(compressed_axes)
         self.fill_value = self.data.dtype.type(fill_value)
+
+        _validate_gcxs_arrays(np.asarray(self._compressed_shape, dtype=np.intp), self.data, self.indices, self.indptr)
 
         if prune:
             self._prune()
@@ -289,11 +318,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         return "gcxs"
 
     def get_nodes(self):
-        comp_axes = (
-            np.array([], dtype=np.intp)
-            if self.compressed_axes is None
-            else np.array(self.compressed_axes, dtype=np.intp)
-        )
+        comp_axes = np.array(self.compressed_axes, dtype=np.intp)
         return {
             "format": self.format,
             "shape": self.shape,
@@ -305,7 +330,7 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         }
 
     @classmethod
-    def from_nodes(cls, nodes):
+    def from_nodes(cls, nodes) -> GCXS:
         shape = tuple(nodes["shape"])
         fill_value = nodes["fill_value"][()]
         data = nodes["data"]
@@ -349,8 +374,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
 
     @property
     def _compressed_shape(self):
-        row_size = np.prod(self._reordered_shape[: self._axisptr])
-        col_size = np.prod(self._reordered_shape[self._axisptr :])
+        row_size = np.prod(self._reordered_shape[: self._axisptr], dtype=np.intp)
+        col_size = np.prod(self._reordered_shape[self._axisptr :], dtype=np.intp)
         return (row_size, col_size)
 
     @property
@@ -508,13 +533,12 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         - [`scipy.sparse.coo_array.todense`][] : Equivalent Scipy method.
 
         """
-        if self.compressed_axes is None:
+        if self.ndim < 2:
             out = np.full(self.shape, self.fill_value, self.dtype)
-            if len(self.indices) != 0:
+            if self.ndim == 1:
                 out[self.indices] = self.data
-            else:
-                if len(self.data) != 0:
-                    out[()] = self.data[0]
+            elif len(self.data) != 0:
+                out[()] = self.data[0]
             return out
         return self.tocoo().todense()
 
@@ -943,7 +967,7 @@ class CSR(_Compressed2d):
 
         return cls((x.data, x.indices, x.indptr), shape=x.shape, fill_value=fill_value)
 
-    def transpose(self, axes: None = None, copy: bool = False) -> Union["CSC", "CSR"]:
+    def transpose(self, axes: None = None, copy: bool = False) -> CSC | CSR:
         axes = normalize_axis(axes, self.ndim)
         if axes not in [(0, 1), (1, 0), None]:
             raise ValueError(f"Invalid transpose axes: {axes}")
@@ -979,7 +1003,7 @@ class CSC(_Compressed2d):
 
         return cls((x.data, x.indices, x.indptr), shape=x.shape, fill_value=fill_value)
 
-    def transpose(self, axes: None = None, copy: bool = False) -> Union["CSC", "CSR"]:
+    def transpose(self, axes: None = None, copy: bool = False) -> CSC | CSR:
         axes = normalize_axis(axes, self.ndim)
         if axes not in [(0, 1), (1, 0), None]:
             raise ValueError(f"Invalid transpose axes: {axes}")
@@ -988,3 +1012,26 @@ class CSC(_Compressed2d):
         if axes == (0, 1):
             return self
         return CSR((self.data, self.indices, self.indptr), self.shape[::-1], fill_value=self.fill_value)
+
+
+@jit(nopython=True, nogil=True)
+def _validate_gcxs_arrays(
+    compressed_shape: np.ndarray, data: np.ndarray, indices: np.ndarray, indptr: np.ndarray
+) -> None:
+    if data.ndim != 1 or indices.ndim != 1 or indptr.ndim != 1:
+        raise ValueError("`data`, `indices` and `indptr` must have `ndim == 1`.")
+
+    if data.shape != indices.shape:
+        raise ValueError("`data` and `indices` must have the same shape.")
+
+    if not np.all((indices >= 0) & (indices < compressed_shape[1])):
+        raise ValueError("`indices` contains one or more out of bounds indices.")
+
+    if not np.all(indptr[:-1] <= indptr[1:]):
+        raise ValueError("`indptr` is not sorted.")
+
+    if indptr.shape[0] != compressed_shape[0] + 1:
+        raise ValueError("`indptr` must have length `compressed_rows + 1`.")
+
+    if indptr[0] < 0 or indptr[-1] > data.shape[0]:
+        raise ValueError("`indptr` contains one or more out of bounds indices.")

@@ -9,10 +9,14 @@ from sparse.numba_backend._settings import NEP18_ENABLED
 from sparse.numba_backend._utils import assert_eq, check_zero_fill_value, html_table, random_value_array
 
 import pytest
+from packaging.version import Version
 
 import numpy as np
+import scipy
 import scipy.sparse
 import scipy.stats
+
+SCIPY_LT_1_12 = Version(scipy.__version__) < Version("1.12")
 
 
 @pytest.fixture(scope="module", params=["f8", "f4", "i8", "i4"])
@@ -778,16 +782,13 @@ def test_op_scipy_sparse(func):
         ),
         pytest.param(
             operator.gt,
-            marks=pytest.mark.xfail(reason="Scipy sparse doesn't support this yet."),
+            marks=pytest.mark.xfail(SCIPY_LT_1_12, reason="Scipy sparse doesn't support this before 1.12."),
         ),
         pytest.param(
             operator.lt,
-            marks=pytest.mark.xfail(reason="Scipy sparse doesn't support this yet."),
+            marks=pytest.mark.xfail(SCIPY_LT_1_12, reason="Scipy sparse doesn't support this before 1.12."),
         ),
-        pytest.param(
-            operator.ne,
-            marks=pytest.mark.xfail(reason="Scipy sparse doesn't support this yet."),
-        ),
+        operator.ne,
     ],
 )
 def test_op_scipy_sparse_left(func):
@@ -1404,6 +1405,31 @@ def test_initialization(ndim, rng):
     with pytest.raises(ValueError, match="shape of `coords`"):
         coords = rng.integers(10, size=(1, 20))
         COO(coords, data=data, shape=shape)
+
+
+@pytest.mark.parametrize(
+    "coords, shape",
+    [
+        ([[3]], (3,)),
+        ([[-1]], (3,)),
+        ([[0, 1], [0, 4]], (2, 4)),
+    ],
+)
+def test_coords_out_of_bounds(coords, shape):
+    with pytest.raises(ValueError, match="out of bounds"):
+        COO(np.array(coords), data=np.ones(len(coords[0])), shape=shape)
+
+
+def test_coords_in_bounds_edge_cases():
+    x = COO(np.array([[2], [3]]), data=np.array([1.0]), shape=(3, 4))
+    expected = np.zeros((3, 4))
+    expected[2, 3] = 1.0
+    np.testing.assert_array_equal(x.todense(), expected)
+
+    empty = COO(np.empty((2, 0), dtype=np.intp), data=np.array([]), shape=(2, 3))
+    np.testing.assert_array_equal(empty.todense(), np.zeros((2, 3)))
+
+    np.testing.assert_array_equal(COO.from_numpy(np.array(5)).todense(), 5)
 
 
 @pytest.mark.parametrize("N, M", [(4, None), (4, 10), (10, 4), (0, 10)])
