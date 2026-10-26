@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy as _copy
 import operator
 import warnings
@@ -304,6 +306,8 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                     "(and coords.shape={})"
                 )
                 raise ValueError(msg.format(len(shape), self.coords.shape[0], self.coords.shape))
+            if not sorted or has_duplicates:
+                _validate_coo_coords(self.coords, np.asarray(self.shape, dtype=np.intp))
 
         from .._settings import WARN_ON_TOO_DENSE
 
@@ -686,7 +690,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         }
 
     @classmethod
-    def from_nodes(cls, nodes):
+    def from_nodes(cls, nodes) -> COO:
         shape = tuple(nodes["shape"])
         fill_value = nodes["fill_value"][()]
         data = nodes["data"]
@@ -1675,6 +1679,13 @@ def as_coo(x, shape=None, fill_value=None, idx_dtype=None):
         f"Format not supported for conversion. Supplied type is "
         f"{type(x)}, see help(sparse.as_coo) for supported formats."
     )
+
+
+@numba.jit(nopython=True, nogil=True)  # pragma: no cover
+def _validate_coo_coords(coords, shape):
+    for i in range(coords.shape[0]):
+        if not np.all((coords[i] >= 0) & (coords[i] < shape[i])):
+            raise ValueError("`coords` contains one or more out of bounds indices.")
 
 
 @numba.jit(nopython=True, nogil=True)  # pragma: no cover
