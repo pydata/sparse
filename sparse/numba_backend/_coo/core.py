@@ -1554,7 +1554,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
         check_zero_fill_value(self)
         if self.ndim == 0:
             raise ValueError("`nonzero` is undefined for `self.ndim == 0`.")
-        return tuple(self.coords)
+        return tuple(self.coords[:, self.data != 0])
 
     def asformat(self, format, **kwargs):
         """
