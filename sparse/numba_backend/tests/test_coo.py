@@ -2,6 +2,7 @@ import contextlib
 import operator
 import pickle
 import sys
+import warnings
 
 import sparse
 from sparse import COO, DOK
@@ -238,6 +239,30 @@ def test_all_nan_reduction_warning(reduction, axis):
 
     with pytest.warns(RuntimeWarning):
         getattr(sparse, reduction)(s, axis=axis)
+
+
+@pytest.mark.parametrize(
+    "input_dtype, dtype",
+    [("f4", None), ("c8", None), ("f8", "f4"), ("c16", "c8"), ("f8", None), ("c16", None)],
+)
+@pytest.mark.parametrize("axis", [None, 0, -1, ()])
+@pytest.mark.parametrize("keepdims", [False, True])
+@pytest.mark.parametrize("fill_value", [0, np.nan])
+def test_nanmean_output_dtype(input_dtype, dtype, axis, keepdims, fill_value):
+    x = np.array([[0, 1, np.nan], [2, np.nan, 3]], dtype=input_dtype)
+    if np.issubdtype(x.dtype, np.complexfloating):
+        x[1, 0] += 1j
+    s = COO.from_numpy(x, fill_value=fill_value)
+    s.data.flags.writeable = False
+    s.coords.flags.writeable = False
+
+    with np.errstate(invalid="ignore"), warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        expected = np.nanmean(x, axis=axis, keepdims=keepdims, dtype=dtype)
+        actual = sparse.nanmean(s, axis=axis, keepdims=keepdims, dtype=dtype)
+    assert actual.dtype == expected.dtype
+    assert_eq(expected, actual)
+    assert_eq(s, x)
 
 
 @pytest.mark.parametrize(
