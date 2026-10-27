@@ -1308,6 +1308,24 @@ def test_clip():
     assert_eq(out, x.clip(min=1, max=3))
 
 
+@pytest.mark.parametrize("clip", [sparse.clip, np.clip])
+@pytest.mark.parametrize("in_place", [False, True])
+def test_clip_output_buffer(clip, in_place):
+    """The public clipping functions write into and return the requested output."""
+    x = np.array([[-2.0, 0.0, 4.0], [1.0, 3.0, -1.0]], dtype=np.float32)
+    s = sparse.COO.from_numpy(x)
+    out = s if in_place else sparse.COO.from_numpy(np.full_like(x, 9))
+    expected = np.empty_like(x)
+    np.clip(x, -1, 2, out=expected)
+
+    result = clip(s, -1, 2, out=out)
+
+    assert result is out
+    assert_eq(out, expected)
+    if not in_place:
+        assert_eq(s, x)
+
+
 @pytest.mark.parametrize("format", ["coo", "gcxs"])
 @pytest.mark.parametrize(
     "min, max",

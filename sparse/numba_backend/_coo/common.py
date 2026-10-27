@@ -1086,7 +1086,7 @@ def clip(a, min=None, max=None, out=None):
     numpy.clip : Equivalent NumPy function
     """
     a = asCOO(a, name="clip")
-    return a.clip(min, max)
+    return a.clip(min, max, out=out)
 
 
 def expand_dims(x, axis: int | tuple[int, ...] = 0):
