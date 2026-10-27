@@ -77,9 +77,9 @@ def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
 
 
 @pytest.mark.parametrize("axes", [(0, 1), (-1,), ()])
-@pytest.mark.parametrize("axis_type", [tuple, list, iter])
+@pytest.mark.parametrize("axis_type", [tuple, list])
 @pytest.mark.parametrize("keepdims", [True, False])
-def test_reduction_axis_iterables(axes, axis_type, keepdims):
+def test_reduction_axis_reusable_iterables(axes, axis_type, keepdims):
     dense = np.arange(24).reshape((2, 3, 4))
     array = COO.from_numpy(dense)
 
@@ -89,15 +89,37 @@ def test_reduction_axis_iterables(axes, axis_type, keepdims):
     assert_eq(actual, expected)
 
 
-@pytest.mark.parametrize("axes, expected", [((0, 1), (0, 1)), ((-1,), (2,)), ((), ())])
-def test_normalize_axis_generator(axes, expected):
-    assert normalize_axis((axis for axis in axes), 3) == expected
+@pytest.mark.parametrize("axes, expected", [([0, 1], (0, 1)), ([-1], (2,)), ([], ()), (range(2), (0, 1))])
+def test_normalize_axis_reusable_iterable(axes, expected):
+    assert normalize_axis(axes, 3) == expected
 
 
-@pytest.mark.parametrize("axes", [(0, "1"), (3,), (-4,)])
-def test_normalize_axis_invalid_generator(axes):
+@pytest.mark.parametrize("axes", [[0, "1"], [3], [-4]])
+def test_normalize_axis_invalid_reusable_iterable(axes):
     with pytest.raises(ValueError):
-        normalize_axis((axis for axis in axes), 3)
+        normalize_axis(axes, 3)
+
+
+@pytest.mark.parametrize("make_axis", [iter, lambda values: (value for value in values)], ids=["iterator", "generator"])
+@pytest.mark.parametrize("axes", [(0, 1), (3,), (0, "1")])
+def test_normalize_axis_rejects_iterators_without_consumption(make_axis, axes):
+    axis_iterator = make_axis(axes)
+
+    with pytest.raises(ValueError, match="iterator"):
+        normalize_axis(axis_iterator, 3)
+
+    assert tuple(axis_iterator) == axes
+
+
+@pytest.mark.parametrize("make_axis", [iter, lambda values: (value for value in values)], ids=["iterator", "generator"])
+def test_reduction_rejects_iterators_without_consumption(make_axis):
+    array = COO.from_numpy(np.arange(24).reshape((2, 3, 4)))
+    axis_iterator = make_axis((0, 1))
+
+    with pytest.raises(ValueError, match="iterator"):
+        array.sum(axis=axis_iterator)
+
+    assert tuple(axis_iterator) == (0, 1)
 
 
 @pytest.mark.xfail(reason=("Setting output dtype=float16 produces results inconsistent with numpy"))

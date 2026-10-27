@@ -406,6 +406,7 @@ class SparseArray:
             The method to use for performing the reduction.
         axis : Union[int, Iterable[int]], optional
             The axes along which to perform the reduction. Uses all axes by default.
+            Iterators, including generators, are not supported.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
         **kwargs : dict
@@ -484,6 +485,7 @@ class SparseArray:
         ----------
         axis : Union[int, Iterable[int]], optional
             The axes along which to sum. Uses all axes by default.
+            Iterators, including generators, are not supported.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
         dtype : numpy.dtype
@@ -509,6 +511,7 @@ class SparseArray:
         ----------
         axis : Union[int, Iterable[int]], optional
             The axes along which to maximize. Uses all axes by default.
+            Iterators, including generators, are not supported.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
         out : numpy.dtype
@@ -536,6 +539,7 @@ class SparseArray:
         ----------
         axis : Union[int, Iterable[int]], optional
             The axes along which to minimize. Uses all axes by default.
+            Iterators, including generators, are not supported.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
 
@@ -558,6 +562,7 @@ class SparseArray:
         ----------
         axis : Union[int, Iterable[int]], optional
             The axes along which to minimize. Uses all axes by default.
+            Iterators, including generators, are not supported.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
 
@@ -580,6 +585,7 @@ class SparseArray:
         ----------
         axis : Union[int, Iterable[int]], optional
             The axes along which to minimize. Uses all axes by default.
+            Iterators, including generators, are not supported.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
         out : numpy.dtype
@@ -607,6 +613,7 @@ class SparseArray:
         ----------
         axis : Union[int, Iterable[int]], optional
             The axes along which to multiply. Uses all axes by default.
+            Iterators, including generators, are not supported.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
         dtype : numpy.dtype
@@ -692,6 +699,7 @@ class SparseArray:
         ----------
         axis : Union[int, Iterable[int]], optional
             The axes along which to compute the mean. Uses all axes by default.
+            Iterators, including generators, are not supported.
         keepdims : bool, optional
             Whether or not to keep the dimensions of the original array.
         dtype : numpy.dtype
@@ -772,6 +780,7 @@ class SparseArray:
         ----------
         axis : Union[int, Iterable[int]], optional
             The axes along which to compute the variance. Uses all axes by default.
+            Iterators, including generators, are not supported.
         dtype : numpy.dtype, optional
             The output datatype.
         out : SparseArray, optional
@@ -864,6 +873,7 @@ class SparseArray:
         axis : Union[int, Iterable[int]], optional
             The axes along which to compute the standard deviation. Uses
             all axes by default.
+            Iterators, including generators, are not supported.
         dtype : numpy.dtype, optional
             The output datatype.
         out : SparseArray, optional
