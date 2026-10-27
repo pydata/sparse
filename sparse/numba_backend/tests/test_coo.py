@@ -1284,6 +1284,55 @@ class TestRoll:
         with pytest.raises(ValueError):
             sparse.roll(x, shift)
 
+    @pytest.mark.parametrize("dtype", [np.uint8, np.int8])
+    @pytest.mark.parametrize("shift_type", [tuple, list, np.array])
+    @pytest.mark.parametrize("reverse_axis", [False, True])
+    def test_coordinate_dtype_overflow(self, dtype, shift_type, reverse_axis):
+        size = np.iinfo(dtype).max
+        x = COO(np.array([[size - 1], [1]], dtype=dtype), [1], shape=(size, 2))
+        axis = (1, 0) if reverse_axis else (0, 1)
+        shift = shift_type((0, 2) if reverse_axis else (2, 0))
+
+        with pytest.raises(ValueError, match="cannot roll with coords.dtype"):
+            sparse.roll(x, shift, axis=axis)
+
+        wider = COO(x.coords.astype(np.int64), x.data, shape=x.shape)
+        assert_eq(np.roll(x.todense(), shift, axis=axis), sparse.roll(wider, shift, axis=axis))
+
+    @pytest.mark.parametrize("dtype", [np.uint8, np.int8])
+    @pytest.mark.parametrize("shift_type", [tuple, list, np.array])
+    @pytest.mark.parametrize("reverse_axis", [False, True])
+    @pytest.mark.parametrize("shift", [(1, 0), (0, 1)])
+    def test_coordinate_dtype_safe_shift(self, dtype, shift_type, reverse_axis, shift):
+        size = np.iinfo(dtype).max
+        x = COO(np.array([[size - 1], [1]], dtype=dtype), [1], shape=(size, 3))
+        axis = (1, 0) if reverse_axis else (0, 1)
+        shift = shift_type(shift[::-1] if reverse_axis else shift)
+        if isinstance(shift, np.ndarray):
+            shift = shift.astype(dtype)
+        result = sparse.roll(x, shift, axis=axis)
+
+        assert_eq(np.roll(x.todense(), shift, axis=axis), result)
+        assert result.coords.dtype == dtype
+
+    @pytest.mark.parametrize("axis", [0, 1])
+    def test_coordinate_dtype_safe_scalar_shift(self, axis):
+        x = COO(np.array([[126], [1]], dtype=np.int8), [1], shape=(127, 3))
+        assert_eq(np.roll(x.todense(), 1, axis=axis), sparse.roll(x, 1, axis=axis))
+
+    @pytest.mark.parametrize("dtype", [np.uint8, np.int8])
+    def test_coordinate_dtype_empty_axis(self, dtype):
+        x = COO(np.empty((2, 0), dtype=dtype), [], shape=(0, 3))
+        assert_eq(np.roll(x.todense(), (0, 1), axis=(0, 1)), sparse.roll(x, (0, 1), axis=(0, 1)))
+
+    @pytest.mark.parametrize("shift_type", [tuple, list, np.array])
+    def test_coordinate_dtype_lower_bound(self, shift_type):
+        x = COO(np.array([[0], [1]], dtype=np.int8), [1], shape=(3, 2))
+        shift = shift_type((-129, 0))
+
+        with pytest.raises(ValueError, match="cannot roll with coords.dtype"):
+            sparse.roll(x, shift, axis=(0, 1))
+
     def test_unsigned_type_error(self):
         x = sparse.random((5, 5, 5), density=0.3, idx_dtype=np.uint8)
         with pytest.raises(ValueError):
