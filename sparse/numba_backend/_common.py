@@ -3101,6 +3101,8 @@ def vecdot(x1, x2, /, *, axis=-1):
     """
     Computes the (vector) dot product of two arrays.
 
+    Dimensions other than the selected axis are broadcast following NumPy's rules.
+
     Parameters
     ----------
     x1, x2 : array_like
@@ -3120,7 +3122,9 @@ def vecdot(x1, x2, /, *, axis=-1):
     if np.issubdtype(x1.dtype, np.complexfloating):
         x1 = np.conjugate(x1)
 
-    return np.sum(x1 * x2, axis=axis, dtype=np.result_type(x1, x2))
+    x1 = np.moveaxis(x1, axis, -1)
+    x2 = np.moveaxis(x2, axis, -1)
+    return np.sum(x1 * x2, axis=-1, dtype=np.result_type(x1, x2))
 
 
 def repeat(a, repeats, axis: int | None = None):
