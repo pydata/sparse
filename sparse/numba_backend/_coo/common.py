@@ -889,7 +889,8 @@ def diagonal(a, offset=0, axis1=0, axis2=1):
         diag_data = np.empty(0, dtype=a.dtype)
     else:
         diag_idx = _diagonal_idx(a.coords, axis1, axis2, offset)
-        diag_coord = a.coords[axis1][diag_idx] if offset >= 0 else a.coords[axis1][diag_idx] + offset
+        # For lower diagonals, columns already hold the output coordinate.
+        diag_coord = a.coords[axis1 if offset >= 0 else axis2][diag_idx]
         diag_coords = [a.coords[axis][diag_idx] for axis in diag_axes] + [diag_coord]
         diag_data = a.data[diag_idx]
 
