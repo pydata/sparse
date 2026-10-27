@@ -998,6 +998,18 @@ def _dot_coo_ndarray_type(dt1, dt2):
             The output shape.
         """
         out = np.zeros(out_shape, dtype=dtr)
+
+        if array2.flags.f_contiguous and out_shape[1] >= 4:
+            # array2 is transposed; traverse contiguous output columns while
+            # preserving the accumulation order within each output element.
+            for didx1 in range(len(data1)):
+                row = coords1[0, didx1]
+                col = coords1[1, didx1]
+                value = data1[didx1]
+                for oidx2 in range(out_shape[1]):
+                    out[row, oidx2] += value * array2[oidx2, col]
+            return out
+
         didx1 = 0
 
         while didx1 < len(data1):
