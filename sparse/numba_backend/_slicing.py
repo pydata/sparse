@@ -340,5 +340,9 @@ def replace_none(idx, dim):
 
         if stop is None:
             stop = -1
+        elif stop < 0:
+            # Resolve a negative stop here, because ``-1`` is reserved to mean
+            # "past the start of the axis" once ``None`` has been replaced.
+            stop = max(stop + dim, -1)
 
     return slice(start, stop, step)

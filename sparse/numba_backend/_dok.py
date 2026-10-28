@@ -343,8 +343,6 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
                 raise IndexError("Unequal length of index sequences!")
             return self._fancy_getitem(key)
 
-        key = normalize_index(key, self.shape)
-
         ret = self.asformat("coo")[key]
         if isinstance(ret, SparseArray):
             ret = ret.asformat("dok")
@@ -413,24 +411,10 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
 
         for i, ind in enumerate(key_list):
             if isinstance(ind, slice):
-                step = ind.step if ind.step is not None else 1
-                if step > 0:
-                    start = ind.start if ind.start is not None else 0
-                    start = max(start, 0)
-                    stop = ind.stop if ind.stop is not None else self.shape[i]
-                    stop = min(stop, self.shape[i])
-                    if start > stop:
-                        start = stop
-                else:
-                    start = ind.start or self.shape[i] - 1
-                    stop = ind.stop if ind.stop is not None else -1
-                    start = min(start, self.shape[i] - 1)
-                    stop = max(stop, -1)
-                    if start < stop:
-                        start = stop
-
+                # ``normalize_index`` has already clipped the slice to the axis,
+                # so its fields can be passed to ``range`` as they are.
                 key_list_temp = key_list[:]
-                for v_idx, ki in enumerate(range(start, stop, step)):
+                for v_idx, ki in enumerate(range(ind.start, ind.stop, ind.step)):
                     key_list_temp[i] = ki
                     vi = value if value_missing_dims > 0 else (value[0] if value.shape[0] == 1 else value[v_idx])
                     self._setitem(key_list_temp, vi)
