@@ -900,6 +900,44 @@ def test_triul(shape, k):
     assert_eq(np.tril(x, k), sparse.tril(s, k))
 
 
+@pytest.mark.parametrize("func", ["triu", "tril"])
+@pytest.mark.parametrize("coord_dtype", ["int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"])
+@pytest.mark.parametrize("k", [-1000, -128, -1, 0, 1, 127, 1000])
+@pytest.mark.parametrize("batched", [False, True])
+def test_triul_coordinate_dtype(func, coord_dtype, k, batched):
+    coords = [[0, 0, 1, 126, 127, 127], [0, 127, 0, 127, 0, 127]]
+    shape = (128, 128)
+    if batched:
+        coords.insert(0, [0, 1, 0, 1, 0, 1])
+        shape = (2, *shape)
+    x = COO(np.asarray(coords, dtype=coord_dtype), np.arange(1, 7), shape=shape)
+
+    result = getattr(sparse, func)(x, k)
+
+    assert_eq(getattr(np, func)(x.todense(), k), result)
+    if result.nnz:
+        assert result.coords.dtype == x.coords.dtype
+
+
+@pytest.mark.parametrize("func", ["triu", "tril"])
+@pytest.mark.parametrize("coord_dtype", ["int64", "uint64"])
+@pytest.mark.parametrize("k", [-(2**100), -(2**63), np.int64(-(2**63)), -1, 0, 1, 2**63, 2**100])
+def test_triul_large_coordinates(func, coord_dtype, k):
+    largest = np.iinfo(coord_dtype).max - 1
+    coords = np.array([[0, largest], [0, 0]], dtype=coord_dtype)
+    x = COO(coords, [1, 2], shape=(largest + 1, 1), sorted=True, has_duplicates=False)
+    comparison = operator.le if func == "triu" else operator.ge
+    mask = [comparison(int(row) + int(k), int(col)) for row, col in coords.T]
+
+    result = getattr(sparse, func)(x, k)
+
+    assert result.shape == x.shape
+    np.testing.assert_array_equal(result.coords, coords[:, mask])
+    np.testing.assert_array_equal(result.data, x.data[mask])
+    if result.nnz:
+        assert result.coords.dtype == x.coords.dtype
+
+
 def test_empty_reduction():
     x = np.zeros((2, 3, 4), dtype=np.float64)
     xs = COO.from_numpy(x)
