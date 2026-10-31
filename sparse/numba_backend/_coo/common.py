@@ -1237,8 +1237,10 @@ def unique_counts(x, /):
     x = _validate_coo_input(x)
 
     x = x.flatten()
-    values, counts = np.unique(x.data, return_counts=True, equal_nan=False)
-    fill_count = x.size - x.nnz
+    # Stored entries equal to the fill value (e.g. explicit zeros from SciPy) are counted with it
+    data = x.data[x.data != x.fill_value]
+    values, counts = np.unique(data, return_counts=True, equal_nan=False)
+    fill_count = x.size - data.size
     if fill_count > 0:
         if np.isnan(x.fill_value):
             # Per the Array API spec, NaNs compare as False, so each NaN is distinct.
@@ -1284,8 +1286,10 @@ def unique_values(x, /):
     x = _validate_coo_input(x)
 
     x = x.flatten()
-    values = np.unique(x.data, equal_nan=False)
-    fill_count = x.size - x.nnz
+    # Stored entries equal to the fill value (e.g. explicit zeros from SciPy) are counted with it
+    data = x.data[x.data != x.fill_value]
+    values = np.unique(data, equal_nan=False)
+    fill_count = x.size - data.size
     if fill_count > 0:
         if np.isnan(x.fill_value):
             # Per the Array API spec, NaNs compare as False, so each NaN is distinct.
