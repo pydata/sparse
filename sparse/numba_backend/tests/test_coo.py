@@ -511,6 +511,10 @@ def test_gt():
         # Pathological - Wrong ordering of start/stop
         (slice(5, 0),),
         (slice(0, 5, -1),),
+        # Negative step with a negative stop
+        (slice(None), slice(None, -1, -1)),
+        (slice(None), slice(None, -2, -2)),
+        (slice(None, -3, -1), slice(-1, -3, -1)),
         (slice(0, 0, None),),
     ],
 )
