@@ -361,11 +361,14 @@ class SparseArray:
             test_kwargs = kwargs.copy()
             if method == "reduce":
                 test_kwargs["axis"] = None
-            test_out = tuple(np.empty((1,), dtype=a.dtype) for a in out)
+            test_shape = () if method == "reduce" and not kwargs.get("keepdims", False) else (1,)
+            test_out = tuple(np.empty(test_shape, dtype=a.dtype) for a in out)
             if len(test_out) == 1:
                 test_out = test_out[0]
             getattr(ufunc, method)(*test_args, out=test_out, **test_kwargs)
-            kwargs["dtype"] = out[0].dtype
+            # Reductions accumulate in the input or requested dtype, then cast to out.
+            if method != "reduce":
+                kwargs["dtype"] = out[0].dtype
 
         if method == "outer":
             method = "__call__"
@@ -393,7 +396,7 @@ class SparseArray:
                     f"doesn't match the broadcast shape {result.shape}"
                 )
 
-            out._make_shallow_copy_of(result)
+            out._make_shallow_copy_of(result.astype(out.dtype, copy=False).asformat(type(out)))
             return out
 
         return result
@@ -853,7 +856,6 @@ class SparseArray:
         # Compute degrees of freedom and make sure it is not negative.
         rcount = max([rcount - ddof, 0])
 
-        ret = ret[...]
         np.divide(ret, rcount, out=ret, casting="unsafe")
         return ret
 
@@ -917,7 +919,7 @@ class SparseArray:
         """
         ret = self.var(axis=axis, dtype=dtype, out=out, ddof=ddof, keepdims=keepdims)
 
-        return np.sqrt(ret)
+        return np.sqrt(ret, out=out)
 
     @property
     def real(self):
