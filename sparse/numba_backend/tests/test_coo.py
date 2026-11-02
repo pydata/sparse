@@ -1522,6 +1522,70 @@ def test_out_dtype():
     )
 
 
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@pytest.mark.parametrize("ufunc", [np.add, np.multiply, np.maximum, np.minimum, np.logical_or, np.logical_and])
+@pytest.mark.parametrize("axis", [None, 1, (0, 2)])
+@pytest.mark.parametrize("keepdims", [False, True])
+def test_reduce_out(format, ufunc, axis, keepdims):
+    dense = np.arange(24, dtype=np.float64).reshape(2, 3, 4) % 4
+    array = sparse.COO.from_numpy(dense).asformat(format)
+    expected = ufunc.reduce(dense, axis=axis, keepdims=keepdims)
+    out = sparse.COO.from_numpy(np.zeros_like(expected)).asformat(format)
+
+    result = ufunc.reduce(array, axis=axis, keepdims=keepdims, out=out)
+
+    assert result is out
+    assert_eq(out, expected)
+
+
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@pytest.mark.parametrize("keepdims", [False, True])
+@pytest.mark.parametrize("dtype", [None, np.float32, np.float64])
+def test_sum_out_preserves_accumulation_dtype(format, keepdims, dtype):
+    dense = np.array([1e8, 1, -1e8], dtype=np.float64)
+    array = sparse.COO.from_numpy(dense).asformat(format)
+    expected = np.zeros((1,) if keepdims else (), dtype=np.float32)
+    np.sum(dense, dtype=dtype, keepdims=keepdims, out=expected)
+    out = sparse.COO.from_numpy(np.zeros_like(expected)).asformat(format)
+
+    result = array.sum(dtype=dtype, keepdims=keepdims, out=out)
+
+    assert result is out
+    assert result.dtype == expected.dtype
+    assert_eq(out, expected)
+
+
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@pytest.mark.parametrize("reduction", ["var", "std"])
+@pytest.mark.parametrize("axis", [None, 1, (0, 2)])
+@pytest.mark.parametrize("keepdims", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_variance_std_out(format, reduction, axis, keepdims, dtype):
+    dense = np.arange(24, dtype=np.float64).reshape(2, 3, 4) % 5
+    array = sparse.COO.from_numpy(dense).asformat(format)
+    expected = getattr(dense, reduction)(axis=axis, keepdims=keepdims, dtype=dtype)
+    out = sparse.COO.from_numpy(np.zeros_like(expected)).asformat(format)
+
+    result = getattr(array, reduction)(axis=axis, keepdims=keepdims, dtype=dtype, out=out)
+
+    assert result is out
+    assert result.dtype == expected.dtype
+    assert_eq(out, expected)
+
+
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@pytest.mark.parametrize("axis", [0, (0, 1)])
+def test_reduce_out_alias(format, axis):
+    dense = np.array([[3.0]])
+    array = sparse.COO.from_numpy(dense).asformat(format)
+    expected = np.add.reduce(dense, axis=axis, keepdims=True)
+
+    result = np.add.reduce(array, axis=axis, keepdims=True, out=array)
+
+    assert result is array
+    assert_eq(array, expected)
+
+
 @contextlib.contextmanager
 def auto_densify():
     "For use in tests only! Not threadsafe."
