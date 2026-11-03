@@ -1346,7 +1346,7 @@ def _einsum_single(lhs, rhs, operand):
     if lhs == rhs:
         if not rhs:
             # full contraction — return 0-D array per the Array API standard
-            return operand.sum()
+            return operand.sum(dtype=operand.dtype)
         return operand
 
     if not isinstance(operand, SparseArray):
@@ -1392,7 +1392,7 @@ def _einsum_single(lhs, rhs, operand):
 
     if not rhs:
         # full contraction — return 0-D COO array per the Array API standard
-        data = np.asarray(new_data.sum())
+        data = np.asarray(new_data.sum(dtype=new_data.dtype))
         return COO.from_numpy(data)
 
     return to_output_format(COO(new_coords, new_data, shape=new_shape, has_duplicates=True))
