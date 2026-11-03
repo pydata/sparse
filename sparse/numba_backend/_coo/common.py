@@ -1341,6 +1341,10 @@ def sort(x, /, *, axis=-1, descending=False, stable=False):
     if stable:
         raise ValueError("`stable=True` isn't currently supported.")
 
+    axis = normalize_axis(axis, x.ndim)
+    if x.size == 0:
+        return x.copy()
+
     original_ndim = x.ndim
     if x.ndim == 1:
         x = x[None, :]
