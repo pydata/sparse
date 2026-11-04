@@ -403,6 +403,65 @@ def test_kron(a_ndim, b_ndim):
         assert_eq(sparse.kron(a, b), sol)
 
 
+@pytest.mark.parametrize("a_idx_dtype", [np.int8, np.uint8, np.int64, np.uint64])
+@pytest.mark.parametrize("b_idx_dtype", [np.int8, np.uint8, np.int64, np.uint64])
+def test_kron_index_dtypes(a_idx_dtype, b_idx_dtype):
+    a = COO([[0, 19], [19, 0]], [2, 5], shape=(20, 20), idx_dtype=a_idx_dtype)
+    b = COO([[0, 19], [19, 0]], [3, 7], shape=(20, 20), idx_dtype=b_idx_dtype)
+
+    # Each entry a[i, j] * b[k, l] belongs at (20*i + k, 20*j + l).
+    expected = np.zeros((400, 400), dtype=a.dtype)
+    expected[0, 399] = 6
+    expected[19, 380] = 14
+    expected[380, 19] = 15
+    expected[399, 0] = 35
+
+    assert_eq(sparse.kron(a, b), expected)
+
+
+@pytest.mark.parametrize("idx_dtype", [np.int64, np.uint64])
+def test_kron_large_coordinates(idx_dtype):
+    size = np.iinfo(np.intp).max
+    a = COO([[size - 1]], [2], shape=(size,), idx_dtype=idx_dtype, has_duplicates=False, sorted=True)
+    b = COO([[0]], [3], shape=(1,))
+
+    result = sparse.kron(a, b)
+
+    assert result.shape == (size,)
+    np.testing.assert_array_equal(result.coords, [[size - 1]])
+    np.testing.assert_array_equal(result.data, [6])
+
+
+@pytest.mark.parametrize("size", [2**63, 2**64 - 1, 2**64 + 3])
+@pytest.mark.parametrize("nnz", [0, 1])
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize("dtype", [np.int8, np.complex64])
+@pytest.mark.parametrize("zero_axis", [None, 0, 1])
+def test_kron_empty_with_large_operand(size, nnz, reverse, dtype, zero_axis):
+    if zero_axis is None:
+        empty_shape, large_shape, expected_shape = (0,), (size,), (0,)
+    elif zero_axis == 0:
+        empty_shape, large_shape, expected_shape = (0, 1), (size, 2), (0, 2)
+    else:
+        empty_shape, large_shape, expected_shape = (2, 0), (1, size), (2, 0)
+    empty = COO(np.empty((len(empty_shape), 0), dtype=np.intp), np.empty(0, dtype=dtype), shape=empty_shape)
+    large = COO(
+        np.zeros((len(large_shape), nnz), dtype=np.uint64),
+        np.full(nnz, 3, dtype=dtype),
+        shape=large_shape,
+        has_duplicates=False,
+        sorted=True,
+    )
+    a, b = (large, empty) if reverse else (empty, large)
+
+    result = sparse.kron(a, b)
+
+    assert result.shape == expected_shape
+    assert result.nnz == 0
+    assert result.dtype == np.result_type(a.dtype, b.dtype)
+    np.testing.assert_array_equal(result.todense(), np.empty(expected_shape, dtype=dtype))
+
+
 @pytest.mark.parametrize("a_spmatrix, b_spmatrix", [(True, True), (True, False), (False, True)])
 def test_kron_spmatrix(a_spmatrix, b_spmatrix):
     sa = sparse.random((3, 4), density=0.5)
