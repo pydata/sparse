@@ -1714,8 +1714,10 @@ def full_like(a, fill_value, dtype=None, shape=None, format=None, *, device=None
         format = "coo"
 
     compressed_axes = kwargs.pop("compressed_axes", None)
-    if hasattr(a, "compressed_axes") and compressed_axes is None:
-        compressed_axes = a.compressed_axes
+    if format_to_string(format) == "gcxs":
+        if compressed_axes is None and (shape is None or np.size(shape) == a.ndim):
+            compressed_axes = getattr(a, "compressed_axes", None)
+        kwargs["compressed_axes"] = compressed_axes
     return full(
         a.shape if shape is None else shape,
         fill_value,
