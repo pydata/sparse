@@ -1609,7 +1609,7 @@ def eye(N, M=None, k=0, dtype=float, format="coo", *, device=None, **kwargs):
         data_length = builtins.max(builtins.min(data_length, N + k), 0)
 
     if data_length == 0:
-        return zeros((N, M), dtype=dtype, format=format, device=device)
+        return zeros((N, M), dtype=dtype, format=format, device=device, **kwargs)
 
     if k > 0:
         n_coords = np.arange(data_length, dtype=np.intp)
@@ -1714,8 +1714,10 @@ def full_like(a, fill_value, dtype=None, shape=None, format=None, *, device=None
         format = "coo"
 
     compressed_axes = kwargs.pop("compressed_axes", None)
-    if hasattr(a, "compressed_axes") and compressed_axes is None:
-        compressed_axes = a.compressed_axes
+    if format_to_string(format) == "gcxs":
+        if compressed_axes is None and (shape is None or np.size(shape) == a.ndim):
+            compressed_axes = getattr(a, "compressed_axes", None)
+        kwargs["compressed_axes"] = compressed_axes
     return full(
         a.shape if shape is None else shape,
         fill_value,

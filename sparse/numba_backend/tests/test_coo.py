@@ -1440,6 +1440,13 @@ def test_eye(N, M):
         assert_eq(sparse.eye(N, M=M, k=k, dtype="i4"), np.eye(N, M=M, k=k, dtype="i4"))
 
 
+@pytest.mark.parametrize("k", [-3, 0, 4])
+def test_eye_compressed_axes(k):
+    result = sparse.eye(3, 4, k=k, format="gcxs", compressed_axes=(1,))
+    assert result.compressed_axes == (1,)
+    assert_eq(result, np.eye(3, 4, k=k))
+
+
 @pytest.mark.parametrize("from_", [np.int8, np.int64, np.float32, np.float64, np.complex64, np.complex128])
 @pytest.mark.parametrize("to", [np.int8, np.int64, np.float32, np.float64, np.complex64, np.complex128])
 @pytest.mark.parametrize("casting", ["no", "safe", "same_kind"])
@@ -1479,6 +1486,16 @@ def test_full():
     assert_eq(sparse.full(5, 9, dtype="f8"), np.full(5, 9, dtype="f8"))
     assert_eq(sparse.full((5, 4), 9.5), np.full((5, 4), 9.5))
     assert_eq(sparse.full((5, 4), 9.5, dtype="i4"), np.full((5, 4), 9.5, dtype="i4"))
+
+
+def test_full_like_compressed_axes():
+    template = sparse.zeros((2, 4), format="gcxs", compressed_axes=(1,))
+    assert sparse.full_like(template, 7).compressed_axes == (1,)
+    assert sparse.ones_like(template, shape=(3, 5)).compressed_axes == (1,)
+    assert sparse.zeros_like(template, compressed_axes=(0,)).compressed_axes == (0,)
+    assert sparse.full_like(np.zeros((2, 4)), 7, format=sparse.GCXS, compressed_axes=(1,)).compressed_axes == (1,)
+    assert_eq(sparse.full_like(template, 7, shape=3), np.full(3, 7, dtype=template.dtype))
+    assert isinstance(sparse.full_like(template, 7, format="coo"), COO)
 
 
 def test_full_like():
