@@ -1609,7 +1609,7 @@ def eye(N, M=None, k=0, dtype=float, format="coo", *, device=None, **kwargs):
         data_length = builtins.max(builtins.min(data_length, N + k), 0)
 
     if data_length == 0:
-        return zeros((N, M), dtype=dtype, format=format, device=device)
+        return zeros((N, M), dtype=dtype, format=format, device=device, **kwargs)
 
     if k > 0:
         n_coords = np.arange(data_length, dtype=np.intp)

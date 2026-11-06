@@ -1440,6 +1440,13 @@ def test_eye(N, M):
         assert_eq(sparse.eye(N, M=M, k=k, dtype="i4"), np.eye(N, M=M, k=k, dtype="i4"))
 
 
+@pytest.mark.parametrize("k", [-3, 0, 4])
+def test_eye_compressed_axes(k):
+    result = sparse.eye(3, 4, k=k, format="gcxs", compressed_axes=(1,))
+    assert result.compressed_axes == (1,)
+    assert_eq(result, np.eye(3, 4, k=k))
+
+
 @pytest.mark.parametrize("from_", [np.int8, np.int64, np.float32, np.float64, np.complex64, np.complex128])
 @pytest.mark.parametrize("to", [np.int8, np.int64, np.float32, np.float64, np.complex64, np.complex128])
 @pytest.mark.parametrize("casting", ["no", "safe", "same_kind"])
