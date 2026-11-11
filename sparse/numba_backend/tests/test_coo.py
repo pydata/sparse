@@ -550,6 +550,142 @@ def test_advanced_indexing(index):
     assert_eq(x[index], s[index])
 
 
+@pytest.mark.parametrize("fill_value", [0, 7, np.nan])
+@pytest.mark.parametrize(
+    "index",
+    [
+        np.array([[1, 0], [-1, 1]]),
+        ([[0, 1]],),
+        (Ellipsis, np.array([[-1], [0]])),
+        (np.array([[1], [0]]), Ellipsis, None),
+        (np.array([[1], [0]]), np.array([2, 0, 2])),
+        (np.array([[1], [0]]), np.array([2]), slice(None, None, -1)),
+        (slice(None), np.array([[2], [0]]), np.array([3, 1, 3])),
+        (np.array([[1], [0]]), slice(None, None, -1), np.array([3, 1, 3])),
+        (None, np.array([[1], [0]]), None, np.array([2, 0, 2])),
+        (slice(None), np.array([[2], [0]]), Ellipsis, np.array([3, 1, 3])),
+        (1, slice(None), np.array([[3], [1]])),
+        (slice(None), np.array(1), np.array([[3], [1]])),
+        (slice(None), np.array(1), Ellipsis, np.array([[3], [1]])),
+        (np.array(-1),),
+        (np.array(-1), np.array(2), np.array(3)),
+        (np.array(-1), np.array(2), np.array(3), Ellipsis),
+        (np.array(-1), Ellipsis, np.array(2), np.array(3)),
+        (Ellipsis, np.array(-1), np.array(2), np.array(3)),
+        (np.array(0), np.array(0), np.array(0)),
+        (np.empty((0, 2), dtype=int),),
+        (np.empty((0, 1), dtype=int), np.array([[0, 2, 1]])),
+        (slice(0, 0), np.array([[2], [0]]), np.array([3, 1, 3])),
+        (np.array([[-1, 0]], dtype=np.int8), np.array([[2], [-1]], dtype=np.int16)),
+        (np.array([[0], [1]], dtype=np.uint64), np.array([2, 0, 2], dtype=np.uint64)),
+    ],
+)
+def test_broadcast_integer_indexing(index, fill_value):
+    x = np.full((2, 3, 4), fill_value)
+    x[0, 1, 2] = 3
+    x[1, 2, 3] = 5
+    s = COO.from_numpy(x, fill_value=fill_value)
+    coords, data = s.coords.copy(), s.data.copy()
+
+    result = s[index]
+
+    expected = x[index]
+    assert np.isscalar(result) == np.isscalar(expected)
+    assert_eq(expected, result)
+    if isinstance(result, COO):
+        np.testing.assert_equal(result.fill_value, fill_value)
+    np.testing.assert_array_equal(s.coords, coords)
+    np.testing.assert_array_equal(s.data, data)
+
+
+@pytest.mark.parametrize("trailing_slice", [slice(None), slice(None, None, -1)])
+def test_broadcast_integer_indexing_pruned_slices(trailing_slice):
+    # The multi-array kernel must not access axes removed by pruning full slices.
+    x = np.arange(2 * 3 * 4 * 5).reshape(2, 3, 4, 5)
+    s = COO.from_numpy(x)
+    index = (slice(None), np.array([[2], [0]]), np.array([3, 1, 3]), trailing_slice)
+    assert_eq(x[index], s[index])
+
+
+@pytest.mark.parametrize(
+    "index",
+    [
+        (np.zeros((2, 2), dtype=int), np.zeros(3, dtype=int)),
+        (np.empty((0, 2), dtype=int), np.zeros((3, 1), dtype=int)),
+        np.array([[2]]),
+        np.array([[-3]]),
+        np.array(2),
+        np.array(-3),
+        np.array([[0.5]]),
+        (np.array([[0]]),) * 4,
+    ],
+)
+def test_broadcast_integer_indexing_errors(index):
+    x = np.zeros((2, 3, 4))
+    s = COO.from_numpy(x)
+    with pytest.raises(IndexError):
+        x[index]
+    with pytest.raises(IndexError):
+        s[index]
+
+
+@pytest.mark.parametrize("shape", [(0, 3, 4), (2, 0, 4), (2, 3, 0)])
+def test_broadcast_integer_indexing_empty_source(shape):
+    x = np.empty(shape)
+    s = COO.from_numpy(x, fill_value=7)
+    index = tuple(np.zeros((0, 1) if dim == 0 else (1, 2), dtype=int) for dim in shape[:2])
+    assert_eq(x[index], s[index])
+
+
+def test_broadcast_integer_indexing_without_densifying(monkeypatch):
+    s = COO([[0, 10**11 - 1], [0, 1]], [3, 8], shape=(10**11, 2), fill_value=7)
+    rows = np.array([[0, 0, -1, 0]])[:, ::2].T
+    cols = np.array([0, 1, 0])
+    rows.flags.writeable = cols.flags.writeable = False
+
+    def fail_todense(*args, **kwargs):
+        pytest.fail("Integer indexing must not densify the source or the indexers")
+
+    with monkeypatch.context() as m:
+        m.setattr(COO, "todense", fail_todense)
+        result = s[rows, cols]
+    assert_eq(result, np.array([[3, 7, 3], [7, 8, 7]]))
+    assert result.fill_value == 7
+
+
+@pytest.mark.parametrize("seed", [0, 1, 2])
+def test_broadcast_integer_indexing_numpy_randomized(seed):
+    rng = np.random.default_rng(seed)
+    for _ in range(100):
+        shape = tuple(rng.integers(1, 5, size=rng.integers(1, 6)))
+        fill_value = rng.choice([0, 7])
+        x = rng.integers(0, 10, size=shape)
+        x[rng.random(shape) < 0.7] = fill_value
+        s = COO.from_numpy(x, fill_value=fill_value)
+        broadcast_shape = tuple(rng.integers(0, 4, size=rng.integers(0, 4)))
+        index = []
+        array_axis = rng.integers(len(shape))
+        for axis, dim in enumerate(shape):
+            kind = rng.integers(3) if axis != array_axis else 0
+            if kind == 0:
+                idx_shape = tuple(d if rng.integers(2) else 1 for d in broadcast_shape)
+                idx_shape = idx_shape[rng.integers(len(idx_shape) + 1) :]
+                ind = rng.integers(-dim, dim, size=idx_shape)
+            elif kind == 1:
+                ind = int(rng.integers(-dim, dim))
+            else:
+                ind = slice(None, None, rng.choice([-2, -1, 1, 2]))
+            index.append(ind)
+            if rng.random() < 0.3:
+                index.append(None)
+        if rng.random() < 0.5:
+            index.insert(rng.integers(len(index) + 1), Ellipsis)
+        index = tuple(index)
+        expected, result = x[index], s[index]
+        assert np.isscalar(result) == np.isscalar(expected)
+        assert_eq(expected, result)
+
+
 def test_custom_dtype_slicing():
     dt = np.dtype([("part1", np.float64), ("part2", np.int64, (2,)), ("part3", np.int64, (2, 2))])
 
@@ -579,7 +715,6 @@ def test_custom_dtype_slicing():
         0.5,
         [0.5],
         {"potato": "kartoffel"},
-        ([[0, 1]],),
     ],
 )
 def test_slicing_errors(index):
