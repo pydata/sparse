@@ -209,9 +209,7 @@ in the form `x.reduction()`, the following reductions are supported:
 ## Indexing
 
 [`sparse.COO`][] and [`sparse.GCXS`][] arrays can be [indexed](https://numpy.org/doc/stable/user/basics.indexing.html)
-just like regular [`numpy.ndarray`][] objects. They support integer, slice and boolean and array indexing (boolean and array indexing is supported only by dense NumPy arrays).
-However, currently, numpy advanced indexing is not properly supported. This
-means that all of the following work like in Numpy, except that they will produce
+with integers, slices and dense NumPy index arrays. All of the following work like in NumPy, except that they will produce
 [`sparse.SparseArray`][] arrays rather than [`numpy.ndarray`][] objects, and will produce
 scalars where expected. Assume that `z.shape` is `(5, 6, 7)`
 
@@ -237,10 +235,14 @@ z[-6]
 
 **Advanced Indexing**
 
-Advanced indexing (indexing arrays with other arrays) is supported, but only for indexing
-with a *single array*. Indexing a single array with multiple arrays is not supported at
-this time. As above, if `z.shape` is `(5, 6, 7)`, all of the following will
-work like NumPy:
+Both formats support one-dimensional dense integer index arrays and one-dimensional
+dense boolean masks. COO retrieval also supports multidimensional integer arrays,
+which are broadcast together following NumPy's advanced indexing rules. The broadcast
+dimensions replace the indexed axes; when the advanced indices are separated by a
+slice, `None` or an ellipsis, those dimensions appear first. The source array stays
+sparse and the result retains its fill value.
+
+As above, if `z.shape` is `(5, 6, 7)`, all of the following work for COO:
 
 ```python
 
@@ -248,7 +250,12 @@ z[[0, 1, 2]]
 z[1, [3]]
 z[1, 4, [3, 6]]
 z[:3, :2, [1, 5]]
+z[np.array([[0], [2]]), np.array([1, 3, 1])]  # shape (2, 3, 7)
+z[np.array([[0], [2]]), :, np.array([1, 5])]  # shape (2, 2, 6)
 ```
+
+Sparse integer index arrays and assignment to COO arrays are not supported.
+Multidimensional boolean masks are not covered by this integer indexing support.
 
 
 **Package Configuration**
