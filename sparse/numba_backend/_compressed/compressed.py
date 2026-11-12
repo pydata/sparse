@@ -210,11 +210,10 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         self._compressed_axes = tuple(compressed_axes)
         self.fill_value = self.data.dtype.type(fill_value)
 
-        # Pass only the length of `data`: Numba can't type every dtype `data` may
-        # hold (float16, object, longdouble), and the check never reads its values.
-        _validate_gcxs_arrays(
-            np.asarray(self._compressed_shape, dtype=np.intp), self.data.shape[0], self.indices, self.indptr
-        )
+        # The check only reads the shape of `data`. Pass a zero-copy stand-in of the same shape,
+        # because Numba can't type every dtype `data` may hold (float16, object, longdouble).
+        data_shape = np.broadcast_to(np.False_, self.data.shape)
+        _validate_gcxs_arrays(np.asarray(self._compressed_shape, dtype=np.intp), data_shape, self.indices, self.indptr)
 
         if prune:
             self._prune()
@@ -1020,13 +1019,12 @@ class CSC(_Compressed2d):
 
 @jit(nopython=True, nogil=True)
 def _validate_gcxs_arrays(
-    compressed_shape: np.ndarray, data_size: int, indices: np.ndarray, indptr: np.ndarray
+    compressed_shape: np.ndarray, data: np.ndarray, indices: np.ndarray, indptr: np.ndarray
 ) -> None:
-    # The caller has already checked that `data` is 1-dimensional.
-    if indices.ndim != 1 or indptr.ndim != 1:
+    if data.ndim != 1 or indices.ndim != 1 or indptr.ndim != 1:
         raise ValueError("`data`, `indices` and `indptr` must have `ndim == 1`.")
 
-    if indices.shape[0] != data_size:
+    if data.shape != indices.shape:
         raise ValueError("`data` and `indices` must have the same shape.")
 
     if not np.all((indices >= 0) & (indices < compressed_shape[1])):
@@ -1038,5 +1036,5 @@ def _validate_gcxs_arrays(
     if indptr.shape[0] != compressed_shape[0] + 1:
         raise ValueError("`indptr` must have length `compressed_rows + 1`.")
 
-    if indptr[0] < 0 or indptr[-1] > data_size:
+    if indptr[0] < 0 or indptr[-1] > data.shape[0]:
         raise ValueError("`indptr` contains one or more out of bounds indices.")
