@@ -6,7 +6,7 @@ import sys
 import sparse
 from sparse import COO, DOK
 from sparse.numba_backend._settings import NEP18_ENABLED
-from sparse.numba_backend._utils import assert_eq, check_zero_fill_value, html_table, random_value_array
+from sparse.numba_backend._utils import assert_eq, check_zero_fill_value, html_table, normalize_axis, random_value_array
 
 import pytest
 from packaging.version import Version
@@ -78,6 +78,52 @@ def test_reductions(reduction, random_sparse, axis, keepdims, kwargs):
     xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     assert_eq(xx, yy)
+
+
+@pytest.mark.parametrize("axes", [(0, 1), (-1,), ()])
+@pytest.mark.parametrize("axis_type", [tuple, list])
+@pytest.mark.parametrize("keepdims", [True, False])
+def test_reduction_axis_reusable_iterables(axes, axis_type, keepdims):
+    dense = np.arange(24).reshape((2, 3, 4))
+    array = COO.from_numpy(dense)
+
+    actual = array.sum(axis=axis_type(axes), keepdims=keepdims)
+    expected = dense.sum(axis=axes, keepdims=keepdims)
+
+    assert_eq(actual, expected)
+
+
+@pytest.mark.parametrize("axes, expected", [([0, 1], (0, 1)), ([-1], (2,)), ([], ()), (range(2), (0, 1))])
+def test_normalize_axis_reusable_iterable(axes, expected):
+    assert normalize_axis(axes, 3) == expected
+
+
+@pytest.mark.parametrize("axes", [[0, "1"], [3], [-4]])
+def test_normalize_axis_invalid_reusable_iterable(axes):
+    with pytest.raises(ValueError):
+        normalize_axis(axes, 3)
+
+
+@pytest.mark.parametrize("make_axis", [iter, lambda values: (value for value in values)], ids=["iterator", "generator"])
+@pytest.mark.parametrize("axes", [(0, 1), (3,), (0, "1")])
+def test_normalize_axis_rejects_iterators_without_consumption(make_axis, axes):
+    axis_iterator = make_axis(axes)
+
+    with pytest.raises(ValueError, match="iterator"):
+        normalize_axis(axis_iterator, 3)
+
+    assert tuple(axis_iterator) == axes
+
+
+@pytest.mark.parametrize("make_axis", [iter, lambda values: (value for value in values)], ids=["iterator", "generator"])
+def test_reduction_rejects_iterators_without_consumption(make_axis):
+    array = COO.from_numpy(np.arange(24).reshape((2, 3, 4)))
+    axis_iterator = make_axis((0, 1))
+
+    with pytest.raises(ValueError, match="iterator"):
+        array.sum(axis=axis_iterator)
+
+    assert tuple(axis_iterator) == (0, 1)
 
 
 @pytest.mark.xfail(reason=("Setting output dtype=float16 produces results inconsistent with numpy"))
