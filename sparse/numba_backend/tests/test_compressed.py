@@ -439,6 +439,86 @@ def test_from_coo_valerr():
 
 
 @pytest.mark.parametrize(
+    "shape, n_rows, expected",
+    [
+        ((2, 3), 2, (0,)),
+        ((2, 3), 3, (1,)),
+        ((2, 3, 4), 6, (0, 1)),
+        ((2, 3, 4), 4, (2,)),
+        ((3, 3), 3, (0,)),
+    ],
+)
+def test_infer_compressed_axes(shape, n_rows, expected):
+    x = GCXS((np.array([]), np.array([], dtype=np.intp), np.zeros(n_rows + 1, dtype=np.intp)), shape=shape)
+    assert x.compressed_axes == expected
+    np.testing.assert_array_equal(x.todense(), np.zeros(shape))
+
+
+def test_infer_compressed_axes_fails():
+    with pytest.raises(ValueError):
+        GCXS((np.array([]), np.array([], dtype=np.intp), np.zeros(6, dtype=np.intp)), shape=(2, 3))
+
+
+@pytest.mark.parametrize("a", [np.array(5), np.array([0, 1, 0, 2])])
+def test_low_ndim_compressed_axes(a):
+    x = GCXS.from_numpy(a)
+    assert x.compressed_axes == ()
+    assert x.indptr.tolist() == [0, x.nnz]
+    assert_eq(x, a)
+
+
+def test_low_ndim_indptr_none():
+    x = GCXS((np.array([1.0]), np.array([2]), None), shape=(4,))
+    np.testing.assert_array_equal(x.todense(), [0, 0, 1, 0])
+
+
+def test_low_ndim_rejects_axes():
+    with pytest.raises(ValueError):
+        GCXS(np.arange(4), compressed_axes=(0,))
+
+
+@pytest.mark.parametrize(
+    "indices, indptr",
+    [
+        ([0, 5], [0, 1, 2]),
+        ([0], [0, 1, 2]),
+        ([0, 1], [0, 3, 2]),
+        ([0, 1], [0, 2]),
+        ([0, 1], [0, 1, 3]),
+    ],
+)
+def test_validate_gcxs_arrays(indices, indptr):
+    with pytest.raises(ValueError):
+        GCXS((np.ones(2), np.array(indices), np.array(indptr)), shape=(2, 3), compressed_axes=(0,))
+
+
+@pytest.mark.parametrize(
+    "data, indices, indptr",
+    [
+        ([], [], [0, 0, 0]),
+        ([1.0, 2.0], [0, 2], [0, 2, 2]),
+    ],
+)
+def test_validate_gcxs_arrays_valid_edge_cases(data, indices, indptr):
+    x = GCXS(
+        (np.array(data), np.array(indices, dtype=np.intp), np.array(indptr)),
+        shape=(2, 3),
+        compressed_axes=(0,),
+    )
+    expected = np.zeros((2, 3))
+    expected[0, indices] = data
+    np.testing.assert_array_equal(x.todense(), expected)
+
+
+def test_get_nodes_low_ndim():
+    x = GCXS.from_numpy(np.arange(4))
+    nodes = x.get_nodes()
+    assert nodes["compressed_axes"].dtype == np.intp
+    assert nodes["compressed_axes"].size == 0
+    assert_eq(GCXS.from_nodes(nodes), x)
+
+
+@pytest.mark.parametrize(
     "pad_width",
     [
         2,

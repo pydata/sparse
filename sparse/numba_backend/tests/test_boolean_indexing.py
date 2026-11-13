@@ -95,7 +95,14 @@ def test_sparse_boolean_indexing_shape_mismatch(format, mask_shape):
 
 def test_sparse_boolean_indexing_unsigned_coords():
     size = 2**54
-    x = sparse.COO(np.array([[1], [size - 1]], dtype=np.uint64), [3], shape=(2, size))
+    # The single coordinate is already sorted and has no duplicates.
+    x = sparse.COO(
+        np.array([[1], [size - 1]], dtype=np.uint64),
+        [3],
+        shape=(2, size),
+        has_duplicates=False,
+        sorted=True,
+    )
     mask = sparse.COO.from_numpy(np.array([False, True]))
     result = x[mask]
     assert result.shape == (1, size)

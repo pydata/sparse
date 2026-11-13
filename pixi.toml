@@ -1,4 +1,5 @@
 [workspace]
+requires-pixi = ">=0.82.1"
 authors = ["Hameer Abbasi <2190658+hameerabbasi@users.noreply.github.com>"]
 channels = ["https://prefix.dev/conda-forge"]
 name = "sparse"

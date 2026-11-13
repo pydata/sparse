@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import contextlib
 import operator
 import warnings
@@ -245,14 +247,14 @@ class SparseArray:
         """
 
     @abstractmethod
-    def get_nodes(self):
+    def get_nodes(self) -> dict[str, np.ndarray]:
         """
         Get the nodes dictionary for serialization to .npz format.
         """
 
     @classmethod
     @abstractmethod
-    def from_nodes(cls, nodes):
+    def from_nodes(cls, nodes) -> SparseArray:
         """
         Reconstruct a sparse array from a nodes mapping.
         """
