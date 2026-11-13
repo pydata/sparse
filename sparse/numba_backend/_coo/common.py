@@ -1542,17 +1542,14 @@ def _arg_minmax_common(
         raise ValueError("Input array must be at least 1-D, but it's 0-D.")
     axis = normalize_axis(axis, x.ndim)
 
-    # If `axis` is None then we need to flatten the input array and memorize
-    # the original dimensionality for the final reshape operation.
+    # If `axis` is None, or the input is 1-D (so `axis` can only be 0), then we
+    # need to flatten the input array and memorize the original dimensionality
+    # for the final reshape operation.
     axis_none_original_ndim: int | None = None
-    if axis is None:
+    if axis is None or x.ndim == 1:
         axis_none_original_ndim = x.ndim
         x = x.reshape(-1)[:, None]
         axis = 0
-
-    # A 1-D array must have one more singleton dimension.
-    if axis == 0 and x.ndim == 1:
-        x = x[:, None]
 
     # We need to move `axis` to the front.
     new_transpose = list(range(x.ndim))
@@ -1586,7 +1583,7 @@ def _arg_minmax_common(
     new_transpose.insert(axis, new_transpose.pop(0))
     result = result.transpose(new_transpose)
 
-    # If `axis=None` we need to reshape flattened array into original dimensionality.
+    # If we flattened the input, reshape the result into the original dimensionality.
     if axis_none_original_ndim is not None:
         result = result.reshape([1 for _ in range(axis_none_original_ndim)])
 
