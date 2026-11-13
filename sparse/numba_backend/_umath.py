@@ -475,6 +475,20 @@ class _Elemwise:
                 fill_value=self.fill_value,
             )
 
+        aligned = self._get_aligned_coords_data()
+        if aligned is None:
+            aligned = self._get_union_coords_data()
+        if aligned is not None:
+            coords, data = aligned
+            return COO(
+                coords,
+                data,
+                shape=self.shape,
+                sorted=True,
+                has_duplicates=False,
+                fill_value=self.fill_value,
+            ).asformat(self.out_type, **self.out_kwargs)
+
         data_list = []
         coords_list = []
 
@@ -573,6 +587,138 @@ class _Elemwise:
         self.ndarray_shape = ndarray_shape
         self.non_ndarray_shape = non_ndarray_shape
 
+    def _get_aligned_coords_data(self):
+        """Evaluate operands with identical stored coordinates without matching.
+
+        Empty sparse operands are constant everywhere, so they do not constrain
+        the common support. Nonempty sparse operands must already have the
+        output shape: expanding their support is left to the broadcast path.
+        """
+        from ._coo import COO
+
+        reference = None
+        sparse_count = 0
+        for arg in self.args:
+            if not isinstance(arg, COO) or arg.nnz == 0:
+                continue
+            sparse_count += 1
+            if arg.shape != self.shape:
+                return None
+            if reference is None:
+                reference = arg
+            elif arg.coords is not reference.coords and (
+                arg.coords.dtype != reference.coords.dtype or not np.array_equal(arg.coords, reference.coords)
+            ):
+                # Mixed signed/unsigned equality can promote indices to floats.
+                # Leave such operands to the general path instead.
+                return None
+
+        if reference is None:
+            return np.empty((len(self.shape), 0), dtype=np.intp), np.empty(0, dtype=self.dtype)
+
+        # Matching multiple sparse operands normally copies their stored data.
+        # Preserve those writable buffers for callables that reuse an operand.
+        copy_data = sparse_count > 1 and not isinstance(self.func, np.ufunc)
+        func_args = []
+        for arg in self.args:
+            if isinstance(arg, COO):
+                data = arg.data.copy() if copy_data else arg.data
+                func_args.append(data if arg.nnz else arg.fill_value)
+            else:
+                func_args.append(self._get_dense_coords_data(arg, reference.coords))
+
+        data = self._get_func_data(func_args)
+        keep = ~equivalent(data, self.fill_value)
+        return reference.coords[:, keep], data[keep]
+
+    def _get_union_coords_data(self):
+        """Evaluate same-shape operands once on the union of their support.
+
+        The general broadcasting algorithm enumerates stored/fill combinations.
+        Without sparse broadcasting, their union describes every position at
+        which the result can differ from the fill value, regardless of arity.
+        """
+        from ._coo import COO
+        from ._coo.common import linear_loc
+
+        sparse_args = [arg for arg in self.args if isinstance(arg, COO) and arg.nnz]
+        # Binary intersection-like operations can cheaply discard unmatched
+        # positions. Reserve union assembly for the n-ary combinatorial path.
+        if len(sparse_args) < 3:
+            return None
+        if any(arg.shape != self.shape for arg in sparse_args):
+            return None
+        # Ravelled indices must be exactly representable by NumPy's index type.
+        if sparse_args[0].size > np.iinfo(np.intp).max:
+            return None
+
+        indices = [linear_loc(arg.coords.astype(np.intp, copy=False), self.shape) for arg in sparse_args]
+        union, inverse = np.unique(np.concatenate(indices), return_inverse=True)
+        positions = []
+        offset = 0
+        for arg in sparse_args:
+            positions.append(inverse[offset : offset + arg.nnz])
+            offset += arg.nnz
+        del indices
+        result_indices, result_data = [], []
+        # Bound temporary filled operands independently of the full union size.
+        # There are at most 2**16 stored positions in each function evaluation.
+        for start in range(0, union.size, 2**16):
+            block = union[start : start + 2**16]
+            block_coords = None
+            func_args = []
+            sparse_index = 0
+            for arg in self.args:
+                if isinstance(arg, COO):
+                    if arg.nnz:
+                        index = positions[sparse_index]
+                        sparse_index += 1
+                        lo = np.searchsorted(index, start, side="left")
+                        hi = np.searchsorted(index, start + block.size, side="left")
+                        data = np.full(block.size, arg.fill_value, dtype=arg.dtype)
+                        data[index[lo:hi] - start] = arg.data[lo:hi]
+                        func_args.append(data)
+                    else:
+                        func_args.append(arg.fill_value)
+                else:
+                    if block_coords is None:
+                        block_coords = np.asarray(np.unravel_index(block, self.shape))
+                    func_args.append(self._get_dense_coords_data(arg, block_coords))
+
+            data = self._get_func_data(func_args)
+            keep = ~equivalent(data, self.fill_value)
+            result_indices.append(block[keep])
+            result_data.append(data[keep])
+
+        coords = np.asarray(np.unravel_index(np.concatenate(result_indices), self.shape))
+        return coords, np.concatenate(result_data)
+
+    @staticmethod
+    def _get_dense_coords_data(arg, coords):
+        """Sample broadcast dense values without forming a full-shape view."""
+        array = np.asarray(arg)
+        offset = coords.shape[0] - array.ndim
+        indices = tuple(0 if size == 1 else coords[offset + axis] for axis, size in enumerate(array.shape))
+        sampled = array[indices]
+        # Callables receive one dense value per stored coordinate, just as
+        # with full-shape advanced indexing, including an owned writable
+        # buffer for scalar and all-singleton operands.
+        if np.ndim(sampled) == 0:
+            return np.full(coords.shape[1], sampled, dtype=array.dtype)
+        return sampled
+
+    def _get_func_data(self, func_args):
+        """Evaluate stored values with the dtype selected by the fill operation."""
+        try:
+            return self.func(*func_args, dtype=self.dtype, **self.kwargs)
+        except TypeError:
+            try:
+                func_args = np.broadcast_arrays(*func_args)
+                out = np.empty(func_args[0].shape, dtype=self.dtype)
+                return self.func(*func_args, out=out, **self.kwargs)
+            except TypeError:
+                return self.func(*func_args, **self.kwargs).astype(self.dtype)
+
     def _get_func_coords_data(self, mask):
         """
         Gets the coords/data for a certain mask
@@ -604,7 +750,7 @@ class _Elemwise:
         m_arg = 0
         for arg, m in zip(self.args, mask, strict=True):
             if m is None:
-                func_args.append(np.broadcast_to(arg, matched_broadcast_shape)[tuple(matched_arrays[0].coords)])
+                func_args.append(self._get_dense_coords_data(arg, matched_arrays[0].coords))
                 continue
 
             if m:
@@ -613,16 +759,7 @@ class _Elemwise:
             else:
                 func_args.append(arg.fill_value)
 
-        # Try our best to preserve the output dtype.
-        try:
-            func_data = self.func(*func_args, dtype=self.dtype, **self.kwargs)
-        except TypeError:
-            try:
-                func_args = np.broadcast_arrays(*func_args)
-                out = np.empty(func_args[0].shape, dtype=self.dtype)
-                func_data = self.func(*func_args, out=out, **self.kwargs)
-            except TypeError:
-                func_data = self.func(*func_args, **self.kwargs).astype(self.dtype)
+        func_data = self._get_func_data(func_args)
 
         unmatched_mask = ~equivalent(func_data, self.fill_value)
 
