@@ -597,9 +597,11 @@ class _Elemwise:
         from ._coo import COO
 
         reference = None
+        sparse_count = 0
         for arg in self.args:
             if not isinstance(arg, COO) or arg.nnz == 0:
                 continue
+            sparse_count += 1
             if arg.shape != self.shape:
                 return None
             if reference is None:
@@ -614,10 +616,14 @@ class _Elemwise:
         if reference is None:
             return np.empty((len(self.shape), 0), dtype=np.intp), np.empty(0, dtype=self.dtype)
 
+        # Matching multiple sparse operands normally copies their stored data.
+        # Preserve those writable buffers for callables that reuse an operand.
+        copy_data = sparse_count > 1 and not isinstance(self.func, np.ufunc)
         func_args = []
         for arg in self.args:
             if isinstance(arg, COO):
-                func_args.append(arg.data if arg.nnz else arg.fill_value)
+                data = arg.data.copy() if copy_data else arg.data
+                func_args.append(data if arg.nnz else arg.fill_value)
             else:
                 func_args.append(self._get_dense_coords_data(arg, reference.coords))
 

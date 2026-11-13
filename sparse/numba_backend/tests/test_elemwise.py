@@ -750,6 +750,33 @@ def test_no_out_upcast():
         a *= 0.5
 
 
+@pytest.mark.parametrize("arity", [2, 3])
+@pytest.mark.parametrize("reuse", [0, -1])
+@pytest.mark.parametrize("readonly", [False, True])
+def test_elemwise_aligned_callable_preserves_inputs(arity, reuse, readonly):
+    arrays = [COO([[0, 1]], [2.0 * i + 1, 2.0 * i + 2], shape=(3,)) for i in range(arity)]
+    expected_inputs = [array.todense() for array in arrays]
+    if readonly:
+        for array in arrays:
+            array.data.flags.writeable = False
+
+    def add_reusing_operand(*operands, dtype=None):
+        if any(np.shape(arg) != np.shape(operands[0]) for arg in operands[1:]):
+            return sum(operands)
+        index = reuse % len(operands)
+        result = operands[index]
+        for i, arg in enumerate(operands):
+            if i != index:
+                result[...] += arg
+        return result
+
+    result = sparse.elemwise(add_reusing_operand, *arrays)
+
+    np.testing.assert_array_equal(result.todense(), sum(expected_inputs))
+    for array, expected in zip(arrays, expected_inputs, strict=True):
+        np.testing.assert_array_equal(array.todense(), expected)
+
+
 @pytest.mark.parametrize("arg", [2, np.float64(2), np.array(2), np.array([2]), np.array([[2]])])
 def test_elemwise_dense_operand_large_shape(arg):
     # The logical COO shape is indexable, but a dense broadcast view of that
