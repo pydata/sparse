@@ -1,5 +1,4 @@
 array_api_tests/test_array_object.py::test_setitem
-array_api_tests/test_array_object.py::test_getitem_masking
 array_api_tests/test_array_object.py::test_setitem_masking
 array_api_tests/test_creation_functions.py::test_arange
 array_api_tests/test_creation_functions.py::test_linspace
