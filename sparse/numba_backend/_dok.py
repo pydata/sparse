@@ -365,6 +365,10 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         )
 
     def __setitem__(self, key, value):
+        if isinstance(value, SparseArray):
+            if self._setitem_sparse(key, value):
+                return
+            value = value.todense()
         value = np.asarray(value, dtype=self.dtype)
 
         # 1D fancy indexing
@@ -384,6 +388,56 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         key_list = [int(k) if isinstance(k, Integral) else k for k in key]
 
         self._setitem(key_list, value)
+
+    def _setitem_sparse(self, key, value):
+        """
+        Assign a sparse ``value`` to the slices and integers in ``key`` without
+        densifying it. Returns ``False`` if this isn't possible, in which case
+        nothing has been modified.
+        """
+        if not equivalent(value.fill_value, self.fill_value):
+            # Every element of the region is written, so there's nothing to gain.
+            return False
+
+        if not isinstance(key, tuple):
+            key = (key,)
+        if not all(isinstance(k, slice | Integral) or k is Ellipsis for k in key):
+            return False
+        if Ellipsis in key:
+            pos = key.index(Ellipsis)
+            if Ellipsis in key[pos + 1 :]:
+                return False
+            key = key[:pos] + (slice(None),) * (self.ndim - len(key) + 1) + key[pos + 1 :]
+        key = key + (slice(None),) * (self.ndim - len(key))
+        if len(key) != self.ndim:
+            return False
+
+        ranges = []
+        for k, n in zip(key, self.shape, strict=True):
+            if isinstance(k, slice):
+                ranges.append(range(*k.indices(n)))
+            elif -n <= k < n:
+                ranges.append(range(int(k) % n, int(k) % n + 1))
+            else:
+                return False
+        slice_axes = [i for i, k in enumerate(key) if isinstance(k, slice)]
+        if value.ndim > len(slice_axes):
+            raise ValueError("setting an array element with a sequence.")
+
+        target_shape = tuple(len(ranges[i]) for i in slice_axes)
+        # ``astype`` also drops any explicitly stored fill values.
+        value = value.asformat("coo").broadcast_to(target_shape).astype(self.dtype)
+
+        data = self.data
+        for idx in [idx for idx in data if all(i in r for i, r in zip(idx, ranges, strict=True))]:
+            del data[idx]
+
+        idx = [r[0] if len(r) else 0 for r in ranges]
+        for coord, v in zip(value.coords.T, value.data, strict=True):
+            for axis, c in zip(slice_axes, coord, strict=True):
+                idx[axis] = ranges[axis][c]
+            data[tuple(idx)] = v
+        return True
 
     def _fancy_setitem(self, idxs, values):
         idxs = tuple(np.asanyarray(idxs) for idxs in idxs)

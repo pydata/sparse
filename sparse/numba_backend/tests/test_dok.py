@@ -371,3 +371,88 @@ def test_dok_indexing():
     s[1, 2] = 0.5
     x = s.todense()
     assert_eq(x[1::-1], s[1::-1])
+
+
+@pytest.mark.parametrize("format", ["dok", "coo", "gcxs"])
+@pytest.mark.parametrize(
+    "shape, index, value_shape",
+    [
+        ((4, 4), (slice(None, 2), slice(None, 2)), (2, 2)),
+        ((4, 4), (slice(None), 1), (4,)),
+        ((4, 4), (slice(None, None, -1), slice(1, None, 2)), (4, 2)),
+        ((4, 4), (slice(-1, -1, -1), slice(None)), (0, 4)),
+        ((3, 4, 5), (1, Ellipsis), (4, 5)),
+        ((3, 4, 5), (Ellipsis, -2), (3, 4)),
+        ((3, 4, 5), (slice(1, 3),), (5,)),
+        ((3, 4, 5), (slice(None), slice(None), slice(None)), (3, 1, 5)),
+        ((5,), slice(1, 4), (3,)),
+    ],
+)
+def test_setitem_sparse_value(shape, index, value_shape, format, rng):
+    x = rng.random(shape) * (rng.random(shape) < 0.5)
+    value = rng.random(value_shape) * (rng.random(value_shape) < 0.5)
+    s = sparse.DOK.from_numpy(x)
+
+    s[index] = sparse.COO.from_numpy(value).asformat(format)
+    x[index] = value
+
+    assert_eq(x, s.asformat("coo"))
+    assert all(v != 0 for v in s.data.values())
+
+
+def test_setitem_sparse_value_does_not_densify(monkeypatch):
+    s = sparse.DOK((1000, 1000))
+    s[0, 0] = 1
+    value = sparse.DOK((500, 500))
+    value[1, 2] = 3
+
+    monkeypatch.setattr(sparse.DOK, "todense", None)
+    s[:500, :500] = value
+
+    assert s.data == {(1, 2): 3}
+
+
+def test_setitem_sparse_value_different_fill_value():
+    s = sparse.DOK((3, 3))
+    s[0, 0] = 5
+
+    s[:2, :] = sparse.COO.from_numpy(np.ones((2, 3)), fill_value=1.0)
+
+    assert_eq(s.asformat("coo"), sparse.COO.from_numpy(np.array([[1.0, 1, 1], [1, 1, 1], [0, 0, 0]])))
+
+
+def test_setitem_sparse_value_error():
+    s = sparse.DOK((3, 3))
+
+    with pytest.raises(ValueError, match="setting an array element with a sequence"):
+        s[0] = sparse.COO.from_numpy(np.ones((3, 3)))
+    with pytest.raises(ValueError, match="could not be broadcast"):
+        s[:2] = sparse.COO.from_numpy(np.ones((2, 2)))
+    assert s.nnz == 0
+
+
+def test_setitem_sparse_value_fancy_index():
+    s = sparse.DOK((4, 4))
+
+    s[[0, 1], [1, 2]] = sparse.COO.from_numpy(np.array([1.0, 2.0]))
+
+    assert s.data == {(0, 1): 1.0, (1, 2): 2.0}
+
+
+@pytest.mark.parametrize("index", [(Ellipsis, Ellipsis), (0, 0, 0), (slice(None), 3), -4])
+def test_setitem_sparse_value_index_error(index):
+    s = sparse.DOK((3, 3))
+
+    with pytest.raises(IndexError):
+        s[index] = sparse.COO.from_numpy(np.ones(3))
+    assert s.nnz == 0
+
+
+def test_setitem_sparse_value_explicit_fill_value():
+    value = sparse.COO(np.array([[0, 1]]), np.array([0.0, 2.0]), shape=(2,))
+    s = sparse.DOK((2, 2))
+    s[0, 0] = 1
+
+    s[0] = value
+
+    assert s.data == {(0, 1): 2.0}
