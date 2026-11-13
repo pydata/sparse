@@ -307,7 +307,10 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
                 )
                 raise ValueError(msg.format(len(shape), self.coords.shape[0], self.coords.shape))
             if not sorted or has_duplicates:
-                _validate_coo_coords(self.coords, np.asarray(self.shape, dtype=np.intp))
+                # Comparing uint64 coordinates with signed bounds in Numba can
+                # promote to float64 and lose exact positions above 2**53.
+                bounds_dtype = np.uint64 if self.coords.dtype.kind == "u" else np.intp
+                _validate_coo_coords(self.coords, np.asarray(self.shape, dtype=bounds_dtype))
 
         from .._settings import WARN_ON_TOO_DENSE
 

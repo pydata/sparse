@@ -1567,6 +1567,62 @@ def test_coords_in_bounds_edge_cases():
     np.testing.assert_array_equal(COO.from_numpy(np.array(5)).todense(), 5)
 
 
+@pytest.mark.skipif(np.iinfo(np.intp).max < 2**54, reason="requires 64-bit index dimensions")
+@pytest.mark.parametrize("dtype", [np.int64, np.uint64])
+@pytest.mark.parametrize("dimension", [2**53, 2**53 + 1, 2**53 + 2, 2**54, np.iinfo(np.intp).max])
+def test_coords_large_integer_bounds(dtype, dimension):
+    # Integer positions near the bound must remain distinct beyond float64's
+    # exact range, including the largest supported index dimension.
+    coords = np.array([[dimension - 1]], dtype=dtype)
+    x = COO(coords, data=[3], shape=(dimension,))
+    assert x.shape == (dimension,)
+    assert x.coords.dtype == coords.dtype
+    np.testing.assert_array_equal(x.coords, coords)
+    np.testing.assert_array_equal(x.data, [3])
+
+    with pytest.raises(ValueError, match="out of bounds"):
+        COO(np.array([[dimension]], dtype=dtype), data=[3], shape=(dimension,))
+
+
+@pytest.mark.parametrize("coordinate", [2**63, np.iinfo(np.uint64).max])
+def test_coords_uint64_out_of_bounds(coordinate):
+    with pytest.raises(ValueError, match="out of bounds"):
+        COO(np.array([[coordinate]], dtype=np.uint64), data=[3], shape=(np.iinfo(np.intp).max,))
+
+
+@pytest.mark.parametrize("dtype", [np.int8, np.int16, np.int32, np.uint8, np.uint16, np.uint32])
+def test_coords_narrow_integer_bounds(dtype):
+    coordinate = np.iinfo(dtype).max
+    dimension = coordinate + 1
+    if dimension > np.iinfo(np.intp).max:
+        pytest.skip("dimension exceeds the platform's index range")
+    coords = np.array([[coordinate]], dtype=dtype)
+    x = COO(coords, data=[3], shape=(dimension,))
+    np.testing.assert_array_equal(x.coords, coords)
+    assert x.coords.dtype == coords.dtype
+
+    with pytest.raises(ValueError, match="out of bounds"):
+        COO(coords, data=[3], shape=(coordinate,))
+
+
+@pytest.mark.parametrize("dtype", [np.int8, np.int16, np.int32, np.int64])
+def test_coords_negative_integer_bounds(dtype):
+    with pytest.raises(ValueError, match="out of bounds"):
+        COO(np.array([[-1]], dtype=dtype), data=[3], shape=(3,))
+
+
+@pytest.mark.parametrize("coordinate", [-0.5, 3.0, np.nan, np.inf])
+def test_coords_float_out_of_bounds(coordinate):
+    with pytest.raises(ValueError, match="out of bounds"):
+        COO(np.array([[coordinate]]), data=[3], shape=(3,))
+
+
+@pytest.mark.parametrize("coordinate", [0.0, 0.5, 2.5])
+def test_coords_float_indices(coordinate):
+    with pytest.raises(TypeError, match="only int indices permitted"):
+        COO(np.array([[coordinate]]), data=[3], shape=(3,))
+
+
 @pytest.mark.parametrize("N, M", [(4, None), (4, 10), (10, 4), (0, 10)])
 def test_eye(N, M):
     m = M or N
