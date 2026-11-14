@@ -2635,6 +2635,39 @@ def test_diff_matches_numpy(ndim, shape_range, n, use_prepend, use_append):
         )
 
 
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@pytest.mark.parametrize("use_prepend, use_append", [(False, False), (True, False), (False, True), (True, True)])
+def test_diff_zero_order(format, use_prepend, use_append):
+    array = np.arange(6).reshape(2, 3)
+    x = COO.from_numpy(array).asformat(format)
+    # Zero-order differences must ignore edges, even if their shape is incompatible.
+    edge = np.array([10, 20])
+    kwargs = {}
+    sparse_kwargs = {}
+    if use_prepend:
+        kwargs["prepend"] = edge
+        sparse_kwargs["prepend"] = COO.from_numpy(edge)
+    if use_append:
+        kwargs["append"] = edge
+        sparse_kwargs["append"] = COO.from_numpy(edge)
+
+    result = sparse.diff(x, n=0, **sparse_kwargs)
+
+    assert result is x
+    assert_eq(result, np.diff(array, n=0, **kwargs))
+
+
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+@pytest.mark.parametrize("n", [-1, -2, np.int64(-1)])
+def test_diff_negative_order(format, n):
+    array = np.arange(6).reshape(2, 3)
+    x = COO.from_numpy(array).asformat(format)
+    with pytest.raises(ValueError, match="order must be non-negative"):
+        np.diff(array, n=n)
+    with pytest.raises(ValueError, match="order must be non-negative"):
+        sparse.diff(x, n=n)
+
+
 def test_diff_invalid_type():
     a = np.arange(6).reshape(2, 3)
     with pytest.raises(TypeError, match="must be a SparseArray"):
