@@ -3257,7 +3257,9 @@ def diff(x, axis=-1, n=1, prepend=None, append=None):
     x : SparseArray
         Input sparse arrays.
     n : int
-        The number of times values are differenced. Default: 1.
+        The number of times values are differenced. Must be non-negative.
+        If zero, the input is returned unchanged, ignoring prepend and append.
+        Default: 1.
     axis : int
         The axis along which the difference is taken. Default: -1.
 
@@ -3268,6 +3270,11 @@ def diff(x, axis=-1, n=1, prepend=None, append=None):
     """
     if not isinstance(x, SparseArray):
         raise TypeError("`x` must be a SparseArray.")
+
+    if n == 0:
+        return x
+    if n < 0:
+        raise ValueError(f"order must be non-negative but got {n}")
 
     if axis < 0:
         axis = x.ndim + axis
