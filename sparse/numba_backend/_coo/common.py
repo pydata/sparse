@@ -249,6 +249,22 @@ def stack(arrays, axis=0):
     )
 
 
+def _triu_mask(row, col, k):
+    limit = np.iinfo(row.dtype).max
+    if k > limit:
+        return np.zeros(row.shape, dtype=bool)
+    if k <= -int(limit):
+        return np.ones(row.shape, dtype=bool)
+    # Coordinate differences fit in their signed dtype, unlike row + k.
+    if row.dtype.kind == "i":
+        return col - row >= k
+    # Unsigned differences can wrap; the coordinate comparison excludes the
+    # wrapped values without widening the dtype (including uint64).
+    if k >= 0:
+        return (row <= col) & (col - row >= k)
+    return (row <= col) | (row - col <= -k)
+
+
 def triu(x, k=0):
     """
     Returns an array with all elements below the k-th diagonal set to zero.
@@ -283,7 +299,8 @@ def triu(x, k=0):
     if not x.ndim >= 2:
         raise NotImplementedError("sparse.triu is not implemented for scalars or 1-D arrays.")
 
-    mask = x.coords[-2] + k <= x.coords[-1]
+    k = k.item() if isinstance(k, np.integer) else k
+    mask = _triu_mask(x.coords[-2], x.coords[-1], k)
 
     coords = x.coords[:, mask]
     data = x.data[mask]
@@ -325,7 +342,8 @@ def tril(x, k=0):
     if not x.ndim >= 2:
         raise NotImplementedError("sparse.tril is not implemented for scalars or 1-D arrays.")
 
-    mask = x.coords[-2] + k >= x.coords[-1]
+    k = k.item() if isinstance(k, np.integer) else k
+    mask = _triu_mask(x.coords[-1], x.coords[-2], -k)
 
     coords = x.coords[:, mask]
     data = x.data[mask]
