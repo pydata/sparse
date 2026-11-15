@@ -478,40 +478,36 @@ class _Elemwise:
         aligned = self._get_aligned_coords_data()
         if aligned is None:
             aligned = self._get_union_coords_data()
-        if aligned is not None:
+        if aligned is None:
+            data_list = []
+            coords_list = []
+
+            for mask in itertools.product(*[[True, False] if isinstance(arg, COO) else [None] for arg in self.args]):
+                if not any(mask):
+                    continue
+
+                r = self._get_func_coords_data(mask)
+
+                if r is not None:
+                    coords_list.append(r[0])
+                    data_list.append(r[1])
+
+            # Concatenate matches and mismatches
+            data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=self.fill_value.dtype)
+            coords = (
+                np.concatenate(coords_list, axis=1)
+                if len(coords_list)
+                else np.empty((0, len(self.shape)), dtype=np.intp)
+            )
+
+        else:
             coords, data = aligned
-            return COO(
-                coords,
-                data,
-                shape=self.shape,
-                sorted=True,
-                has_duplicates=False,
-                fill_value=self.fill_value,
-            ).asformat(self.out_type, **self.out_kwargs)
-
-        data_list = []
-        coords_list = []
-
-        for mask in itertools.product(*[[True, False] if isinstance(arg, COO) else [None] for arg in self.args]):
-            if not any(mask):
-                continue
-
-            r = self._get_func_coords_data(mask)
-
-            if r is not None:
-                coords_list.append(r[0])
-                data_list.append(r[1])
-
-        # Concatenate matches and mismatches
-        data = np.concatenate(data_list) if len(data_list) else np.empty((0,), dtype=self.fill_value.dtype)
-        coords = (
-            np.concatenate(coords_list, axis=1) if len(coords_list) else np.empty((0, len(self.shape)), dtype=np.intp)
-        )
 
         return COO(
             coords,
             data,
             shape=self.shape,
+            sorted=aligned is not None,
             has_duplicates=False,
             fill_value=self.fill_value,
         ).asformat(self.out_type, **self.out_kwargs)
