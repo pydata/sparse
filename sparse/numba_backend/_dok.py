@@ -365,7 +365,8 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         )
 
     def __setitem__(self, key, value):
-        value = np.asarray(value, dtype=self.dtype)
+        if not isinstance(value, SparseArray):
+            value = np.asarray(value, dtype=self.dtype)
 
         # 1D fancy indexing
         if self.ndim == 1 and isinstance(key, Iterable) and all(isinstance(i, int | np.integer) for i in key):
@@ -379,11 +380,85 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
             self._fancy_setitem(key, value)
             return
 
+        if isinstance(value, SparseArray):
+            self._setitem_sparse(key, value)
+            return
+
         key = normalize_index(key, self.shape)
 
         key_list = [int(k) if isinstance(k, Integral) else k for k in key]
 
         self._setitem(key_list, value)
+
+    def _setitem_sparse(self, key, value):
+        """
+        Assign a sparse ``value`` to the slices and integers in ``key``.
+
+        ``value`` is never densified. When its fill value matches this array's,
+        only its stored entries are written.
+        """
+        if not isinstance(key, tuple):
+            key = (key,)
+        if not all(isinstance(k, slice | Integral) or k is Ellipsis for k in key):
+            raise NotImplementedError(
+                "Assigning a sparse array is only supported with integers, slices and `...`, "
+                "or with index sequences for all dimensions."
+            )
+        if Ellipsis in key:
+            pos = key.index(Ellipsis)
+            if Ellipsis in key[pos + 1 :]:
+                raise IndexError("an index can only have a single ellipsis ('...')")
+            key = key[:pos] + (slice(None),) * (self.ndim - len(key) + 1) + key[pos + 1 :]
+        if len(key) > self.ndim:
+            raise IndexError(
+                f"too many indices for array: array is {self.ndim}-dimensional, but {len(key)} were indexed"
+            )
+        key = key + (slice(None),) * (self.ndim - len(key))
+
+        ranges = []
+        for axis, (k, n) in enumerate(zip(key, self.shape, strict=True)):
+            if isinstance(k, slice):
+                ranges.append(range(*k.indices(n)))
+            elif -n <= k < n:
+                ranges.append(range(int(k) % n, int(k) % n + 1))
+            else:
+                raise IndexError(f"index {k} is out of bounds for axis {axis} with size {n}")
+        slice_axes = [i for i, k in enumerate(key) if isinstance(k, slice)]
+        if value.ndim > len(slice_axes):
+            raise ValueError("setting an array element with a sequence.")
+
+        target_shape = tuple(len(ranges[i]) for i in slice_axes)
+        value = value.asformat("coo").broadcast_to(target_shape)
+
+        data = self.data
+        idx = [r[0] if len(r) else 0 for r in ranges]
+
+        if not equivalent(value.fill_value, self.fill_value):
+            # Every element of the region differs from this array's fill value
+            # unless ``value`` stores it, so walk the region and look up the
+            # stored entries instead of densifying ``value``.
+            default = np.asarray(value.fill_value, dtype=self.dtype)[()]
+            stored = dict(zip(map(tuple, value.coords.T.tolist()), value.data.astype(self.dtype), strict=True))
+            for coord in np.ndindex(target_shape):
+                for axis, c in zip(slice_axes, coord, strict=True):
+                    idx[axis] = ranges[axis][c]
+                v = stored.get(coord, default)
+                if not equivalent(v, self.fill_value):
+                    data[tuple(idx)] = v
+                else:
+                    data.pop(tuple(idx), None)
+            return
+
+        for i in [i for i in data if all(j in r for j, r in zip(i, ranges, strict=True))]:
+            del data[i]
+
+        values = value.data.astype(self.dtype)
+        # Skip explicitly stored fill values.
+        keep = ~equivalent(values, self.fill_value)
+        for coord, v in zip(value.coords.T[keep], values[keep], strict=True):
+            for axis, c in zip(slice_axes, coord, strict=True):
+                idx[axis] = ranges[axis][c]
+            data[tuple(idx)] = v
 
     def _fancy_setitem(self, idxs, values):
         idxs = tuple(np.asanyarray(idxs) for idxs in idxs)
@@ -391,6 +466,9 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
             raise IndexError("Indices must be sequences of integer types!")
         if idxs[0].ndim != 1:
             raise IndexError("Indices are not 1d sequences!")
+        if isinstance(values, SparseArray):
+            self._fancy_setitem_sparse(idxs, values)
+            return
         if values.ndim == 0:
             values = np.full(idxs[0].size, values, self.dtype)
         elif values.ndim > 1:
@@ -401,6 +479,24 @@ class DOK(SparseArray, NDArrayOperatorsMixin):
         data = self.data
         for idx, value in zip(zip(*idxs, strict=True), values, strict=True):
             if value != fill_value:
+                data[idx] = value
+            elif idx in data:
+                del data[idx]
+
+    def _fancy_setitem_sparse(self, idxs, values):
+        """Like ``_fancy_setitem``, but looks up the stored entries of a sparse ``values``."""
+        if values.ndim > 1:
+            raise ValueError(f"Dimension of values ({values.ndim}) must be 0 or 1!")
+        if values.ndim == 1 and idxs[0].shape != values.shape:
+            raise ValueError(f"Shape mismatch of indices ({idxs[0].shape}) and values ({values.shape})!")
+        values = values.asformat("coo")
+        default = np.asarray(values.fill_value, dtype=self.dtype)[()]
+        stored = dict(zip(map(tuple, values.coords.T.tolist()), values.data.astype(self.dtype).tolist(), strict=True))
+        fill_value = self.fill_value
+        data = self.data
+        for i, idx in enumerate(zip(*idxs, strict=True)):
+            value = stored.get((i,) if values.ndim else (), default)
+            if not equivalent(value, fill_value):
                 data[idx] = value
             elif idx in data:
                 del data[idx]
