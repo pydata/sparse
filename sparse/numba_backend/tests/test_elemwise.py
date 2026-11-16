@@ -748,3 +748,129 @@ def test_no_out_upcast():
     a = sparse.COO([[0, 1], [0, 1]], [1, 1], shape=(2, 2))
     with pytest.raises(TypeError):
         a *= 0.5
+
+
+@pytest.mark.parametrize("arity", [2, 3])
+@pytest.mark.parametrize("reuse", [0, -1])
+@pytest.mark.parametrize("readonly", [False, True])
+def test_elemwise_aligned_callable_preserves_inputs(arity, reuse, readonly):
+    arrays = [COO([[0, 1]], [2.0 * i + 1, 2.0 * i + 2], shape=(3,)) for i in range(arity)]
+    expected_inputs = [array.todense() for array in arrays]
+    if readonly:
+        for array in arrays:
+            array.data.flags.writeable = False
+
+    def add_reusing_operand(*operands, dtype=None):
+        if any(np.shape(arg) != np.shape(operands[0]) for arg in operands[1:]):
+            return sum(operands)
+        index = reuse % len(operands)
+        result = operands[index]
+        for i, arg in enumerate(operands):
+            if i != index:
+                result[...] += arg
+        return result
+
+    result = sparse.elemwise(add_reusing_operand, *arrays)
+
+    np.testing.assert_array_equal(result.todense(), sum(expected_inputs))
+    for array, expected in zip(arrays, expected_inputs, strict=True):
+        np.testing.assert_array_equal(array.todense(), expected)
+
+
+@pytest.mark.parametrize("arg", [2, np.float64(2), np.array(2), np.array([2]), np.array([[2]])])
+def test_elemwise_dense_operand_large_shape(arg):
+    # The logical COO shape is indexable, but a dense broadcast view of that
+    # shape would exceed NumPy's byte-size limit even without allocating it.
+    shape = (2_000_000_000, 2_000_000_000)
+    array = COO([[0, 1], [0, 1]], [3.0, 4.0], shape=shape)
+    result = array * arg
+    assert result.shape == shape
+    np.testing.assert_array_equal(result.coords, array.coords)
+    np.testing.assert_array_equal(result.data, [6.0, 8.0])
+    assert result.fill_value == 0
+
+    # Different supports exercise the general coordinate-matching route.
+    condition = COO([[0], [0]], [True], shape=shape)
+    result = sparse.where(condition, array, arg)
+    assert result.shape == shape
+    np.testing.assert_array_equal(result.coords, [[0], [0]])
+    np.testing.assert_array_equal(result.data, [3.0])
+    assert result.fill_value == 2
+
+    # Three distinct nonempty supports select the bounded coordinate-union
+    # route, which must not form a full logical dense broadcast view either.
+    second = COO([[1], [2]], [5.0], shape=shape)
+    third = COO([[2], [3]], [7.0], shape=shape)
+    result = sparse.elemwise(lambda a, b, c, scale: (a + b + c) * scale, array, second, third, arg)
+    assert result.shape == shape
+    np.testing.assert_array_equal(result.coords, [[0, 1, 1, 2], [0, 1, 2, 3]])
+    np.testing.assert_array_equal(result.data, [6.0, 8.0, 10.0, 14.0])
+    assert result.fill_value == 0
+
+    # A dtype-aware callable can return its dense operand directly. That
+    # operand must have one value per stored coordinate, including when it
+    # comes from a scalar or singleton array. Exercise all three routes.
+    def project_dense(*operands, dtype=None):
+        return np.asarray(operands[-1])
+
+    for sparse_operands in [(array,), (array, second), (array, second, third)]:
+        result = sparse.elemwise(project_dense, *sparse_operands, arg)
+        assert result.shape == shape
+        assert result.nnz == 0
+        assert result.fill_value == 2
+        assert result.dtype == np.asarray(arg).dtype
+
+
+def test_elemwise_union_rejects_index_overflow():
+    from sparse.numba_backend._umath import _Elemwise
+
+    # A logical shape may exceed intp's range without allocating dense storage.
+    # The union shortcut must decline before flattening such coordinates.
+    shape = (2**32, 2**32)
+    arrays = [COO([[0], [i]], [i + 1], shape=shape, sorted=True, has_duplicates=False) for i in range(3)]
+    evaluator = _Elemwise(lambda a, b, c: a + b + c, *arrays)
+    assert evaluator.shape == shape
+    assert evaluator._get_union_coords_data() is None
+
+
+@pytest.mark.parametrize("format", [COO, GCXS, DOK])
+@pytest.mark.parametrize("position", range(4))
+def test_elemwise_union_includes_empty_constant_operand(format, position):
+    dense = [np.zeros((3, 4), dtype=np.int64) for _ in range(3)]
+    for i, array in enumerate(dense):
+        array[i, i] = 3 * (i + 1)
+    operands = [format.from_numpy(array) for array in dense]
+    constant = COO(np.empty((2, 0), dtype=np.intp), np.empty(0, dtype=np.int64), shape=(3, 4), fill_value=2)
+    operands.insert(position, constant.asformat(format))
+    expected = sum(dense) + 2
+    result = sparse.elemwise(lambda a, b, c, d: a + b + c + d, *operands)
+    assert isinstance(result, format)
+    assert result.fill_value == 2
+    np.testing.assert_array_equal(result.todense(), expected)
+
+
+@pytest.mark.parametrize("cancel", [False, True])
+def test_elemwise_union_spans_multiple_evaluation_blocks(cancel):
+    size = 2**16 + 5
+    coordinates = np.arange(size, dtype=np.intp)[None, :]
+    first = COO(coordinates, np.ones(size, dtype=np.int64), shape=(size,), sorted=True, has_duplicates=False)
+    second = COO([[0]], [-3 if cancel else 2], shape=(size,))
+    third = COO([[size - 1]], [2], shape=(size,))
+    result = sparse.elemwise(lambda a, b, c: a + b + c, first, second, third)
+    expected = np.ones(size, dtype=np.int64)
+    expected[0] += -3 if cancel else 2
+    expected[-1] += 2
+    np.testing.assert_array_equal(result.todense(), expected)
+    np.testing.assert_array_equal(result.coords, coordinates)
+    assert result.fill_value == 0
+
+
+def test_elemwise_union_prunes_cancelled_final_block():
+    size = 2**16 + 1
+    first = COO(np.arange(size)[None, :], np.ones(size, dtype=np.int64), shape=(size,))
+    second = COO([[0]], [2], shape=(size,))
+    third = COO([[size - 1]], [-1], shape=(size,))
+    result = sparse.elemwise(lambda a, b, c: a + b + c, first, second, third)
+    assert result.nnz == size - 1
+    np.testing.assert_array_equal(result.coords, np.arange(size - 1)[None, :])
+    np.testing.assert_array_equal(result.data, np.r_[3, np.ones(size - 2, dtype=np.int64)])
