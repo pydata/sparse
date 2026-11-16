@@ -510,6 +510,23 @@ def test_validate_gcxs_arrays_valid_edge_cases(data, indices, indptr):
     np.testing.assert_array_equal(x.todense(), expected)
 
 
+@pytest.mark.parametrize("dtype", [np.float16, object, np.longdouble])
+def test_gcxs_data_dtype_not_supported_by_numba(dtype):
+    # Regression test for gh-1027: validation must not pass `data` to Numba.
+    a = np.array([[1.5, 0.0], [0.0, 2.0]]).astype(dtype)
+    x = GCXS.from_numpy(a)
+    assert x.dtype == a.dtype
+    np.testing.assert_array_equal(x.todense(), a)
+
+
+def test_ufunc_to_float16_on_gcxs():
+    # Regression test for gh-1027: `np.sin` on int8 data returns float16.
+    a = np.array([[1, 0], [0, 2]], dtype=np.int8)
+    x = np.sin(GCXS.from_numpy(a))
+    assert x.dtype == np.float16
+    np.testing.assert_array_equal(x.todense(), np.sin(a))
+
+
 def test_get_nodes_low_ndim():
     x = GCXS.from_numpy(np.arange(4))
     nodes = x.get_nodes()

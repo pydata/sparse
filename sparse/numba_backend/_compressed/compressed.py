@@ -210,7 +210,10 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
         self._compressed_axes = tuple(compressed_axes)
         self.fill_value = self.data.dtype.type(fill_value)
 
-        _validate_gcxs_arrays(np.asarray(self._compressed_shape, dtype=np.intp), self.data, self.indices, self.indptr)
+        # The check only reads the shape of `data`. Pass a zero-copy stand-in of the same shape,
+        # because Numba can't type every dtype `data` may hold (float16, object, longdouble).
+        data_shape = np.broadcast_to(np.False_, self.data.shape)
+        _validate_gcxs_arrays(np.asarray(self._compressed_shape, dtype=np.intp), data_shape, self.indices, self.indptr)
 
         if prune:
             self._prune()
