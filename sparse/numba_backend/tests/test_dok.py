@@ -412,10 +412,11 @@ def test_setitem_sparse_value_does_not_densify(monkeypatch):
     assert s.data == {(1, 2): 3}
 
 
-def test_setitem_sparse_value_different_fill_value():
+def test_setitem_sparse_value_different_fill_value(monkeypatch):
     s = sparse.DOK((3, 3))
     s[0, 0] = 5
 
+    monkeypatch.setattr(sparse.COO, "todense", None)
     s[:2, :] = sparse.COO.from_numpy(np.ones((2, 3)), fill_value=1.0)
 
     assert_eq(s.asformat("coo"), sparse.COO.from_numpy(np.array([[1.0, 1, 1], [1, 1, 1], [0, 0, 0]])))
@@ -431,19 +432,52 @@ def test_setitem_sparse_value_error():
     assert s.nnz == 0
 
 
-def test_setitem_sparse_value_fancy_index():
+def test_setitem_sparse_value_fancy_index(monkeypatch):
     s = sparse.DOK((4, 4))
+    s[0, 1] = 5
+    s[3, 3] = 7
 
-    s[[0, 1], [1, 2]] = sparse.COO.from_numpy(np.array([1.0, 2.0]))
+    monkeypatch.setattr(sparse.COO, "todense", None)
+    s[[0, 1, 2], [1, 2, 3]] = sparse.COO(np.array([[1]]), np.array([2.0]), shape=(3,))
 
-    assert s.data == {(0, 1): 1.0, (1, 2): 2.0}
+    assert s.data == {(1, 2): 2.0, (3, 3): 7}
+
+
+def test_setitem_sparse_value_fancy_index_fill_value():
+    s = sparse.DOK((3, 3))
+
+    s[[0, 1], [0, 1]] = sparse.COO(np.array([[1]]), np.array([0.0]), shape=(2,), fill_value=4.0)
+    s[[2], [2]] = sparse.COO(np.empty((0, 1), dtype=np.intp), np.array([3.0]), shape=())
+
+    assert s.data == {(0, 0): 4.0, (2, 2): 3.0}
+
+
+def test_setitem_sparse_value_fancy_index_error():
+    s = sparse.DOK((3, 3))
+
+    with pytest.raises(ValueError, match="must be 0 or 1"):
+        s[[0, 1], [0, 1]] = sparse.COO.from_numpy(np.ones((2, 2)))
+    with pytest.raises(ValueError, match="Shape mismatch"):
+        s[[0, 1], [0, 1]] = sparse.COO.from_numpy(np.ones(3))
+    assert s.nnz == 0
 
 
 @pytest.mark.parametrize("index", [(Ellipsis, Ellipsis), (0, 0, 0), (slice(None), 3), -4])
-def test_setitem_sparse_value_index_error(index):
+def test_setitem_sparse_value_index_error(index, monkeypatch):
     s = sparse.DOK((3, 3))
 
+    monkeypatch.setattr(sparse.COO, "todense", None)
     with pytest.raises(IndexError):
+        s[index] = sparse.COO.from_numpy(np.ones(3))
+    assert s.nnz == 0
+
+
+@pytest.mark.parametrize("index", [(None, slice(None)), (slice(None), [0, 1]), np.array([True, False, True])])
+def test_setitem_sparse_value_unsupported_index(index, monkeypatch):
+    s = sparse.DOK((3, 3))
+
+    monkeypatch.setattr(sparse.COO, "todense", None)
+    with pytest.raises(NotImplementedError, match="Assigning a sparse array"):
         s[index] = sparse.COO.from_numpy(np.ones(3))
     assert s.nnz == 0
 
@@ -456,3 +490,13 @@ def test_setitem_sparse_value_explicit_fill_value():
     s[0] = value
 
     assert s.data == {(0, 1): 2.0}
+
+
+def test_setitem_sparse_value_0d():
+    s = sparse.DOK((2, 2))
+    s[0, 0] = 1
+
+    s[0, 0] = sparse.COO(np.empty((0, 1), dtype=np.intp), np.array([3.0]), shape=())
+    s[1, 1] = sparse.COO.from_numpy(np.array(2.0))
+
+    assert s.data == {(0, 0): 3.0, (1, 1): 2.0}
