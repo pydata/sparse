@@ -270,6 +270,10 @@ def test_complex_methods(complex):
         # Pathological - Wrong ordering of start/stop
         (slice(5, 0),),
         (slice(0, 5, -1),),
+        # Negative step with a negative stop
+        (slice(None), slice(None, -1, -1)),
+        (slice(None), slice(None, -2, -2)),
+        (slice(None, -3, -1), slice(-1, -3, -1)),
     ],
 )
 @pytest.mark.parametrize("compressed_axes", [(0,), (1,), (2,), (0, 1), (0, 2), (1, 2)])

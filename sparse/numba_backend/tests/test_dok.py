@@ -371,3 +371,27 @@ def test_dok_indexing():
     s[1, 2] = 0.5
     x = s.todense()
     assert_eq(x[1::-1], s[1::-1])
+
+
+@pytest.mark.parametrize(
+    "index",
+    [
+        slice(None, -1, -1),
+        slice(None, -2, -2),
+        slice(3, -4, -1),
+        slice(0, None, -1),
+        slice(-5, None, -2),
+        slice(0, -7, -1),
+    ],
+)
+def test_negative_step_slicing(index):
+    x = np.arange(1, 6, dtype=float)
+    s = DOK.from_numpy(x)
+    assert_eq(s[index], x[index])
+
+    expected = np.zeros_like(x)
+    values = np.arange(1, expected[index].size + 1, dtype=float)
+    expected[index] = values
+    s = DOK((5,))
+    s[index] = values
+    assert_eq(s, expected)
