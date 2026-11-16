@@ -2680,3 +2680,17 @@ class TestInterp:
         if isinstance(x, sparse.SparseArray):
             assert actual.fill_value == fp[1]
         np.testing.assert_array_equal(to_dense(actual), expected)
+
+
+@pytest.mark.parametrize("axis", [None, 0, 1])
+def test_nanreduce_array_identity_broadcasts_replacements(axis):
+    from sparse.numba_backend._coo.common import nanreduce
+
+    dense = np.array([[np.nan, 3.0, 0.0], [2.0, np.nan, 4.0]])
+    identity = np.array([10.0, 20.0, 30.0])
+    array = COO.from_numpy(dense)
+    expected = np.where(np.isnan(dense), identity, dense).sum(axis=axis)
+    result = nanreduce(array, np.add, identity=identity, axis=axis)
+    if isinstance(result, sparse.SparseArray):
+        result = result.todense()
+    np.testing.assert_array_equal(result, expected)

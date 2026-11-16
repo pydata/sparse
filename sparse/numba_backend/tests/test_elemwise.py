@@ -819,3 +819,58 @@ def test_elemwise_dense_operand_large_shape(arg):
         assert result.nnz == 0
         assert result.fill_value == 2
         assert result.dtype == np.asarray(arg).dtype
+
+
+def test_elemwise_union_rejects_index_overflow():
+    from sparse.numba_backend._umath import _Elemwise
+
+    # A logical shape may exceed intp's range without allocating dense storage.
+    # The union shortcut must decline before flattening such coordinates.
+    shape = (2**32, 2**32)
+    arrays = [COO([[0], [i]], [i + 1], shape=shape, sorted=True, has_duplicates=False) for i in range(3)]
+    evaluator = _Elemwise(lambda a, b, c: a + b + c, *arrays)
+    assert evaluator.shape == shape
+    assert evaluator._get_union_coords_data() is None
+
+
+@pytest.mark.parametrize("format", [COO, GCXS, DOK])
+@pytest.mark.parametrize("position", range(4))
+def test_elemwise_union_includes_empty_constant_operand(format, position):
+    dense = [np.zeros((3, 4), dtype=np.int64) for _ in range(3)]
+    for i, array in enumerate(dense):
+        array[i, i] = 3 * (i + 1)
+    operands = [format.from_numpy(array) for array in dense]
+    constant = COO(np.empty((2, 0), dtype=np.intp), np.empty(0, dtype=np.int64), shape=(3, 4), fill_value=2)
+    operands.insert(position, constant.asformat(format))
+    expected = sum(dense) + 2
+    result = sparse.elemwise(lambda a, b, c, d: a + b + c + d, *operands)
+    assert isinstance(result, format)
+    assert result.fill_value == 2
+    np.testing.assert_array_equal(result.todense(), expected)
+
+
+@pytest.mark.parametrize("cancel", [False, True])
+def test_elemwise_union_spans_multiple_evaluation_blocks(cancel):
+    size = 2**16 + 5
+    coordinates = np.arange(size, dtype=np.intp)[None, :]
+    first = COO(coordinates, np.ones(size, dtype=np.int64), shape=(size,), sorted=True, has_duplicates=False)
+    second = COO([[0]], [-3 if cancel else 2], shape=(size,))
+    third = COO([[size - 1]], [2], shape=(size,))
+    result = sparse.elemwise(lambda a, b, c: a + b + c, first, second, third)
+    expected = np.ones(size, dtype=np.int64)
+    expected[0] += -3 if cancel else 2
+    expected[-1] += 2
+    np.testing.assert_array_equal(result.todense(), expected)
+    np.testing.assert_array_equal(result.coords, coordinates)
+    assert result.fill_value == 0
+
+
+def test_elemwise_union_prunes_cancelled_final_block():
+    size = 2**16 + 1
+    first = COO(np.arange(size)[None, :], np.ones(size, dtype=np.int64), shape=(size,))
+    second = COO([[0]], [2], shape=(size,))
+    third = COO([[size - 1]], [-1], shape=(size,))
+    result = sparse.elemwise(lambda a, b, c: a + b + c, first, second, third)
+    assert result.nnz == size - 1
+    np.testing.assert_array_equal(result.coords, np.arange(size - 1)[None, :])
+    np.testing.assert_array_equal(result.data, np.r_[3, np.ones(size - 2, dtype=np.int64)])
