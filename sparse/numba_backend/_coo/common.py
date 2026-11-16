@@ -692,7 +692,25 @@ def _replace_nan(array, value):
     if not (np.issubdtype(array.dtype, np.floating) or np.issubdtype(array.dtype, np.complexfloating)):
         return array
 
-    return where(np.isnan(array), value, array)
+    if np.ndim(value) != 0:
+        return where(np.isnan(array), value, array)
+
+    from .core import COO
+
+    # The coordinates already identify every stored value. Replacing NaNs
+    # needs only a dense operation on that data and on the implicit fill,
+    # not a sparse boolean mask followed by coordinate matching.
+    data = np.where(np.isnan(array.data), value, array.data)
+    fill_value = np.where(np.isnan(array.fill_value), value, array.fill_value)[()]
+    return COO(
+        array.coords,
+        data,
+        shape=array.shape,
+        sorted=True,
+        has_duplicates=False,
+        prune=True,
+        fill_value=fill_value,
+    )
 
 
 def nanreduce(x, method, identity=None, axis=None, keepdims=False, **kwargs):
