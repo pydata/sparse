@@ -1,6 +1,7 @@
 """GCXS reductions over no axes must preserve values, shape and NumPy dtypes."""
 
 import sparse
+from sparse.numba_backend._utils import assert_eq
 
 import pytest
 
@@ -17,9 +18,7 @@ def test_gcxs_reduce_no_axes(shape, reduction, keepdims):
 
     result = getattr(array, reduction)(axis=(), keepdims=keepdims)
 
-    assert result.shape == expected.shape
-    assert result.dtype == expected.dtype
-    np.testing.assert_array_equal(result.todense(), expected)
+    assert_eq(result, expected)
 
 
 @pytest.mark.parametrize("value", [0, 7, -3.5, True, 2 + 3j])
@@ -32,9 +31,7 @@ def test_gcxs_scalar_reduce_all_axes(value, reduction, keepdims):
 
     result = getattr(array, reduction)(keepdims=keepdims)
 
-    assert result.shape == expected.shape
-    assert result.dtype == expected.dtype
-    np.testing.assert_allclose(result.todense(), expected)
+    assert_eq(result, expected)
 
 
 @pytest.mark.parametrize("dtype", [np.float32, np.int64])
@@ -46,8 +43,7 @@ def test_gcxs_no_axes_accumulator_dtype(dtype, ufunc):
     result = ufunc.reduce(array, axis=(), dtype=dtype)
     expected = ufunc.reduce(dense, axis=(), dtype=dtype)
 
-    assert result.dtype == expected.dtype
-    np.testing.assert_array_equal(result.todense(), expected)
+    assert_eq(result, expected)
 
 
 def test_gcxs_no_axes_does_not_densify_large_array():
@@ -58,11 +54,10 @@ def test_gcxs_no_axes_does_not_densify_large_array():
     ).asformat("gcxs", compressed_axes=(1,))
 
     result = array.sum(axis=(), dtype=np.int64).asformat("coo")
-    expected = array.tocoo()
+    expected = array.tocoo().astype(np.int64)
 
     assert result.shape == array.shape
     assert result.dtype == np.dtype(np.int64)
     assert result.fill_value == 0
     assert result.nnz == 2
-    np.testing.assert_array_equal(result.coords, expected.coords)
-    np.testing.assert_array_equal(result.data, expected.data)
+    assert_eq(result, expected)
