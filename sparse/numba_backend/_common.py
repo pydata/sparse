@@ -275,6 +275,19 @@ def matmul(a, b):
         if i != 1 and j != 1 and i != j:
             raise ValueError("shapes of a and b are not broadcastable")
 
+    batch_shape = np.broadcast_shapes(a.shape[:-2], b.shape[:-2])
+    if 0 in batch_shape:
+        if a.shape[-1] != b.shape[-2]:
+            raise ValueError("shape-mismatch for sum")
+        shape = (*batch_shape, a.shape[-2], b.shape[-1])
+        dtype = np.result_type(a.dtype, b.dtype)
+        if isinstance(a, np.ndarray) or isinstance(b, np.ndarray):
+            return np.empty(shape, dtype=dtype)
+        from ._compressed import GCXS
+
+        format = "gcxs" if isinstance(a, GCXS) or isinstance(b, GCXS) else "coo"
+        return zeros(shape, dtype=dtype, format=format)
+
     def _matmul_recurser(a, b):
         if a.ndim == 2:
             return dot(a, b)
