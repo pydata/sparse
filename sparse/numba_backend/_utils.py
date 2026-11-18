@@ -1,6 +1,6 @@
 import functools
 import warnings
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from numbers import Integral
 
 import numba
@@ -372,7 +372,8 @@ def normalize_axis(axis, ndim):
     Parameters
     ----------
     axis : Union[int, Iterable[int], None]
-        The axis indices.
+        The axis indices. Iterators, including generators, are rejected
+        without being consumed.
     ndim : int
         Number of dimensions to normalize axis indices against.
 
@@ -395,6 +396,9 @@ def normalize_axis(axis, ndim):
         return axis
 
     if isinstance(axis, Iterable):
+        if isinstance(axis, Iterator):
+            raise ValueError("axis iterators are not supported")
+        axis = tuple(axis)
         if not all(isinstance(a, Integral) for a in axis):
             raise ValueError(f"axis {axis} not understood")
 
