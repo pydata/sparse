@@ -273,6 +273,13 @@ def test_broadcast_to(shape1, shape2):
     assert_eq(np.broadcast_to(x, shape2), a.broadcast_to(shape2))
 
 
+@pytest.mark.parametrize("shape, target", [((2, 3), (3,)), ((1, 3), (3,)), ((1,), ())])
+def test_broadcast_to_fewer_dimensions(shape, target):
+    a = sparse.zeros(shape)
+    with pytest.raises(ValueError, match="could not be broadcast"):
+        sparse.broadcast_to(a, target)
+
+
 @pytest.mark.parametrize(
     "shapes",
     [
