@@ -202,3 +202,85 @@ def test_einsum_dtype(dtype):
     result = sparse.einsum("ij,i->j", x, y, dtype=dtype)
 
     assert result.dtype == dtype
+
+
+@pytest.mark.parametrize(
+    "subscripts,shapes",
+    [
+        ("ij,ij->i", ((2, 3), (1, 3))),
+        ("ij,ij->i", ((1, 3), (2, 3))),
+        ("ij,ij->i", ((2, 1), (2, 3))),
+        ("i,i->", ((1,), (3,))),
+        ("...ij,...jk->...ik", ((2, 3, 4), (1, 4, 2))),
+        ("...ij,...jk", ((1, 3, 4), (2, 4, 2))),
+        ("...i,...i->...", ((2, 1, 3), (4, 3))),
+        ("ij,ij,ij->i", ((2, 1), (1, 3), (2, 3))),
+        ("ii,i->i", ((1, 1), (3,))),
+        ("ii,i->", ((3, 3), (1,))),
+        ("ij,ij->i", ((0, 3), (1, 3))),
+        ("ij,ij->i", ((2, 0), (2, 1))),
+    ],
+)
+@pytest.mark.parametrize("formats", [("coo", "coo"), ("gcxs", "gcxs"), ("dok", "dense")])
+@pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+def test_einsum_broadcast_dimensions(subscripts, shapes, formats, dtype):
+    dense_inputs = []
+    inputs = []
+    for i, shape in enumerate(shapes):
+        data = (np.arange(np.prod(shape), dtype=np.float64).reshape(shape) + 1) % 4
+        data = data.astype(dtype)
+        if np.issubdtype(dtype, np.complexfloating):
+            data *= 1 + 2j
+        dense_inputs.append(data)
+        format = formats[i % len(formats)]
+        inputs.append(data if format == "dense" else sparse.COO.from_numpy(data).asformat(format))
+
+    expected = np.einsum(subscripts, *dense_inputs)
+    actual = sparse.einsum(subscripts, *inputs)
+    assert actual.shape == expected.shape
+    assert actual.dtype == expected.dtype
+    np.testing.assert_allclose(actual.todense(), expected)
+    for original, input in zip(dense_inputs, inputs, strict=True):
+        np.testing.assert_array_equal(input if isinstance(input, np.ndarray) else input.todense(), original)
+
+
+@pytest.mark.parametrize(
+    "subscripts,shapes",
+    [
+        ("i,i->i", ((2,), (3,))),
+        ("i,i,i->i", ((2,), (1,), (3,))),
+        ("i,i,i->i", ((1,), (2,), (3,))),
+        ("i,i,i->i", ((0,), (1,), (2,))),
+        ("ii,i->i", ((1, 3), (3,))),
+        ("ii,i->i", ((3, 1), (3,))),
+    ],
+)
+def test_einsum_invalid_broadcast_dimensions(subscripts, shapes):
+    inputs = [np.zeros(shape) for shape in shapes]
+    with pytest.raises(ValueError):
+        np.einsum(subscripts, *inputs)
+    with pytest.raises(ValueError):
+        sparse.einsum(subscripts, *(sparse.COO.from_numpy(a) for a in inputs))
+
+
+@pytest.mark.parametrize("shape", [(0, 1), (1, 0)])
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize("format", ["coo", "gcxs", "dok"])
+@pytest.mark.parametrize("dtype", [np.float32, np.complex64])
+def test_einsum_invalid_empty_dense_diagonal(shape, reverse, format, dtype):
+    diagonal = np.zeros(shape, dtype=dtype)
+    vector = np.ones(1, dtype=dtype)
+    inputs = [diagonal, sparse.COO.from_numpy(vector).asformat(format)]
+    dense_inputs = [diagonal, vector]
+    subscripts = "ii,i->i"
+    if reverse:
+        inputs.reverse()
+        dense_inputs.reverse()
+        subscripts = "i,ii->i"
+
+    # Check the full contraction: NumPy's single-operand empty diagonal path
+    # can accept unequal repeated dimensions.
+    with pytest.raises(ValueError):
+        np.einsum(subscripts, *dense_inputs)
+    with pytest.raises(ValueError):
+        sparse.einsum(subscripts, *inputs)
