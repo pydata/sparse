@@ -412,9 +412,8 @@ def nanmean(x, axis=None, keepdims=False, dtype=None, out=None):
     num = np.sum(x2, axis=axis, dtype=dtype, keepdims=keepdims)
 
     with np.errstate(invalid="ignore", divide="ignore"):
-        if num.ndim:
-            return np.true_divide(num, den, casting="unsafe")
-        return (num / den).astype(dtype if dtype is not None else x.dtype)
+        result = np.true_divide(num, den, casting="unsafe")
+        return result.astype(dtype if dtype is not None else x.dtype, copy=False)
 
 
 def _contains_nan(ar):
