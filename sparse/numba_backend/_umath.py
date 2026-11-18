@@ -145,7 +145,7 @@ def _get_broadcast_shape(shape1, shape2, is_result=False):
         If the two shapes cannot be broadcast together.
     """
     # https://stackoverflow.com/a/47244284/774273
-    if not all(
+    if (is_result and len(shape1) > len(shape2)) or not all(
         (l1 == l2) or (l1 == 1) or ((l2 == 1) and not is_result)
         for l1, l2 in zip(shape1[::-1], shape2[::-1], strict=False)
     ):

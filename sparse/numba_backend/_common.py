@@ -2830,7 +2830,8 @@ def broadcast_to(x, /, shape):
     x: array
         array to broadcast.
     shape: Tuple[int, ...]
-        array shape. Must be compatible with ``x``.
+        Target shape. It must have at least as many dimensions as ``x``
+        and be broadcast-compatible with it.
         If the array is incompatible with the specified shape, the function raises an exception.
 
     Returns
