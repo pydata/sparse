@@ -240,6 +240,9 @@ def _get_expanded_coords_data(coords, data, params, broadcast_shape):
     expanded_data : np.ndarray
         The data corresponding to expanded_coords.
     """
+    if data.size == 0:
+        return np.empty((len(broadcast_shape), 0), dtype=np.intp), data.copy()
+
     first_dim = -1
     expand_shapes = []
     for d, p, sh in zip(range(len(broadcast_shape)), params, broadcast_shape, strict=True):
@@ -252,18 +255,14 @@ def _get_expanded_coords_data(coords, data, params, broadcast_shape):
 
     all_idx = _cartesian_product(*(np.arange(d, dtype=np.intp) for d in expand_shapes))
 
-    false_dim = 0
-    dim = 0
+    if first_dim == -1:
+        return all_idx, np.repeat(data, reduce(operator.mul, broadcast_shape, 1))
 
+    expanded_data = data[all_idx[first_dim]]
     expanded_coords = np.empty((len(broadcast_shape), all_idx.shape[1]), dtype=np.intp)
 
-    if first_dim != -1:
-        expanded_data = data[all_idx[first_dim]]
-    else:
-        expanded_coords = all_idx if len(data) else np.empty((0, all_idx.shape[1]), dtype=np.intp)
-        expanded_data = np.repeat(data, reduce(operator.mul, broadcast_shape, 1))
-        return np.asarray(expanded_coords), np.asarray(expanded_data)
-
+    false_dim = 0
+    dim = 0
     for d, p in zip(range(len(broadcast_shape)), params, strict=True):
         if p:
             expanded_coords[d] = coords[dim, all_idx[first_dim]]
