@@ -1455,8 +1455,11 @@ class COO(SparseArray, NDArrayOperatorsMixin):  # lgtm [py/missing-equals]
 
     def broadcast_to(self, shape):
         """
-        Performs the equivalent of [`sparse.COO`][]. Note that
-        this function returns a new array instead of a view.
+        Broadcast this array to a compatible shape.
+
+        Expanding the shape creates a new COO array. An input with no stored
+        entries keeps its fill value without allocating coordinates for the
+        expanded axes.
 
         Parameters
         ----------
