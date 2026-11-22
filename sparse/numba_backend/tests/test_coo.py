@@ -2428,6 +2428,25 @@ def test_take(fill_value, indices, axis):
     np.testing.assert_equal(result.todense(), expected)
 
 
+@pytest.mark.parametrize("axis", [0, 1, -1])
+def test_take_sparse_indices(axis):
+    a = np.arange(24).reshape(2, 3, 4)
+    source = COO.from_numpy(a, fill_value=3)
+    indices = np.array([0, -1, 1, 0, -1])
+    for fill in (0, -1, 99):
+        key = COO.from_numpy(indices, fill_value=fill)
+        assert_eq(sparse.take(source, key, axis=axis), np.take(a, indices, axis=axis))
+
+
+def test_take_long_sparse_index():
+    source = COO([[1], [2]], [7], shape=(3, 4))
+    key = COO([[10**8 - 1]], [2], shape=(10**8,))
+    result = sparse.take(source, key, axis=1)
+    assert result.shape == (3, 10**8)
+    np.testing.assert_array_equal(result.coords, [[1], [10**8 - 1]])
+    np.testing.assert_array_equal(result.data, [7])
+
+
 @pytest.mark.parametrize("ndim", [2, 3, 4, 5])
 @pytest.mark.parametrize("density", [0.0, 0.1, 0.25, 1.0])
 def test_matrix_transpose(ndim, density):

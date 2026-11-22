@@ -292,6 +292,8 @@ For example, `a[rows, cols]` selects paired entries from a two-dimensional COO
 array. Positions where both index arrays contain their fill values select
 `a[rows.fill_value, cols.fill_value]` and can share a single output fill value.
 Mixing sparse integer indices with slices and assigning through them are unsupported.
+To select along one axis of a multidimensional array, use `sparse.take(a, indices, axis=axis)`
+with a one-dimensional integer index.
 
 
 **Package Configuration**
