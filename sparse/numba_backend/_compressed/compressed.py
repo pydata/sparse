@@ -411,6 +411,8 @@ class GCXS(SparseArray, NDArrayOperatorsMixin):
     __getitem__ = getitem
 
     def _reduce_calc(self, method, axis, keepdims=False, **kwargs):
+        if len(axis) == 0:
+            return (self.tocoo().reduce(method, axis=axis, keepdims=keepdims, **kwargs),)
         if axis[0] is None or np.array_equal(axis, np.arange(self.ndim, dtype=np.intp)):
             x = self.flatten().tocoo()
             out = x.reduce(method, axis=None, keepdims=keepdims, **kwargs)
