@@ -653,6 +653,68 @@ def test_broadcast_integer_indexing_without_densifying(monkeypatch):
     assert result.fill_value == 7
 
 
+def test_sparse_integer_indexing(monkeypatch):
+    source = COO([[0, 0, 1, 2], [0, 3, 2, 3]], [7, 1, 6, 11], shape=(3, 4), fill_value=-1)
+    rows = COO([[5, 13]], [1, 2], shape=(10**8,))
+    cols = COO([[5, 17]], [2, 3], shape=(10**8,))
+    with monkeypatch.context() as m:
+        m.setattr(COO, "todense", lambda *a: pytest.fail("unexpected dense conversion"))
+        result = source[rows, cols]
+    assert result.shape == (10**8,)
+    assert result.fill_value == 7
+    np.testing.assert_array_equal(result.coords, [[5, 13, 17]])
+    np.testing.assert_array_equal(result.data, [6, -1, 1])
+
+
+def test_sparse_integer_indexing_broadcast_and_bounds():
+    a = np.arange(12).reshape(3, 4)
+    source = COO.from_numpy(a)
+    rows = np.array([[0], [-1]])
+    cols = np.array([1, 3])
+    # Fully stored keys may have an out-of-bounds fill that never appears.
+    r = COO.from_numpy(rows, fill_value=99)
+    assert_eq(source[r, cols], a[rows, cols])
+    assert_eq(source[r, 1], a[rows, 1])
+    assert_eq(source[1, COO.from_numpy(cols, fill_value=2)], a[1, cols])
+    assert r.fill_value == 99
+    assert_eq(source[COO.from_numpy(np.empty((0, 1), dtype=int)), cols], a[:0, cols])
+    for invalid in (COO([[1]], [0], shape=(2,), fill_value=4), COO.from_numpy(np.array([0, 4]))):
+        with pytest.raises(IndexError):
+            source[0, invalid]
+
+
+def test_sparse_integer_indexing_large_source():
+    source = COO([[0, 9], [0, 10]], [3, 4], shape=(2**32, 2**32), sorted=True, has_duplicates=False)
+    result = source[COO.from_numpy(np.array([0, 9])), COO.from_numpy(np.array([0, 10]))]
+    assert_eq(result, np.array([3, 4]))
+
+
+def test_sparse_integer_indexing_many_broadcast_axes():
+    rank = 18
+    coords = np.broadcast_to([0, 1], (rank, 2))
+    source = COO(coords, [-9, 11], shape=(2,) * rank, fill_value=3)
+    row = COO([[63], [0]], [1], shape=(65, 1))
+    col = COO([[0], [64]], [1], shape=(1, 65))
+    result = source[(row, col) * (rank // 2)]
+    expected = np.full((65, 65), -9)
+    expected[63, :] = expected[:, 64] = 3
+    expected[63, 64] = 11
+    assert_eq(result, expected)
+    assert result.fill_value == -9
+
+
+def test_sparse_integer_indexing_broadcast_constants():
+    source = COO([[0, 1], [0, 1]], [5, 7], shape=(2, 2))
+    rows = sparse.full((10**8, 1), 0, dtype=int)
+    cols = COO([[0], [1]], [1], shape=(1, 2))
+    result = source[rows, sparse.full((1, 2), 0, dtype=int)]
+    assert result.shape == (10**8, 2)
+    assert result.nnz == 0
+    assert result.fill_value == 5
+    small = source[rows[:3], cols]
+    assert_eq(small, np.array([[5, 0]] * 3))
+
+
 @pytest.mark.parametrize("seed", [0, 1, 2])
 def test_broadcast_integer_indexing_numpy_randomized(seed):
     rng = np.random.default_rng(seed)

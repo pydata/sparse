@@ -1,4 +1,5 @@
 from itertools import zip_longest
+from math import prod
 from numbers import Integral
 
 import numba
@@ -64,6 +65,17 @@ def getitem(x, index):
     # Otherwise, convert into a tuple.
     if not isinstance(index, tuple):
         index = (index,)
+
+    if (
+        len(index) == x.ndim
+        and any(isinstance(key, SparseArray) for key in index)
+        and all(
+            (isinstance(key, Integral) and not isinstance(key, bool))
+            or (isinstance(key, (SparseArray, np.ndarray)) and key.dtype.kind in "iu")
+            for key in index
+        )
+    ):
+        return _sparse_integer_index(x, index)
 
     # Even an ellipsis that consumes no axes makes a scalar selection an array.
     has_ellipsis = any(ind is Ellipsis for ind in index)
@@ -149,6 +161,107 @@ def getitem(x, index):
         result = result.transpose(adv_axes + tuple(ax for ax in range(result.ndim) if ax not in adv_axes))
 
     return result
+
+
+def _sparse_integer_index(x, index):
+    """Gather COO values using a complete tuple of broadcastable integer keys."""
+    from .._common import full
+    from .._sparse_array import SparseArray
+    from .._umath import elemwise
+    from .core import COO
+
+    try:
+        shape = np.broadcast_shapes(*(np.shape(key) for key in index))
+    except ValueError as exc:
+        raise IndexError("shape mismatch: indexing arrays could not be broadcast together") from exc
+
+    keys = []
+    for key, size in zip(index, x.shape, strict=True):
+        if isinstance(key, SparseArray):
+            key = key.asformat("coo")
+        elif isinstance(key, np.ndarray) and key.ndim:
+            key = COO.from_numpy(key)
+        if isinstance(key, COO) and key.size and (key.nnz == 0 or key.size == 1):
+            key = key.data[0] if key.nnz else key.fill_value
+        if not isinstance(key, COO):
+            value = int(key)
+            if not -size <= value < size:
+                raise IndexError(f"Index out of bounds for dimension {size}")
+            keys.append(value)
+        else:
+            if np.any(key.data >= size) or np.any(key.data < -size):
+                raise IndexError(f"Index out of bounds for dimension {size}")
+            if not -size <= int(key.fill_value) < size:
+                if key.nnz < key.size:
+                    raise IndexError(f"Index out of bounds for dimension {size}")
+                # elemwise also evaluates fills which are absent from a fully stored index.
+                key = key.copy(deep=False)
+                key.fill_value = key.dtype.type(0)
+            keys.append(key)
+
+    if not shape:
+        return getitem(x, tuple(keys))
+    if 0 in shape:
+        return full(shape, x.fill_value, dtype=x.dtype)
+
+    arrays = [k for k in keys if isinstance(k, COO)]
+    if not arrays:
+        return full(shape, getitem(x, tuple(keys)), dtype=x.dtype)
+    active_shape = np.broadcast_shapes(*(k.shape for k in arrays))
+    size = prod(active_shape)
+    # For unequal shapes elemwise may visit all subsets of the sparse operands.
+    # On small grids it is cheaper to read the coordinates of each output point.
+    if (
+        any(k.shape != active_shape for k in arrays)
+        and size * len(arrays) < 2 ** len(arrays)
+        and size <= np.iinfo(np.intp).max
+    ):
+        result = _gather_broadcast_grid(x, keys, active_shape, size)
+    else:
+        result = elemwise(lambda *indices: _gather_values(x, indices), *keys)
+    if result.shape == shape:
+        return result
+    if not result.nnz:
+        return full(shape, result.fill_value, dtype=x.dtype)
+    return result.broadcast_to(shape)
+
+
+def _gather_values(x, indices):
+    """Read one block using the existing dense integer indexing implementation."""
+    arrays = np.broadcast_arrays(*indices)
+    selected = getitem(x, tuple(a.ravel() for a in arrays))
+    result = np.full(arrays[0].shape, x.fill_value, dtype=x.dtype)
+    result.flat[selected.coords[0]] = selected.data
+    return result
+
+
+def _gather_broadcast_grid(x, keys, shape, size):
+    from .._common import full
+    from .core import COO
+
+    fill = getitem(x, tuple(int(k.fill_value) if isinstance(k, COO) else k for k in keys))
+    # Bound the output coordinates and temporary integer keys in each block.
+    block_size = max(1, (2**16) // (len(shape) + len(keys)))
+    positions = []
+    stored = []
+    for start in range(0, size, block_size):
+        stop = min(start + block_size, size)
+        coords = np.unravel_index(np.arange(start, stop, dtype=np.intp), shape)
+        values = []
+        for key in keys:
+            if isinstance(key, COO):
+                pos = tuple(0 if n == 1 else c for n, c in zip(key.shape, coords[-key.ndim :], strict=True))
+                key = _gather_values(key, pos)
+            values.append(key)
+        data = np.broadcast_to(_gather_values(x, values), (stop - start,))
+        take = np.flatnonzero(~equivalent(data, fill))
+        if take.size:
+            positions.append(start + take)
+            stored.append(data[take])
+    if not positions:
+        return full(shape, fill, dtype=x.dtype)
+    coords = np.unravel_index(np.concatenate(positions), shape)
+    return COO(coords, np.concatenate(stored), shape=shape, fill_value=fill, sorted=True, has_duplicates=False)
 
 
 def _boolean_index(x, mask):

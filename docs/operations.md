@@ -258,9 +258,8 @@ array([0, 0])
 
 Masks with either `False` or `True` fill values are supported without densifying
 either operand or listing the mask's implicit entries. GCXS uses a COO
-conversion for this operation. Combining sparse masks with other indices in
-one indexing operation, sparse integer indices, and assignment through a
-sparse mask are not supported.
+conversion for this operation. A sparse boolean mask must be the sole index
+and may only be used for retrieval.
 
 **Dense array indices**
 
@@ -283,8 +282,16 @@ z[np.array([[0], [2]]), np.array([1, 3, 1])]  # shape (2, 3, 7)
 z[np.array([[0], [2]]), :, np.array([1, 5])]  # shape (2, 2, 6)
 ```
 
-Sparse integer index arrays and assignment to COO arrays are not supported.
 Multidimensional dense boolean masks are not covered by this integer indexing support.
+
+**Sparse integer indices**
+
+For COO retrieval, you can select one coordinate per axis using broadcastable
+integer arrays and scalar integers. The index arrays may themselves be sparse.
+For example, `a[rows, cols]` selects paired entries from a two-dimensional COO
+array. Positions where both index arrays contain their fill values select
+`a[rows.fill_value, cols.fill_value]` and can share a single output fill value.
+Mixing sparse integer indices with slices and assigning through them are unsupported.
 
 
 **Package Configuration**
