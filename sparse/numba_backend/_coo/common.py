@@ -1414,6 +1414,27 @@ def take(x, indices, /, *, axis=None):
         return x[indices]
 
     axis = normalize_axis(axis, x.ndim)
+    if isinstance(indices, SparseArray) and indices.ndim == 1 and indices.dtype.kind in "iu":
+        from .core import COO
+
+        if x.ndim == 1:
+            return x[indices]
+        key = indices.asformat("coo")
+        leading = (slice(None),) * axis
+        if key.nnz < key.size and x[(*leading, int(key.fill_value))].nnz:
+            # Each implicit index selects a slice with stored entries. The
+            # output already needs space proportional to the index length.
+            values = np.full(key.shape, key.fill_value, dtype=key.dtype)
+            values[key.coords[0]] = key.data
+            return x[(*leading, values)]
+
+        # Only explicit indices contribute stored entries. Restore their
+        # positions on the result axis without enumerating implicit indices.
+        result = x[(*leading, key.data)]
+        coords = result.coords.copy()
+        coords[axis] = key.coords[0, coords[axis]]
+        shape = (*x.shape[:axis], key.size, *x.shape[axis + 1 :])
+        return COO(coords, result.data, shape=shape, fill_value=x.fill_value, sorted=True, has_duplicates=False)
     full_index = (slice(None),) * axis + (indices, ...)
     return x[full_index]
 
