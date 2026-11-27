@@ -8,6 +8,14 @@ import pytest
 DENSITY = 0.01
 
 
+def test_broadcast_fill_only(benchmark):
+    x = sparse.full((1, 1), 7)
+
+    @benchmark
+    def bench():
+        sparse.broadcast_to(x, (512, 512))
+
+
 def format_id(format):
     return f"{format=}"
 

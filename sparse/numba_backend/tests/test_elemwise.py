@@ -280,6 +280,27 @@ def test_broadcast_to_fewer_dimensions(shape, target):
         sparse.broadcast_to(a, target)
 
 
+@pytest.mark.parametrize("source_shape", [(), (1, 1)])
+def test_broadcast_to_fill_only_large_shape(source_shape):
+    # Each axis is small, but a dense intp coordinate grid would exceed the byte-size limit.
+    target = (1024,) * 6
+    a = sparse.full(source_shape, 7, dtype=np.int16)
+    result = sparse.broadcast_to(a, target)
+    assert result.shape == target
+    assert result.coords.shape == (len(target), 0)
+    assert result.nnz == 0
+    assert result.fill_value == 7
+    assert result.dtype == np.int16
+
+
+def test_broadcast_to_stored_scalar():
+    a = COO(np.empty((0, 1), dtype=np.intp), np.array([9]), shape=(), fill_value=1)
+    result = sparse.broadcast_to(a, (2, 3))
+    assert result.nnz == 6
+    assert result.fill_value == 1
+    assert_eq(np.broadcast_to(a.todense(), (2, 3)), result)
+
+
 @pytest.mark.parametrize(
     "shapes",
     [
