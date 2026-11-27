@@ -80,6 +80,29 @@ def test_tensordot(a_shape, b_shape, axes, a_format, b_format):
     assert isinstance(sa_sb, np.ndarray)
 
 
+@pytest.mark.parametrize("return_type", [None, COO, GCXS, np.ndarray])
+@pytest.mark.parametrize(
+    "a_format,b_format",
+    [(a, b) for a in ["coo", "gcxs", "dense"] for b in ["coo", "gcxs", "dense"] if (a, b) != ("dense", "dense")],
+)
+def test_tensordot_empty_return_type(return_type, a_format, b_format):
+    a = np.empty((2, 0), dtype=np.float32)
+    b = np.empty((0, 3), dtype=np.float32)
+    sa = a if a_format == "dense" else COO.from_numpy(a).asformat(a_format)
+    sb = b if b_format == "dense" else COO.from_numpy(b).asformat(b_format)
+
+    result = sparse.tensordot(sa, sb, axes=1, return_type=return_type)
+
+    expected_type = return_type
+    if expected_type is None:
+        if "dense" in (a_format, b_format):
+            expected_type = np.ndarray
+        else:
+            expected_type = GCXS if "gcxs" in (a_format, b_format) else COO
+    assert isinstance(result, expected_type)
+    assert_eq(result, np.tensordot(a, b, axes=1))
+
+
 def test_tensordot_empty():
     x1 = np.empty((0, 0, 0))
     x2 = np.empty((0, 0, 0))
