@@ -120,11 +120,16 @@ def kron(a, b):
 
     a_idx, b_idx = _cartesian_product(np.arange(a.nnz), np.arange(b.nnz))
 
-    a_expanded_coords = a.coords[:, a_idx]
-    b_expanded_coords = b.coords[:, b_idx]
-    o_coords = a_expanded_coords * np.asarray(b.shape)[:, None] + b_expanded_coords
-    o_data = a.data[a_idx] * b.data[b_idx]
     o_shape = tuple(i * j for i, j in zip(a.shape, b.shape, strict=True))
+    o_data = a.data[a_idx] * b.data[b_idx]
+    if o_data.size == 0:
+        o_coords = np.empty((max_dim, 0), dtype=np.intp)
+    else:
+        # Keep all coordinate arithmetic in an integer dtype that fits the output shape.
+        idx_dtype = np.intp if can_store(np.intp, max(o_shape)) else np.uint64
+        a_expanded_coords = a.coords[:, a_idx].astype(idx_dtype, copy=False)
+        b_expanded_coords = b.coords[:, b_idx].astype(idx_dtype, copy=False)
+        o_coords = a_expanded_coords * np.asarray(b.shape, dtype=idx_dtype)[:, None] + b_expanded_coords
 
     return COO(o_coords, o_data, shape=o_shape, has_duplicates=False)
 
