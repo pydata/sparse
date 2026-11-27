@@ -202,3 +202,24 @@ def test_einsum_dtype(dtype):
     result = sparse.einsum("ij,i->j", x, y, dtype=dtype)
 
     assert result.dtype == dtype
+
+
+@pytest.mark.parametrize("subscripts", ["ij->", "ii->", "ij,ij->", "ij,jk->"])
+@pytest.mark.parametrize("dtype", [np.int8, np.int32, np.uint16, np.bool_])
+@pytest.mark.parametrize("format", ["coo", "gcxs"])
+def test_einsum_full_contraction_dtype(subscripts, dtype, format):
+    x = np.array([[0, 1, 0], [2, 0, 1], [1, 1, 0]], dtype=dtype)
+    terms = subscripts.split("->")[0].split(",")
+    sparse_out = sparse.einsum(subscripts, *(sparse.asarray(x, format=format) for _ in terms))
+    numpy_out = np.einsum(subscripts, *(x for _ in terms))
+
+    assert sparse_out.dtype == numpy_out.dtype
+    np.testing.assert_array_equal(sparse_out.todense(), numpy_out)
+
+
+def test_einsum_full_contraction_dtype_kwarg():
+    x = sparse.random((3, 3), density=0.5, random_state=0) * 10.0
+
+    result = sparse.einsum("ij,ij->", x, x, dtype=np.int32)
+
+    assert result.dtype == np.int32
