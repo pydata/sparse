@@ -89,6 +89,42 @@ def test_tensordot_empty():
     assert_eq(np.tensordot(x1, x2), sparse.tensordot(s1, s2))
 
 
+@pytest.mark.parametrize("dtype", [np.bool_, np.int8, np.uint64, np.float32, np.float64, np.complex128])
+@pytest.mark.parametrize("layout", ["C", "F", "strided", "reversed"])
+@pytest.mark.parametrize("columns", [1, 2, 3, 4, 7])
+def test_coo_dense_matmul_layout(dtype, layout, columns):
+    a = np.array([[0, 2, 0, 3], [0, 0, 0, 0], [4, 0, 5, 0]], dtype=dtype)
+    b = np.arange(4 * columns * 2).reshape(4, columns * 2).astype(dtype)
+    if np.issubdtype(dtype, np.complexfloating):
+        a *= 1 + 2j
+        b *= 2 - 1j
+    if layout == "C":
+        b = np.ascontiguousarray(b[:, :columns])
+    elif layout == "F":
+        b = np.asfortranarray(b[:, :columns])
+    elif layout == "strided":
+        b = b[:, ::2]
+    else:
+        b = b[:, :columns][:, ::-1]
+    b.setflags(write=False)
+
+    result = COO.from_numpy(a) @ b
+    expected = a @ b
+    assert result.dtype == expected.dtype
+    assert_eq(result, expected)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex128])
+def test_coo_dense_matmul_accumulation_order(dtype):
+    large = 2 ** (np.finfo(dtype).nmant + 2)
+    a = COO.from_numpy(np.array([[large, 1, -large], [0, 0, 0]], dtype=dtype))
+    b = np.ones((3, 8), dtype=dtype)
+
+    # Adding 1 between these two values rounds it away. Reassociating the
+    # products would instead produce 1.
+    assert_eq(a @ b, np.zeros((2, 8), dtype=dtype))
+
+
 @pytest.mark.parametrize("a_shape, b_shape", [((0, 3), (3, 0)), ((2, 3), (3, 0))])
 @pytest.mark.parametrize("compressed_axes", [(0,), (1,)])
 def test_matmul_GCXS_no_output_columns(a_shape, b_shape, compressed_axes):

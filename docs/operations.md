@@ -209,9 +209,8 @@ in the form `x.reduction()`, the following reductions are supported:
 ## Indexing
 
 [`sparse.COO`][] and [`sparse.GCXS`][] arrays can be [indexed](https://numpy.org/doc/stable/user/basics.indexing.html)
-just like regular [`numpy.ndarray`][] objects. They support integer, slice and boolean and array indexing (boolean and array indexing is supported only by dense NumPy arrays).
-However, currently, numpy advanced indexing is not properly supported. This
-means that all of the following work like in Numpy, except that they will produce
+with integers, slices and dense NumPy index arrays, as well as a single sparse boolean
+mask as described below. All of the following work like in NumPy, except that they will produce
 [`sparse.SparseArray`][] arrays rather than [`numpy.ndarray`][] objects, and will produce
 scalars where expected. Assume that `z.shape` is `(5, 6, 7)`
 
@@ -237,10 +236,42 @@ z[-6]
 
 **Advanced Indexing**
 
-Advanced indexing (indexing arrays with other arrays) is supported, but only for indexing
-with a *single array*. Indexing a single array with multiple arrays is not supported at
-this time. As above, if `z.shape` is `(5, 6, 7)`, all of the following will
-work like NumPy:
+**Sparse boolean masks**
+
+For the Numba backend, `x[mask]` and `x[(mask,)]` accept a COO, GCXS, or DOK boolean array
+whose shape matches the leading dimensions of `x`. A mask with the same shape
+as `x` produces a one-dimensional result, in NumPy's row-major order. A mask
+with fewer dimensions preserves the remaining dimensions after the selected
+axis. A zero-dimensional boolean mask inserts a leading axis of length one or
+zero; Python and NumPy boolean scalars behave the same way. As in NumPy, a
+mask axis may also have length zero, producing an empty selection.
+The result retains the input's fill value and is a COO or GCXS array,
+respectively.
+
+```python
+>>> x = sparse.COO.from_numpy(np.array([0, 1, 0, 2]))
+>>> x[x > 0].todense()
+array([1, 2])
+>>> x[x == 0].todense()
+array([0, 0])
+```
+
+Masks with either `False` or `True` fill values are supported without densifying
+either operand or listing the mask's implicit entries. GCXS uses a COO
+conversion for this operation. Combining sparse masks with other indices in
+one indexing operation, sparse integer indices, and assignment through a
+sparse mask are not supported.
+
+**Dense array indices**
+
+Both formats support one-dimensional dense integer index arrays and one-dimensional
+dense boolean masks. COO retrieval also supports multidimensional integer arrays,
+which are broadcast together following NumPy's advanced indexing rules. The broadcast
+dimensions replace the indexed axes; when the advanced indices are separated by a
+slice, `None` or an ellipsis, those dimensions appear first. The source array stays
+sparse and the result retains its fill value.
+
+As above, if `z.shape` is `(5, 6, 7)`, all of the following work for COO:
 
 ```python
 
@@ -248,7 +279,12 @@ z[[0, 1, 2]]
 z[1, [3]]
 z[1, 4, [3, 6]]
 z[:3, :2, [1, 5]]
+z[np.array([[0], [2]]), np.array([1, 3, 1])]  # shape (2, 3, 7)
+z[np.array([[0], [2]]), :, np.array([1, 5])]  # shape (2, 2, 6)
 ```
+
+Sparse integer index arrays and assignment to COO arrays are not supported.
+Multidimensional dense boolean masks are not covered by this integer indexing support.
 
 
 **Package Configuration**

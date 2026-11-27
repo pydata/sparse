@@ -27,7 +27,14 @@ def getitem(x, index):
     index : {tuple, str}
         The index into the array.
     """
+    from .._sparse_array import SparseArray
     from .core import COO
+
+    mask = index[0] if isinstance(index, tuple) and len(index) == 1 else index
+    if isinstance(mask, bool | np.bool_):
+        mask = COO.from_numpy(np.asarray(mask))
+    if isinstance(mask, SparseArray) and mask.dtype == np.bool_:
+        return _boolean_index(x, mask.asformat("coo"))
 
     # If string, this is an index into an np.void
 
@@ -58,8 +65,8 @@ def getitem(x, index):
     if not isinstance(index, tuple):
         index = (index,)
 
-    # Check if the last index is an ellipsis.
-    last_ellipsis = len(index) > 0 and index[-1] is Ellipsis
+    # Even an ellipsis that consumes no axes makes a scalar selection an array.
+    has_ellipsis = any(ind is Ellipsis for ind in index)
 
     # Normalize the index into canonical form.
     orig_index = index
@@ -98,8 +105,9 @@ def getitem(x, index):
         # Add the index and shape for the advanced index.
         if isinstance(ind, np.ndarray):
             if not adv_idx_added:
-                shape.append(adv_idx.length)
-                coords.append(adv_idx.idx)
+                shape.extend(adv_idx.shape)
+                if adv_idx.shape:
+                    coords.extend(np.unravel_index(adv_idx.idx, adv_idx.shape))
                 adv_idx_added = True
             i += 1
         # Add a dimension for None.
@@ -112,8 +120,8 @@ def getitem(x, index):
         coords = np.stack(coords, axis=0)
     else:
         # If index result is a scalar, return a 0-d COO or
-        # a scalar depending on whether the last index is an ellipsis.
-        if last_ellipsis:
+        # a scalar depending on whether the index contains an ellipsis.
+        if has_ellipsis:
             coords = np.empty((0, n), dtype=np.uint8)
         else:
             if n != 0:
@@ -133,13 +141,62 @@ def getitem(x, index):
         fill_value=x.fill_value,
     )
 
-    # Like NumPy, move the advanced-index axis to the front when the advanced
+    # Like NumPy, move the advanced-index dimensions to the front when the advanced
     # indices are not next to each other
     adv_axis = advanced_index_axis(orig_index, index)
     if adv_axis:
-        result = result.transpose((adv_axis,) + tuple(ax for ax in range(result.ndim) if ax != adv_axis))
+        adv_axes = tuple(range(adv_axis, adv_axis + len(adv_idx.shape)))
+        result = result.transpose(adv_axes + tuple(ax for ax in range(result.ndim) if ax not in adv_axes))
 
     return result
+
+
+def _boolean_index(x, mask):
+    """Select with a sparse boolean mask over the leading axes of a COO array."""
+    from .common import linear_loc
+    from .core import COO
+
+    if mask.ndim > x.ndim or any(m not in (n, 0) for m, n in zip(mask.shape, x.shape[: mask.ndim], strict=True)):
+        raise IndexError("boolean index did not match indexed array")
+
+    if mask.size == 0:
+        return COO(
+            np.empty((1 + x.ndim - mask.ndim, 0), dtype=np.intp),
+            x.data[:0],
+            shape=(0,) + x.shape[mask.ndim :],
+            fill_value=x.fill_value,
+        )
+
+    # Ignore explicitly stored fill values. For a True fill, these locations
+    # are the excluded positions, so we never enumerate the implicit True entries.
+    mask_loc = mask.linear_loc()[mask.data != mask.fill_value]
+    x_loc = linear_loc(x.coords[: mask.ndim], mask.shape)
+    ranks = np.searchsorted(mask_loc, x_loc)
+    matches = np.zeros(x.nnz, dtype=bool)
+    in_bounds = ranks < mask_loc.size
+    matches[in_bounds] = mask_loc[ranks[in_bounds]] == x_loc[in_bounds]
+
+    if mask.fill_value:
+        selected = ~matches
+        ranks = x_loc - ranks
+        count = mask.size - mask_loc.size
+    else:
+        selected = matches
+        count = mask_loc.size
+
+    # Use an integer buffer: stacking intp ranks with uint64 coordinates can
+    # promote to float64 and lose exact positions on large trailing axes.
+    coords = np.empty((1 + x.ndim - mask.ndim, np.count_nonzero(selected)), dtype=np.intp)
+    coords[0] = ranks[selected]
+    coords[1:] = x.coords[mask.ndim :, selected]
+    return COO(
+        coords,
+        x.data[selected],
+        shape=(count,) + x.shape[mask.ndim :],
+        has_duplicates=False,
+        sorted=True,
+        fill_value=x.fill_value,
+    )
 
 
 def _mask(coords, indices, shape):
@@ -147,35 +204,31 @@ def _mask(coords, indices, shape):
     indices, adv_idx, adv_idx_pos = _separate_adv_indices(indices)
 
     if len(adv_idx) != 0:
+        try:
+            broadcast_indices = np.broadcast_arrays(*adv_idx)
+        except ValueError as e:
+            shapes = " ".join(str(idx.shape) for idx in adv_idx)
+            raise IndexError(
+                f"shape mismatch: indexing arrays could not be broadcast together with shapes {shapes}"
+            ) from e
+        adv_shape = broadcast_indices[0].shape
+        # The selection kernels operate on one-dimensional arrays. Each position
+        # represents one element of the common broadcast shape.
+        adv_idx = [np.asarray(idx, dtype=np.intp).ravel() for idx in broadcast_indices]
         if len(adv_idx) != 1:
-            # Ensure if multiple advanced indices are passed, all are of the same length
-            # Also check each advanced index to ensure each is only a one-dimensional iterable
-            adv_ix_len = len(adv_idx[0])
-            for ai in adv_idx:
-                if len(ai) != adv_ix_len:
-                    raise IndexError(
-                        "shape mismatch: indexing arrays could not be broadcast together. Ensure all indexing arrays "
-                        "are of the same length."
-                    )
-                if ai.ndim != 1:
-                    raise IndexError("Only one-dimensional iterable indices supported.")
-
             mask, aidxs = _compute_multi_axis_multi_mask(
                 coords,
                 _ind_ar_from_indices(indices),
                 np.array(adv_idx, dtype=np.intp),
                 np.array(adv_idx_pos, dtype=np.intp),
             )
-            return mask, _AdvIdxInfo(aidxs, adv_idx_pos, adv_ix_len)
+            return mask, _AdvIdxInfo(aidxs, adv_idx_pos[0], adv_shape)
 
         adv_idx = adv_idx[0]
         adv_idx_pos = adv_idx_pos[0]
 
-        if adv_idx.ndim != 1:
-            raise IndexError("Only one-dimensional iterable indices supported.")
-
         mask, aidxs = _compute_multi_mask(coords, _ind_ar_from_indices(indices), adv_idx, adv_idx_pos)
-        return mask, _AdvIdxInfo(aidxs, adv_idx_pos, len(adv_idx))
+        return mask, _AdvIdxInfo(aidxs, adv_idx_pos, adv_shape)
 
     mask, is_slice = _compute_mask(coords, _ind_ar_from_indices(indices))
 
@@ -329,7 +382,7 @@ def _compute_multi_axis_multi_mask(coords, indices, adv_idx, adv_idx_pos):  # pr
     # Get location of non-advanced indices
     if len(indices) != 0:
         ixx = 0
-        for ix in range(coords.shape[0]):
+        for ix in range(len(full_idx)):
             isin = False
             for ax in adv_idx_pos:
                 if ix == ax:
@@ -673,7 +726,7 @@ def array_from_list_intp(x):  # pragma: no cover
 
 
 class _AdvIdxInfo:
-    def __init__(self, idx, pos, length):
+    def __init__(self, idx, pos, shape):
         self.idx = idx
         self.pos = pos
-        self.length = length
+        self.shape = shape
