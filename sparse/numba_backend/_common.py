@@ -3253,6 +3253,8 @@ def diff(x, axis=-1, n=1, prepend=None, append=None):
     """
     Calculates the n-th discrete difference along the given axis.
 
+    Boolean inputs retain their dtype and indicate whether adjacent values differ.
+
     Parameters
     ----------
     x : SparseArray
@@ -3276,9 +3278,12 @@ def diff(x, axis=-1, n=1, prepend=None, append=None):
         x = concatenate([prepend, x], axis=axis)
     if append is not None:
         x = concatenate([x, append], axis=axis)
+    operation = np.not_equal if x.dtype == np.bool_ else np.subtract
     result = x
     for _ in range(n):
-        result = result[(slice(None),) * axis + (slice(1, None),)] - result[(slice(None),) * axis + (slice(None, -1),)]
+        result = operation(
+            result[(slice(None),) * axis + (slice(1, None),)], result[(slice(None),) * axis + (slice(None, -1),)]
+        )
     return result
 
 
